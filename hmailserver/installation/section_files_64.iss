@@ -3,8 +3,7 @@
 Source: "..\source\server\hMailServer\x64\Release\hMailServer.exe"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
 Source: "..\source\server\hMailServer\x64\Release\hMailServer.tlb"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
 Source: "..\source\server\hMailServer\x64\Release\hMailServer.Minidump.exe"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
-; The Visual C++ runtime, in the newest version each Windows version can load - see
-; VCREDIST_PATH_MODERN and VCREDIST_PATH_LEGACY in hMailServer64.iss.
+; The Visual C++ runtime - see VCREDIST_PATH in hMailServer64.iss.
 ;
 ; Only the three that are actually loaded. Everything in Bin resolves to these: hMailServer.exe
 ; and hMailServer.Minidump.exe import all three, libcrypto, libssl and libpq import
@@ -14,23 +13,16 @@ Source: "..\source\server\hMailServer\x64\Release\hMailServer.Minidump.exe"; Des
 ;
 ; The rest of the redistributable is left out: concrt140.dll, vccorlib140.dll (C++/CX, which
 ; cannot even load below Windows 8), vcruntime140_threads.dll and the msvcp140_1, _2,
-; _atomic_wait and _codecvt_ids satellites. That saves about 1.1 MB per tier.
+; _atomic_wait and _codecvt_ids satellites. That saves about 1.1 MB.
 ;
 ; Which satellites are needed follows from the code, not from the toolset: std::atomic::wait
 ; and std::counting_semaphore pull in msvcp140_atomic_wait.dll, PPL pulls in concrt140.dll,
 ; and so on. Such a reference would build and test clean here and then fail to start on a
 ; machine without the redistributable installed, so re-check this list with
 ; "dumpbin /imports" when adding a dependency or moving to a newer toolset.
-Source: "{#VCREDIST_PATH_MODERN}\msvcp140.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools; MinVersion: 10.0;
-Source: "{#VCREDIST_PATH_MODERN}\vcruntime140.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools; MinVersion: 10.0;
-Source: "{#VCREDIST_PATH_MODERN}\vcruntime140_1.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools; MinVersion: 10.0;
-Source: "{#VCREDIST_PATH_LEGACY}\msvcp140.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools; OnlyBelowVersion: 10.0;
-Source: "{#VCREDIST_PATH_LEGACY}\vcruntime140.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools; OnlyBelowVersion: 10.0;
-Source: "{#VCREDIST_PATH_LEGACY}\vcruntime140_1.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools; OnlyBelowVersion: 10.0;
-; Windows 10 and later carry the Universal CRT themselves, and resolve api-ms-win-crt-* to it
-; through the API set schema without ever looking in {app}\Bin - so it is shipped only to the
-; older versions that need it.
-Source: "{#UCRT_PATH}\*"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools; OnlyBelowVersion: 10.0;
+Source: "{#VCREDIST_PATH}\msvcp140.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
+Source: "{#VCREDIST_PATH}\vcruntime140.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
+Source: "{#VCREDIST_PATH}\vcruntime140_1.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
 
 Source: "SQLCE\SSCERuntime_x64-ENU.msi"; Flags: deleteafterinstall ; Excludes: ".svn"; DestDir: "{tmp}"; Components: server;
 

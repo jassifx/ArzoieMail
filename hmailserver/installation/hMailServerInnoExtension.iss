@@ -65,11 +65,6 @@ const
 	// How long to wait for the hMailServer service to stop before giving up.
 	SERVICE_STOP_TIMEOUT_MS     = 60000;
 
-  // BEGIN .NET INSTALLER	
-  mdacURL = 'http://download.microsoft.com/download/4/a/a/4aafff19-9d21-4d35-ae81-02c48dcbbbff/MDAC_TYP.EXE';
-  dotnet20URL = 'http://download.microsoft.com/download/5/6/7/567758a3-759e-473e-bf8f-52154438565a/dotnetfx.exe';
-  // END .NET INSTALLER	
-
 function ControlService(hService :HANDLE; dwControl :cardinal;var ServiceStatus :SERVICE_STATUS) : boolean;
 external 'ControlService@advapi32.dll stdcall';		
 
@@ -87,38 +82,6 @@ external 'QueryServiceStatus@advapi32.dll stdcall';
 
 function CheckPorts(): Integer;
 external 'CheckPorts@files:ISC.DLL stdcall';
-
-
-function isxdl_Download(hWnd: Integer; URL, Filename: PAnsiChar): Integer;
-external 'isxdl_Download@files:isxdl.dll stdcall';
-
-procedure isxdl_AddFile(URL, Filename: PAnsiChar);
-external 'isxdl_AddFile@files:isxdl.dll stdcall';
-
-procedure isxdl_AddFileSize(URL, Filename: PAnsiChar; Size: Cardinal);
-external 'isxdl_AddFileSize@files:isxdl.dll stdcall';
-
-function isxdl_DownloadFiles(hWnd: Integer): Integer;
-external 'isxdl_DownloadFiles@files:isxdl.dll stdcall';
-
-procedure isxdl_ClearFiles;
-external 'isxdl_ClearFiles@files:isxdl.dll stdcall';
-
-function isxdl_IsConnected: Integer;
-external 'isxdl_IsConnected@files:isxdl.dll stdcall';
-
-function isxdl_SetOption(Option, Value: PAnsiChar): Integer;
-external 'isxdl_SetOption@files:isxdl.dll stdcall';
-
-function isxdl_GetFileName(URL: PAnsiChar): PAnsiChar;
-external 'isxdl_GetFileName@files:isxdl.dll stdcall';
-
-// get Windows Installer version
-procedure DecodeVersion(const Version: cardinal; var a, b : word);
-begin
-  a := word(Version shr 16);
-  b := word(Version and not $ffff0000);
-end;
 
 
 function OpenServiceManager() : HANDLE;
@@ -771,17 +734,11 @@ end;
 
 // Gives the hMailServer service access to its own data. The service runs as the
 // virtual account NT SERVICE\hMailServer, which exists only once the service has
-// been created. On Windows versions before Windows 7, virtual accounts are not
-// available and the service stays on LocalSystem, which already has access.
+// been created.
 procedure GrantServiceAccountAccess();
 var
    ResultCode : Integer;
-   Version : TWindowsVersion;
 begin
-   GetWindowsVersionEx(Version);
-   if (Version.Major < 6) or ((Version.Major = 6) and (Version.Minor < 1)) then
-      exit;
-
    Exec(ExpandConstant('{sys}\icacls.exe'),
         '"' + GetProgramDataDir() + '" /grant "NT SERVICE\hMailServer":(OI)(CI)F',
         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
@@ -901,11 +858,11 @@ begin
    // Copy the file from the Windows directory
    // to the Bin directory. hMailServer uses the
    // file located in the Bin directory.
-   if (FileCopy(sOldFile, sNewFile, True) = True) then
+   if (CopyFile(sOldFile, sNewFile, True) = True) then
    begin
       // Rename the old hmailserver.ini
       sNewFile := sOldFile + '.old';
-      if (FileCopy(sOldFile, sNewFile, True) = True) then
+      if (CopyFile(sOldFile, sNewFile, True) = True) then
       begin
         // We've managed to backup hMailServer.ini in the
         // windows directory. Now delete the original.

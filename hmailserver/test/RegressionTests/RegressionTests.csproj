@@ -98,6 +98,7 @@
     <Compile Include="Shared\ImapClientSimulator.cs" />
     <Compile Include="Infrastructure\IniFileLocation.cs" />
     <Compile Include="Infrastructure\ProductIdentity.cs" />
+    <Compile Include="Infrastructure\InstallationLayout.cs" />
     <Compile Include="Infrastructure\IPRanges.cs" />
     <Compile Include="Infrastructure\MainOperations.cs" />
     <Compile Include="Infrastructure\Persistence\Basics.cs" />

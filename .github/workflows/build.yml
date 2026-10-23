@@ -76,10 +76,10 @@ env:
   # The v142 toolset the projects are pinned to, and so the oldest C++ runtime the installer
   # may ship. A later one is fine - the 14.x runtimes are backwards compatible.
   REDIST_MIN_VERSION: '14.29'
-  # The last Inno Setup release whose installers still run on Windows Vista. The installer's
-  # MinVersion is now Windows 10 (libpq requires it), so a later release could be used; the
-  # pin has not been moved yet.
-  INNOSETUP_VERSION: 6.2.2
+  # Inno Setup, taken from its GitHub release rather than Chocolatey, which lags behind it.
+  # The download is checked against the SHA-256 GitHub publishes for the release asset.
+  INNOSETUP_VERSION: 6.7.3
+  INNOSETUP_SHA256: 9C73C3BAE7ED48D44112A0F48E66742C00090BDB5BEF71D9D3C056C66E97B732
   # The build number continues the series TeamCity produced, which ended at 2869. GitHub's
   # run number cannot be seeded, so it is offset by that instead: build = offset + run number.
   # The run number is counted per workflow file path, so renaming this file restarts it at 1
@@ -676,20 +676,42 @@ jobs:
           retention-days: 1
 
       - name: Install Inno Setup
+        id: innosetup
         run: |
-          # The image carries a newer Inno Setup 6 than the one the installer is pinned to.
-          # -AllowDowngrade is what makes choco step back from it; Inno Setup's own installer
-          # marks its files ignoreversion, so the older ones do replace the newer ones.
-          . build\Install-ChocoPackage.ps1
-          Install-ChocoPackage -Package 'innosetup' -Version $env:INNOSETUP_VERSION -AllowDowngrade
-
-          # A downgrade that silently left the newer files behind would compile the script
-          # with a compiler that no longer supports the Vista MinVersion it sets.
-          $installed = (Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue |
-              Where-Object { $_.DisplayName -like 'Inno Setup*' }).DisplayVersion
-          if ($installed -ne $env:INNOSETUP_VERSION) {
-              throw "Inno Setup $env:INNOSETUP_VERSION was requested, but the installed version is '$installed'."
+          function Get-InnoSetup {
+              Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                               'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue |
+                  Where-Object { $_.DisplayName -like 'Inno Setup*' } | Select-Object -First 1
           }
+
+          $installed = Get-InnoSetup
+          if ($installed.DisplayVersion -ne $env:INNOSETUP_VERSION) {
+              $setup = Join-Path $env:RUNNER_TEMP "innosetup-$env:INNOSETUP_VERSION.exe"
+              $tag = 'is-' + ($env:INNOSETUP_VERSION -replace '\.', '_')
+              $url = "https://github.com/jrsoftware/issrc/releases/download/$tag/innosetup-$env:INNOSETUP_VERSION.exe"
+              "Downloading $url (the image has '$($installed.DisplayVersion)')"
+              Invoke-WebRequest -Uri $url -OutFile $setup
+
+              $hash = (Get-FileHash -Path $setup -Algorithm SHA256).Hash
+              if ($hash -ne $env:INNOSETUP_SHA256) {
+                  throw "The SHA-256 of $url is $hash, but $env:INNOSETUP_SHA256 is pinned for it."
+              }
+
+              # The installer marks its files ignoreversion, so it replaces a different
+              # version already on the image in either direction.
+              $process = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-', '/ALLUSERS' -Wait -PassThru
+              if ($process.ExitCode -ne 0) { throw "The Inno Setup installer failed with exit code $($process.ExitCode)." }
+              $installed = Get-InnoSetup
+          }
+
+          if ($installed.DisplayVersion -ne $env:INNOSETUP_VERSION) {
+              throw "Inno Setup $env:INNOSETUP_VERSION was requested, but the installed version is '$($installed.DisplayVersion)'."
+          }
+
+          $iscc = Join-Path $installed.InstallLocation 'ISCC.exe'
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe was not found at $iscc." }
+          "Inno Setup $($installed.DisplayVersion): $iscc"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "iscc=$iscc"
 
       - name: Locate the Visual C++ redistributables
         id: redist
@@ -700,64 +722,31 @@ jobs:
           # VS2022, whose v142 toolset is 14.29 - so they are taken from the installed
           # toolset now, and the two can no longer drift apart.
           #
-          # Two of them are shipped, because the redistributable version is also an operating
-          # system floor, and Microsoft's advice is to use the latest available runtime. The
-          # newest installed goes to Windows 10 and later; 14.29, the newest that still runs
-          # below that, goes to everything older. section_files_64.iss picks by OS version.
+          # The installer requires Windows 10, and Microsoft's advice is to ship the latest
+          # available runtime, so the newest installed one is shipped. Windows 10 and later
+          # have the Universal CRT built in, so only the Visual C++ runtime itself is needed.
           . build\Get-VCRedistPath.ps1
-          $legacy = Get-VCRedistPath -MinimumVersion $env:REDIST_MIN_VERSION
-          if (-not $legacy) {
-              throw "No Visual C++ redistributable of $env:REDIST_MIN_VERSION or later was found. hMailServer.exe is compiled with the v142 ($env:REDIST_MIN_VERSION) toolset and must not ship an older runtime."
-          }
-
-          # Get-VCRedistPath prefers the redistributable matching the toolset and only falls
-          # back to a newer one. That fallback is fine for Windows 10 and later, but it is
-          # what the pre-Windows 10 tier must not be - the 14.4x/14.5x runtime does not load
-          # there - so it is refused, as the step that installs the v142 components already did.
-          if (-not (Split-Path (Split-Path (Split-Path $legacy -Parent) -Parent) -Leaf).StartsWith("$env:REDIST_MIN_VERSION.")) {
-              throw "The v142 ($env:REDIST_MIN_VERSION) redistributable is not installed - the newest one found is $legacy. Add the 'MSVC v142 - VS 2019 C++ x64/x86 build tools' component to the Visual Studio installation; hMailServer.exe is compiled with v142 and the installer must not ship a runtime that no longer supports the Windows versions it still allows."
-          }
-
-          $modern = Get-VCRedistPath -MinimumVersion $env:REDIST_MIN_VERSION -Newest
-          if (-not $modern) {
-              throw "No Visual C++ redistributable of $env:REDIST_MIN_VERSION or later was found for the Windows 10 and later tier."
+          $redist = Get-VCRedistPath -MinimumVersion $env:REDIST_MIN_VERSION -Newest
+          if (-not $redist) {
+              throw "No Visual C++ redistributable of $env:REDIST_MIN_VERSION or later was found. hMailServer.exe is compiled with the $env:REDIST_MIN_VERSION toolset and must not ship an older runtime."
           }
 
           # Whatever the runner image carries. Worth a look when it changes: the Windows 10
           # floor holds for every 14.x redistributable Microsoft has shipped so far, but a
-          # future one raising it would need the MinVersion in section_files_64.iss raised too.
-          foreach ($tier in ([ordered]@{ 'Windows 10 and later' = $modern; 'below Windows 10' = $legacy }).GetEnumerator()) {
-              "Shipping the runtime for $($tier.Key) from $($tier.Value)"
-              Get-ChildItem $tier.Value -File |
-                  Select-Object Name, @{ Name = 'Version'; Expression = { $_.VersionInfo.FileVersion } } |
-                  Format-Table -AutoSize | Out-String
-          }
+          # future one raising it would need the installer's MinVersion raised too.
+          "Shipping the runtime from $redist"
+          Get-ChildItem $redist -File |
+              Select-Object Name, @{ Name = 'Version'; Expression = { $_.VersionInfo.FileVersion } } |
+              Format-Table -AutoSize | Out-String
 
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "modern=$modern"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "legacy=$legacy"
-
-      # The Universal CRT itself is checked in and needs no step of its own. What it does need
-      # is this: the Windows Vista loader cannot resolve every forwarder form a redistributable
-      # may use, and nothing else in the pipeline would notice, since these files are installed
-      # only below Windows 10 and so are never loaded by the tests. Only the files that go
-      # below Windows 10 are checked; the modern tier never reaches a loader that cares.
-      - name: Check the shipped runtime against the oldest supported Windows
-        run: |
-          . build\Test-DownlevelForwarders.ps1
-          Test-DownlevelForwarders -Path 'hmailserver\installation\Microsoft.UCRT.WindowsSDK14393'
-          Test-DownlevelForwarders -Path $env:VCREDIST_PATH_LEGACY
-        env:
-          VCREDIST_PATH_LEGACY: ${{ steps.redist.outputs.legacy }}
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "path=$redist"
 
       - name: Build the installer
         env:
-          VCREDIST_PATH_MODERN: ${{ steps.redist.outputs.modern }}
-          VCREDIST_PATH_LEGACY: ${{ steps.redist.outputs.legacy }}
+          VCREDIST_PATH: ${{ steps.redist.outputs.path }}
+          ISCC: ${{ steps.innosetup.outputs.iscc }}
         run: |
-          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) { throw "ISCC.exe was not found at $iscc." }
-
-          & $iscc "/DHMAILSERVERLIBS=$env:hMailServerLibs" "/DVCREDIST_PATH_MODERN=$env:VCREDIST_PATH_MODERN" "/DVCREDIST_PATH_LEGACY=$env:VCREDIST_PATH_LEGACY" hmailserver\installation\hMailServer64.iss
+          & $env:ISCC "/DHMAILSERVERLIBS=$env:hMailServerLibs" "/DVCREDIST_PATH=$env:VCREDIST_PATH" hmailserver\installation\hMailServer64.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC.exe failed with exit code $LASTEXITCODE" }
 
           # The script sets no OutputDir, so Inno Setup writes to Output next to it.

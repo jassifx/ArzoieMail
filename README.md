@@ -36,9 +36,7 @@ Environment set up
 **Required software**
 
    * Visual Studio 2026 Community edition with the v142 (VS2019) build tools
-   * InnoSetup 6.2.2 (https://github.com/jrsoftware/issrc/releases/tag/is-6_2_2) - the last
-     release whose installers run on Windows Vista. ArzoieMail now requires Windows 10, so a
-     later release could be used, but the build has not been moved to one yet
+   * Inno Setup 6.7.3 (https://github.com/jrsoftware/issrc/releases/tag/is-6_7_3)
    * Perl 5 (https://strawberryperl.com/) - required by the OpenSSL and PostgreSQL library builds
    * Python 3 (https://www.python.org/downloads/) - required by the PostgreSQL library build
    * CMake (https://cmake.org/download/) - unless Visual Studio's "C++ CMake tools for Windows" component is installed
@@ -226,20 +224,15 @@ with `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>`:
 4. Compile `hmailserver\installation\hMailServer64.iss` with InnoSetup to build the installer,
    `ArzoieMail-<version>-B<build>-x64-Setup.exe`.
 
-   The installer ships the Visual C++ runtime beside hMailServer.exe. Point the environment at
-   the redistributables first:
+   The installer ships the newest installed Visual C++ runtime beside hMailServer.exe. Point
+   the environment at it first:
 
    ```
    . build\Get-VCRedistPath.ps1
-   $env:VCRedistPathModern = Get-VCRedistPath -Newest
-   $env:VCRedistPathLegacy = Get-VCRedistPath
+   $env:VCRedistPath = Get-VCRedistPath -Newest
    ```
 
-   The installer script still has entries for Windows versions older than 10: the 14.29
-   runtime (`VCRedistPathLegacy`) and the Universal CRT checked in under
-   hmailserver\installation\Microsoft.UCRT.WindowsSDK14393. Since the installer now requires
-   Windows 10, they are never installed, but the script still needs them to compile. They,
-   and build\Test-DownlevelForwarders.ps1, can be removed together.
+   Windows 10 and later carry the Universal CRT themselves, so it is not shipped.
 
 GitHub Actions does all of the above on every push to master and to the branch prefixes listed
 under Branches, then installs the result on a clean runner and runs the regression tests against
