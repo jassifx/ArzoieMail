@@ -200,7 +200,7 @@ namespace HM
             MySQLInterface::Instance()->p_mysql_free_result(pRes);
 
          // Fetch insert id.
-         if (iInsertID > 0)
+         if (iInsertID != nullptr)
          {
             *iInsertID = MySQLInterface::Instance()->p_mysql_insert_id(dbconn_);
          }

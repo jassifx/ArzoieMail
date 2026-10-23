@@ -132,7 +132,7 @@ namespace HM
    bool
    MySQLInterface::IsLoaded()
    {
-      if (library_instance_ > 0)
+      if (library_instance_ != nullptr)
          return true;
       else
          return false;

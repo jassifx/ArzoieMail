@@ -1379,7 +1379,7 @@ LPCTSTR	_tagXMLNode::GetChildValue( LPCTSTR name )
 HM::String	_tagXMLNode::GetChildText( LPCTSTR name, LPDISP_OPT opt /*= &optDefault*/ )
 {
 	LPXNode node = GetChild( name );
-	return (node != NULL)? node->GetText(opt) : _T("");
+	return (node != NULL)? node->GetText(opt) : HM::String();
 }
 
 LPXAttr _tagXMLNode::GetChildAttr( LPCTSTR name, LPCTSTR attrname )

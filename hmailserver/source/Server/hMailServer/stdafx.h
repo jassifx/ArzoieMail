@@ -24,9 +24,9 @@
 // Modify the following defines if you have to target a platform prior to the ones specified below.
 // Refer to MSDN for the latest info on corresponding values for different platforms.
 
-#define WINVER 0x0600
-#define _WIN32_WINNT 0x0600
-#define _WIN32_WINDOWS 0x0600
+#define WINVER 0x0A00
+#define _WIN32_WINNT 0x0A00
+#define _WIN32_WINDOWS 0x0A00
 
 // START: ATL settings
 	#define _ATL_FREE_THREADEDLPCWSTR

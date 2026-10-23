@@ -21,7 +21,7 @@ namespace HM
       }
 
       int
-      CachedObject::SecondsOld()
+      SecondsOld()
       {
          int iCurrentTime = GetTickCount();
 
@@ -35,13 +35,13 @@ namespace HM
       }
 
       void
-      CachedObject::SetEstimatedSize()
+      SetEstimatedSize()
       {
          estimated_size_ = object_->GetEstimatedCachingSize();
       }
 
       size_t
-      CachedObject::GetEstimatedSize()
+      GetEstimatedSize()
       {
          return estimated_size_;
       }

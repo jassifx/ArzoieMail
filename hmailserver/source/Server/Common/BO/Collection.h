@@ -252,7 +252,7 @@ namespace HM
    {
       boost::lock_guard<boost::recursive_mutex> guard(_mutex);
 
-      std::vector<std::shared_ptr<T> >::const_iterator iter = vecObjects.begin();
+      typename std::vector<std::shared_ptr<T> >::const_iterator iter = vecObjects.begin();
       
       for(std::shared_ptr<T> pObject : vecObjects)
       {

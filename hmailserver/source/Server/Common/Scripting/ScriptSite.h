@@ -68,14 +68,14 @@ public:
 
       if(dwMask & SCRIPTINFO_ITYPEINFO) {
          CComPtr<ITypeInfo> spTI;
-         CComQIPtr<IProvideClassInfo> spPCI = spUnk;
+         CComQIPtr<IProvideClassInfo> spPCI(spUnk);
          if(!!spPCI) {
             // Got IProvideClassInfo interface so use it
             HR(spPCI->GetClassInfo(&spTI));
             spPCI.Release();
          } else {
             // Try for IDispatch::GetTypeInfo
-            CComQIPtr<IDispatch> spDisp = spUnk;
+            CComQIPtr<IDispatch> spDisp(spUnk);
             if(!!spDisp) {
                HR(spDisp->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&spTI));
                spDisp.Release();
@@ -97,7 +97,7 @@ public:
       if(pbstrversionString==NULL)
          return E_POINTER;
       USES_CONVERSION;
-      *pbstrversionString = ::SysAllocString(T2OLE(SCRIPTSITE_APPNAME));
+      *pbstrversionString = ::SysAllocString(SCRIPTSITE_APPNAME);
       return NOERROR;
    };
 
@@ -270,7 +270,7 @@ public:
       // Attach to site
       HR(engine_->SetScriptSite(static_cast<IActiveScriptSite*>(this)));
 
-      CComQIPtr<IActiveScriptParse> spParse = engine_;
+      CComQIPtr<IActiveScriptParse> spParse(engine_);
       if(!spParse) return E_NOINTERFACE;
       HR(spParse->InitNew());
 
@@ -344,7 +344,7 @@ public:
    {
       if(!init_) return E_FAIL;
 
-      CComQIPtr<IActiveScriptParse> spParse = engine_;
+      CComQIPtr<IActiveScriptParse> spParse(engine_);
       if(!spParse) return E_NOINTERFACE;
 
       USES_CONVERSION;

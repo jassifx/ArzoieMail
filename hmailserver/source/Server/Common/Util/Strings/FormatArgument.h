@@ -11,6 +11,7 @@ namespace HM
       FormatArgument(const String &value);
       FormatArgument(const AnsiString &value);
       FormatArgument(const int &value);
+      FormatArgument(const long &value) : FormatArgument(static_cast<int>(value)) {}
       FormatArgument(const unsigned int &value);
       FormatArgument(const __int64 &value);
       FormatArgument(const unsigned __int64 &value);
