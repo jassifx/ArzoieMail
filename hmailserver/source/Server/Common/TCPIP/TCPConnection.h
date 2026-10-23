@@ -9,6 +9,7 @@
 #include "IOOperationQueue.h"
 
 
+#pragma message("HM-DIAG TCPConnection.h: _WIN32_WINNT=" HM_DIAG_STR(_WIN32_WINNT) " BOOST_USE_WINAPI_VERSION=" HM_DIAG_STR(BOOST_USE_WINAPI_VERSION))
 #include <boost/atomic.hpp>
 
 using boost::asio::ip::tcp;
