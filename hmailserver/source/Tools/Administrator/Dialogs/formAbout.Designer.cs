@@ -65,7 +65,7 @@ namespace hMailServer.Administrator
          this.labelVersion.Name = "labelVersion";
          this.labelVersion.Size = new System.Drawing.Size(85, 16);
          this.labelVersion.TabIndex = 11;
-         this.labelVersion.Text = "hMailServer";
+         this.labelVersion.Text = "ArzoieMail";
          // 
          // linkVisitors
          // 

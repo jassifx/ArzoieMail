@@ -19,7 +19,7 @@ namespace DBUpdater
          Application.EnableVisualStyles();
          Application.SetCompatibleTextRenderingDefault(false);
 
-         string databaseOldErrorMessage = "The database is too old for this version of hMailServer.";
+         string databaseOldErrorMessage = "The database is too old for this version of ArzoieMail.";
 
          try
          {
@@ -45,7 +45,7 @@ namespace DBUpdater
             if (from == to)
             {
                if (!CommandLineParser.ContainsArgument("/SilentIfOk") && !CommandLineParser.IsSilent())
-                  MessageBox.Show("Your hMailServer database is already up to date.", "hMailServer Administrator");
+                  MessageBox.Show("Your ArzoieMail database is already up to date.", "ArzoieMail Administrator");
 
                return ExitCodes.Success;
             }
@@ -86,7 +86,7 @@ namespace DBUpdater
             // Never show a dialog when running unattended - there may be no desktop
             // to show it on, and the installer would hang or the process crash.
             if (!CommandLineParser.IsSilent())
-               MessageBox.Show(ex.Message + Environment.NewLine + Environment.NewLine + "Please check the hMailServer error log for further details.", "hMailServer Administrator", MessageBoxButtons.OK, MessageBoxIcon.Error);
+               MessageBox.Show(ex.Message + Environment.NewLine + Environment.NewLine + "Please check the ArzoieMail error log for further details.", "ArzoieMail Administrator", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
             return ExitCodes.UnexpectedError;
          }

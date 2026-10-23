@@ -43,7 +43,7 @@ namespace DBSetup.Pages
          this.radioCreateNew.Size = new System.Drawing.Size(194, 17);
          this.radioCreateNew.TabIndex = 0;
          this.radioCreateNew.TabStop = true;
-         this.radioCreateNew.Text = "Create a new hMailServer database";
+         this.radioCreateNew.Text = "Create a new ArzoieMail database";
          this.radioCreateNew.UseVisualStyleBackColor = true;
          // 
          // radioSelectNew
@@ -53,7 +53,7 @@ namespace DBSetup.Pages
          this.radioSelectNew.Name = "radioSelectNew";
          this.radioSelectNew.Size = new System.Drawing.Size(228, 17);
          this.radioSelectNew.TabIndex = 1;
-         this.radioSelectNew.Text = "Select a new hMailServer default database";
+         this.radioSelectNew.Text = "Select a new ArzoieMail default database";
          this.radioSelectNew.UseVisualStyleBackColor = true;
          // 
          // labelCreateNewHelp
@@ -62,8 +62,8 @@ namespace DBSetup.Pages
          this.labelCreateNewHelp.Name = "labelCreateNewHelp";
          this.labelCreateNewHelp.Size = new System.Drawing.Size(416, 48);
          this.labelCreateNewHelp.TabIndex = 2;
-         this.labelCreateNewHelp.Text = "Select this option if you do not already have a hMailServer database and you want" +
-             " to create one now. hMailServer requires one database to run.";
+         this.labelCreateNewHelp.Text = "Select this option if you do not already have an ArzoieMail database and you want" +
+             " to create one now. ArzoieMail requires one database to run.";
          // 
          // label1
          // 
@@ -71,7 +71,7 @@ namespace DBSetup.Pages
          this.label1.Name = "label1";
          this.label1.Size = new System.Drawing.Size(416, 48);
          this.label1.TabIndex = 3;
-         this.label1.Text = "Select this option if you want to change the default hMailServer server or databa" +
+         this.label1.Text = "Select this option if you want to change the default ArzoieMail server or databa" +
              "se.";
          // 
          // ucAction

@@ -37,8 +37,8 @@ namespace DataDirectorySynchronizer.Pages
          this.labelInfo.Name = "labelInfo";
          this.labelInfo.Size = new System.Drawing.Size(379, 53);
          this.labelInfo.TabIndex = 0;
-         this.labelInfo.Text = "This utility will synchronize your hMailServer data directory with your hMailServ" +
-             "er database. It is very important that you backup both your database and your da" +
+         this.labelInfo.Text = "This utility will synchronize your ArzoieMail data directory with your ArzoieMail" +
+             " database. It is very important that you backup both your database and your da" +
              "ta directory before proceeding.";
          // 
          // ucWelcome

@@ -31,7 +31,9 @@
 #>
 [CmdletBinding()]
 Param(
-	[string]$DataFolder = "$env:ProgramData\hMailServer",
+	# New installations keep their data in ProgramData\ArzoieMail; one upgraded from
+	# hMailServer keeps ProgramData\hMailServer, which is used when the first is missing.
+	[string]$DataFolder = $(if (Test-Path "$env:ProgramData\ArzoieMail") { "$env:ProgramData\ArzoieMail" } else { "$env:ProgramData\hMailServer" }),
 	[switch]$Revoke
 )
 

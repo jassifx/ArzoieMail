@@ -273,7 +273,9 @@ namespace VMTestRunner.Console
          }
 
          guest.RunProgram(@"C:\Windows\System32\net.exe", "stop hMailServer");
-         guest.CopyFileToGuest(localExecutable, @"C:\Program Files\hMailServer\Bin\hMailServer.exe");
+         // New installations go to Program Files\ArzoieMail; an environment that upgrades an
+         // hMailServer installation keeps its Program Files\hMailServer folder instead.
+         guest.CopyFileToGuest(localExecutable, @"C:\Program Files\ArzoieMail\Bin\hMailServer.exe");
          guest.RunProgram(@"C:\Windows\System32\net.exe", "start hMailServer");
       }
 

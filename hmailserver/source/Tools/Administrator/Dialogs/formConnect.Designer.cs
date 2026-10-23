@@ -66,7 +66,7 @@ namespace hMailServer.Administrator
          // 
          // columnUsername
          // 
-         this.columnUsername.Text = "hMailServer Username";
+         this.columnUsername.Text = "ArzoieMail Username";
          this.columnUsername.Width = 150;
          // 
          // btnAdd

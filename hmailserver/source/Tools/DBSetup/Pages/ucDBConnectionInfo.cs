@@ -95,13 +95,13 @@ namespace DBSetup.Pages
          {
             if (textDatabaseName.Text.Length == 0)
             {
-               MessageBox.Show("You must enter the name of the database to create.", "hMailServer");
+               MessageBox.Show("You must enter the name of the database to create.", "ArzoieMail");
                return false;
             }
 
             if (textServerAddress.Text.Length == 0)
             {
-               MessageBox.Show("You must enter the name of the database server to connect to.", "hMailServer");
+               MessageBox.Show("You must enter the name of the database server to connect to.", "ArzoieMail");
                return false;
             }
          }

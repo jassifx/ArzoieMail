@@ -256,14 +256,14 @@ namespace HM
    }
 
    String
-   IniFileSettings::GetProgramDataDirectory_()
+   IniFileSettings::GetProgramDataDirectory_(const String &folder_name)
    {
       TCHAR path[MAX_PATH] = {0};
 
       if (FAILED(SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT, path)))
          return "";
 
-      return FileUtilities::Combine(path, _T("hMailServer"));
+      return FileUtilities::Combine(path, folder_name);
    }
 
    String
@@ -271,12 +271,16 @@ namespace HM
    {
       if (ini_file_.IsEmpty())
       {
-         // New installations keep the ini file in ProgramData. Installations made
-         // before that change keep it in the Bin directory.
-         String program_data_directory = GetProgramDataDirectory_();
-
-         if (!program_data_directory.IsEmpty())
+         // New installations keep the ini file in ProgramData\ArzoieMail. Installations
+         // upgraded from hMailServer keep theirs in ProgramData\hMailServer, and those
+         // made before ProgramData was used keep it in the Bin directory.
+         for (const String &folder_name : { String(_T("ArzoieMail")), String(_T("hMailServer")) })
          {
+            String program_data_directory = GetProgramDataDirectory_(folder_name);
+
+            if (program_data_directory.IsEmpty())
+               continue;
+
             String program_data_file = FileUtilities::Combine(program_data_directory, _T("hMailServer.ini"));
 
             if (FileUtilities::Exists(program_data_file))

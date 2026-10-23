@@ -98,7 +98,7 @@ namespace hMailServer.Administrator.Utilities
                        if (account.AdminLevel != eAdminLevel.hAdminLevelServerAdmin)
                        {
                            // Wrong password, try again.
-                           MessageBox.Show(Strings.Localize("hMailServer server administration rights are required to run hMailServer Administrator."), EnumStrings.hMailServerAdministrator, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                           MessageBox.Show(Strings.Localize("ArzoieMail server administration rights are required to run ArzoieMail Administrator."), EnumStrings.hMailServerAdministrator, MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
                            return false;
                        }

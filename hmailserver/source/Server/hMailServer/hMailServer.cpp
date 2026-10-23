@@ -203,9 +203,11 @@ extern "C" int WINAPI _tWinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstan
 
    if (bRegisterService)
    {
-      // --- Register the hMailServer service.
+      // --- Register the service. The service name stays hMailServer, so that
+      // existing installations, scripts and net start/stop keep working; only
+      // the name shown in the Services console is ArzoieMail.
       HM::ServiceManager hSCM;
-      if (!hSCM.RegisterService("hMailServer", "hMailServer"))
+      if (!hSCM.RegisterService("hMailServer", "ArzoieMail"))
       {
          return -1;         
       }

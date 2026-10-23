@@ -1,11 +1,16 @@
-hMailServer
-===========
+ArzoieMail
+==========
 
-hMailServer is an open source email server for Microsoft Windows.
+ArzoieMail is an open source email server for Microsoft Windows. It is a fork of
+[hMailServer](https://github.com/hmailserver/hmailserver), licensed under AGPLv3.
 
-This page describes how to compile and run hMailServer in debug. 
+The product is shown as ArzoieMail, while the identifiers that existing installations and
+scripts depend on keep their hMailServer names: the hMailServer Windows service, the
+`hMailServer.Application` COM API, `hMailServer.exe` and `hMailServer.ini`. New installations
+go to `C:\Program Files\ArzoieMail` and `C:\ProgramData\ArzoieMail`. The installer upgrades an
+existing hMailServer installation in place and leaves it in its hMailServer folders.
 
-For other information about hMailServer, please go to http://www.hmailserver.com
+This page describes how to compile and run ArzoieMail in debug.
 
 Building hMailServer
 ====================

@@ -1,7 +1,12 @@
 [Setup]
-AppName=hMailServer
-DefaultDirName={commonpf}\hMailServer
-DefaultGroupName=hMailServer
+; AppId is what Windows and Setup recognise an installation by. It stays hMailServer, so
+; that this installer upgrades an existing hMailServer installation in place (keeping its
+; folder and its Programs and Features entry) rather than installing beside it.
+AppId=hMailServer
+AppName=ArzoieMail
+AppPublisher=ArzoieMail
+DefaultDirName={commonpf}\ArzoieMail
+DefaultGroupName=ArzoieMail
 PrivilegesRequired=admin
 SolidCompression=yes
 WizardImageFile=setup.bmp

@@ -7,25 +7,32 @@ namespace RegressionTests.Shared
 {
    /// <summary>
    /// Locates hMailServer.ini the same way the server does. New installations keep
-   /// the file in ProgramData, older ones in the Bin directory.
+   /// the file in ProgramData\ArzoieMail, installations upgraded from hMailServer in
+   /// ProgramData\hMailServer, and older ones in the Bin directory.
    /// </summary>
    public static class IniFileLocator
    {
+      public const string ProgramDataFolderName = "ArzoieMail";
+      public const string LegacyProgramDataFolderName = "hMailServer";
+
       public static string GetIniFileName()
       {
-         var programDataFile = Path.Combine(GetProgramDataDirectory(), "hMailServer.ini");
+         foreach (var folderName in new[] { ProgramDataFolderName, LegacyProgramDataFolderName })
+         {
+            var programDataFile = Path.Combine(GetProgramDataDirectory(folderName), "hMailServer.ini");
 
-         if (File.Exists(programDataFile))
-            return programDataFile;
+            if (File.Exists(programDataFile))
+               return programDataFile;
+         }
 
          return Path.Combine(GetBinDirectory(), "hMailServer.ini");
       }
 
-      public static string GetProgramDataDirectory()
+      public static string GetProgramDataDirectory(string folderName = ProgramDataFolderName)
       {
          return Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "hMailServer");
+            folderName);
       }
 
       private static string GetBinDirectory()

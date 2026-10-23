@@ -1,6 +1,6 @@
 [CustomMessages]
 ;configurations
-AppName=hMailServer
+AppName=ArzoieMail
 DependenciesDir=MyProgramDependencies
 
 MSI20Title=Windows Installer 2.0

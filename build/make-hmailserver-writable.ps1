@@ -3,6 +3,9 @@ Grant modify permissions for the hMailServer installation folder.
 
 This script will relaunch itself elevated if not already running as Administrator.
 It grants 'Everyone' Modify permissions recursively to:
+  C:\Program Files\ArzoieMail
+  C:\ProgramData\ArzoieMail
+  and the hMailServer folders an installation upgraded from hMailServer keeps:
   C:\Program Files (x86)\hMailServer
   C:\Program Files\hMailServer
   C:\ProgramData\hMailServer
@@ -14,6 +17,8 @@ in a dedicated test VM.
 #>
 
 $targets = @(
+    'C:\Program Files\ArzoieMail',
+    (Join-Path $env:ProgramData 'ArzoieMail'),
     'C:\Program Files (x86)\hMailServer',
     'C:\Program Files\hMailServer',
     (Join-Path $env:ProgramData 'hMailServer')

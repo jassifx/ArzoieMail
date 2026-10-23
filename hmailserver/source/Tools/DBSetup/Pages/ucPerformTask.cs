@@ -123,7 +123,7 @@ namespace DBSetup.Pages
          }
          catch (Exception)
          {
-            MessageBox.Show("The set-up failed to set the service dependency.", "hMailServer");
+            MessageBox.Show("The set-up failed to set the service dependency.", "ArzoieMail");
          }
 
       }

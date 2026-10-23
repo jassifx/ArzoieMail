@@ -86,12 +86,12 @@ namespace hMailServer.Administrator
       {
          // Each sentence is localized separately. english.ini is line based, so a
          // single string spanning several lines can not be stored in it.
-         MessageBox.Show(Strings.Localize("hMailServer Administrator lost the connection to the hMailServer service.") + "\r\n" +
-                         Strings.Localize("This may happen, for example, if the hMailServer service stops or restarts.") + "\r\n" +
+         MessageBox.Show(Strings.Localize("ArzoieMail Administrator lost the connection to the ArzoieMail service.") + "\r\n" +
+                         Strings.Localize("This may happen, for example, if the ArzoieMail service stops or restarts.") + "\r\n" +
                          "\r\n" +
-                         Strings.Localize("If the stop or restart was unexpected, please review the hMailServer logs.") + "\r\n" +
+                         Strings.Localize("If the stop or restart was unexpected, please review the ArzoieMail logs.") + "\r\n" +
                          "\r\n" +
-                         Strings.Localize("Press OK to restart hMailServer Administrator."), EnumStrings.hMailServerAdministrator, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                         Strings.Localize("Press OK to restart ArzoieMail Administrator."), EnumStrings.hMailServerAdministrator, MessageBoxButtons.OK, MessageBoxIcon.Error);
          System.Windows.Forms.Application.Restart();
 
       }

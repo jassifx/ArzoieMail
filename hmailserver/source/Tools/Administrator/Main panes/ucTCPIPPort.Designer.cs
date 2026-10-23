@@ -84,7 +84,7 @@ namespace hMailServer.Administrator
            this.labelRestartInfo.Name = "labelRestartInfo";
            this.labelRestartInfo.Size = new System.Drawing.Size(451, 13);
            this.labelRestartInfo.TabIndex = 34;
-           this.labelRestartInfo.Text = "If you change these settings, hMailServer needs to be restarted for the changes t" +
+           this.labelRestartInfo.Text = "If you change these settings, ArzoieMail needs to be restarted for the changes t" +
                "o take effect.";
            // 
            // textIPAddress

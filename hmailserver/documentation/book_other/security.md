@@ -14,7 +14,9 @@ account, the service runs as `LocalSystem` instead.
 
 ## Where hMailServer stores its data
 
-Everything the server writes is kept under `C:\ProgramData\hMailServer`:
+Everything the server writes is kept under `C:\ProgramData\ArzoieMail`. An installation
+upgraded from hMailServer keeps using `C:\ProgramData\hMailServer`; replace the path in the
+commands below with that one.
 
 | Item | Contains |
 | --- | --- |
@@ -49,7 +51,7 @@ If other people log on to the computer that runs hMailServer, remove the read ac
 Run this in an elevated command prompt:
 
 ```
-icacls "C:\ProgramData\hMailServer" /remove:g *S-1-5-32-545
+icacls "C:\ProgramData\ArzoieMail" /remove:g *S-1-5-32-545
 ```
 
 `S-1-5-32-545` is the Users group. The SID is used instead of the name because the

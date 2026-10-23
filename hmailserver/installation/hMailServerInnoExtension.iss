@@ -256,7 +256,7 @@ end;
 // that a silent installation or uninstallation isn't blocked by a dialog.
 procedure ReportServiceStopFailure(szMessage: String);
 begin
-	Log('hMailServer: ' + szMessage);
+	Log('ArzoieMail: ' + szMessage);
 	SuppressibleMsgBox(szMessage, mbError, MB_OK, IDOK);
 end;
 
@@ -276,9 +276,16 @@ begin
 	Result := WaitForServiceStopped(ServiceName, SERVICE_STOP_TIMEOUT_MS);
 end;
 
+// New installations keep their ini file and data in ProgramData\ArzoieMail. An
+// installation upgraded from hMailServer keeps using ProgramData\hMailServer, which the
+// server also looks in.
 function GetProgramDataDir() : AnsiString;
 begin
-   Result := ExpandConstant('{commonappdata}\hMailServer');
+   Result := ExpandConstant('{commonappdata}\ArzoieMail');
+
+   if (not FileExists(Result + '\hMailServer.ini')) and
+      FileExists(ExpandConstant('{commonappdata}\hMailServer\hMailServer.ini')) then
+      Result := ExpandConstant('{commonappdata}\hMailServer');
 end;
 
 function GetInifile() : AnsiString;
@@ -532,7 +539,7 @@ begin
    end;
 
  	 // Create key page
-   g_pageAccessKey := CreateInputQueryPage(wpSelectTasks, 'hMailServer Security', 'Specify main password','The installation program will now create a hMailServer user with administration rights. Please enter a password below. You will need this password to be able to manage your hMailServer installation, so please remember it.');	
+   g_pageAccessKey := CreateInputQueryPage(wpSelectTasks, 'ArzoieMail Security', 'Specify main password','The installation program will now create a ArzoieMail user with administration rights. Please enter a password below. You will need this password to be able to manage your ArzoieMail installation, so please remember it.');	
 
    g_pageAccessKey.Add('Password:', True);
    g_pageAccessKey.Add('Confirm password:', True);
@@ -586,24 +593,25 @@ begin
 	Result := true;
 			
 	if not IsNetFrameworkInstalled() then begin
-        MsgBox('hMailServer requires .NET Framework 4.5'#13#13
-            'Please install this version and then re-run the hMailServer setup program.', mbInformation, MB_OK);
+        MsgBox('ArzoieMail requires .NET Framework 4.5'#13#13
+            'Please install this version and then re-run the ArzoieMail setup program.', mbInformation, MB_OK);
         result := false;
 		Exit;
 	end;
 	
-	if (FindWindowByWindowName('hMailServer Administrator') > 0) then
+	// The window titles of the current tools, and of the hMailServer tools an upgrade replaces.
+	if (FindWindowByWindowName('ArzoieMail Administrator') > 0) or (FindWindowByWindowName('hMailServer Administrator') > 0) then
 	begin
-		MsgBox('hMailServer Administrator is started. You must close down this application before starting the installation.',mbInformation, MB_OK);	
+		MsgBox('ArzoieMail Administrator is started. You must close down this application before starting the installation.',mbInformation, MB_OK);	
 		Result := false;
 		Exit;
 	end;
 	
 	if (Result = true) then
 	begin
-		if (FindWindowByWindowName('hMailServer Database Setup') > 0) then
+		if (FindWindowByWindowName('ArzoieMail Database Setup') > 0) or (FindWindowByWindowName('hMailServer Database Setup') > 0) then
 		begin
-			MsgBox('hMailServer Database Setup is started. You must close down this application before starting the installation.',mbInformation, MB_OK);	
+			MsgBox('ArzoieMail Database Setup is started. You must close down this application before starting the installation.',mbInformation, MB_OK);	
 			Result := false;
 			Exit;
 		end;	
@@ -611,9 +619,9 @@ begin
 	
 	if (Result = true) then
 	begin
-		if (FindWindowByWindowName('hMailServer Database Upgrader') > 0) then
+		if (FindWindowByWindowName('ArzoieMail Database Upgrader') > 0) or (FindWindowByWindowName('hMailServer Database Upgrader') > 0) then
 		begin
-			MsgBox('hMailServer Database Upgrader is started. You must close down this application before starting the installation.',mbInformation, MB_OK);	
+			MsgBox('ArzoieMail Database Upgrader is started. You must close down this application before starting the installation.',mbInformation, MB_OK);	
 			Result := false;
 			Exit;			
 		end;	
@@ -623,7 +631,7 @@ begin
 	begin
 		if (FindWindowByWindowName('DBSetup') > 0) then
 		begin
-			MsgBox('hMailServer DBSetup is started. You must close down this application before starting the installation.',mbInformation, MB_OK);	
+			MsgBox('ArzoieMail DBSetup is started. You must close down this application before starting the installation.',mbInformation, MB_OK);	
 			Result := false;
 			Exit;			
 		end;	
@@ -638,7 +646,7 @@ begin
 		begin
 			// The hMailServer isn't running, but someone is blocking the ports.
 			//
-			sMessage := 'The hMailServer Setup has detected that one or several of the TCP/IP ports 25, 110 and 143 are already in use.' + Chr(13) + Chr(10) + 'This indicates that there already is an email server running on this computer.' + Chr(13) + Chr(10) + 'If you plan to use any of these ports with hMailServer, the already existing server must be stopped.';
+			sMessage := 'The ArzoieMail Setup has detected that one or several of the TCP/IP ports 25, 110 and 143 are already in use.' + Chr(13) + Chr(10) + 'This indicates that there already is an email server running on this computer.' + Chr(13) + Chr(10) + 'If you plan to use any of these ports with ArzoieMail, the already existing server must be stopped.';
 			MsgBox(sMessage, mbInformation, MB_OK);	
 		end;
 	end;	
@@ -733,7 +741,7 @@ procedure ExitProcess(uExitCode: UINT);
 // Setup itself uses for a fatal error during installation.
 procedure FailPostInstall(szMessage: String);
 begin
-   Log('hMailServer: ' + szMessage);
+   Log('ArzoieMail: ' + szMessage);
    SuppressibleMsgBox(szMessage, mbError, MB_OK, IDOK);
 
    g_iExitCode := 4;
@@ -754,10 +762,10 @@ end;
 function GetDatabaseSetupErrorMessage(ResultCode: Integer) : String;
 begin
    case ResultCode of
-      2: Result := 'The hMailServer database could not be upgraded because the hMailServer administrator password was not accepted.' #13#13 'Re-run the setup program with /ADMINPASSWORD=<password>, or run DBUpdater.exe manually.';
-      3: Result := 'The hMailServer database upgrade failed. Please check the hMailServer error log for further details.';
+      2: Result := 'The ArzoieMail database could not be upgraded because the ArzoieMail administrator password was not accepted.' #13#13 'Re-run the setup program with /ADMINPASSWORD=<password>, or run DBUpdater.exe manually.';
+      3: Result := 'The ArzoieMail database upgrade failed. Please check the ArzoieMail error log for further details.';
    else
-      Result := 'The hMailServer database setup failed with error code ' + IntToStr(ResultCode) + '.' #13#13 'Please check the hMailServer error log for further details.';
+      Result := 'The ArzoieMail database setup failed with error code ' + IntToStr(ResultCode) + '.' #13#13 'Please check the ArzoieMail error log for further details.';
    end;
 end;
 
@@ -799,19 +807,19 @@ begin
   	  // Install
       InstallSQLCE();
 
-      ProgressPage.SetText('Creating the hMailServer service...', '');
+      ProgressPage.SetText('Creating the ArzoieMail service...', '');
       ProgressPage.SetProgress(3,6);
 
       // Register hMaillServer service
       if (Exec(ExpandConstant('{app}\Bin\hMailServer.exe'), '/Register', '',  SW_HIDE, ewWaitUntilTerminated, ResultCode) = False) then
-         FailPostInstall('The hMailServer service could not be created. ' + SysErrorMessage(ResultCode));
+         FailPostInstall('The ArzoieMail service could not be created. ' + SysErrorMessage(ResultCode));
 
       // Must run after the service has been created - the virtual account doesn't
       // exist until then.
       if (IsProgramDataInstallation()) then
          GrantServiceAccountAccess();
 
-      ProgressPage.SetText('Initializing hMailServer database...', '');
+      ProgressPage.SetText('Initializing ArzoieMail database...', '');
       ProgressPage.SetProgress(4,6);
 
       if (WizardSilent() = true) then
@@ -841,12 +849,12 @@ begin
             FailPostInstall(GetDatabaseSetupErrorMessage(ResultCode));
       end;
 
-      ProgressPage.SetText('Starting the hMailServer service...', '');
+      ProgressPage.SetText('Starting the ArzoieMail service...', '');
       ProgressPage.SetProgress(5,6);
 
       // Start hMailServer
       if (Exec(ExpandConstant('{sys}\net.exe'), 'START hMailServer', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) = False) then
-         FailPostInstall('The hMailServer service could not be started. ' + SysErrorMessage(ResultCode));
+         FailPostInstall('The ArzoieMail service could not be started. ' + SysErrorMessage(ResultCode));
 
       ProgressPage.SetText('Completed', '');
       ProgressPage.SetProgress(6,6);
@@ -942,10 +950,10 @@ begin
        if (iFileSize < 3500000) then begin
           // MySQL is too old.
 
-          szMessage := 'This version of hMailServer does not include MySQL. hMailServer can still' + #13 +
+          szMessage := 'This version of ArzoieMail does not include MySQL. ArzoieMail can still' + #13 +
                        'use MySQL as backend though, assuming it is already installed on the system.' + #13 +
                        '' + #13 +
-                       'However, the MySQL version hMailServer is configured to use is'  + #13 +
+                       'However, the MySQL version ArzoieMail is configured to use is'  + #13 +
                        'too old for this version of hMailServer.' + #13 +
                        ''+ #13 +
                        'To solve this issue you must install the latest hMailServer 4 version' + #13 +
@@ -965,13 +973,13 @@ begin
                        '' + #13 +
                        'You have configured hMailServer 4 to use the bundled MySQL installation. However'+ #13 +
                        'hMailServer 4 with MySQL appears to have been uninstalled prior to running this' + #13 +
-                       'hMailServer 5 installation. Hence, the MySQL installation hMailServer needs is' + #13 +
+                       'hMailServer 5 installation. Hence, the MySQL installation ArzoieMail needs is' + #13 +
                        'no longer available.' + #13 +
                        '' + #13 +
                        'To solve this problem, reinstall the same hMailServer 4 version as before and then' + #13 +
                        'upgrade to version 5 without first uninstalling version 4.' + #13 +
                        '' + #13 +
-                       'As an alternative, you can cancel this installation, delete the entire hMailServer ' + #13 +
+                       'As an alternative, you can cancel this installation, delete the entire ArzoieMail ' + #13 +
                        'directory and then run this installation program again. Using this method, your configuration' + #13 +
                        'and email messages will be lost.';
 
@@ -1009,7 +1017,7 @@ begin
 		// Stop hMailServer, if it's running, so that its files aren't locked.
 		if StopServiceAndWait('hMailServer') = false then
 		begin
-			ReportServiceStopFailure('The hMailServer service could not be stopped. Stop it manually and try again.');
+			ReportServiceStopFailure('The ArzoieMail service could not be stopped. Stop it manually and try again.');
 			Result := false;
 
 			// The user can't retry a silent installation, so fail it.
@@ -1084,6 +1092,6 @@ begin
 	if CurUninstallStep = usUninstall then
 	begin
 		if StopServiceAndWait('hMailServer') = false then
-			ReportServiceStopFailure('The hMailServer service could not be stopped. Some files may not be removed until the computer is restarted.');
+			ReportServiceStopFailure('The ArzoieMail service could not be stopped. Some files may not be removed until the computer is restarted.');
 	end;
 end;

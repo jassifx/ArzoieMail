@@ -99,7 +99,7 @@ namespace hMailServer.Administrator
          this.labelAutomate.Size = new System.Drawing.Size(440, 28);
          this.labelAutomate.TabIndex = 30;
          this.labelAutomate.Text = "If you want to automate the backup process, please use the script StartBackup.vbs" +
-    " found under \\hMailServer\\Addons\\Utilities.";
+    " found under \\ArzoieMail\\Addons\\Utilities.";
          // 
          // buttonShowLog
          // 
@@ -313,7 +313,7 @@ namespace hMailServer.Administrator
          // 
          // openFileDialog
          // 
-         this.openFileDialog.Filter = "hMailServer Backup File (HMBackup*.7z)|HMBackup*.7z";
+         this.openFileDialog.Filter = "ArzoieMail Backup File (HMBackup*.7z)|HMBackup*.7z";
          // 
          // ucBackup
          // 

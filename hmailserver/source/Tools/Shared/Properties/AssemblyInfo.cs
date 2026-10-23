@@ -8,8 +8,8 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Shared")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("hMailServer.com")]
-[assembly: AssemblyProduct("hMailServer")]
+[assembly: AssemblyCompany("ArzoieMail")]
+[assembly: AssemblyProduct("ArzoieMail")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

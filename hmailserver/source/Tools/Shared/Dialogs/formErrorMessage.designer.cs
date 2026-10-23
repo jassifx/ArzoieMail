@@ -106,7 +106,7 @@
            this.Controls.Add(this.buttonClose);
            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
            this.Name = "formErrorMessage";
-           this.Text = "hMailServer Administrator";
+           this.Text = "ArzoieMail Administrator";
            this.Shown += new System.EventHandler(this.formErrorMessage_Shown);
            this.ResumeLayout(false);
            this.PerformLayout();

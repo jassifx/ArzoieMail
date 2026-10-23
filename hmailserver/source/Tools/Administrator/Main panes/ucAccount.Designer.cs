@@ -610,7 +610,7 @@ namespace hMailServer.Administrator
            this.labelAccountADInfo.Size = new System.Drawing.Size(470, 50);
            this.labelAccountADInfo.TabIndex = 22;
            this.labelAccountADInfo.Text = "By entering the fields below, you can connect this account to an Active Directory" +
-               ". When a user connects to the server, hMailServer will use the Active Directory " +
+               ". When a user connects to the server, ArzoieMail will use the Active Directory " +
                "to validate the user\'s password.";
            // 
            // labelUsername

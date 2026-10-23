@@ -94,8 +94,8 @@ namespace hMailServer.Administrator
 
       static internal void AskRestartServer()
       {
-         if (MessageBox.Show(Strings.Localize("hMailServer needs to be restarted for the changes to take effect.") + Environment.NewLine +
-                    Strings.Localize("Do you want to restart hMailServer now?"), EnumStrings.hMailServerAdministrator, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+         if (MessageBox.Show(Strings.Localize("ArzoieMail needs to be restarted for the changes to take effect.") + Environment.NewLine +
+                    Strings.Localize("Do you want to restart ArzoieMail now?"), EnumStrings.hMailServerAdministrator, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
          {
             using (new WaitCursor())
             {
@@ -103,7 +103,7 @@ namespace hMailServer.Administrator
                application.Stop();
                application.Start();
 
-               MessageBox.Show(Strings.Localize("The hMailServer server has been restarted."), EnumStrings.hMailServerAdministrator, MessageBoxButtons.OK, MessageBoxIcon.Information);
+               MessageBox.Show(Strings.Localize("The ArzoieMail server has been restarted."), EnumStrings.hMailServerAdministrator, MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
          }
       }

@@ -60,7 +60,7 @@ namespace hMailServer.Shared
             if (AuthenticateUser(application, enteredPassword))
                return true;
 
-            MessageBox.Show("Invalid user name or password.", "hMailServer");
+            MessageBox.Show("Invalid user name or password.", "ArzoieMail");
          }
       }
    }

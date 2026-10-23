@@ -44,7 +44,7 @@ namespace hMailServer.Shared
          this.labelPassword.Name = "labelPassword";
          this.labelPassword.Size = new System.Drawing.Size(194, 13);
          this.labelPassword.TabIndex = 0;
-         this.labelPassword.Text = "Please enter the hMailServer password.";
+         this.labelPassword.Text = "Please enter the ArzoieMail password.";
          // 
          // groupBox1
          // 
@@ -121,7 +121,7 @@ namespace hMailServer.Shared
          this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
          this.Name = "formEnterPassword";
          this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-         this.Text = "hMailServer password";
+         this.Text = "ArzoieMail password";
          this.Load += new System.EventHandler(this.formEnterPassword_Load);
          this.ResumeLayout(false);
          this.PerformLayout();

@@ -185,9 +185,10 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: regression-test-logs
-          # New installations log to ProgramData. The Program Files path is kept for
-          # installations made before that change.
+          # New installations log to ProgramData\ArzoieMail. The hMailServer paths are kept
+          # for installations upgraded from hMailServer.
           path: |
+            C:\ProgramData\ArzoieMail\Logs\*.log
             C:\ProgramData\hMailServer\Logs\*.log
             C:\Program Files\hMailServer\Logs\*.log
           if-no-files-found: ignore

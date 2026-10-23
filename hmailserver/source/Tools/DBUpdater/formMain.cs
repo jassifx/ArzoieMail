@@ -60,7 +60,7 @@ namespace DBUpdater
 
             if (script == null)
             {
-               ShowError("Upgrade path not found.", "hMailServer");
+               ShowError("Upgrade path not found.", "ArzoieMail");
                return false;
             }
 
@@ -68,7 +68,7 @@ namespace DBUpdater
 
             if (!File.Exists(fileName))
             {
-               ShowError("Required file for upgrade not found:" + Environment.NewLine + fileName, "hMailServer");
+               ShowError("Required file for upgrade not found:" + Environment.NewLine + fileName, "ArzoieMail");
                return false;
             }
 
@@ -101,7 +101,7 @@ namespace DBUpdater
                _databaseType = DatabaseTypePGSQL;
                break;
             default:
-               ShowError("Unknown database type", "hMailServer");
+               ShowError("Unknown database type", "ArzoieMail");
                return false;
          }
 
@@ -110,7 +110,7 @@ namespace DBUpdater
          _scriptPath = _application.Settings.Directories.DBScriptDirectory;
          if (_scriptPath == null || _scriptPath.Length == 0)
          {
-            ShowError("Database script directory could not be found." + Environment.NewLine + "Please check the hMailServer error log.", "hMailServer");
+            ShowError("Database script directory could not be found." + Environment.NewLine + "Please check the ArzoieMail error log.", "ArzoieMail");
             return false;
          }
 
@@ -461,12 +461,12 @@ namespace DBUpdater
 
       private void buttonUpgrade_Click(object sender, EventArgs e)
       {
-         DialogResult result = MessageBox.Show("Have you taken a backup of the hMailServer database?", "hMailServer", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+         DialogResult result = MessageBox.Show("Have you taken a backup of the ArzoieMail database?", "ArzoieMail", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
 
          if (result == DialogResult.Yes)
             DoUpgrade();
          else if (result == DialogResult.No)
-            MessageBox.Show(labelRunBackup.Text, "hMailServer", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            MessageBox.Show(labelRunBackup.Text, "ArzoieMail", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
       }
 
       private void listRequiredUpgrades_DoubleClick(object sender, EventArgs e)

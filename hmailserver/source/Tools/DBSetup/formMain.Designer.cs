@@ -57,7 +57,7 @@ namespace DBSetup
           this.MaximizeBox = false;
           this.Name = "formMain";
           this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-          this.Text = "hMailServer Database Setup";
+          this.Text = "ArzoieMail Database Setup";
           this.Shown += new System.EventHandler(this.formMain_Shown);
           this.ResumeLayout(false);
 
