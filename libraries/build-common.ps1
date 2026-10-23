@@ -133,25 +133,20 @@ function Resolve-HMailServerLibs
     return $libsPath
 }
 
-# The MSVC toolset hMailServer's own projects are compiled with: PlatformToolset v142,
-# which is the 14.2x compiler. Visual Studio 2019 provides it by default; Visual Studio
-# 2022 and 2026 provide it as the optional "MSVC v142 build tools" component, selected
-# with 'vcvars64.bat -vcvars_ver=14.29'.
-$script:HMailServerVcToolsetVersion = '14.29'
-
 # Locate a Visual Studio installation with the x64 C++ toolchain and return what the callers
 # need from it: the vcvars64.bat path, the installation path and its version.
 #
 # We do NOT simply take 'vswhere -latest'. The Visual Studio in use decides which STL/CRT the
-# libraries are compiled against, and Boost in particular must match hMailServer's own v142
-# toolset: a newer STL emits vectorized-algorithm symbols (e.g. __std_find_last_trivial_2)
-# that the v142 runtime hMailServer links against does not provide, producing LNK2019
-# unresolved externals at link time. So the caller states which Visual Studio versions are
-# acceptable, in preference order, and the first one installed wins.
+# libraries are compiled against, and Boost in particular must match hMailServer's own v145
+# toolset: a different STL emits or expects different vectorized-algorithm symbols (e.g.
+# __std_find_last_trivial_2), producing LNK2019 unresolved externals at link time. So the
+# caller states which Visual Studio versions are acceptable, in preference order, and the
+# first one installed wins.
 #
-# The default order prefers VS2026 - what the README asks a developer to install, and the only
-# Visual Studio on the GitHub Actions windows-2025-vs2026 image - and falls back to VS2022 and
-# then VS2019. On VS2026 and VS2022, callers that need the v142 compiler ask
+# The default order prefers VS2026 - what the README asks a developer to install, the only
+# Visual Studio on the GitHub Actions windows-2025-vs2026 image, and the one whose default
+# compiler (v145) hMailServer is built with - and falls back to VS2022 and then VS2019 for
+# the C libraries, which do not care. Callers that need an older compiler ask
 # Import-VsEnvironment for it; see the comment there for which libraries actually care.
 #
 # Pass $null or an empty array to fall back to 'vswhere -latest'.
@@ -232,12 +227,11 @@ function Resolve-VcVars64
 # succeeded.
 #
 # -ToolsetVersion pins the MSVC compiler vcvars selects (vcvars64.bat -vcvars_ver=14.29). It
-# is applied only on VS2022 and newer, whose default compiler is 14.4x or 14.5x rather than the 14.2x
-# (v142) toolset hMailServer is built with; on VS2019 the default is already the right one and
-# older 16.x installs may not even carry 14.29.
+# is applied only on VS2022 and newer. hMailServer itself is built with the VS2026 default
+# (v145), so this is only needed to build Boost for an older toolset.
 #
-# Only Boost needs this. It is C++, linked statically into hMailServer, and its auto-linking
-# pragma encodes the toolset in the library name (libboost_thread-vc142-...). OpenSSL, libpq
+# Only Boost cares. It is C++, linked statically into hMailServer, and its auto-linking
+# pragma encodes the toolset in the library name (libboost_thread-vc145-...). OpenSSL, libpq
 # and libmariadb are C libraries consumed through an import library and a DLL, so their C ABI
 # is toolset-independent and they build fine with whatever compiler the resolved Visual Studio
 # defaults to.

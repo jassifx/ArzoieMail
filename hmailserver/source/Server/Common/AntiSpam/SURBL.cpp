@@ -59,7 +59,7 @@ namespace HM
                break;
             }
 
-            String sURL = matches[1];
+            String sURL = matches[1].str().c_str();
 
             // Clean the URL from linefeeds
             CleanURL_(sURL);

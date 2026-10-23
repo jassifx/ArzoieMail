@@ -2598,7 +2598,7 @@ namespace HM
 
       address = mailFrom.Left(emailAddressEndPosition);
 
-      parameters = parameterStartPosition > 0 ? mailFrom.Mid(parameterStartPosition) : _T("");
+      parameters = parameterStartPosition > 0 ? mailFrom.Mid(parameterStartPosition) : String();
 
       if (address.StartsWith(_T("<")))
       {

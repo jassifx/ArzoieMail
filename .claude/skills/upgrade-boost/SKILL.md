@@ -33,9 +33,8 @@ There are two reasons to run it:
   time and there is **no Boost DLL** to copy in `post-build.bat` or ship in the installer —
   that is why Boost, unlike OpenSSL/libpq, has no touch points in `post-build.bat`,
   `section_files_64.iss`, or `hMailServer64.iss`.
-- The compiled libs are built with the **msvc-14.2** toolset (v142 - VS2019, or VS2022 with the
-  "MSVC v142 build tools" component), matching the
-  rest of hMailServer. Updating any CI/CD-built copy of Boost is out of scope, but the README
+- The compiled libs are built with the **msvc-14.5** toolset (v145, the Visual Studio 2026
+  default compiler), matching the rest of hMailServer. Updating any CI/CD-built copy of Boost is out of scope, but the README
   build instructions must stay accurate.
 
 ## Steps
@@ -54,14 +53,14 @@ There are two reasons to run it:
 
 ### 2. Build Boost
 
-Invoke the build script (prerequisites — `%hMailServerLibs%`, VS2019/VS2022 x64 tools — are validated
+Invoke the build script (prerequisites — `%hMailServerLibs%`, VS2026 x64 tools — are validated
 inside it; surface its error message if it fails):
 
 ```
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\build-boost.ps1 -Version <target>
 ```
 
-Pass `-Toolset <name>` to override the default `msvc-14.2`, or `-Jobs <n>` to change the
+Pass `-Toolset <name>` to override the default `msvc-14.5`, or `-Jobs <n>` to change the
 parallelism (defaults to the number of logical processors).
 
 **Run this through the native PowerShell tool, NOT the Bash tool.** The Bash tool prepends
@@ -79,7 +78,7 @@ captured console output.
 
 On success it produces `%hMailServerLibs%\boost_<underscored-target>` with the Boost headers
 under `boost\` and the staged static libs under `stage\lib` (e.g.
-`libboost_thread-vc142-mt-x64-1_90.lib`). Only proceed if the script exits 0.
+`libboost_thread-vc145-mt-x64-1_92.lib`). Only proceed if the script exits 0.
 
 ### 3. Rewrite the pinned version references
 
@@ -132,5 +131,5 @@ installer changes are involved.
 
 ## Note
 
-The script's own end-to-end run needs the Boost source download and the VS2019/VS2022 x64 toolchain
+The script's own end-to-end run needs the Boost source download and the VS2026 x64 toolchain
 present; it validates those prerequisites and fails early with a clear message if any is missing.

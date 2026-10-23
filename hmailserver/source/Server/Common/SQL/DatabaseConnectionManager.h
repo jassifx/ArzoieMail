@@ -19,8 +19,20 @@ namespace HM
       
       void Disconnect();
 
-      bool Execute(const SQLStatement &statement, __int64 *iInsertID = 0, int iIgnoreErrors = 0, String &sErrorMessage = String(_T("")));
-      bool Execute(const SQLCommand &command, __int64 *iInsertID = 0, int iIgnoreErrors = 0, String &sErrorMessage = String(_T("")));
+      bool Execute(const SQLStatement &statement, __int64 *iInsertID, int iIgnoreErrors, String &sErrorMessage);
+      bool Execute(const SQLCommand &command, __int64 *iInsertID, int iIgnoreErrors, String &sErrorMessage);
+
+      bool Execute(const SQLStatement &statement, __int64 *iInsertID = 0, int iIgnoreErrors = 0)
+      {
+         String sErrorMessage;
+         return Execute(statement, iInsertID, iIgnoreErrors, sErrorMessage);
+      }
+
+      bool Execute(const SQLCommand &command, __int64 *iInsertID = 0, int iIgnoreErrors = 0)
+      {
+         String sErrorMessage;
+         return Execute(command, iInsertID, iIgnoreErrors, sErrorMessage);
+      }
       
       std::shared_ptr<DALRecordset> OpenRecordset(const SQLStatement &statement);
       std::shared_ptr<DALRecordset> OpenRecordset(const SQLCommand &command);

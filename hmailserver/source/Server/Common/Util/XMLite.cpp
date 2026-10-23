@@ -1174,7 +1174,7 @@ HM::String _tagXMLNode::GetXML( LPDISP_OPT opt /*= &optDefault*/ )
 //========================================================
 HM::String _tagXMLNode::GetText( LPDISP_OPT opt /*= &optDefault*/ )
 {
-	std::ostringstream os;
+	std::basic_ostringstream<TCHAR> os;
 
 	if( type == XNODE_DOC )
 	{
@@ -1379,7 +1379,7 @@ LPCTSTR	_tagXMLNode::GetChildValue( LPCTSTR name )
 HM::String	_tagXMLNode::GetChildText( LPCTSTR name, LPDISP_OPT opt /*= &optDefault*/ )
 {
 	LPXNode node = GetChild( name );
-	return (node != NULL)? node->GetText(opt) : _T("");
+	return (node != NULL)? node->GetText(opt) : HM::String();
 }
 
 LPXAttr _tagXMLNode::GetChildAttr( LPCTSTR name, LPCTSTR attrname )

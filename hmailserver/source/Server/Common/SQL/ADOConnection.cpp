@@ -247,7 +247,7 @@ namespace HM
          // Check what unique ID we got back (if we're interested).
          _RecordsetPtr pIdentityRS;
          BSTR bsIdentity;
-         if (iInsertID > 0)
+         if (iInsertID != nullptr)
          {
             pIdentityRS.CreateInstance(__uuidof(Recordset));
             pIdentityRS->PutCursorLocation(adUseClient);

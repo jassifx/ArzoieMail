@@ -9,8 +9,8 @@ namespace HM
    class BusinessObject
    {
    public:
-      BusinessObject<T>::BusinessObject();
-      virtual ~BusinessObject<T>() {};
+      BusinessObject();
+      virtual ~BusinessObject() {};
 
 		__int64 GetID() const;
 		void SetID(__int64 iNewVal);

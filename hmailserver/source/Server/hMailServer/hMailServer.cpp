@@ -318,7 +318,7 @@ DWORD WINAPI StartServiceInitialization(LPVOID vd)
 
    SERVICE_TABLE_ENTRY   DispatchTable[] = 
    { 
-      { _T("hMailServer"), ServiceMain }, 
+      { const_cast<LPTSTR>(_T("hMailServer")), ServiceMain }, 
       { NULL,          NULL        } 
    }; 
 

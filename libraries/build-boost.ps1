@@ -15,18 +15,18 @@
 
     Prerequisites (must be on PATH / installed):
       - The environment variable hMailServerLibs, pointing at your library folder.
-      - Visual Studio 2019 with the x64 build tools, or Visual Studio 2022/2026 with the
-        "MSVC v142 build tools" component (vcvars64.bat is located automatically via
-        vswhere). b2 is driven with the msvc-14.2 toolset, which hMailServer's own
-        projects are built with.
+      - Visual Studio 2026 with the x64 build tools (vcvars64.bat is located
+        automatically via vswhere). b2 is driven with the msvc-14.5 toolset, the
+        Visual Studio 2026 default that hMailServer's own projects are built with.
 
 .PARAMETER Version
     The Boost version to build, e.g. 1.90.0. Must match 1.x.y.
 
 .PARAMETER Toolset
-    The b2 toolset to build with. Defaults to msvc-14.2, the v142 toolset
-    hMailServer's project files expect. It is provided by Visual Studio 2019, and by
-    Visual Studio 2022 and 2026 with the "MSVC v142 build tools" component.
+    The b2 toolset to build with. Defaults to msvc-14.5, the v145 toolset
+    hMailServer's project files expect, which is the default compiler of Visual
+    Studio 2026. msvc-14.2 (v142, from the optional "MSVC v142 build tools"
+    component) and msvc-14.3 are still accepted for building older branches.
 
 .PARAMETER Jobs
     Number of parallel compilations (b2 -j). Defaults to the number of logical
@@ -42,7 +42,7 @@ param(
     [string]$Version,
 
     [Parameter(Mandatory = $false)]
-    [string]$Toolset = "msvc-14.2",
+    [string]$Toolset = "msvc-14.5",
 
     [Parameter(Mandatory = $false)]
     [int]$Jobs = [int]$env:NUMBER_OF_PROCESSORS
@@ -88,15 +88,16 @@ if ($Jobs -lt 1)
 # Boost must be compiled with the requested toolset, not simply the newest compiler
 # installed (see Resolve-VcVars64 for why -latest is wrong): its static libraries end up
 # inside hMailServer.exe, and the auto-linking pragma encodes the toolset in the library
-# name (libboost_thread-vc142-mt-s-x64-1_92.lib).
+# name (libboost_thread-vc145-mt-s-x64-1_92.lib).
 #
-# msvc-14.2 (v142) is available two ways: from VS2026 and VS2022, where it is the optional
-# "MSVC v142 build tools" component selected with -vcvars_ver=14.29, and from VS2019, where it
-# is the default compiler. Accept all three, newest first: VS2026 is what the README asks a
+# msvc-14.5 (v145) is the default compiler of VS2026, which is what the README asks a
 # developer to install and the only Visual Studio on the GitHub Actions windows-2025-vs2026
-# image. A custom/unknown toolset falls back to -latest ($null ranges).
+# image. The older toolsets are optional components of it, selected with -vcvars_ver, and
+# msvc-14.2 is also the default of VS2019. A custom/unknown toolset falls back to -latest
+# ($null ranges).
 $vsVersionRanges = switch -Regex ($Toolset)
 {
+    '^msvc-14\.5$' { @('[18.0,19.0)'); break }                                # VS2026
     '^msvc-14\.2$' { @('[18.0,19.0)', '[17.0,18.0)', '[16.0,17.0)'); break }  # VS2026/VS2022 + v142, or VS2019
     '^msvc-14\.3$' { @('[18.0,19.0)', '[17.0,18.0)'); break }                 # VS2026 + v143, or VS2022
     default        { $null }                                                  # custom/unknown toolset
@@ -106,7 +107,7 @@ $vsVersionRanges = switch -Regex ($Toolset)
 # Import-VsEnvironment applies this only on VS2022 and newer.
 $vcVarsToolsetVersion = switch -Regex ($Toolset)
 {
-    '^msvc-14\.2$' { $script:HMailServerVcToolsetVersion; break }  # 14.29
+    '^msvc-14\.2$' { '14.29'; break }
     default        { $null }
 }
 
@@ -125,9 +126,9 @@ Import-VsEnvironment -VsInstall $vsInstall -ToolsetVersion $vcVarsToolsetVersion
 # VS2022 or VS2026 - b2 cannot auto-configure it: Boost.Build looks for a VS2019 installation to satisfy
 # --toolset=msvc-14.2 and finds none. Point it at the compiler vcvars just put on PATH with a
 # generated user-config.jam, which also keeps the library name tag at vc142 (the tag comes
-# from the declared version, and hMailServer's auto-linking pragma expects
-# libboost_thread-vc142-mt-s-x64-...). On VS2019 nothing is generated and b2 auto-configures
-# exactly as before.
+# from the declared version, and the auto-linking pragma of a v142 build expects
+# libboost_thread-vc142-mt-s-x64-...). For the default msvc-14.5 nothing is generated and b2
+# auto-configures from VS2026.
 $userConfigArgument = $null
 if ($vcVarsToolsetVersion -and $vsInstall.MajorVersion -ge 17)
 {
@@ -212,7 +213,7 @@ if (!(Test-Path $stageLib))
     Throw "Build completed but the staged library folder was missing: $stageLib"
 }
 
-# The staged libs are named like libboost_thread-vc142-mt[-s]-x64-1_90.lib. Confirm
+# The staged libs are named like libboost_thread-vc145-mt[-s]-x64-1_92.lib. Confirm
 # each requested compiled library produced at least one .lib. Boost.System is fully
 # header-only as of Boost 1.92 (its compiled library was removed), so --with-system
 # stages no .lib and it is not listed among the expected compiled libraries.

@@ -262,7 +262,7 @@ namespace HM
          adoCommand->Execute(NULL, NULL, adCmdText);
          adoCommand->ActiveConnection = NULL;
 
-         if (iInsertID > 0)
+         if (iInsertID != nullptr)
          {
             _RecordsetPtr pIdentityRS;
             BSTR bsIdentity;

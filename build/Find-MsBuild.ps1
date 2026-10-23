@@ -1,9 +1,8 @@
 function Find-MsBuild {
     # The range covers VS2019 through VS2026, and -latest picks the newest installed, so a
     # machine with several Visual Studios uses the same one the build server does: VS2026 on
-    # windows-2025-vs2026, with the v142 build tools beside it. MSBuild 17 and 18 build the
-    # v142 projects hMailServer uses just as well as MSBuild 16 does, provided the v142
-    # toolset is installed.
+    # windows-2025-vs2026. The C++ projects use the v145 toolset, which only VS2026 provides;
+    # the C# projects build with any of them.
     param(
         [string]$VsWhereMinVersion = '[16.0,19.0)'
     )

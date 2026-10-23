@@ -1817,7 +1817,7 @@ inline int sscpy(CT1* pDst, const std::basic_string<CT2>& sSrc)
 // -----------------------------------------------------------------------------
 
 template<typename CT>
-struct SSToUpper : public std::binary_function<CT, std::locale, CT>
+struct SSToUpper
 {
     inline CT operator()(const CT& t, const std::locale& loc) const
     {
@@ -1825,7 +1825,7 @@ struct SSToUpper : public std::binary_function<CT, std::locale, CT>
     }
 };
 template<typename CT>
-struct SSToLower : public std::binary_function<CT, std::locale, CT>
+struct SSToLower
 {
     inline CT operator()(const CT& t, const std::locale& loc) const
     {
@@ -1842,7 +1842,7 @@ struct SSToLower : public std::binary_function<CT, std::locale, CT>
 //	inline bool operator() (CT t) { return !std::isspace(t, loc); }
 //};
 template<typename CT>
-struct NotSpace : public std::unary_function<CT, bool>
+struct NotSpace
 {
 	// DINKUMWARE BUG:
 	// Note -- using std::isspace in a COM DLL gives us access violations
@@ -2233,7 +2233,7 @@ public:
 		std::transform(this->begin(),
 					   this->end(),
 					   this->begin(),
-					   std::bind2nd(SSToUpper<CT>(), loc));
+					   [&loc](const CT& t) { return SSToUpper<CT>()(t, loc); });
 
 		// ...but if it were, this would probably work better.  Also, this way
 		// seems to be a bit faster when anything other then the "C" locale is
@@ -3593,7 +3593,7 @@ public:
 		{
 			TRACE(_T("StreamSave: Cannot write control header, ERR=0x%X\n"),hr);
 		}
-		else if ( empty() )
+		else if ( this->empty() )
 		{
 			;		// nothing to write
 		}
@@ -3942,28 +3942,24 @@ typedef CStdStringW				CStdString;
 #endif
 
 struct StdStringLessNoCaseW
-	: std::binary_function<CStdStringW, CStdStringW, bool>
 {
 	inline
 	bool operator()(const CStdStringW& sLeft, const CStdStringW& sRight) const
 	{ return ssicmp(sLeft.c_str(), sRight.c_str()) < 0; }
 };
 struct StdStringEqualsNoCaseW
-	: std::binary_function<CStdStringW, CStdStringW, bool>
 {
 	inline
 	bool operator()(const CStdStringW& sLeft, const CStdStringW& sRight) const
 	{ return ssicmp(sLeft.c_str(), sRight.c_str()) == 0; }
 };
 struct StdStringLessNoCaseA
-	: std::binary_function<CStdStringA, CStdStringA, bool>
 {
 	inline
 	bool operator()(const CStdStringA& sLeft, const CStdStringA& sRight) const
 	{ return ssicmp(sLeft.c_str(), sRight.c_str()) < 0; }
 };
 struct StdStringEqualsNoCaseA
-	: std::binary_function<CStdStringA, CStdStringA, bool>
 {
 	inline
 	bool operator()(const CStdStringA& sLeft, const CStdStringA& sRight) const

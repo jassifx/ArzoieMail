@@ -26,7 +26,7 @@ namespace HM
    {
       windows_error_code = 0;
 
-      LPSTR usage_identifier[] = { szOID_PKIX_KP_SERVER_AUTH, szOID_SERVER_GATED_CRYPTO, szOID_SGC_NETSCAPE };
+      LPSTR usage_identifier[] = { const_cast<LPSTR>(szOID_PKIX_KP_SERVER_AUTH), const_cast<LPSTR>(szOID_SERVER_GATED_CRYPTO), const_cast<LPSTR>(szOID_SGC_NETSCAPE) };
 
       CERT_CHAIN_PARA params = { sizeof( params ) };
       params.RequestedUsage.dwType = USAGE_MATCH_TYPE_OR;

@@ -33,13 +33,13 @@ namespace RegressionTests.Infrastructure
       }
 
       [Test]
-      [Description("The runtime is not older than the 14.29 toolset that compiles hMailServer.exe")]
+      [Description("The runtime is not older than the 14.50 (v145) toolset that compiles hMailServer.exe")]
       public void VisualCppRuntimeShouldNotBeOlderThanTheToolset()
       {
          var versionInfo = FileVersionInfo.GetVersionInfo(Path.Combine(GetBinDirectory(), "vcruntime140.dll"));
          var version = new Version(versionInfo.FileMajorPart, versionInfo.FileMinorPart);
 
-         Assert.GreaterOrEqual(version, new Version(14, 29));
+         Assert.GreaterOrEqual(version, new Version(14, 50));
       }
 
       [Test]

@@ -25,6 +25,7 @@ namespace HM
       static String IntToString(int lTheInt);
       static String IntToString(unsigned int lTheInt);
       static String IntToString(__int64 lTheInt);
+      static String IntToString(long lTheInt) { return IntToString(static_cast<int>(lTheInt)); }
 
       static bool TryParseInt(const std::string &str, int &value);
 

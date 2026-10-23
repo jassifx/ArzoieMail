@@ -23,6 +23,7 @@ namespace HM
       void AddParameter(const AnsiString &name, const __int64 &value);
       void AddParameter(const AnsiString &name, const String& value);
       void AddParameter(const AnsiString &name, unsigned int value);
+      void AddParameter(const AnsiString &name, long value) { AddParameter(name, static_cast<int>(value)); }
       
 
    private:

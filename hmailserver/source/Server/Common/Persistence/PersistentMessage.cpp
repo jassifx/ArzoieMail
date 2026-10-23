@@ -976,7 +976,7 @@ namespace HM
          NULL // file template
          );
 
-      if (handleFile == INVALID_HANDLE_VALUE || handleFile < 0)
+      if (handleFile == INVALID_HANDLE_VALUE || handleFile == nullptr)
       {
          if (reportError)
          {
@@ -1052,7 +1052,7 @@ namespace HM
          NULL // file template
          );
 
-      if (handleFile == INVALID_HANDLE_VALUE || handleFile < 0) 
+      if (handleFile == INVALID_HANDLE_VALUE || handleFile == nullptr)
       {
          ErrorManager::Instance()->ReportError(ErrorManager::Medium, 4403, "PersistentMessage::LoadBody", "Could not read the message body, since the file was not available. File: " + fileName);
          return "";

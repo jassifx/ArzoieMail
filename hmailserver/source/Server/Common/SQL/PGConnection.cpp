@@ -129,7 +129,7 @@ namespace HM
          
          // Check if a value has been returned. Will only occur if we've
          // inserted a value.
-         if (iInsertID > 0 && iExecResult == PGRES_TUPLES_OK)
+         if (iInsertID != nullptr && iExecResult == PGRES_TUPLES_OK)
          {
             // pick the ID from the first row.
             char *pRetVal = PQgetvalue(pResult, 0, 0);
