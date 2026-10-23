@@ -37,7 +37,7 @@ namespace DBSetup.Pages
          this.labelWelcomeText.Name = "labelWelcomeText";
          this.labelWelcomeText.Size = new System.Drawing.Size(368, 56);
          this.labelWelcomeText.TabIndex = 0;
-         this.labelWelcomeText.Text = "Using this wizard, you can create a new hMailServer database and select a new def" +
+         this.labelWelcomeText.Text = "Using this wizard, you can create a new ArzoieMail database and select a new def" +
              "ault database.";
          // 
          // ucWelcome

@@ -96,7 +96,7 @@ namespace DataDirectorySynchronizer.Pages
             // Messages in public folders can't be imported unless we know which public IMAP
             // folder to place them in. The folder isn't part of the path on disk.
             MessageBox.Show("Please specify the public IMAP folder in which messages found in the public folder should be placed.",
-                            "hMailServer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            "ArzoieMail", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
             comboPublicFolderImportPath.Focus();
             return false;

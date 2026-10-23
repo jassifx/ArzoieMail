@@ -40,7 +40,7 @@ namespace DBSetup
 
       private void wizard_PageChanged(int currentPage, int lastPage)
       {
-         this.Text = "hMailServer Database Setup - Step " + currentPage.ToString() + " of " + lastPage.ToString();
+         this.Text = "ArzoieMail Database Setup - Step " + currentPage.ToString() + " of " + lastPage.ToString();
       }
    }
 }

@@ -119,8 +119,8 @@ define('REQUIRED_VERSION', '$Version-B$Build');
 
 Write-Host "Writing the install version and output name to $setupFile"
 $settings = [ordered]@{
-    "OutputBaseFilename" = "hMailServer-$Version-B$Build-x64"
-    "AppVerName"         = "hMailServer $Version-B$Build-x64"
+    "OutputBaseFilename" = "ArzoieMail-$Version-B$Build-x64"
+    "AppVerName"         = "ArzoieMail $Version-B$Build-x64"
     "AppVersion"         = $productVersion
     "VersionInfoVersion" = $productVersion
 }

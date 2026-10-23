@@ -303,7 +303,7 @@ namespace hMailServer.Administrator
            this.MinimumSize = new System.Drawing.Size(800, 600);
            this.Name = "formMain";
            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-           this.Text = "hMailServer Administrator";
+           this.Text = "ArzoieMail Administrator";
            this.Load += new System.EventHandler(this.formMain_Load);
            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.formMain_FormClosing);
            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.formMain_KeyDown);

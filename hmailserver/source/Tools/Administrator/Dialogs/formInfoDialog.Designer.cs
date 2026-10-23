@@ -81,7 +81,7 @@ namespace hMailServer.Administrator.Dialogs
          this.MinimumSize = new System.Drawing.Size(342, 222);
          this.Name = "formInfoDialog";
          this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-         this.Text = "hMailServer";
+         this.Text = "ArzoieMail";
          this.ResumeLayout(false);
          this.PerformLayout();
 

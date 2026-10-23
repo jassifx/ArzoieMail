@@ -173,7 +173,7 @@ namespace DBUpdater
          this.MinimumSize = new System.Drawing.Size(431, 278);
          this.Name = "formMain";
          this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-         this.Text = "hMailServer Database Upgrade";
+         this.Text = "ArzoieMail Database Upgrade";
          this.Shown += new System.EventHandler(this.formMain_Shown);
          this.ResumeLayout(false);
          this.PerformLayout();

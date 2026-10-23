@@ -50,7 +50,7 @@
           this.labelInfo.Name = "labelInfo";
           this.labelInfo.Size = new System.Drawing.Size(332, 13);
           this.labelInfo.TabIndex = 5;
-          this.labelInfo.Text = "This tool lets you perform diagnostics on your hMailServer installation.";
+          this.labelInfo.Text = "This tool lets you perform diagnostics on your ArzoieMail installation.";
           // 
           // labelSelectDomain
           // 
@@ -74,7 +74,7 @@
           // saveFileDialog1
           // 
           this.saveFileDialog1.DefaultExt = "*.txt";
-          this.saveFileDialog1.FileName = "hMailServer diagnostics log.txt";
+          this.saveFileDialog1.FileName = "ArzoieMail diagnostics log.txt";
           this.saveFileDialog1.Filter = "Text file|*.txt";
           // 
           // buttonSaveToFile

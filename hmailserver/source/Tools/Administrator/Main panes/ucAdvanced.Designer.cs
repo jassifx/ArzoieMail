@@ -71,7 +71,7 @@ namespace hMailServer.Administrator
            this.labelPleaseRemember.Name = "labelPleaseRemember";
            this.labelPleaseRemember.Size = new System.Drawing.Size(361, 32);
            this.labelPleaseRemember.TabIndex = 10;
-           this.labelPleaseRemember.Text = "You need this password to be able to manage your hMailServer installation, so ple" +
+           this.labelPleaseRemember.Text = "You need this password to be able to manage your ArzoieMail installation, so ple" +
                "ase remember it.";
            // 
            // textAdministratorPassword

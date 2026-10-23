@@ -37,7 +37,7 @@ namespace hMailServer.Administrator
             this.ClientSize = new System.Drawing.Size(370, 126);
             this.Name = "formApplication";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "hMailServer";
+            this.Text = "ArzoieMail";
             this.Load += new System.EventHandler(this.formApplication_Load);
             this.ResumeLayout(false);
 

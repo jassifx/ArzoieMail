@@ -267,12 +267,12 @@ namespace hMailServer.Administrator
                 textClamScanDatabase.Text = database;
                 textClamScanExecutable.Text = executable;
 
-                string warning = "hMailServer Administrator was able to auto-detect the location of ClamScan and the database.\r\nIt is still recommended you verify that the path to the executable and the database is correct.";
+                string warning = "ArzoieMail Administrator was able to auto-detect the location of ClamScan and the database.\r\nIt is still recommended you verify that the path to the executable and the database is correct.";
                 MessageBox.Show(warning, EnumStrings.hMailServerAdministrator, MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
-                string warning = "hMailServer Administrator was unable to auto-detect the location of ClamWin.";
+                string warning = "ArzoieMail Administrator was unable to auto-detect the location of ClamWin.";
                 MessageBox.Show(warning, EnumStrings.hMailServerAdministrator, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
 

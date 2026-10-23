@@ -42,7 +42,7 @@ namespace HM
       // Check whether we already exists.
       if (DoesServiceExist(ServiceName))
       {
-         if (!ReconfigureService_(hSCManager, ServiceName))
+         if (!ReconfigureService_(hSCManager, ServiceName, ServiceCaption))
             return false;
       }
       else
@@ -147,7 +147,7 @@ namespace HM
    }
 
    bool
-   ServiceManager::ReconfigureService_(SC_HANDLE hSCManager, const String &ServiceName)
+   ServiceManager::ReconfigureService_(SC_HANDLE hSCManager, const String &ServiceName, const String &ServiceCaption)
    //---------------------------------------------------------------------------//
    // DESCRIPTION:
    // Updates an existing hMailServer service.
@@ -167,21 +167,22 @@ namespace HM
          return false;
       }
 
-      // Update the path to the executable
+      // Update the path to the executable, and the display name, so that a service
+      // created by an earlier version picks up the current one.
       String sPath = "\"" + Application::GetExecutableName() + "\" RunAsService";
 
       if (ChangeServiceConfig(
-               hService,        // handle of service 
-               SERVICE_NO_CHANGE , // service type: no change 
+               hService,        // handle of service
+               SERVICE_NO_CHANGE , // service type: no change
                SERVICE_NO_CHANGE, // service start type no change
-               SERVICE_NO_CHANGE, // error control: no change 
+               SERVICE_NO_CHANGE, // error control: no change
                sPath,            // binary path changed
-               NULL,              // load order group: no change 
-               NULL,              // tag ID: no change 
-               NULL,              // dependencies: no change 
-               NULL,              // account name: no change 
-               NULL,              // password: no change 
-               NULL) == 0)             // display name: no change
+               NULL,              // load order group: no change
+               NULL,              // tag ID: no change
+               NULL,              // dependencies: no change
+               NULL,              // account name: no change
+               NULL,              // password: no change
+               ServiceCaption) == 0)   // display name changed
       {
          String sErrorMessage;
          sErrorMessage.Format(_T("ChangeServiceConfig failed. (%d)"), GetLastError());

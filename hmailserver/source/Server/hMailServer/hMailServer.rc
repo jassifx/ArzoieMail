@@ -72,12 +72,12 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "hMailServer.com"
-            VALUE "FileDescription", "hMailServer"
+            VALUE "CompanyName", "ArzoieMail"
+            VALUE "FileDescription", "ArzoieMail"
             VALUE "FileVersion", HMAILSERVER_PRODUCT_VERSION
             VALUE "InternalName", "hMailServer.exe"
             VALUE "OriginalFilename", "hMailServer.exe"
-            VALUE "ProductName", "hMailServer"
+            VALUE "ProductName", "ArzoieMail"
             VALUE "ProductVersion", HMAILSERVER_PRODUCT_VERSION
         END
     END

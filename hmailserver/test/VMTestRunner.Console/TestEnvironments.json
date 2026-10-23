@@ -89,7 +89,7 @@
     "preInstallFileCopy": [],
     "postInstallCommands": [
       {
-        "executable": "C:\\Program Files\\hMailServer\\Bin\\DBSetup.exe",
+        "executable": "C:\\Program Files\\ArzoieMail\\Bin\\DBSetup.exe",
         "parameters": "/silent ServerType:PGSQL ServerAddress:localhost DatabaseName:hMailServer Authentication:Server CreateNew:Yes Username:postgres Password:Secret123"
       }
     ],
@@ -106,7 +106,7 @@
     "preInstallFileCopy": [],
     "postInstallCommands": [
       {
-        "executable": "C:\\Program Files\\hMailServer\\Bin\\DBSetup.exe",
+        "executable": "C:\\Program Files\\ArzoieMail\\Bin\\DBSetup.exe",
         "parameters": "/silent ServerType:MSSQL ServerAddress:.\\SQLEXPRESS DatabaseName:hMailServer Authentication:SServer CreateNew:Yes Username:sa Password:Secret123"
       }
     ],
@@ -127,7 +127,7 @@
     "preInstallFileCopy": [],
     "postInstallCommands": [
       {
-        "executable": "C:\\Program Files\\hMailServer\\Bin\\DBSetup.exe",
+        "executable": "C:\\Program Files\\ArzoieMail\\Bin\\DBSetup.exe",
         "parameters": "/silent ServerType:MySQL ServerAddress:localhost DatabaseName:hMailServer Authentication:Server CreateNew:Yes Username:root Password:Secret123"
       }
     ],

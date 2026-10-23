@@ -58,7 +58,7 @@ namespace hMailServer.Administrator
          this.labelUsername.Name = "labelUsername";
          this.labelUsername.Size = new System.Drawing.Size(114, 13);
          this.labelUsername.TabIndex = 2;
-         this.labelUsername.Text = "hMailServer Username";
+         this.labelUsername.Text = "ArzoieMail Username";
          // 
          // labelPassword
          // 

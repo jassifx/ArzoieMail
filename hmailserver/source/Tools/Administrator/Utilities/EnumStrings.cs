@@ -13,7 +13,7 @@ namespace hMailServer.Administrator.Utilities
       {
          get
          {
-            return "hMailServer Administrator";
+            return "ArzoieMail Administrator";
          }
       }
 

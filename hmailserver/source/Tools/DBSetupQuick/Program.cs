@@ -35,7 +35,7 @@ namespace DBSetupQuick
          if (CommandLineParser.IsSilent())
             return;
 
-         MessageBox.Show(text, "hMailServer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+         MessageBox.Show(text, "ArzoieMail", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
 
       private static int UpgradeDatabase()

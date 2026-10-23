@@ -81,7 +81,7 @@ namespace hMailServer.Administrator
         {
             CreateMainNodes();
 
-            this.Text = "hMailServer Administrator - [" + _serverHost + "]";
+            this.Text = "ArzoieMail Administrator - [" + _serverHost + "]";
 
         }
 

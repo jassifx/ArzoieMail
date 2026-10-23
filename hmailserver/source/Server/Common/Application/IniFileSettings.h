@@ -122,7 +122,7 @@ namespace HM
       String ReadIniSettingString_(const String &sSection, const String &sKey, const String &sDefault);
       int ReadIniSettingInteger_(const String &sSection, const String &sKey, int iDefault);
 
-      static String GetProgramDataDirectory_();
+      static String GetProgramDataDirectory_(const String &folder_name);
 
       String database_server_;
       String database_name_;

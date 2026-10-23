@@ -1,3 +1,3 @@
 [Messages]
-BeveledLabel=hMailServer
-WinVersionTooLowError=This program requires Microsoft Windows Vista Service Pack 2 or later.
+BeveledLabel=ArzoieMail
+WinVersionTooLowError=This program requires Windows 10 or Windows Server 2016 or later.

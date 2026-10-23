@@ -15,7 +15,7 @@ namespace hMailServer.Administrator
 
          hMailServer.Application application = APICreator.Application;
 
-         labelVersion.Text = "hMailServer " + application.Version;
+         labelVersion.Text = "ArzoieMail " + application.Version;
 
          Strings.Localize(this);
       }

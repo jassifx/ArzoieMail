@@ -10,9 +10,9 @@ using RegressionTests.Shared;
 namespace RegressionTests.Infrastructure
 {
    /// <summary>
-   /// The server looks for hMailServer.ini in ProgramData first and falls back to the
-   /// Bin directory. These tests confirm that the file the server actually loaded is
-   /// the one that lookup finds.
+   /// The server looks for hMailServer.ini in ProgramData\ArzoieMail, then in
+   /// ProgramData\hMailServer, and falls back to the Bin directory. These tests confirm
+   /// that the file the server actually loaded is the one that lookup finds.
    /// </summary>
    [TestFixture]
    public class IniFileLocation : TestFixtureBase
@@ -41,11 +41,15 @@ namespace RegressionTests.Infrastructure
       {
          var iniFile = IniFileLocator.GetIniFileName();
          var programDataFile = Path.Combine(IniFileLocator.GetProgramDataDirectory(), "hMailServer.ini");
+         var legacyProgramDataFile = Path.Combine(
+            IniFileLocator.GetProgramDataDirectory(IniFileLocator.LegacyProgramDataFolderName), "hMailServer.ini");
 
-         if (!File.Exists(programDataFile))
+         if (File.Exists(programDataFile))
+            Assert.AreEqual(programDataFile, iniFile);
+         else if (File.Exists(legacyProgramDataFile))
+            Assert.AreEqual(legacyProgramDataFile, iniFile);
+         else
             Assert.Inconclusive("This installation keeps hMailServer.ini in the Bin directory.");
-
-         Assert.AreEqual(programDataFile, iniFile);
       }
 
       private static string ReadIniSetting(string key)

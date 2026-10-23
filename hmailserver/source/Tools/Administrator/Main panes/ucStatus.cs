@@ -141,7 +141,7 @@ namespace hMailServer.Administrator
                 AddWarning("W001", Strings.Localize("High"), Strings.Localize("You haven't specified the public host name for this computer in the SMTP settings."));
 
             if (settings.DenyMailFromNull)
-                AddWarning("W002", Strings.Localize("High"), Strings.Localize("You have configured hMailServer not to allow email with an empty sender address. Many email servers will not accept email from your server with this configuration."));
+                AddWarning("W002", Strings.Localize("High"), Strings.Localize("You have configured ArzoieMail not to allow email with an empty sender address. Many email servers will not accept email from your server with this configuration."));
 
             int autobanRanges = 0;
 
@@ -154,7 +154,7 @@ namespace hMailServer.Administrator
                 if (range.AllowDeliveryFromRemoteToRemote && !range.RequireSMTPAuthExternalToExternal)
                 {
                     string warning =
-                       Strings.Localize("hMailServer is configured to allow deliveries from external to external accounts in the IP range %s. This may make the server vulnerable to spam. It is recommended that you disable this option.");
+                       Strings.Localize("ArzoieMail is configured to allow deliveries from external to external accounts in the IP range %s. This may make the server vulnerable to spam. It is recommended that you disable this option.");
 
                     warning = warning.Replace("%s", range.Name);
 
