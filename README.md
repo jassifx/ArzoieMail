@@ -10,39 +10,52 @@ scripts depend on keep their hMailServer names: the hMailServer Windows service,
 go to `C:\Program Files\ArzoieMail` and `C:\ProgramData\ArzoieMail`. The installer upgrades an
 existing hMailServer installation in place and leaves it in its hMailServer folders.
 
-This page describes how to compile and run ArzoieMail in debug.
+ArzoieMail requires Windows 10 or Windows Server 2016 or later.
 
-Building hMailServer
-====================
+This page describes how to build ArzoieMail, run it in debug and test it.
+
+Building ArzoieMail
+===================
 
 Branches
 --------
 
-   * The master branch contains the latest development version of hMailServer. This version is typically not yet released for production usage. If you want to add new features to hMailServer, use this branch.
-   
-   * The x.y.z (for example 5.6.2) contains the code for the version with the same name as the branch. For example, branch 5.6.1 contains hMailServer version 5.6.1. These branches are typically only used for bugfixes or minor features.
+   * The master branch contains the latest development version of ArzoieMail. It is protected:
+     changes reach it through a pull request, and only once the build and the regression tests
+     have passed on GitHub Actions.
+
+   * Work happens on a branch named after what it is for, such as `feature/...`, `bugfix/...` or
+     `techdebt/...`. GitHub Actions builds and tests every push to branches with those prefixes.
+
+   * A version branch, named after the version (for example 5.8.1), can be cut from master for
+     bug fixes to a released version.
 
 Environment set up
----------------------
+------------------
 
 **Required software**
 
-   * An installed version of hMailServer 5.7 (configured with a database)
    * Visual Studio 2026 Community edition with the v142 (VS2019) build tools
    * InnoSetup 6.2.2 (https://github.com/jrsoftware/issrc/releases/tag/is-6_2_2) - the last
-     release whose installers run on Windows Vista. hMailServer now requires Windows 10, so a
+     release whose installers run on Windows Vista. ArzoieMail now requires Windows 10, so a
      later release could be used, but the build has not been moved to one yet
    * Perl 5 (https://strawberryperl.com/) - required by the OpenSSL and PostgreSQL library builds
+   * Python 3 (https://www.python.org/downloads/) - required by the PostgreSQL library build
    * CMake (https://cmake.org/download/) - unless Visual Studio's "C++ CMake tools for Windows" component is installed
-   
+   * To run the regression tests: an installed ArzoieMail (or hMailServer 5.7 or later),
+     configured with a database. The tests drive it through its COM API.
+
 **NOTE**
 
-You should not be compiling hMailServer on a computer which already runs a production version of hMailServer. When compiling hMailServer, the compilation will stop any already running version of hMailServer, and will register the compiled version as the hMailServer version on the machine (configuring the Windows service). This means that if you are running a production version of hMailServer on the machine, this version will stop running if you compile hMailServer. If this happens, the easiest path is to reinstall the production version.
+Do not build ArzoieMail on a computer that runs a production mail server. Building stops the
+running hMailServer service and registers the newly built hMailServer.exe as the service and COM
+server on the machine, so a production installation stops running. If that happens, reinstall the
+production version.
 
 Installing Visual Studio
 ------------------------
 
-hMailServer's C++ projects are built with the v142 platform toolset. Visual Studio 2026
+ArzoieMail's C++ projects are built with the v142 platform toolset. Visual Studio 2026
 provides it as an optional component, so it has to be selected during installation.
 
 **Visual Studio 2026**
@@ -61,9 +74,20 @@ compiler out of it.
 3rd party libraries
 -------------------
 
-Some 3rd party libraries which hMailServer relies on are large and updated frequently. Rather than including these large libraries into the hMailServer git repository, they have to be downloaded and built, currently manually. When you build hMailServer, Visual Studio will use a system environment variable, named hMailServerLibs, to locate these libraries.
+The 3rd party libraries ArzoieMail links against are large and updated often, so they are not
+checked into this repository. They are downloaded and built by the scripts in `libraries\`, one
+per library, described below. The build finds them through a system environment variable named
+hMailServerLibs.
 
-Create an environment variable named hMailServerLibs pointing at a folder where you will store hMailServer libraries, such as C:\Dev\hMailLibs.
+Create an environment variable named hMailServerLibs pointing at a folder where you will store
+the libraries, such as C:\Dev\hMailLibs. Build OpenSSL first: libpq and MariaDB Connector/C link
+against it.
+
+The versions the project is pinned to can be listed with:
+
+   <pre>
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\Get-LibraryVersions.ps1
+   </pre>
 
 Building OpenSSL
 ----------------
@@ -79,14 +103,15 @@ Prerequisites:
 Run, from the repository root:
 
    <pre>
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\build-openssl.ps1 -Version 3.5.x
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\build-openssl.ps1 -Version 3.5.9
    </pre>
 
-Only OpenSSL 3.5.x is supported; the build recipe for 3.0.x and 4.x differs.
+Only OpenSSL 3.5.x, the current long-term support release, is supported; the build recipe for
+3.0.x and 4.x differs.
 
 Building PostgreSQL
 -------------------
-hMailServer talks to PostgreSQL through libpq. libpq is built by the `libraries\build-pgsql.ps1`
+ArzoieMail talks to PostgreSQL through libpq. libpq is built by the `libraries\build-pgsql.ps1`
 script, which downloads the requested version into %hMailServerLibs%\postgresql-&lt;Version&gt;,
 configures it with Meson against a previously built OpenSSL, and builds `libpq.dll` / `libpq.lib`
 into `postgresql-&lt;Version&gt;\Release\libpq`. The script fetches pinned copies of Meson, Ninja
@@ -105,13 +130,13 @@ Run, from the repository root:
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\build-pgsql.ps1 -Version 18.6
    </pre>
 
-The script auto-detects the OpenSSL version to link against from the hMailServer project; pass
+The script auto-detects the OpenSSL version to link against from the project; pass
 `-OpenSSLVersion 3.5.x` to override it. Only PostgreSQL 17.x and 18.x are supported. libpq from
-PostgreSQL 16 and later requires Windows 10, which is why hMailServer does too.
+PostgreSQL 16 and later requires Windows 10, which is why ArzoieMail does too.
 
 Building MariaDB Connector/C
 ----------------------------
-hMailServer talks to MySQL and MariaDB through MariaDB Connector/C, and ships its
+ArzoieMail talks to MySQL and MariaDB through MariaDB Connector/C, and ships its
 `libmariadb.dll` in the Bin directory. It is built by the `libraries\build-mariadb.ps1` script,
 which downloads the requested version into %hMailServerLibs%\libmariadb-&lt;Version&gt;, configures it
 with CMake against a previously built OpenSSL, and builds
@@ -130,12 +155,12 @@ Run, from the repository root:
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\build-mariadb.ps1 -Version 3.4.11
    </pre>
 
-The script auto-detects the OpenSSL version to link against from the hMailServer project; pass
+The script auto-detects the OpenSSL version to link against from the project; pass
 `-OpenSSLVersion 3.5.x` to override it. Only MariaDB Connector/C 3.4.x is supported.
 
 Building Boost
 --------------
-hMailServer links statically against a handful of compiled Boost libraries (thread, filesystem,
+ArzoieMail links statically against a handful of compiled Boost libraries (thread, filesystem,
 regex, chrono, atomic; Boost.System is header-only as of Boost 1.92). Boost is built by the
 `libraries\build-boost.ps1` script, which
 downloads the requested version into %hMailServerLibs%\boost_&lt;Version&gt; (e.g. `boost_1_92_0`),
@@ -145,7 +170,7 @@ Prerequisites:
 - The environment variable hMailServerLibs (see above).
 - Visual Studio 2026 with the "MSVC v142 build tools" component (the
   script locates vcvars64.bat automatically and drives `b2` with the msvc-14.2 toolset, which is
-  the toolset hMailServer itself is built with).
+  the toolset ArzoieMail itself is built with).
 
 Run, from the repository root:
 
@@ -160,7 +185,7 @@ supported.
 Fetching 7-Zip
 --------------
 The backup and restore feature launches the 7-Zip command line tool to compress and read
-backup archives. It is a prebuilt binary rather than something hMailServer compiles, so the
+backup archives. It is a prebuilt binary rather than something ArzoieMail compiles, so the
 `libraries\build-7zip.ps1` script downloads the "7-Zip Extra" package into
 %hMailServerLibs%\7zip-&lt;Version&gt; (e.g. `7zip-26.03`) and keeps the x64 `7za.exe` and its
 LGPL license text.
@@ -182,24 +207,27 @@ listed there are accepted. To move to a newer 7-Zip, record its hashes in `$Arch
 and `$BootstrapHashes` and update the `7zip-&lt;Version&gt;` folder name in `post-build.bat` and
 `hMailServer64.iss`.
 
-Building hMailServer
---------------------
+Building the server, the tools and the installer
+------------------------------------------------
 
-Visual Studio must be started with _Run as Administrator_.
+The scripts under `build\` locate Visual Studio themselves. Run them from the repository root
+with `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>`:
 
-1. Download the source code from this Git repository.
-2. Compile the solution hmailserver\source\Server\hMailServer\hMailServer.sln.
-   This will build the hMailServer server-part (hMailServer.exe)
-3. Compile the solution hmailserver\source\Tools\hMailServer Tools.sln.
-   This will build hMailServer related tools, such as hMailServer Administrator and hMailServer DB Setup.
-4. Compile hmailserver\installation\hMailServer64.iss (using InnoSetup)
-   This will build the hMailServer installation program.
+1. `build\build.ps1` builds the server, `hmailserver\source\Server\hMailServer\hMailServer.sln`
+   (hMailServer.exe). Pass `-Configuration Release` for a release build; the default is Debug.
+2. `build\post-build.ps1` stops the service, copies the library DLLs beside the new
+   hMailServer.exe, registers it as the COM server if needed, and starts the service again.
+   Only the registration needs elevation. Run `build\grant-service-control.ps1` once, elevated,
+   to let your account start and stop the service without a UAC prompt.
+3. Build `hmailserver\source\Tools\hMailServer Tools.sln` in Visual Studio or with MSBuild. This
+   builds ArzoieMail Administrator, Database Setup, the database upgrader and the other tools.
+   They generate their COM interop from the type library the server build writes, so build the
+   server first.
+4. Compile `hmailserver\installation\hMailServer64.iss` with InnoSetup to build the installer,
+   `ArzoieMail-<version>-B<build>-x64-Setup.exe`.
 
-   The installer ships two runtimes beside hMailServer.exe. The Visual C++ runtime comes in
-   two versions, picked by Windows version at install time: the newest installed for Windows
-   10 and later, and the 14.29 one of the v142 toolset that compiled hMailServer.exe for
-   everything below, since the newer runtimes do not load there. Point the environment at
-   both first:
+   The installer ships the Visual C++ runtime beside hMailServer.exe. Point the environment at
+   the redistributables first:
 
    ```
    . build\Get-VCRedistPath.ps1
@@ -207,60 +235,71 @@ Visual Studio must be started with _Run as Administrator_.
    $env:VCRedistPathLegacy = Get-VCRedistPath
    ```
 
-   The Universal CRT, for the Windows versions older than 10 that have none of their own, is
-   checked in under hmailserver\installation\Microsoft.UCRT.WindowsSDK14393 and needs no
-   setup. Do not replace it with a newer Windows SDK redistributable. 10.0.14393 is the
-   newest Universal CRT Microsoft supports on Windows Vista through 8.1, and above that the
-   Vista loader cannot resolve the forwarders they use - hMailServer.exe then fails to start
-   with an access violation. build\Test-DownlevelForwarders.ps1 checks for that.
+   The installer script still has entries for Windows versions older than 10: the 14.29
+   runtime (`VCRedistPathLegacy`) and the Universal CRT checked in under
+   hmailserver\installation\Microsoft.UCRT.WindowsSDK14393. Since the installer now requires
+   Windows 10, they are never installed, but the script still needs them to compile. They,
+   and build\Test-DownlevelForwarders.ps1, can be removed together.
 
-   The files come from the Windows 10 SDK version 1607 (10.0.14393), which installs them to
-   Windows Kits\10\Redist\ucrt\DLLs\x64. Download it from
-   https://learn.microsoft.com/en-us/windows/apps/windows-sdk/downloads-archive
+GitHub Actions does all of the above on every push to master and to the branch prefixes listed
+under Branches, then installs the result on a clean runner and runs the regression tests against
+it (`.github/workflows/build.yml` and `tests.yml`).
 
 Running in Debug
 ----------------
 
-If you want to run hMailServer in debug mode in Visual Studio, add the command argument /debug. You find this setting in the Project properties, under Configuration Properties -> Debugging.
+To run the server in debug mode in Visual Studio, add the command argument /debug. You find this
+setting in the Project properties, under Configuration Properties -> Debugging.
 
 Running tests
 -------------
 
-hMailServer source code contains a number of automated tests which excercises the basic functionality. When adding new features or fixing bugs, corresponding tests should be added. hMailServer tests are implemented using NUnit. To run them in Visual Studio, follow these steps:
+The regression tests exercise the server end to end over SMTP, IMAP and POP3, and through its
+COM API. They are NUnit tests in `hmailserver\test\RegressionTests`. Every bug fix and every new
+feature needs a regression test.
 
-NOTE: When running tests, your local hMailServer installation will be updated with test accounts. Existing domains and accounts are deleted. Each tests prepares the server configuration in different ways. In other words, do not run the automated tests in an environment where you need to preserve hMailServer data.
+NOTE: The tests reconfigure the local server: existing domains and accounts are deleted and
+test accounts are created. Do not run them where you need to keep the server's data.
 
-1. Make sure hMailServer.exe is built and can be run. The tests will launch the service.
-2. Open the test solution, `\hmailserver\test\hMailServer Tests.sln`
-3. In Visual Studio, select Test Explorer from the View-menu. 
-4. Locate a test to run under "RegressionTests"
-5. Right-click on a test or test category and select "Run".
+1. Make sure the server is built, registered and running (see above).
+2. Build the test solution with `build\build-tests.ps1`.
+3. Run the tests with the NUnit console runner from the restored packages, for example:
 
-You can also navigate to the source code for a test, right-click anywhere and select "Run Test(s)" to run it.
+   ```
+   hmailserver\test\packages\NUnit.ConsoleRunner.<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll
+   ```
 
-Code signing policy
-===================
+You can also open `hmailserver\test\hMailServer Tests.sln` in Visual Studio and run tests from
+Test Explorer, under "RegressionTests".
 
-Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+Code signing
+============
 
-Only binaries built from this repository are signed. They are built and signed by GitHub Actions, and every signing request is approved by hand.
-
-**Team roles**
-
-   * Committers and reviewers: [Members](https://github.com/orgs/hmailserver/people)
-   * Approvers: [Owners](https://github.com/orgs/hmailserver/people?query=role%3Aowner)
+ArzoieMail builds are not code-signed yet. `build.yml` can sign through
+[SignPath](https://signpath.io) when a manual run asks for it, but the SignPath organization and
+project it names are hMailServer's, so signing an ArzoieMail build needs its own SignPath project
+and the `SIGNPATH_*` settings in the workflow pointed at it.
 
 **Privacy**
 
-hMailServer does not send any information to the hMailServer project or to other third parties. It only connects to other systems as part of what the administrator configures it to do, such as delivering email, looking up DNS records, checking DNS blacklists and fetching email from external accounts.
+ArzoieMail does not send any information to the ArzoieMail or hMailServer projects or to other
+third parties. It only connects to other systems as part of what the administrator configures it
+to do, such as delivering email, looking up DNS records, checking DNS blacklists and fetching
+email from external accounts.
 
-Releasing hMailServer
-=====================
+Releasing ArzoieMail
+====================
 
-Without finding any serious issues:
+Before a release, without finding any serious issues:
 
-1. Run all integration tests on supported versions of Windows and the different supported databases. 
-2. Run all server stress tests
-3. Run the page heap tests to check for memory issues, using the VM test runner: `--test "Windows 10 - Page heap: Regression tests"` and `--test "Windows 10 - Page heap: Volume tests"`
-4. Run for at least 1 week in production for hMailServer.com
-5. Wait for at least 500 downloads of the beta version
+1. Run the regression tests on the supported versions of Windows and with each supported
+   database, using the VM test runner (`hmailserver\test\VMTestRunner.Console`). This includes
+   the environments that upgrade an existing hMailServer installation.
+2. Run the server stress tests.
+3. Run the page heap tests to check for memory issues, using the VM test runner:
+   `--test "Windows 10 - Page heap: Regression tests"`.
+
+Then create the release from the GitHub Actions build of the commit being released: run the
+Release workflow (`.github/workflows/release.yml`) with its build number. It attaches the
+installer and the symbols to a draft GitHub release, which is reviewed, given release notes and
+published by hand.

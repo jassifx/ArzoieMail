@@ -184,7 +184,7 @@ the Windows SDK on the host. Runs with `"enabled": false` are left out of a norm
 execute when named:
 
 ```
-VMTestRunner.Console.exe -i <installer> --test "Windows 10 - Page heap: Volume tests"
+VMTestRunner.Console.exe -i <installer> --test "Windows 10 - Page heap: Regression tests"
 ```
 
 **Every bug fix and every new feature needs a regression test.** Add it to `RegressionTests/`,
