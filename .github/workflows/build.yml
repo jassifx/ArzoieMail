@@ -15,12 +15,10 @@
 # %hMailServerLibs%, keyed on the version the repository pins plus the script that builds it,
 # so a normal run restores them and only compiles hMailServer.
 #
-# About the runner: windows-2025-vs2026 ships Visual Studio 2026 (18.x). It still carries the
-# v142 compiler hMailServer's projects are pinned to, as the "MSVC v142 build tools"
-# component group, but not ATL for v142 - which the ATL-static projects need - and not the
-# Windows 10 SDK the installer takes its Universal CRT from. The workflow installs those two
-# when they are missing (~5 minutes together) and caches what they produce, so a normal run
-# copies the files back in instead.
+# About the runner: windows-2025-vs2026 ships Visual Studio 2026 (18.x), whose default
+# compiler (v145) hMailServer's projects are built with, together with the ATL and the
+# Spectre-mitigated libraries for it that the projects need. Nothing has to be installed into
+# Visual Studio; the workflow only checks that they are there.
 name: Build
 
 on:
@@ -67,15 +65,9 @@ env:
   # Where the library build scripts download and build into. Anywhere outside the working
   # directory will do; the build scripts and hMailServer.vcxproj both read this variable.
   hMailServerLibs: C:\hMailLibs
-  # "C++ v14.29 (16.11) ATL for v142 build tools (x86 & x64)" in the Visual Studio installer.
-  ATL_COMPONENT: Microsoft.VisualStudio.Component.VC.14.29.16.11.ATL
-  # "MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.29-16.11)", which also carries the
-  # 14.29 redistributable. The image installs the v142 compiler; this is the fallback for
-  # when it stops doing so.
-  V142_COMPONENT: Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64
-  # The v142 toolset the projects are pinned to, and so the oldest C++ runtime the installer
-  # may ship. A later one is fine - the 14.x runtimes are backwards compatible.
-  REDIST_MIN_VERSION: '14.29'
+  # The v145 toolset the projects are built with (14.5x), and so the oldest C++ runtime the
+  # installer may ship. A later one is fine - the 14.x runtimes are backwards compatible.
+  REDIST_MIN_VERSION: '14.50'
   # Inno Setup, taken from its GitHub release rather than Chocolatey, which lags behind it.
   # The download is checked against the SHA-256 GitHub publishes for the release asset.
   INNOSETUP_VERSION: 6.7.3
@@ -134,10 +126,10 @@ jobs:
       - name: Create the library folder
         run: New-Item -ItemType Directory -Force -Path $env:hMailServerLibs | Out-Null
 
-      # Locating the toolset is separate from installing into it: the cache key below has to
-      # name the exact 14.29 toolset the ATL payload belongs to, so a servicing bump to the
-      # toolset cannot restore the previous toolset's atlmfc into it.
-      - name: Locate the Visual Studio instance and the v142 toolset
+      # The projects use PlatformToolset v145, the default compiler of Visual Studio 2026,
+      # with ATL linked statically and the Spectre-mitigated runtime libraries. All three come
+      # with the image; this fails early, with the reason, if an image update drops one.
+      - name: Locate Visual Studio and the v145 toolset
         id: vs
         run: |
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -145,140 +137,24 @@ jobs:
           if (-not $instance) { throw "No Visual Studio 2026 with the x64 C++ toolchain was found." }
           "Building with $($instance.displayName) $($instance.installationVersion)"
 
-          # hMailServer's projects are pinned to PlatformToolset v142, so the 14.29 compiler
-          # has to be there. The image ships it as the "MSVC v142 build tools" component
-          # group; nothing here silently falls back to a newer toolset if it is not.
-          $toolset = Get-ChildItem (Join-Path $instance.installationPath 'VC\Tools\MSVC') -Directory -Filter '14.29.*' |
-              Where-Object { Test-Path (Join-Path $_.FullName 'bin\Hostx64\x64\cl.exe') } |
-              Select-Object -First 1
-          if (-not $toolset) {
-              $present = (Get-ChildItem (Join-Path $instance.installationPath 'VC\Tools\MSVC') -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }) -join ', '
-              throw "The v142 (14.29) toolset is not installed in $($instance.installationPath) - the toolsets found there are: $present. Add the Microsoft.VisualStudio.ComponentGroup.VC.Tools.142.x86.x64 component group to the image or the installation."
+          # The version MSBuild selects for the default toolset of this Visual Studio.
+          $defaultFile = Join-Path $instance.installationPath 'VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt'
+          $version = (Get-Content $defaultFile -Raw).Trim()
+          if (-not $version.StartsWith('14.5')) { throw "The default MSVC toolset of $($instance.installationPath) is $version, not a 14.5x (v145) one." }
+          $toolset = Join-Path $instance.installationPath "VC\Tools\MSVC\$version"
+          "v145 toolset: $version"
+
+          $required = [ordered]@{
+              'the x64 compiler'                  = 'bin\Hostx64\x64\cl.exe'
+              'ATL (UseOfAtl=Static)'             = 'atlmfc\lib\x64\atls.lib'
+              'the Spectre-mitigated runtime'     = 'lib\spectre\x64\libcmt.lib'
+              'the Spectre-mitigated ATL'         = 'atlmfc\lib\spectre\x64\atls.lib'
           }
-          "v142 toolset: $($toolset.Name)"
-
-          "install-path=$($instance.installationPath)" >> $env:GITHUB_OUTPUT
-          "product-id=$($instance.productId)" >> $env:GITHUB_OUTPUT
-          "channel-id=$($instance.channelId)" >> $env:GITHUB_OUTPUT
-          "toolset-path=$($toolset.FullName)" >> $env:GITHUB_OUTPUT
-          "toolset-version=$($toolset.Name)" >> $env:GITHUB_OUTPUT
-
-      # ATL for v142 is missing from the image and takes around five minutes to install, so
-      # its payload is cached instead: 8 MB of headers and libraries inside the toolset, with
-      # no installer-registered state behind it, which is why copying the directory back is
-      # equivalent to installing the component. The 14.29 redistributable is handled the same
-      # way, for the run where the image stops carrying it. Both are staged outside Program
-      # Files, so the cache action never writes there. The key names the runner image as well
-      # as the toolset, since what the image is missing is what ends up in the payload.
-      - name: Cache the v142 ATL and redistributable payload
-        id: cache-v142
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ env.hMailServerLibs }}\vs142
-          key: v142-${{ matrix.image }}-${{ steps.vs.outputs.toolset-version }}-${{ env.ATL_COMPONENT }}-${{ env.V142_COMPONENT }}
-
-      # Deliberately not conditioned on the cache: every branch below decides by looking for
-      # the files, so an empty or half-restored cache falls back to a real install instead of
-      # failing later in the build.
-      - name: Make sure the v142 ATL and redistributable are installed
-        env:
-          TOOLSET_PATH: ${{ steps.vs.outputs.toolset-path }}
-          VS_INSTALL_PATH: ${{ steps.vs.outputs.install-path }}
-          VS_PRODUCT_ID: ${{ steps.vs.outputs.product-id }}
-          VS_CHANNEL_ID: ${{ steps.vs.outputs.channel-id }}
-        run: |
-          # robocopy reports success with exit codes below 8, which the shell would otherwise
-          # turn into a failed step.
-          $PSNativeCommandUseErrorActionPreference = $false
-
-          . build\Get-VCRedistPath.ps1
-
-          $atl = Join-Path $env:TOOLSET_PATH 'atlmfc'
-          $staging = Join-Path $env:hMailServerLibs 'vs142'
-          $atlStaging = Join-Path $staging 'atlmfc'
-          $redistStaging = Join-Path $staging 'redist'
-
-          # hMailServer.vcxproj needs ATL because it is UseOfAtl=Static; without it the compile
-          # fails with C1083 on atlbase.h.
-          function Test-Atl {
-              (Test-Path (Join-Path $env:TOOLSET_PATH 'atlmfc\include\atlbase.h')) -and
-              (Test-Path (Join-Path $env:TOOLSET_PATH 'atlmfc\lib\x64\atls.lib'))
-          }
-
-          # The redistributable the installer ships beside hMailServer.exe. Only one matching
-          # the pinned toolset counts here; Get-VCRedistPath itself accepts newer ones too.
-          function Get-Redist {
-              $path = Get-VCRedistPath -MinimumVersion $env:REDIST_MIN_VERSION
-              if ($path -and (Split-Path (Split-Path (Split-Path $path -Parent) -Parent) -Leaf).StartsWith("$env:REDIST_MIN_VERSION.")) { $path } else { $null }
-          }
-
-          function Copy-Tree($source, $target) {
-              robocopy $source $target /e /njh /njs /ndl /nc /ns /np | Out-Null
-              if ($LASTEXITCODE -ge 8) { throw "Copying $source to $target failed with robocopy exit code $LASTEXITCODE." }
-              # The shell exits the step with the last exit code, and robocopy's is not zero.
-              $global:LASTEXITCODE = 0
-          }
-
-          if (-not (Test-Atl) -and (Test-Path (Join-Path $atlStaging 'include\atlbase.h'))) {
-              "Restoring ATL from the cache into $atl"
-              Copy-Tree $atlStaging $atl
-          }
-
-          if (-not (Get-Redist) -and (Test-Path $redistStaging)) {
-              foreach ($version in Get-ChildItem $redistStaging -Directory) {
-                  "Restoring the $($version.Name) redistributable from the cache"
-                  Copy-Tree $version.FullName (Join-Path $env:VS_INSTALL_PATH "VC\Redist\MSVC\$($version.Name)")
+          foreach ($item in $required.GetEnumerator()) {
+              if (-not (Test-Path (Join-Path $toolset $item.Value))) {
+                  throw "$($item.Key) is missing from $toolset ($($item.Value)). The image needs the VC.ATL, VC.Runtimes.x86.x64.Spectre and VC.ATL.Spectre components of Visual Studio 2026."
               }
           }
-
-          $missing = @()
-          if (-not (Test-Atl)) { $missing += $env:ATL_COMPONENT }
-          if (-not (Get-Redist)) { $missing += $env:V142_COMPONENT }
-
-          if ($missing) {
-              "Installing the missing v142 components: $($missing -join ', ')"
-              $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-              $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
-
-              # & with splatting, not Start-Process -ArgumentList: the install path contains a
-              # space, and -ArgumentList would hand the installer "--installPath C:\Program".
-              $installerArgs = @(
-                  'modify',
-                  '--installPath', $env:VS_INSTALL_PATH,
-                  '--productId', $env:VS_PRODUCT_ID,
-                  '--channelId', $env:VS_CHANNEL_ID
-              )
-              foreach ($component in $missing) { $installerArgs += @('--add', $component) }
-              $installerArgs += @('--quiet', '--norestart')
-
-              & $installer @installerArgs
-              "vs_installer exit code: $LASTEXITCODE"
-
-              # vs_installer.exe delegates to background setup processes and returns before they
-              # finish, so wait for them to drain before checking the result.
-              $deadline = (Get-Date).AddMinutes(30)
-              while ((Get-Date) -lt $deadline) {
-                  $running = Get-Process -Name 'vs_installer', 'vs_installershell', 'vs_installerservice', 'setup' -ErrorAction SilentlyContinue
-                  if (-not $running) { break }
-                  Start-Sleep -Seconds 10
-              }
-              $stopwatch.Stop()
-              "Installed in {0:F1} minutes" -f $stopwatch.Elapsed.TotalMinutes
-          } else {
-              "ATL and the $env:REDIST_MIN_VERSION redistributable are already in place - nothing to install."
-          }
-
-          if (-not (Test-Atl)) { throw "Neither the cache nor $env:ATL_COMPONENT produced atlmfc under $env:TOOLSET_PATH." }
-          $redist = Get-Redist
-          if (-not $redist) { throw "Neither the cache nor $env:V142_COMPONENT produced a $env:REDIST_MIN_VERSION redistributable; the newest one found is $(Get-VCRedistPath -MinimumVersion $env:REDIST_MIN_VERSION)." }
-          "v142 redistributable: $redist"
-
-          # Stage whatever this run had to install, so the cache saved at the end of the job
-          # carries it and the next run copies it in instead.
-          if (-not (Test-Path (Join-Path $atlStaging 'include\atlbase.h'))) { Copy-Tree $atl $atlStaging }
-          $redistVersion = Split-Path (Split-Path $redist -Parent) -Parent
-          $redistTarget = Join-Path $redistStaging (Split-Path $redistVersion -Leaf)
-          if (-not (Test-Path $redistTarget)) { Copy-Tree $redistVersion $redistTarget }
 
       - name: Read the pinned library versions
         id: versions
@@ -359,7 +235,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.hMailServerLibs }}\${{ steps.versions.outputs.boost_dir }}
-          key: boost-${{ steps.versions.outputs.boost }}-msvc14.2-${{ matrix.image }}-${{ hashFiles('libraries/build-boost.ps1', 'libraries/build-common.ps1') }}
+          key: boost-${{ steps.versions.outputs.boost }}-msvc14.5-${{ matrix.image }}-${{ hashFiles('libraries/build-boost.ps1', 'libraries/build-common.ps1') }}
 
       - name: Restore PostgreSQL (libpq)
         id: cache-pgsql
@@ -428,7 +304,7 @@ jobs:
           $root = Join-Path $env:hMailServerLibs $env:LIB_DIR
           Get-ChildItem $root -Force | Where-Object { $_.Name -notin @('boost', 'stage') } | Remove-Item -Recurse -Force
           if (-not (Test-Path (Join-Path $root 'boost\version.hpp'))) { throw "Pruning removed the Boost headers." }
-          if (-not (Get-ChildItem (Join-Path $root 'stage\lib') -Filter '*vc142*.lib')) { throw "No vc142-tagged libraries in stage\lib - Boost was built with the wrong toolset." }
+          if (-not (Get-ChildItem (Join-Path $root 'stage\lib') -Filter '*vc145*.lib')) { throw "No vc145-tagged libraries in stage\lib - Boost was built with the wrong toolset." }
 
       - name: Save Boost
         if: success() && steps.cache-boost.outputs.cache-hit != 'true'
@@ -636,7 +512,7 @@ jobs:
           )
 
           # Named one by one rather than globbed: these folders also hold PDBs for things the
-          # installer does not ship - openssl.exe, and the vc142.pdb the compiler leaves behind.
+          # installer does not ship - openssl.exe, and the vc145.pdb the compiler leaves behind.
           $libraryPdbs = @(
               "$env:OPENSSL_DIR\out64\bin\libcrypto-3-x64.pdb",
               "$env:OPENSSL_DIR\out64\bin\libssl-3-x64.pdb",

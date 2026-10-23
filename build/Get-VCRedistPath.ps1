@@ -17,7 +17,7 @@ function Get-VCRedistPath {
     #             is to use the latest available runtime, and every 14.x runtime runs on the
     #             Windows 10 and later the installer requires.
     param(
-        [string]$MinimumVersion = '14.29',
+        [string]$MinimumVersion = '14.50',
         [switch]$Newest
     )
 

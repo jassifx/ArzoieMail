@@ -35,7 +35,8 @@ Environment set up
 
 **Required software**
 
-   * Visual Studio 2026 Community edition with the v142 (VS2019) build tools
+   * Visual Studio 2026 Community edition with the C++ desktop workload, ATL and the
+     Spectre-mitigated libraries (see below)
    * Inno Setup 6.7.3 (https://github.com/jrsoftware/issrc/releases/tag/is-6_7_3)
    * Perl 5 (https://strawberryperl.com/) - required by the OpenSSL and PostgreSQL library builds
    * Python 3 (https://www.python.org/downloads/) - required by the PostgreSQL library build
@@ -53,8 +54,9 @@ production version.
 Installing Visual Studio
 ------------------------
 
-ArzoieMail's C++ projects are built with the v142 platform toolset. Visual Studio 2026
-provides it as an optional component, so it has to be selected during installation.
+ArzoieMail's C++ projects are built as C++20 with the v145 platform toolset, the default
+compiler of Visual Studio 2026. They link ATL statically and are compiled with Spectre
+mitigations, so ATL and the Spectre-mitigated libraries have to be selected during installation.
 
 **Visual Studio 2026**
 
@@ -63,11 +65,11 @@ provides it as an optional component, so it has to be selected during installati
   * .NET desktop development
   * Desktop development with C++
 3. Select the following _Individual components_
-  * MSVC v142 - VS 2019 C++ x64/x86 build tools
-  * C++ v14.29 (16.11) ATL for v142 build tools (x86 & x64)
+  * C++ ATL for latest v145 build tools (x86 & x64)
+  * MSVC v145 - C++ x64/x86 Spectre-mitigated libs (Latest)
+  * C++ ATL for latest v145 build tools with Spectre Mitigations (x86 & x64)
 
-The build scripts locate the installed Visual Studio automatically and select the v142
-compiler out of it.
+The build scripts locate the installed Visual Studio automatically.
 
 3rd party libraries
 -------------------
@@ -166,9 +168,9 @@ bootstraps `b2`, and builds the static, multithreaded x64 libraries into `stage\
 
 Prerequisites:
 - The environment variable hMailServerLibs (see above).
-- Visual Studio 2026 with the "MSVC v142 build tools" component (the
-  script locates vcvars64.bat automatically and drives `b2` with the msvc-14.2 toolset, which is
-  the toolset ArzoieMail itself is built with).
+- Visual Studio 2026 with the x64 C++ build tools (the script locates vcvars64.bat
+  automatically and drives `b2` with the msvc-14.5 toolset, which is the toolset ArzoieMail
+  itself is built with).
 
 Run, from the repository root:
 
@@ -176,7 +178,7 @@ Run, from the repository root:
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\build-boost.ps1 -Version 1.92.0
    </pre>
 
-Pass `-Toolset &lt;name&gt;` to override the default `msvc-14.2`, or `-Jobs &lt;n&gt;` to change the
+Pass `-Toolset &lt;name&gt;` to override the default `msvc-14.5`, or `-Jobs &lt;n&gt;` to change the
 number of parallel compilations (defaults to the number of logical processors). Only Boost 1.x is
 supported.
 
