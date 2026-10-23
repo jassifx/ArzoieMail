@@ -32,7 +32,7 @@ namespace HM
 
    private:
 
-      void WorkQueue::RemoveRunningTask_(std::shared_ptr<Task> task);
+      void RemoveRunningTask_(std::shared_ptr<Task> task);
 
       void IoServiceRunWorker();
       void ExecuteTask(std::shared_ptr<Task> pTask);

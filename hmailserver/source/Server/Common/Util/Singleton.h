@@ -8,7 +8,7 @@ class Singleton
 {
 public:
 
-   virtual ~Singleton<T>()
+   virtual ~Singleton()
    {
 
    }
