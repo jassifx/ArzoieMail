@@ -71,11 +71,9 @@
 //
 // BOOST INCLUDES
 //
-#define BOOST_USE_WINAPI_VERSION 0x0600
+// Boost.WinAPI takes its target version from _WIN32_WINNT above (Windows 10). Boost.Atomic
+// needs at least Windows 8, for WaitOnAddress.
 #include <boost/winapi/config.hpp>
-#define HM_DIAG_STR2(x) #x
-#define HM_DIAG_STR(x) HM_DIAG_STR2(x)
-#pragma message("HM-DIAG stdafx: _WIN32_WINNT=" HM_DIAG_STR(_WIN32_WINNT) " BOOST_USE_WINAPI_VERSION=" HM_DIAG_STR(BOOST_USE_WINAPI_VERSION) " PARTITION_APP=" HM_DIAG_STR(BOOST_WINAPI_PARTITION_APP) " PARTITION_SYSTEM=" HM_DIAG_STR(BOOST_WINAPI_PARTITION_SYSTEM) " UWP=" HM_DIAG_STR(BOOST_PLAT_WINDOWS_UWP) " DESKTOP=" HM_DIAG_STR(BOOST_PLAT_WINDOWS_DESKTOP) " WINAPI_FAMILY=" HM_DIAG_STR(WINAPI_FAMILY))
 #include <boost/bind/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>

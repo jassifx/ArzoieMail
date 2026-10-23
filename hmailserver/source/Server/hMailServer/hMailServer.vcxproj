@@ -76,7 +76,7 @@ EXIT 0
       <ConformanceMode>true</ConformanceMode>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(hMailServerLibs)\boost_1_92_0;..\..\..\..\Libraries\mssqlce4.0;$(hMailServerLibs)\openssl-3.5.9\out64\include;$(hMailServerLibs)\postgresql-18.6\src\interfaces\libpq;$(BOOST_INCLUDE_PATH);$(OPENSSL_INCLUDE_PATH);$(ProjectDir);$(hMailServerLibs)\postgresql-18.6\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WINVER=0x0A00;_WIN32_WINNT=0x0A00;BOOST_USE_WINAPI_VERSION=0x0A00;_DEBUG;UNICODE;_UNICODE;BOOST_DATE_TIME_NO_LIB;_SCL_SECURE_NO_WARNINGS;OPENSSL_API_COMPAT=30500;OPENSSL_NO_DEPRECATED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;UNICODE;_UNICODE;BOOST_DATE_TIME_NO_LIB;_SCL_SECURE_NO_WARNINGS;OPENSSL_API_COMPAT=30500;OPENSSL_NO_DEPRECATED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -132,7 +132,7 @@ EXIT 0
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(hMailServerLibs)\boost_1_92_0;..\..\..\..\Libraries\mssqlce4.0;$(hMailServerLibs)\openssl-3.5.9\out64\include;$(hMailServerLibs)\postgresql-18.6\src\interfaces\libpq;$(BOOST_INCLUDE_PATH);$(OPENSSL_INCLUDE_PATH);$(ProjectDir);$(hMailServerLibs)\postgresql-18.6\src\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;WINVER=0x0A00;_WIN32_WINNT=0x0A00;BOOST_USE_WINAPI_VERSION=0x0A00;UNICODE;_UNICODE;NDEBUG;BOOST_DATE_TIME_NO_LIB;_SCL_SECURE_NO_WARNINGS;OPENSSL_API_COMPAT=30500;OPENSSL_NO_DEPRECATED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;UNICODE;_UNICODE;NDEBUG;BOOST_DATE_TIME_NO_LIB;_SCL_SECURE_NO_WARNINGS;OPENSSL_API_COMPAT=30500;OPENSSL_NO_DEPRECATED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
