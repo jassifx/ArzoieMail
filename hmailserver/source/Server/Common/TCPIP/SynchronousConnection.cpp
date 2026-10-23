@@ -8,8 +8,6 @@
 #include <Boost/optional.hpp>
 #include <Boost/system/error_code.hpp>
 
-using namespace boost::system;
-
 #ifdef _DEBUG
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW
@@ -82,7 +80,7 @@ namespace HM
    {
       try
       {
-         boost::optional<error_code> timer_result; 
+         boost::optional<boost::system::error_code> timer_result; 
 
          // Create the timeout timer.
          boost::asio::steady_timer timer(io_context_);
@@ -91,7 +89,7 @@ namespace HM
 
          // Start an asynchronous write.
          boost::asio::streambuf readBuffer;
-         boost::optional<error_code> write_result; 
+         boost::optional<boost::system::error_code> write_result; 
          async_write(socket_, boost::asio::buffer(buf, bufSize), std::bind(set_result, &write_result, std::placeholders::_1));
          io_context_.restart();
 
@@ -121,7 +119,7 @@ namespace HM
 
       try
       {
-         boost::optional<error_code> timer_result; 
+         boost::optional<boost::system::error_code> timer_result; 
          
          // Create the timeout timer.
          boost::asio::steady_timer timer(io_context_);
@@ -130,7 +128,7 @@ namespace HM
 
          // Start an asynchronous read.
          boost::asio::streambuf readBuffer;
-         boost::optional<error_code> read_result; 
+         boost::optional<boost::system::error_code> read_result; 
          async_read_until(socket_, readBuffer, delimiter, std::bind(set_result, &read_result, std::placeholders::_1));
          io_context_.restart();
 

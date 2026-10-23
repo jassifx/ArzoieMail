@@ -1174,7 +1174,7 @@ HM::String _tagXMLNode::GetXML( LPDISP_OPT opt /*= &optDefault*/ )
 //========================================================
 HM::String _tagXMLNode::GetText( LPDISP_OPT opt /*= &optDefault*/ )
 {
-	std::ostringstream os;
+	std::basic_ostringstream<TCHAR> os;
 
 	if( type == XNODE_DOC )
 	{
