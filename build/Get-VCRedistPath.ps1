@@ -11,18 +11,11 @@ function Get-VCRedistPath {
     # runs v142 binaries - and only going backwards is unsupported, which is what
     # MinimumVersion guards against.
     #
-    # The installer ships two of them, because the redistributable version is also an
-    # operating system floor. Microsoft's advice is to use the latest available runtime, and
-    # the latest one supports Windows 10 and later only: its msvcp140.dll and concrt140.dll
-    # statically import CopyFile2, CreateFile2 and GetLogicalProcessorInformationEx, which do
-    # not exist on Windows Vista, and neither DLL delay-loads them. So:
-    #
-    #   default   the redistributable matching the pinned toolset, which is the newest one
-    #             that still runs on every Windows version the installer allows. Also the
-    #             build that a developer machine carrying several Visual Studios reproduces.
-    #   -Newest   the newest installed, shipped to Windows 10 and later.
-    #
-    # section_files_64.iss picks between them by OS version at install time.
+    #   default   the redistributable matching the pinned toolset, which is what a developer
+    #             machine carrying several Visual Studios reproduces.
+    #   -Newest   the newest installed. This is what the installer ships: Microsoft's advice
+    #             is to use the latest available runtime, and every 14.x runtime runs on the
+    #             Windows 10 and later the installer requires.
     param(
         [string]$MinimumVersion = '14.29',
         [switch]$Newest
