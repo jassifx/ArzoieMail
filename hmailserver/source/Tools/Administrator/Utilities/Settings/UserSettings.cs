@@ -101,6 +101,13 @@ namespace hMailServer.Administrator.Utilities.Settings
                 XmlSerializer xmlSerializer = new XmlSerializer(typeof(UserSettings));
                 UserSettings retVal = (UserSettings)xmlSerializer.Deserialize(reader);
 
+                // Closed before the file is written again below.
+                reader.Close();
+                reader = null;
+
+                if (ProtectPasswordsSavedTheOldWay(retVal))
+                    Save(retVal);
+
                 return retVal;
             }
             catch (Exception)
@@ -112,6 +119,31 @@ namespace hMailServer.Administrator.Utilities.Settings
                 if (reader != null)
                     reader.Close();
             }
+        }
+
+        // Protects again, for the current Windows user, the passwords an earlier version saved
+        // under the key in the source code. True when one was, and the settings need saving.
+        private static bool ProtectPasswordsSavedTheOldWay(UserSettings settings)
+        {
+            bool changed = false;
+
+            foreach (Server server in settings.ServerConnections.List)
+            {
+                if (!Encryption.IsSavedTheOldWay(server.encryptedPassword))
+                    continue;
+
+                try
+                {
+                    server.encryptedPassword = Encryption.Encrypt(Encryption.Decrypt(server.encryptedPassword));
+                    changed = true;
+                }
+                catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException || ex is FormatException)
+                {
+                    // Unreadable: left as it is, and the password is asked for when connecting.
+                }
+            }
+
+            return changed;
         }
 
         private static UserSettings CreateDefault()
