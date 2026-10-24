@@ -65,6 +65,12 @@ namespace HM
       // Verifies the password against a PHC string, using the parameters recorded
       // in that string.
 
+      static void SpendVerificationTime(const AnsiString &password);
+      // Verifies the password against a hash of no account, made with the configured
+      // algorithm and cost, and ignores the result. For a logon to an account that does not
+      // exist or is not active: it then takes as long as one with a wrong password, so the
+      // time a failed logon takes does not tell which accounts exist.
+
       static bool NeedsRehash(const AnsiString &stored);
       // True if the stored hash was created using another algorithm, another cost or
       // a shorter salt than what is configured right now. A cost that differs in
