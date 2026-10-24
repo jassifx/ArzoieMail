@@ -5,6 +5,7 @@
 #include "stdafx.h"
 
 #include "Application.h"
+#include "../Persistence/SecretMigration.h"
 
 #include "BackupManager.h"
 #include "Scheduler.h"
@@ -135,6 +136,10 @@ namespace HM
       {
          return false;
       }
+
+      // Before the configuration is loaded, so that every secret it reads is protected under
+      // the installation's key rather than Blowfish-encrypted with the key in the source code.
+      SecretMigration::Run();
 
       LOG_DEBUG("Application::InitInstance - Loading configuration...");
       if (!Configuration::Instance()->Load())

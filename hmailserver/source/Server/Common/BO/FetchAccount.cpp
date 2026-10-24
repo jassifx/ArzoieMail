@@ -61,7 +61,7 @@ namespace HM
       pNode->AppendAttr(_T("ServerType"), StringParser::IntToString(server_type_));
       pNode->AppendAttr(_T("Port"), StringParser::IntToString(port_));
       pNode->AppendAttr(_T("Username"), username_);
-      pNode->AppendAttr(_T("Password"), Crypt::Instance()->EnCrypt(password_, Crypt::ETBlowFish));
+      pNode->AppendAttr(_T("Password"), Crypt::Instance()->EnCrypt(password_, Crypt::ETSecret));
       pNode->AppendAttr(_T("Minutes"), StringParser::IntToString(minutes_));
       pNode->AppendAttr(_T("DaysToKeep"), StringParser::IntToString(days_to_keep_));
       pNode->AppendAttr(_T("Active"), is_active_ ? _T("1") : _T("0"));
@@ -87,7 +87,7 @@ namespace HM
       server_type_ = (ServerType)_ttoi(pNode->GetAttrValue(_T("ServerType")));
       port_ =  _ttoi(pNode->GetAttrValue(_T("Port")));
       username_ = pNode->GetAttrValue(_T("Username"));
-      password_ = Crypt::Instance()->DeCrypt(pNode->GetAttrValue(_T("Password")), Crypt::ETBlowFish);
+      password_ = Crypt::Instance()->DeCrypt(pNode->GetAttrValue(_T("Password")), Crypt::ETSecret);
       minutes_ = _ttoi(pNode->GetAttrValue(_T("Minutes")));
       days_to_keep_ = _ttoi(pNode->GetAttrValue(_T("DaysToKeep")));
       is_active_ = (pNode->GetAttrValue(_T("Active")) == _T("1"));

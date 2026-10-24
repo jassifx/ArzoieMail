@@ -73,6 +73,9 @@ namespace RegressionTests.Shared
 
       public string MessageData { get; private set; } = "";
 
+      // The password of the last AUTH LOGIN, decoded. Null until a client has sent one.
+      public string AuthPassword { get; private set; }
+
       // Text sent after the code in RCPT TO replies. When null, the address is echoed.
       public string RecipientReplyText { get; set; }
 
@@ -269,6 +272,15 @@ namespace RegressionTests.Shared
 
          if (_expectingPassword)
          {
+            try
+            {
+               AuthPassword = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(command.Trim()));
+            }
+            catch (FormatException)
+            {
+               AuthPassword = "";
+            }
+
             if (SimulatedError == SimulatedErrorType.ForceAuthenticationFailure)
                Send("535 Authentication failed. Restarting authentication process.\r\n");
             else

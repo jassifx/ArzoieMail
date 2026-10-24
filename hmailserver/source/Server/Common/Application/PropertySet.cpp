@@ -45,10 +45,10 @@ namespace HM
          String sPropertyString = pRS->GetStringValue("settingstring");
 
          bool bIsCrypted = false;
-         if (IsCryptedProperty_(sPropertyName))
+         if (IsCryptedProperty(sPropertyName))
          {
             // De-crypt the string after load from DB.
-            sPropertyString = Crypt::Instance()->DeCrypt(sPropertyString, Crypt::ETBlowFish);
+            sPropertyString = Crypt::Instance()->DeCrypt(sPropertyString, Crypt::ETSecret);
             bIsCrypted = true;
          }
       
@@ -146,9 +146,9 @@ namespace HM
    String
    PropertySet::InitializeStringIfEmpty(const String &sPropertyName, const String &sValue)
    {
-      bool bIsCrypted = IsCryptedProperty_(sPropertyName);
+      bool bIsCrypted = IsCryptedProperty(sPropertyName);
 
-      String sStoredValue = bIsCrypted ? Crypt::Instance()->EnCrypt(sValue, Crypt::ETBlowFish) : sValue;
+      String sStoredValue = bIsCrypted ? Crypt::Instance()->EnCrypt(sValue, Crypt::ETSecret) : sValue;
 
       // A single guarded statement, so that two servers sharing a database and starting at
       // the same time cannot both believe they have set the value: whichever of them gets
@@ -176,7 +176,7 @@ namespace HM
       String sResult = pRS->GetStringValue("settingstring");
 
       if (bIsCrypted)
-         sResult = Crypt::Instance()->DeCrypt(sResult, Crypt::ETBlowFish);
+         sResult = Crypt::Instance()->DeCrypt(sResult, Crypt::ETSecret);
 
       // Only this one property is brought up to date. A full Refresh() would re-fire the
       // change handler of every property, and this runs in the middle of the configuration
@@ -194,7 +194,7 @@ namespace HM
    }
 
    bool 
-   PropertySet::IsCryptedProperty_(const String &sPropertyName)
+   PropertySet::IsCryptedProperty(const String &sPropertyName)
    {
       if (sPropertyName == PROPERTY_SMTPRELAYER_PASSWORD)
          return true;
