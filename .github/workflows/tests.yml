@@ -31,7 +31,8 @@ on:
         default: Debug
       database:
         description: 'Database the installed server runs on: internal (SQL Server Compact, what
-          a silent install sets up) or postgresql (the PostgreSQL server of the runner image).
+          a silent install sets up), postgresql (the PostgreSQL server of the runner image) or
+          mysql (the MySQL server of the runner image, on a data directory of its own).
           The MySQL and PostgreSQL connections write their command parameters into the SQL
           themselves rather than binding them, so they need runs of their own.'
         required: false
@@ -70,7 +71,7 @@ jobs:
         run: |
           # A workflow_call input is whatever the caller passes; an unknown database would
           # otherwise quietly run the tests on the internal one.
-          if ($env:DATABASE -notin @('internal', 'postgresql')) { throw "The database must be internal or postgresql, was '$env:DATABASE'." }
+          if ($env:DATABASE -notin @('internal', 'postgresql', 'mysql')) { throw "The database must be internal, postgresql or mysql, was '$env:DATABASE'." }
 
           $setup = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'installer\*.exe') | Select-Object -First 1
           if (-not $setup) { throw "The '$env:INSTALLER_ARTIFACT' artifact contains no executable." }
@@ -131,6 +132,48 @@ jobs:
           $database = $application.Database
           if ($database.DatabaseType -ne $hDBTypePostgreSQL) { throw "The server runs on database type $($database.DatabaseType), not PostgreSQL." }
           "hMailServer now runs on PostgreSQL ($($database.ServerName), database $($database.DatabaseName), version $($database.CurrentVersion))"
+
+      - name: Move the server to MySQL
+        if: inputs.database == 'mysql'
+        run: |
+          # The runner image carries a MySQL server, but no data directory to run it on. A new
+          # one, initialised without a root password, is what a run needs - whatever service or
+          # password the image may come with.
+          $mysqld = Get-ChildItem 'C:\Program Files\MySQL' -Recurse -Filter 'mysqld.exe' -ErrorAction SilentlyContinue |
+              Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $mysqld) { throw "The runner image has no MySQL server." }
+          & $mysqld.FullName --version
+
+          $dataDirectory = Join-Path $env:RUNNER_TEMP 'mysql-data'
+          & $mysqld.FullName --initialize-insecure "--datadir=$dataDirectory" --console
+          if ($LASTEXITCODE -ne 0) { throw "mysqld --initialize-insecure failed with exit code $LASTEXITCODE" }
+
+          # Its own port, clear of any instance the image starts. The default authentication,
+          # caching_sha2_password, is left as it is: libmariadb carries the plugin.
+          $port = 3307
+          Start-Process -FilePath $mysqld.FullName -ArgumentList "--datadir=$dataDirectory", "--port=$port", '--console' `
+              -RedirectStandardOutput (Join-Path $env:RUNNER_TEMP 'mysqld.out') -RedirectStandardError (Join-Path $env:RUNNER_TEMP 'mysqld.err')
+
+          $deadline = (Get-Date).AddMinutes(2)
+          while (-not (Test-NetConnection -ComputerName 127.0.0.1 -Port $port -InformationLevel Quiet -WarningAction SilentlyContinue)) {
+              if ((Get-Date) -gt $deadline) { Get-Content (Join-Path $env:RUNNER_TEMP 'mysqld.err'); throw "MySQL did not start listening on port $port." }
+              Start-Sleep -Seconds 2
+          }
+          "MySQL listens on port $port"
+
+          # What DBSetup does: create the database and its tables, point hMailServer.ini at
+          # it, and have the server reconnect.
+          $application = New-Object -ComObject 'hMailServer.Application'
+          if (-not $application.Authenticate('Administrator', '')) { throw "Could not authenticate with the blank administrator password." }
+
+          $hDBTypeMySQL = 1
+          $application.Database.CreateExternalDatabase($hDBTypeMySQL, '127.0.0.1', $port, 'hmailserver', 'root', '')
+          $application.Database.SetDefaultDatabase($hDBTypeMySQL, '127.0.0.1', $port, 'hmailserver', 'root', '')
+          $application.Reinitialize()
+
+          $database = $application.Database
+          if ($database.DatabaseType -ne $hDBTypeMySQL) { throw "The server runs on database type $($database.DatabaseType), not MySQL." }
+          "hMailServer now runs on MySQL ($($database.ServerName), database $($database.DatabaseName), version $($database.CurrentVersion))"
 
       - name: Build the test solution
         env:
