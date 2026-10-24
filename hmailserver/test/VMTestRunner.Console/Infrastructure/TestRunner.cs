@@ -82,7 +82,9 @@ namespace VMTestRunner.Console
          string softwareUnderTestFullPath = _softwareUnderTest;
          string softwareUnderTestName = Path.GetFileName(softwareUnderTestFullPath);
 
-         string softwareUnderTestSilentParmas = $"/SILENT /LOG=\"{SetupLogPath}\"";
+         // /SUPPRESSMSGBOXES, or a setup that fails stops at its error message, which nobody
+         // sees in the guest, and the run waits for it forever instead of failing with the log.
+         string softwareUnderTestSilentParmas = $"/SILENT /SUPPRESSMSGBOXES /LOG=\"{SetupLogPath}\"";
 
          string sslFolder = Path.Combine(TestSettings.GetTestFolder(), "SSL examples");
 
