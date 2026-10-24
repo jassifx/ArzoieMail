@@ -265,20 +265,17 @@ namespace HM
          if (iInsertID != nullptr)
          {
             _RecordsetPtr pIdentityRS;
-            BSTR bsIdentity;
 
             pIdentityRS.CreateInstance(__uuidof(Recordset));
-            pIdentityRS->PutRefActiveConnection(cSQLCEConnection); 
-            String sIdentitySQL = "SELECT @@IDENTITY AS IDENT";
-            bsIdentity = sIdentitySQL.AllocSysString();
+            pIdentityRS->PutRefActiveConnection(cSQLCEConnection);
 
-            HRESULT hr = pIdentityRS->Open( bsIdentity, vtMissing, adOpenForwardOnly, adLockUnspecified, -1);
-                        
+            // A _bstr_t, so the query string is freed even when Open throws.
+            _bstr_t identitySQL(_T("SELECT @@IDENTITY AS IDENT"));
+            pIdentityRS->Open(identitySQL, vtMissing, adOpenForwardOnly, adLockUnspecified, -1);
+
             *iInsertID = GetIdentityFromRS_(pIdentityRS);
             pIdentityRS->Close();
-            pIdentityRS->PutRefActiveConnection(NULL); 
-
-            ::SysFreeString( bsIdentity );
+            pIdentityRS->PutRefActiveConnection(NULL);
          }
       }
       catch ( _com_error &err )
