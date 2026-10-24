@@ -144,8 +144,16 @@ jobs:
           if (-not $mysqld) { throw "The runner image has no MySQL server." }
           & $mysqld.FullName --version
 
+          # --no-defaults, first on the command line as mysqld requires: the server must run
+          # with its compiled-in defaults, not with whatever option file the image put in one
+          # of the places mysqld reads by default. Those files are listed for the record.
+          $baseDirectory = Split-Path (Split-Path $mysqld.FullName)
+          foreach ($optionFile in "$env:WINDIR\my.ini", "$env:WINDIR\my.cnf", 'C:\my.ini', 'C:\my.cnf', "$baseDirectory\my.ini", "$baseDirectory\my.cnf") {
+              if (Test-Path $optionFile) { "Option file $optionFile (not used):"; Get-Content $optionFile }
+          }
+
           $dataDirectory = Join-Path $env:RUNNER_TEMP 'mysql-data'
-          & $mysqld.FullName --initialize-insecure "--datadir=$dataDirectory" --console
+          & $mysqld.FullName --no-defaults --initialize-insecure "--datadir=$dataDirectory" --console
           if ($LASTEXITCODE -ne 0) { throw "mysqld --initialize-insecure failed with exit code $LASTEXITCODE" }
 
           # Its own port, clear of any instance the image starts. The default authentication,
@@ -153,13 +161,11 @@ jobs:
           #
           # Without the binary log, and with the redo log flushed once a second rather than at
           # every commit: the server writes with autocommit, so by default each write waits for
-          # two disk flushes. On the runner that made every test take about 76 seconds, and the
-          # suite ran into the job's timeout with every test failing in its setup. On the test
-          # VM a setting write took 200 ms by default and 4.5 ms like this, and API.UtilitiesTests
-          # went from 267 seconds to 26 (17 on the internal database). Durability is no concern
-          # for a database that is thrown away with the runner.
+          # two disk flushes. On the test VM a setting write took 200 ms by default and 4.5 ms
+          # like this, and API.UtilitiesTests went from 267 seconds to 26 (17 on the internal
+          # database). Durability is no concern for a database thrown away with the runner.
           $port = 3307
-          Start-Process -FilePath $mysqld.FullName -ArgumentList "--datadir=$dataDirectory", "--port=$port", '--console', '--skip-log-bin', '--innodb-flush-log-at-trx-commit=2' `
+          Start-Process -FilePath $mysqld.FullName -ArgumentList '--no-defaults', "--datadir=$dataDirectory", "--port=$port", '--console', '--skip-log-bin', '--innodb-flush-log-at-trx-commit=2' `
               -RedirectStandardOutput (Join-Path $env:RUNNER_TEMP 'mysqld.out') -RedirectStandardError (Join-Path $env:RUNNER_TEMP 'mysqld.err')
 
           $deadline = (Get-Date).AddMinutes(2)
@@ -168,6 +174,11 @@ jobs:
               Start-Sleep -Seconds 2
           }
           "MySQL listens on port $port"
+
+          # The settings that decide how the server's writes behave, for the record.
+          $mysql = Join-Path (Split-Path $mysqld.FullName) 'mysql.exe'
+          & $mysql --no-defaults --host=127.0.0.1 "--port=$port" --user=root --table `
+              -e 'SELECT @@version, @@autocommit, @@transaction_isolation, @@innodb_lock_wait_timeout, @@sql_mode, @@lower_case_table_names, @@character_set_server'
 
           # What DBSetup does: create the database and its tables, point hMailServer.ini at
           # it, and have the server reconnect.

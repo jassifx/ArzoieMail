@@ -57,9 +57,15 @@ namespace RegressionTests.Shared
             Console.WriteLine();
          }
 
-         // Deleted, so an error fails only the test that caused it.
+         // Deleted, so an error fails only the test that caused it. Printed too, for the same
+         // reason as the failure above: a failure in TearDown is only reported at the end.
          if (File.Exists(LogHandler.GetErrorLogFileName()))
-            Assert.Fail("Errors were logged during the test:" + Environment.NewLine + LogHandler.ReadAndDeleteErrorLog());
+         {
+            var errors = LogHandler.ReadAndDeleteErrorLog();
+            Console.WriteLine("Errors were logged during the test:");
+            Console.WriteLine(errors);
+            Assert.Fail("Errors were logged during the test:" + Environment.NewLine + errors);
+         }
       }
    }
 }
