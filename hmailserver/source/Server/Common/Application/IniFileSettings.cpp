@@ -23,7 +23,7 @@ namespace HM
   
    IniFileSettings::IniFileSettings() :
       is_internal_database_(false),
-      password_is_blowfish_(false),
+      password_encryption_(Crypt::ETNone),
       dbport_(0),
       no_of_dbconnections_(0),
       add_xauth_user_header_(false),
@@ -102,7 +102,8 @@ namespace HM
 
       // Decrypt password read from hmailserver.ini. Earlier versions Blowfish-encrypted it;
       // SecretMigration protects it again once the server has connected.
-      password_is_blowfish_ = iPWDEncryptionType == Crypt::ETBlowFish && !password_.IsEmpty();
+      password_stored_ = password_;
+      password_encryption_ = iPWDEncryptionType;
       password_ = Crypt::Instance()->DeCrypt(password_, iPWDEncryptionType);
 
       if (sDatabaseType.CompareNoCase(_T("MSSQL")) == 0)
@@ -526,7 +527,20 @@ namespace HM
       String stored = Crypt::Instance()->EnCrypt(password_, Crypt::ETSecret);
       WriteIniSetting_("Database", "Password", stored);
       WriteIniSetting_("Database", "PasswordEncryption", Crypt::ETSecret);
-      password_is_blowfish_ = SecretProtector::IsBlowfishValue(stored);
+      password_stored_ = stored;
+      password_encryption_ = Crypt::ETSecret;
+   }
+
+   bool
+   IniFileSettings::GetPasswordNeedsProtecting() const
+   {
+      // A password that could not be read - under another installation's key - cannot be
+      // protected again, and is left as it is.
+      if (password_.IsEmpty())
+         return false;
+
+      return password_encryption_ != Crypt::ETSecret ||
+             !SecretProtector::Instance()->IsProtectedWithCurrentKey(password_stored_);
    }
 
    String

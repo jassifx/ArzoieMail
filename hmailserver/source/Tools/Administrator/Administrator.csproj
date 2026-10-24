@@ -216,6 +216,9 @@
     <Compile Include="Main panes\ucPasswordHashing.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="Main panes\ucSecretKey.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Main panes\ucPasswordHashing.Designer.cs">
       <DependentUpon>ucPasswordHashing.cs</DependentUpon>
     </Compile>
@@ -548,6 +551,7 @@
     <Compile Include="Nodes\NodeMirror.cs" />
     <Compile Include="Nodes\NodeMXQuery.cs" />
     <Compile Include="Nodes\NodePasswordHashing.cs" />
+    <Compile Include="Nodes\NodeSecretKey.cs" />
     <Compile Include="Nodes\NodePerformance.cs" />
     <Compile Include="Nodes\NodeProtocolIMAP.cs" />
     <Compile Include="Nodes\NodeProtocolPOP3.cs" />

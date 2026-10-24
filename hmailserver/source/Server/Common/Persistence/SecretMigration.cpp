@@ -48,12 +48,12 @@ namespace HM
       int migrated = 0;
       int failed = 0;
 
-      if (IniFileSettings::Instance()->GetPasswordIsBlowfishEncrypted())
+      if (IniFileSettings::Instance()->GetPasswordNeedsProtecting())
       {
          // Written back the way SetPassword writes it now.
          IniFileSettings::Instance()->SetPassword(IniFileSettings::Instance()->GetPassword());
 
-         if (IniFileSettings::Instance()->GetPasswordIsBlowfishEncrypted())
+         if (IniFileSettings::Instance()->GetPasswordNeedsProtecting())
             failed++;
          else
             migrated++;
@@ -100,9 +100,13 @@ namespace HM
 
          bool include = nameColumn.IsEmpty() || PropertySet::IsCryptedProperty(recordset->GetStringValue(AnsiString(nameColumn)));
 
-         // Only what an earlier version wrote. A value protected under another installation's
-         // key is not this one's to change; reading it reports that.
-         if (include && SecretProtector::IsBlowfishValue(stored))
+         // What an earlier version wrote, and what was protected under a key an import has
+         // replaced. A value under another installation's key is not this one's to change;
+         // reading it reports that.
+         bool needed = include && !stored.IsEmpty() && !protector->IsProtectedWithCurrentKey(stored) &&
+                       (SecretProtector::IsBlowfishValue(stored) || protector->IsProtectedWithPreviousKey(stored));
+
+         if (needed)
             pending.push_back({ recordset->GetInt64Value(AnsiString(idColumn)), stored });
 
          recordset->MoveNext();
@@ -112,7 +116,14 @@ namespace HM
       int migrated = 0;
       for (const Pending &row : pending)
       {
-         String plain = Crypt::Instance()->DeCrypt(row.stored, Crypt::ETBlowFish);
+         String plain;
+         String reason;
+         if (!protector->TryUnprotect(row.stored, plain, reason))
+         {
+            failed++;
+            continue;
+         }
+
          String protectedValue = protector->Protect(plain);
 
          if (!protector->IsProtectedWithCurrentKey(protectedValue))
@@ -170,7 +181,7 @@ namespace HM
          }
       }
 
-      if (IniFileSettings::Instance()->GetPasswordIsBlowfishEncrypted())
-         throw std::logic_error("SecretMigration: the database password in hMailServer.ini is still Blowfish-encrypted.");
+      if (IniFileSettings::Instance()->GetPasswordNeedsProtecting())
+         throw std::logic_error("SecretMigration: the database password in hMailServer.ini is not protected under the installation's key.");
    }
 }

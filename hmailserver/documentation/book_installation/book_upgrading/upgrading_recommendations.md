@@ -42,6 +42,17 @@ The below steps are the same for most hMailServer version. For version specific 
 
 The setup installs the MySQL/MariaDB client library libmariadb.dll (MariaDB Connector/C) into the Bin directory, and the server uses only that library to connect to MySQL and MariaDB. If you previously placed a libmysql.dll there yourself, the setup leaves it untouched, but the server no longer loads it, so you can delete it. libmariadb.dll must stay: without it, the server cannot connect to a MySQL or MariaDB database.
 
+### The secret key
+
+The server protects the secrets it has to read back - the database password in hMailServer.ini, the passwords of external accounts and routes, the SMTP relay password - under a secret key of its own, kept in hMailServer.ini and protected so that only this computer can unlock it. Earlier versions encrypted these secrets with a key that was the same for every installation. The first time the upgraded server starts, it protects them again under its own key.
+
+Export the key (Administrator: Settings > Advanced > Secret key, or Utilities.ExportSecretKey in the COM API) and keep the export and its passphrase safe:
+
+- **To move the server to another computer**, or to restore hMailServer.ini there, import the key on the new computer. Without it, the secrets cannot be read there.
+- **If several servers share one database**, every server needs the same key. After upgrading the first server, export its key and import it on each of the others. A server whose key differs reports that the secrets were protected under another installation's key.
+
+If the server could not connect to its database because its database password could not be read, restart the service after importing the key.
+
 ### Upgrading multiple version steps
 
 When upgrading hMailServer to the latest version, you can install the latest version immediately in step 3. For example, when upgrading from 4.0 to 4.4, you do not have to install 4.1, 4.2 or 4.3 since version 4.4 contains all changes made for 4.1, 4.2 and 4.3. It's possible to upgrade directly from 2.0 and later versions to the latest version without installing any other versions in between. There are exceptions to this rule though:

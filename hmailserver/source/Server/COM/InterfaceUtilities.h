@@ -66,6 +66,9 @@ public:
    STDMETHOD(CriteriaMatch)(BSTR MatchValue, eRuleMatchType, BSTR TestValue,  /*[out, retval]*/ VARIANT_BOOL *bIsValid);
    STDMETHOD(IsValidIPAddress)(/*[in]*/ BSTR IPAddress, /*[out, retval]*/ VARIANT_BOOL *bIsValid);
    STDMETHOD(PerformMaintenance)(/*[in]*/ eMaintenanceOperation operation);
+   STDMETHOD(ExportSecretKey)(/*[in]*/ BSTR Passphrase, /*[out, retval]*/ BSTR *Exported);
+   STDMETHOD(ImportSecretKey)(/*[in]*/ BSTR Exported, /*[in]*/ BSTR Passphrase);
+   STDMETHOD(get_SecretKeyId)(/*[out, retval]*/ BSTR *pVal);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Utilities), InterfaceUtilities)
