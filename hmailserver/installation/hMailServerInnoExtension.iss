@@ -656,7 +656,9 @@ var
 begin
    // Register hMaiLlServer service
    if (Exec(ExpandConstant('{app}\Bin\hMailServer.exe'), '/RegisterTypeLib', '',  SW_HIDE, ewWaitUntilTerminated, ResultCode) = False) then
-      MsgBox(SysErrorMessage(ResultCode), mbError, MB_OK);
+      MsgBox(SysErrorMessage(ResultCode), mbError, MB_OK)
+   else if (ResultCode <> 0) then
+      MsgBox(Format('The ArzoieMail type library could not be registered: hMailServer.exe /RegisterTypeLib exited with code %d (0x%.8x).', [ResultCode, ResultCode]), mbError, MB_OK);
 
    Result := true;
 end;
@@ -797,9 +799,15 @@ begin
       ProgressPage.SetText('Creating the ArzoieMail service...', '');
       ProgressPage.SetProgress(3,6);
 
-      // Register hMaillServer service
+      // Register hMaillServer service. Exec only reports whether the process started, so the
+      // exit code is checked as well: hMailServer.exe returns -1 when the registration fails,
+      // and Windows returns an NTSTATUS such as 0xC0000135 when it cannot even load. Carrying on
+      // would only fail later, in DBSetupQuick, with a "class not registered" crash.
       if (Exec(ExpandConstant('{app}\Bin\hMailServer.exe'), '/Register', '',  SW_HIDE, ewWaitUntilTerminated, ResultCode) = False) then
          FailPostInstall('The ArzoieMail service could not be created. ' + SysErrorMessage(ResultCode));
+
+      if (ResultCode <> 0) then
+         FailPostInstall(Format('The ArzoieMail service could not be created: hMailServer.exe /Register exited with code %d (0x%.8x).', [ResultCode, ResultCode]));
 
       // Must run after the service has been created - the virtual account doesn't
       // exist until then.
