@@ -244,26 +244,20 @@ namespace HM
          adoCommand->ActiveConnection = cADOConnection;
          adoCommand->Execute(NULL, NULL, adCmdText);
 
-         // Check what unique ID we got back (if we're interested).
-         _RecordsetPtr pIdentityRS;
-         BSTR bsIdentity;
+         // Check what unique ID we got back (if we're interested). The query string is a
+         // _bstr_t, so it is freed even when Open throws.
          if (iInsertID != nullptr)
          {
+            _RecordsetPtr pIdentityRS;
             pIdentityRS.CreateInstance(__uuidof(Recordset));
             pIdentityRS->PutCursorLocation(adUseClient);
-            pIdentityRS->PutRefActiveConnection(cADOConnection); 
-            String sIdentitySQL = "SELECT @@IDENTITY AS IDENT";
-            bsIdentity = sIdentitySQL.AllocSysString();
+            pIdentityRS->PutRefActiveConnection(cADOConnection);
 
-            HRESULT hr = pIdentityRS->Open( bsIdentity, vtMissing, adOpenKeyset, adLockOptimistic , adCmdText);
-            pIdentityRS->PutRefActiveConnection(NULL); 
-            
-         }
+            _bstr_t identitySQL(_T("SELECT @@IDENTITY AS IDENT"));
+            pIdentityRS->Open(identitySQL, vtMissing, adOpenKeyset, adLockOptimistic, adCmdText);
+            pIdentityRS->PutRefActiveConnection(NULL);
 
-         if (iInsertID)
-         {
             *iInsertID = GetIdentityFromRS_(pIdentityRS);
-            ::SysFreeString( bsIdentity );
          }
       }
       catch ( _com_error &err )
