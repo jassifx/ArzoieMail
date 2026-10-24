@@ -143,7 +143,7 @@ function Resolve-HMailServerLibs
 # caller states which Visual Studio versions are acceptable, in preference order, and the
 # first one installed wins.
 #
-# The default order prefers VS2026 - what the README asks a developer to install, the only
+# The default order prefers VS2026 - what BUILDING.md asks a developer to install, the only
 # Visual Studio on the GitHub Actions windows-2025-vs2026 image, and the one whose default
 # compiler (v145) hMailServer is built with - and falls back to VS2022 and then VS2019 for
 # the C libraries, which do not care. Callers that need an older compiler ask

@@ -13,7 +13,9 @@ build/                # Scripts for building and running tests.
 .editorconfig
 .gitattributes
 .gitignore
-README.md
+BUILDING.md           # How to build, run, test and release
+LICENSE               # GNU AGPLv3
+README.md             # What the project is: roadmap, design decisions, getting started
 ```
 
 Everything of substance lives under `hmailserver/`.
@@ -221,7 +223,7 @@ Vendored third-party C++ libraries checked directly into the repository. Large e
 | Admin tools | `source/Tools/hMailServer Tools.sln` |
 | Installer | `installation/hMailServer64.iss` (InnoSetup) |
 
-**External dependencies** (not in repo): OpenSSL, Boost, PostgreSQL (libpq), MariaDB Connector/C (libmariadb). Set `%hMailServerLibs%` to the parent directory where these are built. See `README.md` for step-by-step build instructions.
+**External dependencies** (not in repo): OpenSSL, Boost, PostgreSQL (libpq), MariaDB Connector/C (libmariadb). Set `%hMailServerLibs%` to the parent directory where these are built. See `BUILDING.md` for step-by-step build instructions.
 
 **Branches:** `master` is the development branch for new features. Version branches (e.g., `5.6.2`) are used for bug fixes only.
 

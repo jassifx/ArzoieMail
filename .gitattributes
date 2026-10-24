@@ -1,63 +1,65 @@
-###############################################################################
-# Set default behavior to automatically normalize line endings.
-###############################################################################
+# Line endings
+#
+# Text files are stored with LF in the repository and checked out with the platform's line
+# ending, unless a rule below fixes the ending because the file's consumer depends on it.
 * text=auto
 
-###############################################################################
-# Set default behavior for command prompt diff.
-#
-# This is need for earlier builds of msysgit that does not have it on by
-# default for csharp files.
-# Note: This is only used by command line
-###############################################################################
-#*.cs     diff=csharp
+# Windows-only formats, checked out with CRLF everywhere. cmd.exe misparses labels and GOTO in a
+# batch file with LF endings, and the Visual Studio, Inno Setup and resource compiler files are
+# only ever edited on Windows.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+*.psm1      text eol=crlf
+*.psd1      text eol=crlf
+*.sln       text eol=crlf
+*.vcxproj   text eol=crlf
+*.filters   text eol=crlf
+*.csproj    text eol=crlf
+*.props     text eol=crlf
+*.targets   text eol=crlf
+*.iss       text eol=crlf
+*.rc        text eol=crlf
+*.reg       text eol=crlf
 
-###############################################################################
-# Set the merge driver for project and solution files
-#
-# Merging from the command prompt will add diff markers to the files if there
-# are conflicts (Merging from VS is not affected by the settings below, in VS
-# the diff markers are never inserted). Diff markers may cause the following 
-# file extensions to fail to load in VS. An alternative would be to treat
-# these files as binary and thus will always conflict and require user
-# intervention with every merge. To do so, just uncomment the entries below
-###############################################################################
-#*.sln       merge=binary
-#*.csproj    merge=binary
-#*.vbproj    merge=binary
-#*.vcxproj   merge=binary
-#*.vcproj    merge=binary
-#*.dbproj    merge=binary
-#*.fsproj    merge=binary
-#*.lsproj    merge=binary
-#*.wixproj   merge=binary
-#*.modelproj merge=binary
-#*.sqlproj   merge=binary
-#*.wwaproj   merge=binary
+# Shell scripts run with LF wherever they are checked out.
+*.sh        text eol=lf
 
-###############################################################################
-# behavior for image files
-#
-# image files are treated as binary by default.
-###############################################################################
-#*.jpg   binary
-#*.png   binary
-#*.gif   binary
+# Test messages, checked out with CRLF everywhere: SMTP lines end in CRLF, and the DKIM
+# signatures in them cover the exact bytes, so an LF checkout would invalidate them.
+*.eml       text eol=crlf
 
-###############################################################################
-# diff behavior for common document formats
-# 
-# Convert binary document formats to text before diffing them. This feature
-# is only available from the command line. Turn it on by uncommenting the 
-# entries below.
-###############################################################################
-#*.doc   diff=astextplain
-#*.DOC   diff=astextplain
-#*.docx  diff=astextplain
-#*.DOCX  diff=astextplain
-#*.dot   diff=astextplain
-#*.DOT   diff=astextplain
-#*.pdf   diff=astextplain
-#*.PDF   diff=astextplain
-#*.rtf   diff=astextplain
-#*.RTF   diff=astextplain
+# Binary files: never converted, never diffed as text.
+*.ico       binary
+*.png       binary
+*.gif       binary
+*.jpg       binary
+*.jpeg      binary
+*.bmp       binary
+*.pfx       binary
+*.p12       binary
+*.der       binary
+*.dll       binary
+*.exe       binary
+*.msi       binary
+*.lib       binary
+*.tlb       binary
+*.sdf       binary
+*.zip       binary
+*.7z        binary
+
+# Fuzzing inputs are test data, kept byte for byte: a carriage return in one is part of the input.
+hmailserver/source/Server/Portable/Fuzz/corpus/** -text
+
+# Language-aware diffs (hunk headers name the function a change is in).
+*.cpp       diff=cpp
+*.h         diff=cpp
+*.cs        diff=csharp
+*.php       diff=php
+*.md        diff=markdown
+*.html      diff=html
+*.css       diff=css
+
+# GitHub language statistics: the vendored icon set and the documentation are not project code.
+libraries/fat_cow_icons/** linguist-vendored
+hmailserver/documentation/** linguist-documentation

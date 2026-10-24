@@ -90,7 +90,7 @@ if ($Jobs -lt 1)
 # inside hMailServer.exe, and the auto-linking pragma encodes the toolset in the library
 # name (libboost_thread-vc145-mt-s-x64-1_92.lib).
 #
-# msvc-14.5 (v145) is the default compiler of VS2026, which is what the README asks a
+# msvc-14.5 (v145) is the default compiler of VS2026, which is what BUILDING.md asks a
 # developer to install and the only Visual Studio on the GitHub Actions windows-2025-vs2026
 # image. The older toolsets are optional components of it, selected with -vcvars_ver, and
 # msvc-14.2 is also the default of VS2019. A custom/unknown toolset falls back to -latest

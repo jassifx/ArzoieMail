@@ -5,7 +5,7 @@ description: >-
   3.4.x (e.g. rebuild 3.4.11 against a new OpenSSL, or upgrade 3.4.11 -> 3.4.12).
   Builds libmariadb.dll into %hMailServerLibs% via libraries\build-mariadb.ps1
   (linking it against the OpenSSL hMailServer uses), rewrites every pinned MariaDB
-  Connector/C version reference in the repo, keeps the README build instructions
+  Connector/C version reference in the repo, keeps the BUILDING.md build instructions
   current, and verifies hMailServer still builds and ships the DLL. Use when asked to
   build, rebuild, bump, update, or upgrade the MySQL/MariaDB client library for
   hMailServer. Supports MariaDB Connector/C 3.4.x only.
@@ -36,7 +36,7 @@ There are two reasons to run it:
 - The connector links against OpenSSL at build time (`-DWITH_SSL=OPENSSL`), so **a matching
   OpenSSL build must already exist** under `%hMailServerLibs%\openssl-<ver>\out64` (build it
   first with the upgrade-openssl skill / `build-openssl.ps1`).
-- Updating any CI/CD-built copy of the connector is out of scope, but the README build
+- Updating any CI/CD-built copy of the connector is out of scope, but BUILDING.md build
   instructions must stay accurate.
 
 ## Steps
@@ -102,7 +102,7 @@ with the new one (`libmariadb-<old>` -> `libmariadb-<new>`) in these files:
 | `hmailserver/source/Server/hMailServer/post-build.bat` | 1 (the `xcopy` of `libmariadb.dll`) |
 | `hmailserver/installation/hMailServer64.iss` | 1 (`MARIADB_LIBS_PATH`) |
 | `hmailserver/source/Server/hMailServer/hMailServer.vcxproj` | 2 (the include directories of `MySQLStatement.cpp`) |
-| `README.md` | 1 (the `-Version` argument in "Building MariaDB Connector/C") |
+| `BUILDING.md` | 1 (the `-Version` argument in "Building MariaDB Connector/C") |
 
 Then grep the whole repo for `libmariadb-\d` and confirm the only remaining matches are the
 intentional ones you just rewrote — there must be **zero** references to the old concrete
@@ -119,11 +119,11 @@ release changes either structure, the server must be rebuilt against the new hea
 
 ### 4. Keep build instructions current
 
-The `README.md` "Building MariaDB Connector/C" section documents the recipe the script
+The `BUILDING.md` "Building MariaDB Connector/C" section documents the recipe the script
 automates. On a version bump, update its version number (step 3 already covers the
 `-Version` argument). Skim the new release's notes; only if the connector changed its build
 process (CMake options, plugin names, output paths) update both `libraries\build-mariadb.ps1`
-and the README accordingly. State whether a change was needed.
+and BUILDING.md accordingly. State whether a change was needed.
 
 ### 5. Verify
 
@@ -150,9 +150,9 @@ connector actually authenticates and queries.
 
 ## Reference: all MariaDB Connector/C touch points
 
-- **Version-pinned (edited by step 3):** `post-build.bat`, `hMailServer64.iss`, `hMailServer.vcxproj`, `README.md`.
+- **Version-pinned (edited by step 3):** `post-build.bat`, `hMailServer64.iss`, `hMailServer.vcxproj`, `BUILDING.md`.
 - **Build recipe (edited only if the release changes it):** `libraries\build-mariadb.ps1`,
-  `README.md`.
+  `BUILDING.md`.
 - **Not version-bearing (leave alone):** the `libmariadb.dll` name in `section_files_64.iss`,
   `Common/SQL/MySQLInterface.cpp` (the probe path and the 5094 message) and
   `hmailserver/test/VMTestRunner.Console/TestEnvironments.json`; the hardcoded option values

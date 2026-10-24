@@ -5,7 +5,7 @@ description: >-
   and 18.x (e.g. rebuild 18.6 against a new OpenSSL, or upgrade 18.6 -> 18.7).
   Builds libpq into %hMailServerLibs% via libraries\build-pgsql.ps1 (linking it
   against the OpenSSL hMailServer uses), rewrites every pinned PostgreSQL version
-  reference in the repo, keeps the README build instructions current, and verifies
+  reference in the repo, keeps the BUILDING.md build instructions current, and verifies
   hMailServer still compiles and links. Use when asked to build, rebuild, bump,
   update, or upgrade PostgreSQL/libpq for hMailServer. Supports PostgreSQL 17.x/18.x
   only.
@@ -42,7 +42,7 @@ There are two reasons to run it:
 - The script fetches its own pinned Meson, Ninja and winflexbison into
   `%hMailServerLibs%\tools`. Bumping those pins (`$MesonVersion`, `$NinjaVersion`,
   `$WinFlexBisonVersion` / `$WinFlexBisonHash`) is a separate change from a PostgreSQL bump.
-- Updating any CI/CD-built copy of libpq is out of scope, but the README build instructions
+- Updating any CI/CD-built copy of libpq is out of scope, but the BUILDING.md build instructions
   must stay accurate.
 
 ## Steps
@@ -102,7 +102,7 @@ with the new one (`postgresql-<old>` -> `postgresql-<new>`) in these files:
 | `hmailserver/source/Server/hMailServer/post-build.bat` | 1 (the `xcopy` of libpq DLLs) |
 | `hmailserver/source/Server/hMailServer/hMailServer.vcxproj` | 6 (include-dir + `src\include` + lib-dir, across Debug and Release) |
 | `hmailserver/installation/hMailServer64.iss` | 1 (`POSTGRESQL_LIBPQ_PATH`) |
-| `README.md` | 3 (the download / cd instructions in "Building PostgreSQL") |
+| `BUILDING.md` | 3 (the download / cd instructions in "Building PostgreSQL") |
 | `.claude/skills/upgrade-openssl/SKILL.md` | 1 (the libpq-note path, to keep cross-references consistent) |
 
 Then grep the whole repo for `postgresql-\d` and confirm the only remaining matches are the
@@ -115,11 +115,11 @@ version.
 
 ### 4. Keep build instructions current
 
-The `README.md` "Building PostgreSQL" section documents the manual recipe the script
+The `BUILDING.md` "Building PostgreSQL" section documents the manual recipe the script
 automates. On a version bump, update its version numbers (step 3 already covers the
 `postgresql-<ver>` strings). Skim the new release's notes; only if PostgreSQL changed the build
 process (e.g. new or renamed Meson options, a different output path) update both
-`libraries\build-pgsql.ps1` and the README accordingly. State whether a change was needed.
+`libraries\build-pgsql.ps1` and BUILDING.md accordingly. State whether a change was needed.
 
 ### 5. Verify
 
@@ -135,7 +135,7 @@ into the output dir.
 
 Confirm `libpq.dll` links against the expected OpenSSL DLLs (`libssl-3-x64.dll` /
 `libcrypto-3-x64.dll`) by dumping its import table with `dumpbin /dependents` (the CLI
-equivalent of the README's [Dependencies](https://github.com/lucasg/Dependencies/releases)
+equivalent of BUILDING.md's [Dependencies](https://github.com/lucasg/Dependencies/releases)
 tool TIP — no extra tooling needed since `dumpbin` ships with VS):
 
 ```
@@ -152,9 +152,9 @@ dependencies and need no action.
 ## Reference: all PostgreSQL/libpq touch points
 
 - **Version-pinned (edited by step 3):** `post-build.bat`, `hMailServer.vcxproj`,
-  `hMailServer64.iss`, `README.md`, and the libpq note in the upgrade-openssl skill.
+  `hMailServer64.iss`, `BUILDING.md`, and the libpq note in the upgrade-openssl skill.
 - **Build recipe (edited only if the release changes it):** `libraries\build-pgsql.ps1`,
-  `README.md`.
+  `BUILDING.md`.
 - **Not version-bearing (leave alone):** `libpq.dll` / `libpq.lib` names in
   `section_files_64.iss` and the `hMailServer.vcxproj` linker dependencies; the `<libpq-fe.h>`
   includes in `Common/SQL/PGRecordset.h` and `Common/SQL/PGConnection.h`.

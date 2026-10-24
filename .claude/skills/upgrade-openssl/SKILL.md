@@ -4,7 +4,7 @@ description: >-
   Upgrade the OpenSSL version hMailServer builds against, for 3.5.x patch bumps
   (e.g. 3.5.5 -> 3.5.7). Builds the new OpenSSL into %hMailServerLibs% via
   libraries\build-openssl.ps1, rewrites every pinned OpenSSL version reference in
-  the repo, keeps the README build instructions current, and verifies hMailServer
+  the repo, keeps the BUILDING.md build instructions current, and verifies hMailServer
   still compiles and links. Use when asked to bump, update, or upgrade OpenSSL for
   hMailServer. Supports OpenSSL 3.5.x only.
 ---
@@ -21,7 +21,7 @@ version, rewrites those references, and verifies the build.
 - **OpenSSL 3.5.x only.** If the requested target is 3.0.x or 4.x, stop and tell the user
   it is out of scope — the build recipe (Configure flags, DLL/lib sonames) differs and this
   skill is not validated for it.
-- Updating the CI/CD-built copy of OpenSSL is out of scope, but the README build
+- Updating the CI/CD-built copy of OpenSSL is out of scope, but BUILDING.md build
   instructions must stay accurate (they reference `libraries\build-openssl.ps1`, so they
   rarely change).
 
@@ -75,7 +75,7 @@ Replace the old version with the new one (`openssl-<old>` -> `openssl-<new>`) in
 | `hmailserver/installation/hMailServer64.iss` | 1 (`OPENSSL_LIBS_PATH`) |
 
 Then grep the whole repo for `openssl-3\.5\.\d+` and confirm the only remaining matches are
-the intentional `openssl-3.5.x` placeholder in `README.md` and any license text — there must
+the intentional `openssl-3.5.x` placeholder in `BUILDING.md` and any license text — there must
 be **zero** references to the old concrete version in the three files above.
 
 **Do not** change the `libcrypto-3-x64.dll` / `libssl-3-x64.dll` DLL names or the
@@ -85,10 +85,10 @@ OpenSSL 3.x, so it does not change on a 3.5.x bump.
 
 ### 4. Keep build instructions current
 
-The `README.md` "Building OpenSSL" section references `libraries\build-openssl.ps1` and uses
-a generic `3.5.x` placeholder, so a patch bump normally needs no README edit. Skim the new
+The `BUILDING.md` "Building OpenSSL" section references `libraries\build-openssl.ps1` and uses
+a generic `3.5.x` placeholder, so a patch bump normally needs no BUILDING.md edit. Skim the new
 release's notes; only if OpenSSL changed the build process (Configure flags, `nmake` targets,
-DLL names) update both `libraries\build-openssl.ps1` and the README accordingly. State
+DLL names) update both `libraries\build-openssl.ps1` and BUILDING.md accordingly. State
 whether a change was needed.
 
 ### 5. Database client note (usually no action)
@@ -116,13 +116,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\build.ps1
 The link step pulls `libssl.lib` / `libcrypto.lib` from the new `openssl-<new>\out64\lib`, so
 a successful link confirms the reference updates are consistent. `post-build.ps1` (needs
 elevation) copies the new DLLs into the output dir; for deeper DLL-linkage checks use the
-[Dependencies](https://github.com/lucasg/Dependencies/releases) tool per the README TIP.
+[Dependencies](https://github.com/lucasg/Dependencies/releases) tool per BUILDING.md TIP.
 
 ## Reference: all OpenSSL touch points
 
 - **Version-pinned (edited by step 3):** `post-build.bat`, `hMailServer.vcxproj`,
   `hMailServer64.iss`.
 - **Build recipe (edited only if the release changes it):** `libraries\build-openssl.ps1`,
-  `README.md`.
+  `BUILDING.md`.
 - **Not version-bearing within 3.5.x (leave alone):** DLL/lib names in `section_files_64.iss`
   and the `hMailServer.vcxproj` linker dependencies.
