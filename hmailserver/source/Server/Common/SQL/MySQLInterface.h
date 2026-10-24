@@ -33,6 +33,25 @@ typedef hm_st_mysql_field *STDCALL hm_mysql_fetch_field_direct(hm_MYSQL_RES *res
 typedef unsigned long STDCALL hm_mysql_get_server_version(hm_MYSQL *mysql);
 typedef int STDCALL hm_mysql_options(hm_MYSQL *mysql, int option, const void *arg);
 
+// Prepared statements. The binds are MYSQL_BIND arrays, whose layout differs between
+// MariaDB Connector/C and libmysql: MySQLStatement fills them from the MariaDB headers,
+// and they are used only when the MariaDB client is loaded.
+typedef void hm_MYSQL_STMT;
+typedef hm_MYSQL_STMT* STDCALL hm_mysql_stmt_init(hm_MYSQL *mysql);
+typedef int STDCALL hm_mysql_stmt_prepare(hm_MYSQL_STMT *stmt, const char *query, unsigned long length);
+typedef char STDCALL hm_mysql_stmt_bind_param(hm_MYSQL_STMT *stmt, void *bind);
+typedef int STDCALL hm_mysql_stmt_execute(hm_MYSQL_STMT *stmt);
+typedef hm_MYSQL_RES* STDCALL hm_mysql_stmt_result_metadata(hm_MYSQL_STMT *stmt);
+typedef char STDCALL hm_mysql_stmt_attr_set(hm_MYSQL_STMT *stmt, int attr_type, const void *attr);
+typedef int STDCALL hm_mysql_stmt_store_result(hm_MYSQL_STMT *stmt);
+typedef char STDCALL hm_mysql_stmt_bind_result(hm_MYSQL_STMT *stmt, void *bind);
+typedef int STDCALL hm_mysql_stmt_fetch(hm_MYSQL_STMT *stmt);
+typedef int STDCALL hm_mysql_stmt_fetch_column(hm_MYSQL_STMT *stmt, void *bind, unsigned int column, unsigned long offset);
+typedef char STDCALL hm_mysql_stmt_close(hm_MYSQL_STMT *stmt);
+typedef unsigned int STDCALL hm_mysql_stmt_errno(hm_MYSQL_STMT *stmt);
+typedef const char * STDCALL hm_mysql_stmt_error(hm_MYSQL_STMT *stmt);
+typedef unsigned long long STDCALL hm_mysql_stmt_insert_id(hm_MYSQL_STMT *stmt);
+
 namespace HM
 {
    class MySQLInterface : public Singleton<MySQLInterface>
@@ -49,6 +68,10 @@ namespace HM
       // mysql_options() values, whose enum numbering differs from libmysql.
       bool IsMariaDB() const { return is_mariadb_; }
 
+      // True when commands can run as prepared statements: the MariaDB client is loaded, and
+      // it has every statement function MySQLStatement uses.
+      bool SupportsPreparedStatements() const;
+
       hm_mysql_real_connect *p_mysql_real_connect;
       hm_mysql_close *p_mysql_close;
       hm_mysql_init *p_mysql_init;
@@ -64,6 +87,21 @@ namespace HM
       hm_mysql_fetch_field_direct *p_mysql_fetch_field_direct;
       hm_mysql_get_server_version *p_mysql_get_server_version;
       hm_mysql_options *p_mysql_options;
+
+      hm_mysql_stmt_init *p_mysql_stmt_init;
+      hm_mysql_stmt_prepare *p_mysql_stmt_prepare;
+      hm_mysql_stmt_bind_param *p_mysql_stmt_bind_param;
+      hm_mysql_stmt_execute *p_mysql_stmt_execute;
+      hm_mysql_stmt_result_metadata *p_mysql_stmt_result_metadata;
+      hm_mysql_stmt_attr_set *p_mysql_stmt_attr_set;
+      hm_mysql_stmt_store_result *p_mysql_stmt_store_result;
+      hm_mysql_stmt_bind_result *p_mysql_stmt_bind_result;
+      hm_mysql_stmt_fetch *p_mysql_stmt_fetch;
+      hm_mysql_stmt_fetch_column *p_mysql_stmt_fetch_column;
+      hm_mysql_stmt_close *p_mysql_stmt_close;
+      hm_mysql_stmt_errno *p_mysql_stmt_errno;
+      hm_mysql_stmt_error *p_mysql_stmt_error;
+      hm_mysql_stmt_insert_id *p_mysql_stmt_insert_id;
    private:
 
       String GetLibraryFileName_(bool &isMariaDB);

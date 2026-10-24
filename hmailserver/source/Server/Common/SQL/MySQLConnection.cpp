@@ -5,6 +5,7 @@
 
 #include "MySQLConnection.h"
 #include "MySQLRecordset.h"
+#include "MySQLStatement.h"
 #include "DatabaseSettings.h"
 #include "Macros/MySQLMacroExpander.h"
 #include "../Util/Unicode.h"
@@ -165,9 +166,56 @@ namespace HM
       return true;
    }
 
-   DALConnection::ExecutionResult
-   MySQLConnection::TryExecute(const SQLCommand &command, String &sErrorMessage, __int64 *iInsertID, int iIgnoreErrors) 
+   bool
+   MySQLConnection::GetSupportsCommandParameters() const
    {
+      return MySQLInterface::Instance()->SupportsPreparedStatements();
+   }
+
+   DALConnection::ExecutionResult
+   MySQLConnection::TryExecuteStatement_(const SQLCommand &command, String &sErrorMessage, __int64 *iInsertID, int iIgnoreErrors)
+   {
+      String SQL = command.GetQueryString();
+
+      try
+      {
+         MySQLStatement statement(dbconn_);
+
+         String statementError;
+         if (statement.Execute(command, nullptr, iInsertID, statementError))
+            return DALConnection::DALSuccess;
+
+         // As for a query: an error the caller expects, or one the SQL itself says to ignore,
+         // is no failure.
+         bool bIgnoreErrors = SQL.Find(_T("[IGNORE-ERRORS]")) >= 0 ||
+            (iIgnoreErrors != 0 && (GetErrorType_(statement.GetErrorNumber()) & iIgnoreErrors));
+
+         if (bIgnoreErrors)
+         {
+            if (iInsertID != nullptr)
+               *iInsertID = 0;
+
+            return DALConnection::DALSuccess;
+         }
+
+         sErrorMessage.Format(_T("MySQL: %s (Additional info: %s)"), statementError.c_str(), SQL.c_str());
+         return GetErrorResult(statement.GetErrorNumber());
+      }
+      catch (...)
+      {
+         sErrorMessage = "Source: MySQLConnection::TryExecuteStatement_, Code: HM10048, Description: An unhandled error occurred while executing: " + SQL;
+         return DALConnection::DALUnknown;
+      }
+   }
+
+   DALConnection::ExecutionResult
+   MySQLConnection::TryExecute(const SQLCommand &command, String &sErrorMessage, __int64 *iInsertID, int iIgnoreErrors)
+   {
+      // A command still has its parameters only when they are to be bound (see
+      // GetSupportsCommandParameters); otherwise DALConnection has written them into the SQL.
+      if (!command.GetParameters().empty())
+         return TryExecuteStatement_(command, sErrorMessage, iInsertID, iIgnoreErrors);
+
       String SQL = command.GetQueryString();
       try
       {
@@ -231,23 +279,10 @@ namespace HM
    {
       try
       {
-         if (pSQL==NULL) 
+         if (pSQL==NULL)
             return DALSuccess;
 
-         int iErrNo = MySQLInterface::Instance()->p_mysql_errno(pSQL);
-
-         switch (iErrNo)
-         {
-         case 0:
-            return DALSuccess;
-         case 1062: // ER_DUP_ENTRY - Message: Duplicate entry '%s' for key %d
-            return DALErrorInSQL;
-         default:
-            return DALUnknown;
-         }
-
-         assert(0); // Should never get here
-         return DALSuccess;
+         return GetErrorType_(MySQLInterface::Instance()->p_mysql_errno(pSQL));
       }
       catch (...)
       {
@@ -257,6 +292,33 @@ namespace HM
 
       return DALSuccess;
 
+   }
+
+   DALConnection::ExecutionResult
+   MySQLConnection::GetErrorType_(unsigned int errorNumber)
+   {
+      switch (errorNumber)
+      {
+      case 0:
+         return DALSuccess;
+      case 1062: // ER_DUP_ENTRY - Message: Duplicate entry '%s' for key %d
+         return DALErrorInSQL;
+      default:
+         return DALUnknown;
+      }
+   }
+
+   DALConnection::ExecutionResult
+   MySQLConnection::GetErrorResult(unsigned int errorNumber)
+   {
+      switch (errorNumber)
+      {
+      case 2006: // MySQL server has gone away
+      case 2013: // Lost connection to MySQL server during query
+         return DALConnection::DALConnectionProblem;
+      default:
+         return DALConnection::DALUnknown;
+      }
    }
 
    DALConnection::ExecutionResult
@@ -272,17 +334,8 @@ namespace HM
             return DALConnection::DALSuccess;
 
          
-         DALConnection::ExecutionResult result = DALConnection::DALUnknown;
+         DALConnection::ExecutionResult result = GetErrorResult(MySQLInterface::Instance()->p_mysql_errno(pSQL));
 
-         int errorCode = MySQLInterface::Instance()->p_mysql_errno(pSQL);
-         switch (errorCode)
-         {
-         case 2006: // MySQL server has gone away 
-         case 2013: // Lost connection to MySQL server during query 
-            result = DALConnection::DALConnectionProblem;
-            break;
-         }
-         
 
          AnsiString sMySqlErrorAnsi = pError;
          String sMySQLErrorUnicode = sMySqlErrorAnsi;

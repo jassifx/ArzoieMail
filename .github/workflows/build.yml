@@ -223,7 +223,9 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.hMailServerLibs }}\${{ steps.versions.outputs.mariadb_dir }}
-          key: mariadb-${{ steps.versions.outputs.mariadb }}-ssl${{ steps.versions.outputs.openssl }}-${{ matrix.image }}-${{ hashFiles('libraries/build-mariadb.ps1', 'libraries/build-common.ps1') }}
+          # "headers": the pruning in "Build MariaDB Connector/C" keeps the headers too, and that
+          # step is not in the hash, so the marker keeps out caches pruned down to the DLL.
+          key: mariadb-${{ steps.versions.outputs.mariadb }}-ssl${{ steps.versions.outputs.openssl }}-${{ matrix.image }}-headers-${{ hashFiles('libraries/build-mariadb.ps1', 'libraries/build-common.ps1') }}
 
       # 7-Zip is downloaded rather than compiled, so its key carries no runner image: the
       # same prebuilt x64 binary is correct on every one of them.
@@ -329,14 +331,18 @@ jobs:
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\build-mariadb.ps1 -Version $env:LIB_VERSION
           if ($LASTEXITCODE -ne 0) { throw "build-mariadb.ps1 failed with exit code $LASTEXITCODE" }
 
-          # Only the DLL is shipped; hMailServer loads it at run time and declares the
-          # mysql_* functions it uses itself, so it needs no headers from this source tree.
-          # Keep just the folder chain leading to the DLL by dropping the siblings at each level.
+          # Only the DLL is shipped; hMailServer loads it at run time. The headers are kept as
+          # well: MySQLStatement.cpp takes MYSQL_BIND and MYSQL_FIELD from include\mysql.h, which
+          # includes the generated build64\include\mariadb_version.h. Everything else goes, by
+          # dropping the siblings at each level of those folder chains.
           $root = Join-Path $env:hMailServerLibs $env:LIB_DIR
-          Get-ChildItem $root -Force | Where-Object { $_.Name -ne 'build64' } | Remove-Item -Recurse -Force
-          Get-ChildItem (Join-Path $root 'build64') -Force | Where-Object { $_.Name -ne 'libmariadb' } | Remove-Item -Recurse -Force
+          Get-ChildItem $root -Force | Where-Object { $_.Name -notin 'build64', 'include' } | Remove-Item -Recurse -Force
+          Get-ChildItem (Join-Path $root 'build64') -Force | Where-Object { $_.Name -notin 'libmariadb', 'include' } | Remove-Item -Recurse -Force
           Get-ChildItem (Join-Path $root 'build64\libmariadb') -Force | Where-Object { $_.Name -ne 'RelWithDebInfo' } | Remove-Item -Recurse -Force
           if (-not (Test-Path (Join-Path $root 'build64\libmariadb\RelWithDebInfo\libmariadb.dll'))) { throw "Pruning removed libmariadb.dll." }
+          foreach ($header in 'include\mysql.h', 'include\mariadb_stmt.h', 'build64\include\mariadb_version.h') {
+              if (-not (Test-Path (Join-Path $root $header))) { throw "Pruning removed $header." }
+          }
 
       - name: Save MariaDB Connector/C
         if: success() && steps.cache-mariadb.outputs.cache-hit != 'true'

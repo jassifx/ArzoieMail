@@ -388,6 +388,12 @@ EXIT 0
     <ClCompile Include="..\Common\Sql\MySQLConnection.cpp" />
     <ClCompile Include="..\Common\SQL\MySQLInterface.cpp" />
     <ClCompile Include="..\Common\Sql\MySQLRecordset.cpp" />
+    <ClCompile Include="..\Common\SQL\MySQLStatement.cpp">
+      <!-- MariaDB Connector/C's headers, for MYSQL_BIND and MYSQL_FIELD. Only this file includes
+           them, so that none of their names reach the rest of the server; nothing links against
+           the connector, which MySQLInterface loads at run time. -->
+      <AdditionalIncludeDirectories>$(hMailServerLibs)\libmariadb-3.4.11\include;$(hMailServerLibs)\libmariadb-3.4.11\build64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <ClCompile Include="..\Common\SQL\PGConnection.cpp" />
     <ClCompile Include="..\Common\SQL\PGRecordset.cpp" />
     <ClCompile Include="..\Common\SQL\Prerequisites\PreReqNoDuplicateFolders.cpp" />
@@ -921,6 +927,7 @@ EXIT 0
     <ClInclude Include="..\Common\Sql\MySQLConnection.h" />
     <ClInclude Include="..\Common\SQL\MySQLInterface.h" />
     <ClInclude Include="..\Common\Sql\MySQLRecordset.h" />
+    <ClInclude Include="..\Common\SQL\MySQLStatement.h" />
     <ClInclude Include="..\Common\SQL\PGConnection.h" />
     <ClInclude Include="..\Common\SQL\PGRecordset.h" />
     <ClInclude Include="..\Common\SQL\Prerequisites\IPrerequisite.h" />

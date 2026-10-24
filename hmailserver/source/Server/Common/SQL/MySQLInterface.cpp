@@ -32,6 +32,20 @@ namespace HM
       p_mysql_fetch_field_direct(0),
       p_mysql_get_server_version(0),
       p_mysql_options(0),
+      p_mysql_stmt_init(0),
+      p_mysql_stmt_prepare(0),
+      p_mysql_stmt_bind_param(0),
+      p_mysql_stmt_execute(0),
+      p_mysql_stmt_result_metadata(0),
+      p_mysql_stmt_attr_set(0),
+      p_mysql_stmt_store_result(0),
+      p_mysql_stmt_bind_result(0),
+      p_mysql_stmt_fetch(0),
+      p_mysql_stmt_fetch_column(0),
+      p_mysql_stmt_close(0),
+      p_mysql_stmt_errno(0),
+      p_mysql_stmt_error(0),
+      p_mysql_stmt_insert_id(0),
       is_mariadb_(false)
    {
 
@@ -126,7 +140,33 @@ namespace HM
       p_mysql_get_server_version = (hm_mysql_get_server_version*) GetProcAddress( (HMODULE)library_instance_, "mysql_get_server_version" );
       p_mysql_options = (hm_mysql_options*) GetProcAddress( (HMODULE)library_instance_, "mysql_options" );
 
+      p_mysql_stmt_init = (hm_mysql_stmt_init*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_init" );
+      p_mysql_stmt_prepare = (hm_mysql_stmt_prepare*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_prepare" );
+      p_mysql_stmt_bind_param = (hm_mysql_stmt_bind_param*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_bind_param" );
+      p_mysql_stmt_execute = (hm_mysql_stmt_execute*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_execute" );
+      p_mysql_stmt_result_metadata = (hm_mysql_stmt_result_metadata*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_result_metadata" );
+      p_mysql_stmt_attr_set = (hm_mysql_stmt_attr_set*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_attr_set" );
+      p_mysql_stmt_store_result = (hm_mysql_stmt_store_result*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_store_result" );
+      p_mysql_stmt_bind_result = (hm_mysql_stmt_bind_result*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_bind_result" );
+      p_mysql_stmt_fetch = (hm_mysql_stmt_fetch*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_fetch" );
+      p_mysql_stmt_fetch_column = (hm_mysql_stmt_fetch_column*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_fetch_column" );
+      p_mysql_stmt_close = (hm_mysql_stmt_close*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_close" );
+      p_mysql_stmt_errno = (hm_mysql_stmt_errno*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_errno" );
+      p_mysql_stmt_error = (hm_mysql_stmt_error*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_error" );
+      p_mysql_stmt_insert_id = (hm_mysql_stmt_insert_id*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_insert_id" );
+
       return true;
+   }
+
+   bool
+   MySQLInterface::SupportsPreparedStatements() const
+   {
+      return is_mariadb_ &&
+         p_mysql_stmt_init && p_mysql_stmt_prepare && p_mysql_stmt_bind_param && p_mysql_stmt_execute &&
+         p_mysql_stmt_result_metadata && p_mysql_stmt_attr_set && p_mysql_stmt_store_result &&
+         p_mysql_stmt_bind_result && p_mysql_stmt_fetch && p_mysql_stmt_fetch_column && p_mysql_stmt_close &&
+         p_mysql_stmt_errno && p_mysql_stmt_error && p_mysql_stmt_insert_id &&
+         p_mysql_num_fields && p_mysql_fetch_field_direct && p_mysql_free_result;
    }
 
    bool
