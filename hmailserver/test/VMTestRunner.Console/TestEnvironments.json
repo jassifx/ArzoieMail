@@ -153,7 +153,12 @@
     "snapshotName": "Ready",
     "preInstallCommands": [],
     "preInstallFileCopy": [],
-    "postInstallCommands": [],
+    "postInstallCommands": [
+      {
+        "executable": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "parameters": "-NoProfile -Command foreach ($n in 'example.com','hmailserver.com','test.multi.surbl.org','secunia.com.multi.surbl.org','2.0.0.127.zen.spamhaus.org') { foreach ($t in 'A','TXT','MX') { Resolve-DnsName $n -Type $t -DnsOnly -ErrorAction SilentlyContinue | Out-Null } }"
+      }
+    ],
     "postInstallFileCopy": []
   },
 

@@ -618,6 +618,48 @@ jobs:
 
           Add-Content -Path $env:GITHUB_OUTPUT -Value "path=$redist"
 
+      - name: Check that the installer ships the C++ runtime the binaries import
+        env:
+          VCREDIST_PATH: ${{ steps.redist.outputs.path }}
+        run: |
+          # The installer ships only part of the redistributable (see section_files_64.iss).
+          # Leaving out a DLL that is imported goes unnoticed on this runner and in the tests,
+          # since the image has the whole redistributable installed in System32 - hMailServer.exe
+          # only fails to start on a machine without it, and setup with it. So every import
+          # that is a DLL of the redistributable has to be among those the installer ships.
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -products '*' -version '[18.0,19.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1
+          $version = (Get-Content (Join-Path $vs 'VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt') -Raw).Trim()
+          $dumpbin = Join-Path $vs "VC\Tools\MSVC\$version\bin\Hostx64\x64\dumpbin.exe"
+          if (-not (Test-Path $dumpbin)) { throw "dumpbin.exe was not found at $dumpbin." }
+
+          $redistDlls = @(Get-ChildItem $env:VCREDIST_PATH -Filter *.dll | ForEach-Object { $_.Name.ToLowerInvariant() })
+          $shipped = @(Select-String -Path hmailserver\installation\section_files_64.iss -Pattern '^Source: "\{#VCREDIST_PATH\}\\([^"]+)"' |
+              ForEach-Object { $_.Matches[0].Groups[1].Value.ToLowerInvariant() })
+          "Shipped from the redistributable: $($shipped -join ', ')"
+
+          # The native binaries the installer ships: the two executables, the libraries
+          # post-build.ps1 copied beside them, and the shipped runtime DLLs themselves.
+          $binaries = @(Get-ChildItem 'hmailserver\source\server\hMailServer\x64\Release' -File |
+              Where-Object { $_.Extension -in '.exe', '.dll' } | ForEach-Object FullName) +
+              @($shipped | ForEach-Object { Join-Path $env:VCREDIST_PATH $_ })
+
+          $missing = @()
+          foreach ($binary in $binaries) {
+              $imports = & $dumpbin /nologo /dependents $binary | Where-Object { $_ -match '^\s+(\S+\.dll)\s*$' } | ForEach-Object { $Matches[1].ToLowerInvariant() }
+              if ($LASTEXITCODE -ne 0) { throw "dumpbin /dependents $binary failed with exit code $LASTEXITCODE" }
+              foreach ($import in $imports) {
+                  if ($redistDlls -contains $import -and $shipped -notcontains $import) {
+                      $missing += "$(Split-Path $binary -Leaf) imports $import"
+                  }
+              }
+          }
+
+          if ($missing) {
+              throw "These imports are DLLs of the Visual C++ redistributable that section_files_64.iss does not ship:`n$($missing -join "`n")"
+          }
+          "Every runtime DLL that $($binaries.Count) binaries import is shipped."
+
       - name: Build the installer
         env:
           VCREDIST_PATH: ${{ steps.redist.outputs.path }}

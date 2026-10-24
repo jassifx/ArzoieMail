@@ -198,7 +198,10 @@ namespace VMTestRunner.Console
 
          string resultData = string.Empty;
 
-         var timeoutTime = DateTime.UtcNow.AddSeconds(60);
+         // Counted from the heartbeat, which comes well before the guest takes PowerShell Direct
+         // sessions: on the Windows Server 2025 VM a session took another 40 seconds, and the
+         // guest's own DNS server answered some 20 seconds after that, so 60 seconds ran out.
+         var timeoutTime = DateTime.UtcNow.AddMinutes(3);
 
          while (DateTime.UtcNow < timeoutTime)
          {
@@ -209,8 +212,10 @@ namespace VMTestRunner.Console
                if (resultData.StartsWith("OK "))
                   return;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+               // Kept, so that a guest that never takes a session doesn't fail with an empty result.
+               resultData = ex.Message;
             }
 
             Thread.Sleep(TimeSpan.FromSeconds(2));

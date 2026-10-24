@@ -40,8 +40,9 @@ namespace VMTestRunner.Console
                EnablePageHeap = item.EnablePageHeap,
                IncludeStressTests = item.IncludeStressTests,
 
-               // Resolved here so a missing SDK is reported before any VM is started.
-               GFlagsPath = item.EnablePageHeap ? GetGFlags() : null,
+               // Resolved by ResolveGFlags for the environments that are selected to run, so
+               // that a host without the SDK can still run every other environment.
+               GFlagsPath = null,
             };
 
             foreach (var cmd in item.PreInstallCommands)
@@ -57,6 +58,20 @@ namespace VMTestRunner.Console
                env.PostInstallFileCopy.Add(new FileCopyCommand(copy.From, copy.To));
 
             listEnvironments.Add(env);
+         }
+      }
+
+      /// <summary>
+      /// Sets GFlagsPath on the page heap environments among those that are about to run.
+      /// Called before any VM is started, so that a missing SDK is reported up front - but
+      /// only when a selected environment needs it.
+      /// </summary>
+      public static void ResolveGFlags(IEnumerable<TestEnvironment> selectedEnvironments)
+      {
+         foreach (var environment in selectedEnvironments)
+         {
+            if (environment.EnablePageHeap)
+               environment.GFlagsPath = GetGFlags();
          }
       }
 

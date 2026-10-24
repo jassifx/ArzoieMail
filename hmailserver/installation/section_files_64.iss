@@ -5,22 +5,26 @@ Source: "..\source\server\hMailServer\x64\Release\hMailServer.tlb"; DestDir: "{a
 Source: "..\source\server\hMailServer\x64\Release\hMailServer.Minidump.exe"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
 ; The Visual C++ runtime - see VCREDIST_PATH in hMailServer64.iss.
 ;
-; Only the three that are actually loaded. Everything in Bin resolves to these: hMailServer.exe
-; and hMailServer.Minidump.exe import all three, libcrypto, libssl and libpq import
-; vcruntime140.dll, and the rest is managed code with no native imports at all. Neither exe
-; delay-loads anything, and msvcp140.dll depends on the two vcruntime DLLs and nothing else -
-; the msvcp140_* satellites depend on it, never the other way round.
+; Only the ones that are actually loaded. Everything in Bin resolves to these: hMailServer.exe
+; imports all four, hMailServer.Minidump.exe all but msvcp140_atomic_wait.dll, libcrypto,
+; libssl and libpq import vcruntime140.dll, and the rest is managed code with no native
+; imports at all. Neither exe delay-loads anything, and msvcp140.dll depends on the two
+; vcruntime DLLs and nothing else - the msvcp140_* satellites depend on it, never the other
+; way round.
 ;
 ; The rest of the redistributable is left out: concrt140.dll, vccorlib140.dll (C++/CX, which
-; cannot even load below Windows 8), vcruntime140_threads.dll and the msvcp140_1, _2,
-; _atomic_wait and _codecvt_ids satellites. That saves about 1.1 MB.
+; cannot even load below Windows 8), vcruntime140_threads.dll and the msvcp140_1, _2 and
+; _codecvt_ids satellites.
 ;
 ; Which satellites are needed follows from the code, not from the toolset: std::atomic::wait
 ; and std::counting_semaphore pull in msvcp140_atomic_wait.dll, PPL pulls in concrt140.dll,
-; and so on. Such a reference would build and test clean here and then fail to start on a
-; machine without the redistributable installed, so re-check this list with
-; "dumpbin /imports" when adding a dependency or moving to a newer toolset.
+; and so on. Such a reference builds and tests clean on a machine with the redistributable
+; installed, and then fails to start on one without it - hMailServer.exe came to import
+; msvcp140_atomic_wait.dll while it was still left out here, and setup on a clean Windows
+; Server 2025 could not register the server. The build workflow checks this list against the
+; imports now ("Check that the installer ships the C++ runtime the binaries import").
 Source: "{#VCREDIST_PATH}\msvcp140.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
+Source: "{#VCREDIST_PATH}\msvcp140_atomic_wait.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
 Source: "{#VCREDIST_PATH}\vcruntime140.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
 Source: "{#VCREDIST_PATH}\vcruntime140_1.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
 

@@ -65,6 +65,8 @@ namespace VMTestRunner.Console
          if (listEnvironments == null)
             return -1;
 
+         TestEnvironments.ResolveGFlags(listEnvironments);
+
          // The one-based position in this list identifies the test, both in the log
          // and in the row it occupies on the status board.
          var results = listEnvironments
