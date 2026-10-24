@@ -97,4 +97,10 @@ namespace HM
       std::vector<Column> vecColumns;
       std::vector<Column> where_clause_columns_;
    };
+
+   class SQLStatementTester
+   {
+   public:
+      void Test();
+   };
 }
