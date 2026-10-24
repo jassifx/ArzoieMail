@@ -144,18 +144,9 @@ jobs:
           if (-not $mysqld) { throw "The runner image has no MySQL server." }
           & $mysqld.FullName --version
 
-          # --no-defaults, first on the command line as mysqld requires: the server must run
-          # with its compiled-in defaults, not with whatever option file the image put in one
-          # of the places mysqld reads by default. Those files are listed for the record.
-          $baseDirectory = Split-Path (Split-Path $mysqld.FullName)
-          foreach ($optionFile in "$env:WINDIR\my.ini", "$env:WINDIR\my.cnf", 'C:\my.ini', 'C:\my.cnf', "$baseDirectory\my.ini", "$baseDirectory\my.cnf") {
-              if (Test-Path $optionFile) { "Option file $optionFile (not used):"; Get-Content $optionFile }
-          }
-
-          $dataDirectory = Join-Path $env:RUNNER_TEMP 'mysql-data'
-          & $mysqld.FullName --no-defaults --initialize-insecure "--datadir=$dataDirectory" --console
-          if ($LASTEXITCODE -ne 0) { throw "mysqld --initialize-insecure failed with exit code $LASTEXITCODE" }
-
+          # The server reads only this file (--defaults-file), not whatever option file the image
+          # put where mysqld looks by default.
+          #
           # Its own port, clear of any instance the image starts. The default authentication,
           # caching_sha2_password, is left as it is: libmariadb carries the plugin.
           #
@@ -165,12 +156,30 @@ jobs:
           # like this, and API.UtilitiesTests went from 267 seconds to 26 (17 on the internal
           # database). Durability is no concern for a database thrown away with the runner.
           $port = 3307
-          Start-Process -FilePath $mysqld.FullName -ArgumentList '--no-defaults', "--datadir=$dataDirectory", "--port=$port", '--console', '--skip-log-bin', '--innodb-flush-log-at-trx-commit=2' `
-              -RedirectStandardOutput (Join-Path $env:RUNNER_TEMP 'mysqld.out') -RedirectStandardError (Join-Path $env:RUNNER_TEMP 'mysqld.err')
+          $dataDirectory = Join-Path $env:RUNNER_TEMP 'mysql-data'
+          $optionFile = Join-Path $env:RUNNER_TEMP 'mysql.ini'
+          @(
+              '[mysqld]'
+              "datadir=$($dataDirectory -replace '\\', '/')"
+              "port=$port"
+              'skip-log-bin'
+              'innodb_flush_log_at_trx_commit=2'
+          ) | Set-Content -Path $optionFile -Encoding ascii
+
+          & $mysqld.FullName "--defaults-file=$optionFile" --initialize-insecure --console
+          if ($LASTEXITCODE -ne 0) { throw "mysqld --initialize-insecure failed with exit code $LASTEXITCODE" }
+
+          # A service, as the PostgreSQL server is. The runner ends every process a step started
+          # when the step ends, so a mysqld started here with Start-Process was gone by the time
+          # the tests ran: each test then failed in its setup after the server's connection
+          # attempts ("Can't connect to server on '127.0.0.1' (10061)") had all timed out.
+          & $mysqld.FullName --install ArzoieTestMySQL "--defaults-file=$optionFile"
+          if ($LASTEXITCODE -ne 0) { throw "mysqld --install failed with exit code $LASTEXITCODE" }
+          Start-Service ArzoieTestMySQL
 
           $deadline = (Get-Date).AddMinutes(2)
           while (-not (Test-NetConnection -ComputerName 127.0.0.1 -Port $port -InformationLevel Quiet -WarningAction SilentlyContinue)) {
-              if ((Get-Date) -gt $deadline) { Get-Content (Join-Path $env:RUNNER_TEMP 'mysqld.err'); throw "MySQL did not start listening on port $port." }
+              if ((Get-Date) -gt $deadline) { Get-Content (Join-Path $dataDirectory '*.err'); throw "MySQL did not start listening on port $port." }
               Start-Sleep -Seconds 2
           }
           "MySQL listens on port $port"
