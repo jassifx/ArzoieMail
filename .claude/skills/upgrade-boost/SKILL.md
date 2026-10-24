@@ -5,7 +5,7 @@ description: >-
   (e.g. rebuild 1.90.0, or upgrade 1.89.0 -> 1.90.0). Builds the static x64
   Boost libraries hMailServer links against into %hMailServerLibs% via
   libraries\build-boost.ps1, rewrites every pinned Boost version reference in the
-  repo, keeps the README build instructions current, and verifies hMailServer
+  repo, keeps the BUILDING.md build instructions current, and verifies hMailServer
   still compiles and links. Use when asked to build, rebuild, bump, update, or
   upgrade Boost for hMailServer. Supports Boost 1.x only.
 ---
@@ -15,7 +15,7 @@ description: >-
 hMailServer links against a handful of compiled Boost libraries (thread, filesystem, regex,
 chrono, system, atomic) plus many header-only ones. Boost is not vendored in the repo; it is
 built locally into `%hMailServerLibs%\boost_<underscored-version>` (e.g. `boost_1_90_0`), and
-its concrete version is pinned in the project files and README. This skill builds Boost,
+its concrete version is pinned in the project files and BUILDING.md. This skill builds Boost,
 rewrites those references when the version changes, and verifies the build.
 
 There are two reasons to run it:
@@ -34,7 +34,7 @@ There are two reasons to run it:
   that is why Boost, unlike OpenSSL/libpq, has no touch points in `post-build.bat`,
   `section_files_64.iss`, or `hMailServer64.iss`.
 - The compiled libs are built with the **msvc-14.5** toolset (v145, the Visual Studio 2026
-  default compiler), matching the rest of hMailServer. Updating any CI/CD-built copy of Boost is out of scope, but the README
+  default compiler), matching the rest of hMailServer. Updating any CI/CD-built copy of Boost is out of scope, but BUILDING.md
   build instructions must stay accurate.
 
 ## Steps
@@ -90,21 +90,21 @@ in these files:
 |------|-------------|
 | `hmailserver/source/Server/hMailServer/hMailServer.vcxproj` | 4 (include-dir + lib-dir, across Debug and Release) |
 | `hmailserver/source/Server/hMailServer.Minidump/hMailServer.Minidump.vcxproj` | 4 (include-dir + lib-dir, across Debug and Release) |
-| `README.md` | 2 (the dotted "Boost 1.90.0" version in the download step and the `boost_1_90_0` example folder name) |
+| `BUILDING.md` | 2 (the dotted "Boost 1.90.0" version in the download step and the `boost_1_90_0` example folder name) |
 
 Then grep the whole repo for `boost_\d+_\d+_\d+` and the dotted `Boost \d+\.\d+\.\d+`, and
 confirm the only remaining matches are the intentional ones you just rewrote — there must be
 **zero** references to the old concrete version.
 
-**Do not** change the `<Boost-Version>` placeholder in the README (it is generic) or the
+**Do not** change the `<Boost-Version>` placeholder in BUILDING.md (it is generic) or the
 `#include <boost/...>` directives throughout the source (not version-bearing).
 
 ### 4. Keep build instructions current
 
-The `README.md` "Building Boost" section documents the manual `bootstrap` / `b2` recipe the
+The `BUILDING.md` "Building Boost" section documents the manual `bootstrap` / `b2` recipe the
 script automates (step 3 already covers the version strings). Skim the new release's notes; only
 if Boost changed the build process (bootstrap/b2 flags, staged lib naming) update both
-`libraries\build-boost.ps1` and the README accordingly. State whether a change was needed.
+`libraries\build-boost.ps1` and BUILDING.md accordingly. State whether a change was needed.
 
 ### 5. Verify
 
@@ -122,12 +122,12 @@ installer changes are involved.
 ## Reference: all Boost touch points
 
 - **Version-pinned (edited by step 3):** `hMailServer.vcxproj`, `hMailServer.Minidump.vcxproj`,
-  `README.md`.
+  `BUILDING.md`.
 - **Build recipe (edited only if the release changes it):** `libraries\build-boost.ps1`,
-  `README.md`.
+  `BUILDING.md`.
 - **Not version-bearing (leave alone):** the `#include <boost/...>` directives across the source
   tree; the `$(BOOST_INCLUDE_PATH)` / `$(BOOST_LIBS_PATH)` MSBuild fallbacks in the project files;
-  the `<Boost-Version>` placeholder in the README.
+  the `<Boost-Version>` placeholder in BUILDING.md.
 
 ## Note
 

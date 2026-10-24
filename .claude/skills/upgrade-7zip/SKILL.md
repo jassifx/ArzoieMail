@@ -5,7 +5,7 @@ description: >-
   the pinned version (e.g. re-fetch 26.03, or upgrade 26.03 -> 26.04). Records the new
   release's SHA-256, downloads and unpacks it into %hMailServerLibs% via
   libraries\build-7zip.ps1, rewrites every pinned 7-Zip version reference in the repo,
-  keeps the README build instructions current, and verifies backup and restore still
+  keeps the BUILDING.md build instructions current, and verifies backup and restore still
   work. Use when asked to fetch, re-fetch, bump, update, or upgrade 7-Zip / 7za.exe for
   hMailServer.
 ---
@@ -127,7 +127,7 @@ the hash that was actually received; work out why it differs first.
 |------|-------------|
 | `hmailserver/source/Server/hMailServer/post-build.bat` | 1 (the `xcopy` of `7za.exe`) |
 | `hmailserver/installation/hMailServer64.iss` | 1 (`SEVENZIP_PATH`) |
-| `README.md` | 2 (the `e.g. 7zip-<ver>` example and the `-Version` argument in "Fetching 7-Zip") |
+| `BUILDING.md` | 2 (the `e.g. 7zip-<ver>` example and the `-Version` argument in "Fetching 7-Zip") |
 
 Then grep the repo for `7zip-\d` and `<old version>` and confirm the only remaining matches are
 the ones you just rewrote plus the illustrative examples in `libraries\build-7zip.ps1`'s own
@@ -147,9 +147,9 @@ It must report the new `sevenzip=<target>` / `sevenzip_dir=7zip-<target>`.
 
 ### 5. Keep build instructions and licensing current
 
-- The `README.md` "Fetching 7-Zip" section documents what the script automates; step 4 covers its
+- The `BUILDING.md` "Fetching 7-Zip" section documents what the script automates; step 4 covers its
   version numbers. Only if the release changed the package layout (the `x64\7za.exe` or
-  `License.txt` paths inside the archive) update both `libraries\build-7zip.ps1` and the README.
+  `License.txt` paths inside the archive) update both `libraries\build-7zip.ps1` and BUILDING.md.
   State whether a change was needed.
 - **Diff the new `License.txt`** against the previously shipped one. It is installed as
   `{app}\Bin\7za.exe.license.txt` by `section_files_common.iss`, so a licensing change matters:
@@ -202,7 +202,7 @@ ISCC validates that both `{#SEVENZIP_PATH}\7za.exe` and `{#SEVENZIP_PATH}\Licens
 - **Version-pinned (edited by steps 2 and 4):** `libraries\build-7zip.ps1` (`$ArchiveHashes`,
   `$BootstrapHashes`),
   `hmailserver/source/Server/hMailServer/post-build.bat`,
-  `hmailserver/installation/hMailServer64.iss`, `README.md`.
+  `hmailserver/installation/hMailServer64.iss`, `BUILDING.md`.
 - **Derived automatically (never edit for a version bump):** `build\Get-LibraryVersions.ps1`,
   `.github/workflows/build.yml`.
 - **Not version-bearing (leave alone):** the `7za.exe` file name in
