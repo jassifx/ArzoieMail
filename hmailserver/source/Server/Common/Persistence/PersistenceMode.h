@@ -3,10 +3,9 @@
 
 #pragma once
 
-#ifdef _DEBUG
-#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
-#define new DEBUG_NEW
-#endif
+// No DEBUG_NEW here. The .cpp files define it after their includes; defined in a header,
+// it would also rewrite the placement new of every header included after this one, such
+// as Boost's.
 
 namespace HM   
 {
