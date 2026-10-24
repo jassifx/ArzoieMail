@@ -39,6 +39,7 @@ namespace hMailServer.Administrator.Controls
          }
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public new object SelectedValue
       {
          set
@@ -68,6 +69,7 @@ namespace hMailServer.Administrator.Controls
          }
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public new string Text
       {
          get

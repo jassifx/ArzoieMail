@@ -350,31 +350,68 @@ begin
 	Result := sKey;
 end;
 
-function IsNetFrameworkInstalled() : boolean;
-	var release: cardinal;
+// True when a .NET 10 Desktop Runtime is installed; any 10.0.x satisfies the tools, which
+// roll forward to the newest patch. The .NET host finds runtimes in
+// dotnet\shared\Microsoft.WindowsDesktop.App\<version> under Program Files, which is where
+// every way of installing one puts it. The .NET installers also record each version in the
+// registry - in the 32-bit view, even for the x64 runtime.
+function IsDotNetDesktopRuntimeInstalled() : Boolean;
+var
+   Versions: TArrayOfString;
+   FindRec: TFindRec;
+   I: Integer;
 begin
-	Result := True;
-	if (not RegKeyExists(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full')) then begin
-		// No 4.x-version is installed.
-		Result := false;
-		Exit;
-	end;
-	
-	// Check for at least 4.5:
-	if (not RegQueryDWordValue(HKLM, 'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full', 'Release', release)) then begin
-		// Unable to determine 4.5-version
-		Result := false;
-		Exit;
-	end;
-	
-	// https://docs.microsoft.com/en-us/dotnet/framework/migration-guide/how-to-determine-which-versions-are-installed
-	// 378389 = .NET Framework 4.5
-	if (release < 378389) then begin
-		// Only .NET 4.0 installed
-		Result := false;
-		Exit;
-	end;
-	
+   Result := False;
+
+   if FindFirst(ExpandConstant('{commonpf64}\dotnet\shared\Microsoft.WindowsDesktop.App\10.*'), FindRec) then
+   begin
+      try
+         repeat
+            if FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY <> 0 then
+            begin
+               Result := True;
+               exit;
+            end;
+         until not FindNext(FindRec);
+      finally
+         FindClose(FindRec);
+      end;
+   end;
+
+   if RegGetValueNames(HKLM32, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App', Versions) then
+      for I := 0 to GetArrayLength(Versions) - 1 do
+         if Pos('10.', Versions[I]) = 1 then
+         begin
+            Result := True;
+            exit;
+         end;
+end;
+
+function NeedsDotNetDesktopRuntime() : Boolean;
+begin
+   Result := not IsDotNetDesktopRuntimeInstalled();
+end;
+
+// Runs the bundled .NET Desktop Runtime installer, if [Files] extracted it because the
+// runtime was missing. Must run before any of the tools is started.
+procedure InstallDotNetDesktopRuntime();
+var
+   Installer: String;
+   ResultCode: Integer;
+begin
+   Installer := ExpandConstant('{tmp}\{#DOTNET_DESKTOP_RUNTIME_FILE}');
+   if not FileExists(Installer) then
+      exit;
+
+   Log('ArzoieMail: installing the .NET Desktop Runtime {#DOTNET_DESKTOP_RUNTIME_VERSION}');
+   if not Exec(Installer, '/install /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      ResultCode := -1;
+
+   // 3010: installed, a restart is needed to finish. 1638: a newer version is installed.
+   if (ResultCode <> 0) and (ResultCode <> 3010) and (ResultCode <> 1638) then
+      SuppressibleMsgBox('The .NET Desktop Runtime {#DOTNET_DESKTOP_RUNTIME_VERSION} could not be installed (exit code ' + IntToStr(ResultCode) + '). '
+         + 'The ArzoieMail tools need it. Install it from https://dotnet.microsoft.com/download/dotnet/10.0 and then run the setup again.',
+         mbError, MB_OK, IDOK);
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
@@ -555,13 +592,6 @@ function InitializeSetup(): Boolean;
 begin
 	Result := true;
 			
-	if not IsNetFrameworkInstalled() then begin
-        MsgBox('ArzoieMail requires .NET Framework 4.5'#13#13
-            'Please install this version and then re-run the ArzoieMail setup program.', mbInformation, MB_OK);
-        result := false;
-		Exit;
-	end;
-	
 	// The window titles of the current tools, and of the hMailServer tools an upgrade replaces.
 	if (FindWindowByWindowName('ArzoieMail Administrator') > 0) or (FindWindowByWindowName('hMailServer Administrator') > 0) then
 	begin
@@ -1017,6 +1047,9 @@ begin
 	
 	if CurStep = ssPostInstall then
 	begin
+	  // The tools started below are .NET 10 applications.
+	  InstallDotNetDesktopRuntime();
+
    // Create a registry key that tell
 	  // other apps where we're installed.
 	  RegWriteStringValue(HKLM32, 'Software\hMailServer', 'InstallLocation', ExpandConstant('{app}'));

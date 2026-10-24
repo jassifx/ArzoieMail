@@ -1,6 +1,7 @@
 // Copyright (c) 2010 Martin Knafve / hMailServer.com.  
 // http://www.hmailserver.com
 
+using System.ComponentModel;
 using System;
 using System.Windows.Forms;
 using hMailServer.Shared;
@@ -20,6 +21,7 @@ namespace hMailServer.Administrator.Controls
          internalText = "";
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public new string Text
       {
          get
@@ -91,6 +93,7 @@ namespace hMailServer.Administrator.Controls
             ContentChanged(sender, e);
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public bool ReadOnlyHost
       {
          set 

@@ -50,7 +50,7 @@ namespace hMailServer.Shared
 
       private void linkWhatIsThis_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
       {
-         Process.Start("https://www.hmailserver.com/documentation/latest/?page=reference_dialoghelp_hmailserver_password");
+         ShellLauncher.Open("https://www.hmailserver.com/documentation/latest/?page=reference_dialoghelp_hmailserver_password");
       }
    }
 }

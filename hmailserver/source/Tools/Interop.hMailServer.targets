@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Generates Interop.hMailServer.dll from the type library the server build writes, rather than
-  through a COMReference, so the interop carries hMailServer's product name and version like the
-  other signed files. Imported by the shipped tools. Build hMailServer.sln first.
+  through a COMReference, so the interop carries the product name and version like the other
+  signed files. Imported by the shipped tools. Build hMailServer.sln first.
+
+  The tools are SDK-style .NET projects, which import this file before the SDK's own targets,
+  so nothing here may depend on properties those targets set, such as IntermediateOutputPath.
 -->
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project>
   <PropertyGroup>
     <HMailServerTypeLibrary>$(MSBuildThisFileDirectory)..\Server\hMailServer\x64\$(Configuration)\hMailServer.tlb</HMailServerTypeLibrary>
     <HMailServerVersionHeader>$(MSBuildThisFileDirectory)..\Server\Common\Application\Version.h</HMailServerVersionHeader>
-    <HMailServerInterop>$(IntermediateOutputPath)Interop.hMailServer.dll</HMailServerInterop>
-    <HMailServerTlbImp>$(TargetFrameworkSDKToolsDirectory)TlbImp.exe</HMailServerTlbImp>
+    <HMailServerInteropDirectory>$(MSBuildProjectDirectory)\$(BaseIntermediateOutputPath)interop\$(Configuration)\</HMailServerInteropDirectory>
+    <HMailServerInterop>$(HMailServerInteropDirectory)Interop.hMailServer.dll</HMailServerInterop>
+
+    <!-- TlbImp ships with the .NET Framework tools of the Windows SDK, which Visual Studio's .NET
+         desktop workload installs. SDK-style projects do not set TargetFrameworkSDKToolsDirectory. -->
+    <HMailServerTlbImpDirectory Condition="'$(HMailServerTlbImpDirectory)' == ''">$([MSBuild]::GetRegistryValueFromView('HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\NETFXSDK\4.8\WinSDK-NetFx40Tools-x64', 'InstallationFolder', null, RegistryView.Registry32))</HMailServerTlbImpDirectory>
+    <HMailServerTlbImpDirectory Condition="'$(HMailServerTlbImpDirectory)' == ''">$(MSBuildProgramFiles32)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\</HMailServerTlbImpDirectory>
+    <HMailServerTlbImp>$([MSBuild]::EnsureTrailingSlash('$(HMailServerTlbImpDirectory)'))TlbImp.exe</HMailServerTlbImp>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,7 +33,7 @@
           Inputs="$(HMailServerTypeLibrary);$(HMailServerVersionHeader)"
           Outputs="$(HMailServerInterop)">
     <Error Condition="!Exists('$(HMailServerTypeLibrary)')" Text="$(HMailServerTypeLibrary) was not found. Build hMailServer.sln ($(Configuration)|x64) first." />
-    <Error Condition="!Exists('$(HMailServerTlbImp)')" Text="TlbImp.exe was not found in $(TargetFrameworkSDKToolsDirectory). Install the .NET Framework tools of the Windows SDK." />
+    <Error Condition="!Exists('$(HMailServerTlbImp)')" Text="TlbImp.exe was not found at $(HMailServerTlbImp). Install the .NET Framework 4.8 tools of the Windows SDK (part of Visual Studio's .NET desktop development workload)." />
 
     <!-- The product version is stamped into Version.h by build\Set-Version.ps1. -->
     <PropertyGroup>
@@ -32,8 +41,8 @@
     </PropertyGroup>
     <Error Condition="'$(HMailServerProductVersion)' == ''" Text="HMAILSERVER_PRODUCT_VERSION was not found in $(HMailServerVersionHeader)." />
 
-    <MakeDir Directories="$(IntermediateOutputPath)" />
-    <Exec Command="&quot;$(HMailServerTlbImp)&quot; &quot;$(HMailServerTypeLibrary)&quot; /out:&quot;$(HMailServerInterop)&quot; /namespace:hMailServer /product:hMailServer /productversion:$(HMailServerProductVersion) /asmversion:$(HMailServerProductVersion) /company:hMailServer.com /nologo /silent" />
+    <MakeDir Directories="$(HMailServerInteropDirectory)" />
+    <Exec Command="&quot;$(HMailServerTlbImp)&quot; &quot;$(HMailServerTypeLibrary)&quot; /out:&quot;$(HMailServerInterop)&quot; /namespace:hMailServer /product:ArzoieMail /productversion:$(HMailServerProductVersion) /asmversion:$(HMailServerProductVersion) /company:ArzoieMail /nologo /silent" />
 
     <ItemGroup>
       <FileWrites Include="$(HMailServerInterop)" />

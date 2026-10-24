@@ -26,18 +26,26 @@ Source: "{#VCREDIST_PATH}\vcruntime140_1.dll"; DestDir: "{app}\Bin"; Flags: igno
 
 Source: "SQLCE\SSCERuntime_x64-ENU.msi"; Flags: deleteafterinstall ; Excludes: ".svn"; DestDir: "{tmp}"; Components: server;
 
-; Common tools
-Source: "..\source\tools\Administrator\bin\x64\Release\hMailAdmin.exe"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: admintools;
-Source: "..\source\tools\DBUpdater\Bin\x64\Release\DBUpdater.exe"; DestDir: "{app}\Bin";  Flags: ignoreversion; Components: server;
-Source: "..\source\tools\DBSetup\Bin\x64\Release\DBSetup.exe"; DestDir: "{app}\Bin";Flags: ignoreversion;Components: server;
-Source: "..\Source\tools\DBSetupQuick\bin\x64\release\DBSetupQuick.exe"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
+; Common tools. They are .NET 10 applications: each is an .exe host with its .dll, .deps.json,
+; .runtimeconfig.json and .dll.config beside it.
+Source: "..\source\tools\Administrator\bin\x64\Release\hMailAdmin.*"; Excludes: "*.pdb"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: admintools;
+Source: "..\source\tools\DBUpdater\Bin\x64\Release\DBUpdater.*"; Excludes: "*.pdb"; DestDir: "{app}\Bin";  Flags: ignoreversion; Components: server;
+Source: "..\source\tools\DBSetup\Bin\x64\Release\DBSetup.*"; Excludes: "*.pdb"; DestDir: "{app}\Bin";Flags: ignoreversion;Components: server;
+; System.ServiceProcess.ServiceController is a NuGet package on .NET; DBSetup uses it.
+Source: "..\source\tools\DBSetup\Bin\x64\Release\System.ServiceProcess.ServiceController.dll"; DestDir: "{app}\Bin";Flags: ignoreversion;Components: server;
+Source: "..\source\tools\DBSetup\Bin\x64\Release\runtimes\*"; DestDir: "{app}\Bin\runtimes";Flags: ignoreversion recursesubdirs;Components: server;
+Source: "..\Source\tools\DBSetupQuick\bin\x64\release\DBSetupQuick.*"; Excludes: "*.pdb"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server;
 Source: "..\source\tools\Administrator\bin\x64\Release\Interop.hMailServer.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
 Source: "..\source\tools\shared\bin\x64\Release\Shared.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
+Source: "..\source\tools\shared\bin\x64\Release\Shared.dll.config"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;
+
+; The .NET Desktop Runtime the tools need, extracted only when it is not installed yet and
+; run by InstallDotNetDesktopRuntime() before any of the tools is started.
+Source: "{#DOTNET_DESKTOP_RUNTIME_PATH}"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsDotNetDesktopRuntime; Components: server admintools;
 
 ; Data directory synchronizer
-Source: "..\source\Tools\DataDirectorySynchronizer\Bin\x64\Release\*.exe"; DestDir: "{app}\Addons\DataDirectorySynchronizer"; Flags: ignoreversion recursesubdirs; Components: server;
-Source: "..\source\tools\Administrator\bin\x64\Release\Interop.hMailServer.dll"; DestDir: "{app}\Addons\DataDirectorySynchronizer"; Flags: ignoreversion; Components: server;
-Source: "..\source\Tools\Shared\Bin\x64\Release\Shared.dll"; DestDir: "{app}\Addons\DataDirectorySynchronizer"; Flags: ignoreversion; Components: server;
+; Its build output already holds Interop.hMailServer.dll and Shared.dll.
+Source: "..\source\Tools\DataDirectorySynchronizer\Bin\x64\Release\*"; Excludes: "*.pdb"; DestDir: "{app}\Addons\DataDirectorySynchronizer"; Flags: ignoreversion recursesubdirs; Components: server;
 
 ; OpenSSL
 Source: "{#OPENSSL_LIBS_PATH}\libcrypto-3-x64.dll"; DestDir: "{app}\Bin"; Flags: ignoreversion; Components: server admintools;

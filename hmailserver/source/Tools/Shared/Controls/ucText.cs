@@ -21,6 +21,7 @@ namespace hMailServer.Shared
 
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public new string Text
       {
          get
@@ -35,6 +36,7 @@ namespace hMailServer.Shared
          }
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public int Number
       {
          get
@@ -56,6 +58,7 @@ namespace hMailServer.Shared
          }
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public Int64 Number64
       {
          get
@@ -94,6 +97,7 @@ namespace hMailServer.Shared
          internalText = base.Text;
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public bool Numeric
       {
          get
