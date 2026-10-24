@@ -108,12 +108,16 @@ namespace VMTestRunner.Console
                foreach (var copyOperation in _environment.PreInstallFileCopy)
                   guest.CopyFileToGuest(copyOperation.From, copyOperation.To);
 
-               guest.CopyFolderToGuest(_nUnitConsolePath, guestTestPath);
-
                // The whole build output: a .NET test assembly needs its .deps.json and
                // .runtimeconfig.json, NUnit and the interop next to it. The volume tests' output
                // includes RegressionTests.dll, whose shared infrastructure they use.
                guest.CopyFolderToGuest(testAssemblyDirectory, guestTestPath);
+
+               // After the build output, not before: NUnit3TestAdapter brings nunit.engine*.dll of
+               // its own version into it, and nunit3-console.exe fails to start with the
+               // adapter's engine beside it (MissingMethodException on
+               // TestEngineActivator.CreateInstance). The tests themselves don't use the engine.
+               guest.CopyFolderToGuest(_nUnitConsolePath, guestTestPath);
 
                guest.CopyFileToGuest(Path.Combine(currentDirectory, RunTestScriptName), Path.Combine(guestTestPath, RunTestScriptName));
 
