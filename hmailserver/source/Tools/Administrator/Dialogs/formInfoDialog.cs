@@ -1,6 +1,7 @@
 // Copyright (c) 2010 Martin Knafve / hMailServer.com.  
 // http://www.hmailserver.com
 
+using System.ComponentModel;
 using System.Windows.Forms;
 
 namespace hMailServer.Administrator.Dialogs
@@ -13,6 +14,7 @@ namespace hMailServer.Administrator.Dialogs
          Strings.Localize(this);
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public string Title
       {
          set
@@ -26,6 +28,7 @@ namespace hMailServer.Administrator.Dialogs
          }
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public string Message
       {
          set

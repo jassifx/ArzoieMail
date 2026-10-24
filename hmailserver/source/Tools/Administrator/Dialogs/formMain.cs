@@ -667,7 +667,7 @@ namespace hMailServer.Administrator
 
             try
             {
-                System.Diagnostics.Process.Start(url);
+                ShellLauncher.Open(url);
             }
             catch (Exception ex)
             {
@@ -683,7 +683,7 @@ namespace hMailServer.Administrator
 
             try
             {
-                System.Diagnostics.Process.Start(url);
+                ShellLauncher.Open(url);
             }
             catch (Exception ex)
             {
@@ -709,7 +709,7 @@ namespace hMailServer.Administrator
             {
                 // Restart hMailServer Administrator to use the new language.
 
-                string currentExecutable = Assembly.GetExecutingAssembly().Location;
+                string currentExecutable = Environment.ProcessPath;
 
                 System.Diagnostics.Process.Start(currentExecutable);
 

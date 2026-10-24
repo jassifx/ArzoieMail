@@ -183,32 +183,6 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$version"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "build=$build"
 
-      - name: Pick the .NET Framework the C# projects build against
-        id: netfx
-        run: |
-          # The C# projects target .NET Framework 4.5, whose reference assemblies current
-          # Visual Studio versions no longer install. 4.5 through 4.8 are in-place updates of the same
-          # runtime, so building against a later targeting pack is safe; the override is used
-          # only when v4.5 really is missing, and never below v4.7.2 - the highest version any
-          # project in the two solutions asks for, which must not be downgraded.
-          $refRoot = "${env:ProgramFiles(x86)}\Reference Assemblies\Microsoft\Framework\.NETFramework"
-          $installed = @(Get-ChildItem $refRoot -Directory -ErrorAction SilentlyContinue |
-              Where-Object { Test-Path (Join-Path $_.FullName 'mscorlib.dll') } |
-              ForEach-Object { $_.Name })
-          "Installed targeting packs: $($installed -join ', ')"
-
-          $override = ''
-          if ($installed -notcontains 'v4.5') {
-              $candidate = $installed |
-                  Where-Object { $_ -match '^v(\d+(\.\d+)+)$' -and [version]$Matches[1] -ge [version]'4.7.2' } |
-                  Sort-Object { [version]($_ -replace '^v', '') } |
-                  Select-Object -First 1
-              if (-not $candidate) { throw "No .NET Framework targeting pack of v4.7.2 or later is installed." }
-              $override = $candidate
-              "v4.5 is not installed; building the C# projects against $override instead."
-          }
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "override=$override"
-
       # One cache per library, so bumping one version does not throw the others away. Each key
       # carries the pinned version, the scripts that produce the build, and the runner image;
       # libpq and libmariadb link against OpenSSL, so their keys carry its version too, and
@@ -259,6 +233,13 @@ jobs:
         with:
           path: ${{ env.hMailServerLibs }}\${{ steps.versions.outputs.sevenzip_dir }}
           key: sevenzip-${{ steps.versions.outputs.sevenzip }}-${{ hashFiles('libraries/build-7zip.ps1', 'libraries/build-common.ps1') }}
+
+      - name: Restore the .NET Desktop Runtime installer
+        id: cache-dotnet-runtime
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.hMailServerLibs }}\${{ steps.versions.outputs.dotnet_runtime_dir }}
+          key: dotnet-runtime-${{ steps.versions.outputs.dotnet_runtime }}-${{ hashFiles('libraries/fetch-dotnet-runtime.ps1', 'libraries/build-common.ps1') }}
 
       # Each build step prunes its tree before it is saved. What is kept is exactly what
       # hMailServer.vcxproj and post-build.bat reference; the rest is source and intermediates
@@ -380,6 +361,22 @@ jobs:
           path: ${{ env.hMailServerLibs }}\${{ steps.versions.outputs.sevenzip_dir }}
           key: ${{ steps.cache-sevenzip.outputs.cache-primary-key }}
 
+      # Microsoft's installer, checked against the SHA-512 Microsoft publishes for it.
+      - name: Fetch the .NET Desktop Runtime installer
+        if: steps.cache-dotnet-runtime.outputs.cache-hit != 'true'
+        env:
+          LIB_VERSION: ${{ steps.versions.outputs.dotnet_runtime }}
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\fetch-dotnet-runtime.ps1 -Version $env:LIB_VERSION
+          if ($LASTEXITCODE -ne 0) { throw "fetch-dotnet-runtime.ps1 failed with exit code $LASTEXITCODE" }
+
+      - name: Save the .NET Desktop Runtime installer
+        if: success() && steps.cache-dotnet-runtime.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.hMailServerLibs }}\${{ steps.versions.outputs.dotnet_runtime_dir }}
+          key: ${{ steps.cache-dotnet-runtime.outputs.cache-primary-key }}
+
       - name: Stamp the version into the sources and the installer script
         env:
           PRODUCT_VERSION: ${{ steps.product.outputs.version }}
@@ -407,16 +404,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "post-build.ps1 failed with exit code $LASTEXITCODE" }
 
       - name: Build the hMailServer tools
-        env:
-          NETFX_OVERRIDE: ${{ steps.netfx.outputs.override }}
         run: |
-          # hMailAdmin, DBSetup, DBUpdater and the rest of what the installer ships.
+          # hMailAdmin, DBSetup, DBUpdater and the rest of what the installer ships: .NET 10
+          # SDK-style projects, so the build restores their NuGet packages first.
           . build\Find-MsBuild.ps1
           $msbuild = Find-MsBuild
           if (-not $msbuild) { throw "MSBuild was not found." }
 
-          $arguments = @('hmailserver\source\Tools\hMailServer Tools.sln', '/m', '/p:Configuration=Release', '/p:Platform=x64')
-          if ($env:NETFX_OVERRIDE) { $arguments += "/p:TargetFrameworkVersion=$env:NETFX_OVERRIDE" }
+          $arguments = @('hmailserver\source\Tools\hMailServer Tools.sln', '/restore', '/m', '/p:Configuration=Release', '/p:Platform=x64')
           & $msbuild @arguments
           if ($LASTEXITCODE -ne 0) { throw "Building hMailServer Tools.sln failed with exit code $LASTEXITCODE" }
 
@@ -426,17 +421,23 @@ jobs:
         if: env.SIGNING_POLICY != 'none'
         run: |
           # Must match the "binaries" artifact configuration in SignPath. Third-party DLLs
-          # are not signed with our certificate.
+          # are not signed with our certificate. The tools are .NET 10 applications, whose
+          # code is in <tool>.dll; <tool>.exe is the .NET host that starts it.
           $files = @(
               'hmailserver\source\Server\hMailServer\x64\Release\hMailServer.exe',
               'hmailserver\source\Server\hMailServer\x64\Release\hMailServer.Minidump.exe',
               'hmailserver\source\Tools\Administrator\bin\x64\Release\hMailAdmin.exe',
+              'hmailserver\source\Tools\Administrator\bin\x64\Release\hMailAdmin.dll',
               'hmailserver\source\Tools\Administrator\bin\x64\Release\Interop.hMailServer.dll',
               'hmailserver\source\Tools\Shared\bin\x64\Release\Shared.dll',
               'hmailserver\source\Tools\DBSetup\Bin\x64\Release\DBSetup.exe',
+              'hmailserver\source\Tools\DBSetup\Bin\x64\Release\DBSetup.dll',
               'hmailserver\source\Tools\DBSetupQuick\bin\x64\Release\DBSetupQuick.exe',
+              'hmailserver\source\Tools\DBSetupQuick\bin\x64\Release\DBSetupQuick.dll',
               'hmailserver\source\Tools\DBUpdater\Bin\x64\Release\DBUpdater.exe',
-              'hmailserver\source\Tools\DataDirectorySynchronizer\Bin\x64\Release\DataDirectorySynchronizer.exe'
+              'hmailserver\source\Tools\DBUpdater\Bin\x64\Release\DBUpdater.dll',
+              'hmailserver\source\Tools\DataDirectorySynchronizer\Bin\x64\Release\DataDirectorySynchronizer.exe',
+              'hmailserver\source\Tools\DataDirectorySynchronizer\Bin\x64\Release\DataDirectorySynchronizer.dll'
           )
 
           $stage = Join-Path $env:RUNNER_TEMP 'unsigned-binaries\Bin'

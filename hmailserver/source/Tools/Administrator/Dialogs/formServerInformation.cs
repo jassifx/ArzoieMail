@@ -1,6 +1,7 @@
 // Copyright (c) 2010 Martin Knafve / hMailServer.com.  
 // http://www.hmailserver.com
 
+using System.ComponentModel;
 using System;
 using System.Windows.Forms;
 using hMailServer.Administrator.Utilities;
@@ -21,6 +22,7 @@ namespace hMailServer.Administrator
          Strings.Localize(this);
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public Server Server
       {
          get

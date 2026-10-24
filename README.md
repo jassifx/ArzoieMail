@@ -207,6 +207,23 @@ listed there are accepted. To move to a newer 7-Zip, record its hashes in `$Arch
 and `$BootstrapHashes` and update the `7zip-&lt;Version&gt;` folder name in `post-build.bat` and
 `hMailServer64.iss`.
 
+Fetching the .NET Desktop Runtime
+---------------------------------
+The administration tools are .NET 10 applications, and the installer bundles Microsoft's .NET
+Desktop Runtime installer, which it runs when the runtime is missing, so that an installation
+needs no internet connection. The `libraries\fetch-dotnet-runtime.ps1` script downloads it into
+%hMailServerLibs%\dotnet-desktop-runtime-&lt;Version&gt; and checks it against the SHA-512 that
+Microsoft publishes, pinned in the script.
+
+Run, from the repository root:
+
+   <pre>
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\fetch-dotnet-runtime.ps1 -Version 10.0.13
+   </pre>
+
+To move to a newer runtime, record its hash in `$RuntimeHashes` and update
+`DOTNET_DESKTOP_RUNTIME_VERSION` in `hMailServer64.iss`.
+
 Building the server, the tools and the installer
 ------------------------------------------------
 
@@ -219,10 +236,12 @@ with `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>`:
    hMailServer.exe, registers it as the COM server if needed, and starts the service again.
    Only the registration needs elevation. Run `build\grant-service-control.ps1` once, elevated,
    to let your account start and stop the service without a UAC prompt.
-3. Build `hmailserver\source\Tools\hMailServer Tools.sln` in Visual Studio or with MSBuild. This
-   builds ArzoieMail Administrator, Database Setup, the database upgrader and the other tools.
-   They generate their COM interop from the type library the server build writes, so build the
-   server first.
+3. Build `hmailserver\source\Tools\hMailServer Tools.sln` in Visual Studio, or with
+   `dotnet build "hmailserver\source\Tools\hMailServer Tools.sln" -c Release -p:Platform=x64`.
+   This builds ArzoieMail Administrator, Database Setup, the database upgrader and the other
+   tools, which are .NET 10 Windows Forms applications (the .NET 10 SDK comes with Visual
+   Studio 2026). They generate their COM interop from the type library the server build writes,
+   using TlbImp from the .NET Framework 4.8 tools of the Windows SDK, so build the server first.
 4. Compile `hmailserver\installation\hMailServer64.iss` with InnoSetup to build the installer,
    `ArzoieMail-<version>-B<build>-x64-Setup.exe`.
 

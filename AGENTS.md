@@ -42,7 +42,7 @@ source/
   DBScripts/          # SQL scripts: create DB schema, upgrade old DBs
   Migration/          # Unpublished tools for migrating from other mail servers
   Server/             # The hMailServer service — main C++ codebase
-  Tools/              # C# GUI tools (Administrator, DBSetup, etc.)
+  Tools/              # C# .NET 10 Windows Forms tools (Administrator, DBSetup, etc.)
 ```
 
 ---
@@ -117,7 +117,7 @@ Built by the separate solution `source/Tools/hMailServer Tools.sln`.
 
 ```
 Tools/
-  Administrator/                # The hMailServer Administrator desktop GUI (C#/WinForms)
+  Administrator/                # The Administrator desktop GUI (C#/WinForms on .NET 10)
                                 # See hmailserver\source\Tools\Administrator\README.md for more information about Administrator.
   DataDirectorySynchronizer/    # Tool for synchronizing data directory with database.
   DBSetup/                      # Interactive DB creation tool (uses the COM API)

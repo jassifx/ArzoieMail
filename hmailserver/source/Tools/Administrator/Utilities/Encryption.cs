@@ -21,8 +21,9 @@ namespace hMailServer.Administrator.Utilities
             PasswordDeriveBytes passwordDerivedBytes = new PasswordDeriveBytes(NOT_SECRET_KEY,
                 new byte[] {0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76});
 
-            // Use Rijndael symmetric algorithm to do the encryption.
-            Rijndael rijndaelAlgorithm = Rijndael.Create();
+            // AES, which is what Rijndael with its default 128-bit block always was, so values
+            // encrypted by earlier versions still decrypt.
+            Aes rijndaelAlgorithm = Aes.Create();
             rijndaelAlgorithm.Key = passwordDerivedBytes.GetBytes(32);
             rijndaelAlgorithm.IV = passwordDerivedBytes.GetBytes(16);
 
@@ -47,8 +48,8 @@ namespace hMailServer.Administrator.Utilities
             PasswordDeriveBytes pdb = new PasswordDeriveBytes(NOT_SECRET_KEY,
                 new byte[] { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 });
 
-            // Use Rijndael symmetric algorithm to do the decryption.
-            Rijndael rijndaelAlgorithm = Rijndael.Create();
+            // AES - see Encrypt.
+            Aes rijndaelAlgorithm = Aes.Create();
             rijndaelAlgorithm.Key = pdb.GetBytes(32);
             rijndaelAlgorithm.IV = pdb.GetBytes(16);
 

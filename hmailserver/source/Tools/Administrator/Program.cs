@@ -29,6 +29,8 @@ namespace hMailServer.Administrator
          // What does this actually do...?
          System.Windows.Forms.Application.EnableVisualStyles();
          System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+         // .NET made Segoe UI 9pt the default; the forms are laid out for the .NET Framework one.
+         System.Windows.Forms.Application.SetDefaultFont(new System.Drawing.Font(new System.Drawing.FontFamily("Microsoft Sans Serif"), 8.25f));
 
          formConnect connectDlg = new formConnect();
          if (!connectDlg.AutoConnect())

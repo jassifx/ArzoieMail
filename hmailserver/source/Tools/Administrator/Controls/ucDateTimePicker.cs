@@ -20,6 +20,7 @@ namespace hMailServer.Administrator.Controls
          
       }
 
+      [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
       public new DateTime Value
       {
          get

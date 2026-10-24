@@ -37,8 +37,9 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Get-Item $PSScriptRoot).Parent.FullName
 $vcxproj = Join-Path -Path $repoRoot -ChildPath "hmailserver\source\Server\hMailServer\hMailServer.vcxproj"
 $postBuild = Join-Path -Path $repoRoot -ChildPath "hmailserver\source\Server\hMailServer\post-build.bat"
+$setupScript = Join-Path -Path $repoRoot -ChildPath "hmailserver\installation\hMailServer64.iss"
 
-foreach ($file in @($vcxproj, $postBuild))
+foreach ($file in @($vcxproj, $postBuild, $setupScript))
 {
     if (!(Test-Path $file))
     {
@@ -49,6 +50,7 @@ foreach ($file in @($vcxproj, $postBuild))
 # Read each file once; the same content is searched for several versions.
 $vcxprojText = Get-Content -Path $vcxproj -Raw
 $postBuildText = Get-Content -Path $postBuild -Raw
+$setupScriptText = Get-Content -Path $setupScript -Raw
 
 # Pull the first match of $Pattern out of $Text, failing loudly rather than returning an
 # empty version that would silently produce a wrong cache key or DLL path.
@@ -82,6 +84,9 @@ $mariadb = Get-PinnedVersion -Text $postBuildText -Pattern 'libmariadb-(\d+\.\d+
 # no compiler path; post-build.bat and hMailServer64.iss both name the 7zip-<version> folder.
 $sevenzip = Get-PinnedVersion -Text $postBuildText -Pattern '7zip-(\d+\.\d+)' -Description '7-Zip' -Source $postBuild
 
+# The .NET Desktop Runtime installer the setup bundles for the .NET 10 tools.
+$dotnetRuntime = Get-PinnedVersion -Text $setupScriptText -Pattern '#define DOTNET_DESKTOP_RUNTIME_VERSION "(\d+\.\d+\.\d+)"' -Description '.NET Desktop Runtime' -Source $setupScript
+
 # Boost is pinned as a folder name with underscores (boost_1_92_0); build-boost.ps1 takes the
 # dotted form.
 $boost = $boostUnderscored -replace '_', '.'
@@ -97,6 +102,8 @@ $values = [ordered]@{
     mariadb_dir        = "libmariadb-$mariadb"
     sevenzip           = $sevenzip
     sevenzip_dir       = "7zip-$sevenzip"
+    dotnet_runtime     = $dotnetRuntime
+    dotnet_runtime_dir = "dotnet-desktop-runtime-$dotnetRuntime"
 }
 
 foreach ($name in $values.Keys)

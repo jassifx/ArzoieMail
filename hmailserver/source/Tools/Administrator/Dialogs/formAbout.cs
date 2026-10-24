@@ -4,6 +4,7 @@
 using System;
 using System.Windows.Forms;
 using hMailServer.Administrator.Utilities;
+using hMailServer.Shared;
 
 namespace hMailServer.Administrator
 {
@@ -26,7 +27,7 @@ namespace hMailServer.Administrator
 
          try
          {
-            System.Diagnostics.Process.Start(url);
+            ShellLauncher.Open(url);
          }
          catch (Exception ex)
          {

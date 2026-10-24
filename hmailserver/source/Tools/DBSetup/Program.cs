@@ -18,6 +18,8 @@ namespace DBSetup
       {
          Application.EnableVisualStyles();
          Application.SetCompatibleTextRenderingDefault(false);
+         // .NET made Segoe UI 9pt the default; the forms are laid out for the .NET Framework one.
+         Application.SetDefaultFont(new System.Drawing.Font(new System.Drawing.FontFamily("Microsoft Sans Serif"), 8.25f));
 
          CommandLineParser.Parse();
          

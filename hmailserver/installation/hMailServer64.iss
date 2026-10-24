@@ -3,6 +3,11 @@
 #define POSTGRESQL_LIBPQ_PATH HMAILSERVERLIBS + "\postgresql-18.6\Release\libpq"
 #define MARIADB_LIBS_PATH HMAILSERVERLIBS + "\libmariadb-3.4.11\build64\libmariadb\RelWithDebInfo"
 #define SEVENZIP_PATH HMAILSERVERLIBS + "\7zip-26.03"
+; Microsoft's .NET Desktop Runtime installer, fetched by libraries\fetch-dotnet-runtime.ps1.
+; The tools are .NET 10 applications; setup installs the runtime when it is missing.
+#define DOTNET_DESKTOP_RUNTIME_VERSION "10.0.13"
+#define DOTNET_DESKTOP_RUNTIME_FILE "windowsdesktop-runtime-" + DOTNET_DESKTOP_RUNTIME_VERSION + "-win-x64.exe"
+#define DOTNET_DESKTOP_RUNTIME_PATH HMAILSERVERLIBS + "\dotnet-desktop-runtime-" + DOTNET_DESKTOP_RUNTIME_VERSION + "\" + DOTNET_DESKTOP_RUNTIME_FILE
 
 ; The Visual C++ runtime shipped in Bin. Microsoft's advice is to ship the latest available
 ; runtime, and the installer requires Windows 10, where every 14.x runtime runs, so the

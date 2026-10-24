@@ -60,12 +60,21 @@ namespace hMailServer.Administrator.Utilities
       {
          string password = server.encryptedPassword;
 
+         bool wrongPassword = false;
+
          if (password.Length > 0)
          {
-            password = Encryption.Decrypt(password);
+            try
+            {
+               password = Encryption.Decrypt(password);
+            }
+            catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException || ex is FormatException)
+            {
+               // The saved password cannot be read back, so ask for it as if it were wrong.
+               password = string.Empty;
+               wrongPassword = true;
+            }
          }
-
-         bool wrongPassword = false;
 
          while (true)
          {
