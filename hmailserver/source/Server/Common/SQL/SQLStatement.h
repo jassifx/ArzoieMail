@@ -71,8 +71,6 @@ namespace HM
       SQLCommand GetCommand() const;
       int GetNoOfCols() const;
 
-      String GenerateFromCommand(const SQLCommand &command);
-
       enum PlaceholderStyle
       {
          // $1, $2, ... (PostgreSQL). A parameter used twice is bound once.

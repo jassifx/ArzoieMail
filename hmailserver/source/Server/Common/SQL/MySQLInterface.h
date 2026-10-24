@@ -33,9 +33,8 @@ typedef hm_st_mysql_field *STDCALL hm_mysql_fetch_field_direct(hm_MYSQL_RES *res
 typedef unsigned long STDCALL hm_mysql_get_server_version(hm_MYSQL *mysql);
 typedef int STDCALL hm_mysql_options(hm_MYSQL *mysql, int option, const void *arg);
 
-// Prepared statements. The binds are MYSQL_BIND arrays, whose layout differs between
-// MariaDB Connector/C and libmysql: MySQLStatement fills them from the MariaDB headers,
-// and they are used only when the MariaDB client is loaded.
+// Prepared statements. The binds are MYSQL_BIND arrays, which MySQLStatement fills from the
+// MariaDB Connector/C headers - the only client that is loaded.
 typedef void hm_MYSQL_STMT;
 typedef hm_MYSQL_STMT* STDCALL hm_mysql_stmt_init(hm_MYSQL *mysql);
 typedef int STDCALL hm_mysql_stmt_prepare(hm_MYSQL_STMT *stmt, const char *query, unsigned long length);
@@ -63,15 +62,7 @@ namespace HM
       bool Load(String &sErrorMessage);
       bool IsLoaded();
 
-      // True when the loaded client library is MariaDB Connector/C (libmariadb.dll)
-      // rather than Oracle's libmysql.dll. Used to apply MariaDB-specific
-      // mysql_options() values, whose enum numbering differs from libmysql.
-      bool IsMariaDB() const { return is_mariadb_; }
-
-      // True when commands can run as prepared statements: the MariaDB client is loaded, and
-      // it has every statement function MySQLStatement uses.
-      bool SupportsPreparedStatements() const;
-
+      // Resolved by Load, which fails unless every one of them is exported.
       hm_mysql_real_connect *p_mysql_real_connect;
       hm_mysql_close *p_mysql_close;
       hm_mysql_init *p_mysql_init;
@@ -104,10 +95,9 @@ namespace HM
       hm_mysql_stmt_insert_id *p_mysql_stmt_insert_id;
    private:
 
-      String GetLibraryFileName_(bool &isMariaDB);
+      String GetLibraryFileName_();
       String GetLibraryDirectory_();
 
       HINSTANCE library_instance_;
-      bool is_mariadb_;
    };
 }

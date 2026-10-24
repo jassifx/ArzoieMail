@@ -39,10 +39,8 @@ namespace HM
       virtual bool RollbackTransaction(String &sErrorMessage);
       virtual void SetTimeout(int seconds) {}
 
-      // True with MariaDB Connector/C, which runs a command with parameters as a prepared
-      // statement. libmysql.dll, still loaded when libmariadb.dll is missing, gets the values
-      // written into the SQL instead.
-      virtual bool GetSupportsCommandParameters() const;
+      // A command with parameters runs as a prepared statement of MariaDB Connector/C.
+      virtual bool GetSupportsCommandParameters() const { return true; }
 
       // What the callers make of a MySQL error number: a lost connection is retried.
       static ExecutionResult GetErrorResult(unsigned int errorNumber);

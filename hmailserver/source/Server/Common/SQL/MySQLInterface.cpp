@@ -45,8 +45,7 @@ namespace HM
       p_mysql_stmt_close(0),
       p_mysql_stmt_errno(0),
       p_mysql_stmt_error(0),
-      p_mysql_stmt_insert_id(0),
-      is_mariadb_(false)
+      p_mysql_stmt_insert_id(0)
    {
 
    }
@@ -82,42 +81,28 @@ namespace HM
    }
 
    String
-   MySQLInterface::GetLibraryFileName_(bool &isMariaDB)
+   MySQLInterface::GetLibraryFileName_()
    {
-      String sDirectory = GetLibraryDirectory_();
-
-      // Prefer the MariaDB Connector/C client (libmariadb.dll), which is
-      // installed into the hMailServer Bin directory. It exposes the same
-      // mysql_* C API as libmysql.dll, and uses the OpenSSL DLLs installed
-      // next to it for TLS. Fall back to libmysql.dll otherwise, so that
-      // installations where it has been replaced keep working unchanged.
-      String sMariaDB = sDirectory + "\\libmariadb.dll";
-      if (FileUtilities::Exists(sMariaDB))
-      {
-         isMariaDB = true;
-         return sMariaDB;
-      }
-
-      isMariaDB = false;
-      return sDirectory + "\\libmysql.dll";
+      // MariaDB Connector/C, which the installer puts in the Bin directory with the OpenSSL
+      // DLLs it uses for TLS. It is the only MySQL client hMailServer loads: Oracle's
+      // libmysql.dll, which an administrator once had to put there, lays out MYSQL_BIND
+      // differently from the MariaDB headers MySQLStatement is compiled against.
+      return GetLibraryDirectory_() + "\\libmariadb.dll";
    }
 
    bool
    MySQLInterface::Load(String &sErrorMessage)
    {
-      String sLibrary = GetLibraryFileName_(is_mariadb_);
+      String sLibrary = GetLibraryFileName_();
       library_instance_ = LoadLibrary(sLibrary);
 
       if (!library_instance_)
       {
-         String versionArchitecture = Application::Instance()->GetVersionArchitecture();
-
          sErrorMessage = Formatter::Format("Error:\r\n"
-               "The MySQL client ({0}) could not be loaded.\r\n"
-               "hMailServer needs this file to be able to connect to MySQL.\r\n"
+               "The MySQL client (libmariadb.dll) could not be loaded.\r\n"
+               "hMailServer needs MariaDB Connector/C to connect to MySQL or MariaDB.\r\n"
                "This file is installed into the hMailServer Bin directory. If it has been removed, reinstall hMailServer to restore it.\r\n"
-               "A replacement can also be downloaded from https://mariadb.com/downloads/connectors/ (libmariadb.dll) or https://dev.mysql.com/downloads/connector/c/ (libmysql.dll).\r\n"
-               "Path: {1}", versionArchitecture, sLibrary);
+               "Path: {0}", sLibrary);
 
          ErrorManager::Instance()->ReportError(ErrorManager::Critical, 5094, "MySQLInterface::Load", sErrorMessage);
 
@@ -155,18 +140,44 @@ namespace HM
       p_mysql_stmt_error = (hm_mysql_stmt_error*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_error" );
       p_mysql_stmt_insert_id = (hm_mysql_stmt_insert_id*) GetProcAddress( (HMODULE)library_instance_, "mysql_stmt_insert_id" );
 
-      return true;
-   }
+      // Every function is required, so a client that lacks one - not MariaDB Connector/C, or a
+      // version too old - fails here, naming what it lacks, rather than when it is first used.
+      const std::pair<const void *, const char *> exports[] =
+      {
+         { p_mysql_real_connect, "mysql_real_connect" }, { p_mysql_close, "mysql_close" },
+         { p_mysql_init, "mysql_init" }, { p_mysql_error, "mysql_error" }, { p_mysql_query, "mysql_query" },
+         { p_mysql_store_result, "mysql_store_result" }, { p_mysql_free_result, "mysql_free_result" },
+         { p_mysql_insert_id, "mysql_insert_id" }, { p_mysql_errno, "mysql_errno" },
+         { p_mysql_num_rows, "mysql_num_rows" }, { p_mysql_fetch_row, "mysql_fetch_row" },
+         { p_mysql_num_fields, "mysql_num_fields" }, { p_mysql_fetch_field_direct, "mysql_fetch_field_direct" },
+         { p_mysql_get_server_version, "mysql_get_server_version" }, { p_mysql_options, "mysql_options" },
+         { p_mysql_stmt_init, "mysql_stmt_init" }, { p_mysql_stmt_prepare, "mysql_stmt_prepare" },
+         { p_mysql_stmt_bind_param, "mysql_stmt_bind_param" }, { p_mysql_stmt_execute, "mysql_stmt_execute" },
+         { p_mysql_stmt_result_metadata, "mysql_stmt_result_metadata" }, { p_mysql_stmt_attr_set, "mysql_stmt_attr_set" },
+         { p_mysql_stmt_store_result, "mysql_stmt_store_result" }, { p_mysql_stmt_bind_result, "mysql_stmt_bind_result" },
+         { p_mysql_stmt_fetch, "mysql_stmt_fetch" }, { p_mysql_stmt_fetch_column, "mysql_stmt_fetch_column" },
+         { p_mysql_stmt_close, "mysql_stmt_close" }, { p_mysql_stmt_errno, "mysql_stmt_errno" },
+         { p_mysql_stmt_error, "mysql_stmt_error" }, { p_mysql_stmt_insert_id, "mysql_stmt_insert_id" },
+      };
 
-   bool
-   MySQLInterface::SupportsPreparedStatements() const
-   {
-      return is_mariadb_ &&
-         p_mysql_stmt_init && p_mysql_stmt_prepare && p_mysql_stmt_bind_param && p_mysql_stmt_execute &&
-         p_mysql_stmt_result_metadata && p_mysql_stmt_attr_set && p_mysql_stmt_store_result &&
-         p_mysql_stmt_bind_result && p_mysql_stmt_fetch && p_mysql_stmt_fetch_column && p_mysql_stmt_close &&
-         p_mysql_stmt_errno && p_mysql_stmt_error && p_mysql_stmt_insert_id &&
-         p_mysql_num_fields && p_mysql_fetch_field_direct && p_mysql_free_result;
+      for (const auto &required : exports)
+      {
+         if (required.first)
+            continue;
+
+         sErrorMessage = Formatter::Format("Error:\r\n"
+               "The MySQL client ({0}) does not export {1}, which hMailServer needs.\r\n"
+               "The file must be the MariaDB Connector/C that the hMailServer installer puts in the Bin directory. Reinstall hMailServer to restore it.",
+               sLibrary, String(required.second));
+
+         ErrorManager::Instance()->ReportError(ErrorManager::Critical, 5094, "MySQLInterface::Load", sErrorMessage);
+
+         FreeLibrary(library_instance_);
+         library_instance_ = 0;
+         return false;
+      }
+
+      return true;
    }
 
    bool
