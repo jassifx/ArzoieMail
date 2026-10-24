@@ -47,6 +47,11 @@ namespace RegressionTests.Shared
       {
          if (TestContext.CurrentContext.Result.FailCount > 0)
          {
+            // The console runner only prints the failures once the whole run is over. Printed
+            // here as well, a run that is cut short - a job timeout - still says why tests failed.
+            Console.WriteLine("Failure: " + TestContext.CurrentContext.Result.Message);
+            Console.WriteLine(TestContext.CurrentContext.Result.StackTrace);
+
             Console.WriteLine("hMailServer log:");
             Console.WriteLine(LogHandler.ReadCurrentDefaultLog());
             Console.WriteLine();
