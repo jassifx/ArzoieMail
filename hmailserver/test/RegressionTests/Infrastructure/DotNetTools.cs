@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -57,17 +58,33 @@ namespace RegressionTests.Infrastructure
       }
 
       [Test]
-      [Description("A .NET 10 Desktop Runtime is installed, which the setup does when it is missing")]
+      [Description("A .NET 10 Desktop Runtime is installed where the .NET host looks for it")]
       public void DotNet10DesktopRuntimeShouldBeInstalled()
       {
-         using (var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+         // The .NET host resolves the framework from here, whichever way it was installed.
+         var programFiles = Environment.GetEnvironmentVariable("ProgramW6432") ?? Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+         var frameworkDirectory = Path.Combine(programFiles, @"dotnet\shared\Microsoft.WindowsDesktop.App");
+
+         var versions = Directory.Exists(frameworkDirectory)
+            ? Directory.GetDirectories(frameworkDirectory).Select(Path.GetFileName).ToList()
+            : new System.Collections.Generic.List<string>();
+
+         Assert.IsTrue(versions.Any(v => Regex.IsMatch(v, @"^10\.")),
+            "No .NET 10 Desktop Runtime in " + frameworkDirectory + ". Found: " + string.Join(", ", versions));
+      }
+
+      [Test]
+      [Description("The .NET installers record x64 runtimes in the 32-bit registry view, which the setup reads")]
+      public void DotNetRuntimeRegistrationShouldBeInThe32BitRegistryView()
+      {
+         using (var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32))
          using (var key = baseKey.OpenSubKey(@"SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App"))
          {
-            Assert.IsNotNull(key, "No .NET Desktop Runtime is registered.");
+            if (key == null)
+               Assert.Inconclusive("The .NET Desktop Runtime here was not installed by a .NET installer, so it is not registered.");
 
-            var versions = key.GetValueNames();
-            Assert.IsTrue(versions.Any(v => Regex.IsMatch(v, @"^10\.")),
-               "No .NET 10 Desktop Runtime is installed. Found: " + string.Join(", ", versions));
+            Assert.IsTrue(key.GetValueNames().Any(v => Regex.IsMatch(v, @"^10\.")),
+               "No .NET 10 Desktop Runtime is registered. Found: " + string.Join(", ", key.GetValueNames()));
          }
       }
    }

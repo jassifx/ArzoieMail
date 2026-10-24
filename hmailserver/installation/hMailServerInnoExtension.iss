@@ -350,24 +350,41 @@ begin
 	Result := sKey;
 end;
 
-// True when a .NET 10 Desktop Runtime is installed. The .NET installers record each
-// installed version as a value under this key; any 10.0.x satisfies the tools, which roll
-// forward to the newest patch.
+// True when a .NET 10 Desktop Runtime is installed; any 10.0.x satisfies the tools, which
+// roll forward to the newest patch. The .NET host finds runtimes in
+// dotnet\shared\Microsoft.WindowsDesktop.App\<version> under Program Files, which is where
+// every way of installing one puts it. The .NET installers also record each version in the
+// registry - in the 32-bit view, even for the x64 runtime.
 function IsDotNetDesktopRuntimeInstalled() : Boolean;
 var
    Versions: TArrayOfString;
+   FindRec: TFindRec;
    I: Integer;
 begin
    Result := False;
-   if not RegGetValueNames(HKLM64, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App', Versions) then
-      exit;
 
-   for I := 0 to GetArrayLength(Versions) - 1 do
-      if Pos('10.', Versions[I]) = 1 then
-      begin
-         Result := True;
-         exit;
+   if FindFirst(ExpandConstant('{commonpf64}\dotnet\shared\Microsoft.WindowsDesktop.App\10.*'), FindRec) then
+   begin
+      try
+         repeat
+            if FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY <> 0 then
+            begin
+               Result := True;
+               exit;
+            end;
+         until not FindNext(FindRec);
+      finally
+         FindClose(FindRec);
       end;
+   end;
+
+   if RegGetValueNames(HKLM32, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App', Versions) then
+      for I := 0 to GetArrayLength(Versions) - 1 do
+         if Pos('10.', Versions[I]) = 1 then
+         begin
+            Result := True;
+            exit;
+         end;
 end;
 
 function NeedsDotNetDesktopRuntime() : Boolean;
