@@ -27,6 +27,20 @@ namespace HM
       // longer than its buffer is fetched again in full, so this only saves that second fetch
       // for the short values that make up most columns.
       const unsigned long MinimumColumnBuffer = 64;
+
+      // Unicode::WideToMultiByte leaves the terminating null of its buffer in the string it
+      // returns, which a C string never shows. A bound value is sent with its length, so the
+      // null would be sent as part of it - "+" became two characters, too long for a CHAR(1).
+      bool ToUtf8(const String &input, AnsiString &output)
+      {
+         if (!Unicode::WideToMultiByte(input, output))
+            return false;
+
+         while (!output.empty() && output.back() == '\0')
+            output.pop_back();
+
+         return true;
+      }
    }
 
    MySQLStatement::MySQLStatement(hm_MYSQL *connection) :
@@ -90,7 +104,7 @@ namespace HM
       }
 
       AnsiString query;
-      if (!Unicode::WideToMultiByte(positionalQuery, query))
+      if (!ToUtf8(positionalQuery, query))
       {
          errorMessage = _T("Could not convert the query into UTF-8: ") + command.GetQueryString();
          return false;
@@ -128,7 +142,7 @@ namespace HM
             numbers[i] = parameter.GetUnsignedInt32Value();
             break;
          case SQLParameter::ParamTypeString:
-            if (!Unicode::WideToMultiByte(parameter.GetStringValue(), strings[i]))
+            if (!ToUtf8(parameter.GetStringValue(), strings[i]))
             {
                errorMessage = _T("Could not convert the value of ") + parameter.GetName() + _T(" into UTF-8.");
                return false;
