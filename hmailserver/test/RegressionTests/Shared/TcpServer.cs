@@ -120,7 +120,9 @@ namespace RegressionTests.Shared
 
             try
             {
-               _tcpListener.BeginAcceptSocket(OnAcceptSocket, null);
+               // BeginAcceptTcpClient, to match EndAcceptTcpClient. On .NET the two accept
+               // methods are task based, and ending one with the other throws.
+               _tcpListener.BeginAcceptTcpClient(OnAcceptSocket, null);
             }
             finally
             {
@@ -158,6 +160,14 @@ namespace RegressionTests.Shared
             _numberOfConnectedClients++;
 
             HandleClient();
+         }
+         catch (Exception ex)
+         {
+            // This runs on a thread pool thread, where an unhandled exception ends the test
+            // process on .NET. The .NET Framework NUnit agent ignored such exceptions, so the
+            // simulated server keeps doing so: it logs the error and the test goes on to judge
+            // the result by what the server under test did.
+            Console.WriteLine($"Simulated server: client handling failed: {ex}");
          }
          finally
          {

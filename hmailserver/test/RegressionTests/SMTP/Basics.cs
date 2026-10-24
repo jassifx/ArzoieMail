@@ -20,11 +20,20 @@ namespace RegressionTests.SMTP
       // helper
       private static void Send50Messages()
       {
-         for (var i = 0; i < 50; i++)
+         // Runs on its own thread, where an unhandled exception would end the test process on
+         // .NET. A failed send shows up in the message count the test checks.
+         try
          {
-            var smtpClientSimulator = new SmtpClientSimulator();
-            smtpClientSimulator.Send("test@example.test", "bigaccount@example.test", "Big account email",
-               "Body av email");
+            for (var i = 0; i < 50; i++)
+            {
+               var smtpClientSimulator = new SmtpClientSimulator();
+               smtpClientSimulator.Send("test@example.test", "bigaccount@example.test", "Big account email",
+                  "Body av email");
+            }
+         }
+         catch (Exception ex)
+         {
+            Console.WriteLine($"Sending failed: {ex}");
          }
       }
 
