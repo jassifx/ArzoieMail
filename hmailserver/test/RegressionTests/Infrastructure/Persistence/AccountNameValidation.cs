@@ -107,8 +107,8 @@ namespace RegressionTests.Infrastructure.Persistence
 
          var exception = Assert.Throws<COMException>(() =>
             SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@other.example.com", "secret"));
-         Assert.AreEqual("Failed to save object. The account address domain does not match the owning domain name.",
-            exception.Message);
+         Assert.That(exception.Message,
+            Is.EqualTo("Failed to save object. The account address domain does not match the owning domain name."));
       }
 
       [Test]
@@ -155,7 +155,7 @@ namespace RegressionTests.Infrastructure.Persistence
       {
          var exception = Assert.Throws<COMException>(() =>
             SingletonProvider<TestSetup>.Instance.AddAccount(_domain, address, "secret"));
-         Assert.AreEqual(expectedErrorMessage, exception.Message);
+         Assert.That(exception.Message, Is.EqualTo(expectedErrorMessage));
       }
 
       private void AssertValidEmailAddress(string address)

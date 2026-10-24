@@ -6,9 +6,9 @@
 # waits for it. Being a separate job also gives it what it needs anyway - a fresh runner,
 # with no build output on it beyond the installer a user would download.
 #
-# The tests are installed-server tests, not unit tests: RegressionTests.csproj has a COM
-# reference to the hMailServer type library, so hMailServer has to be installed and
-# registered here before the solution will even compile.
+# The tests are installed-server tests, not unit tests: the test projects generate their
+# interop from the type library the installed hMailServer registered, so hMailServer has to
+# be installed and registered here before the solution will even compile.
 name: Tests
 
 on:
@@ -89,17 +89,10 @@ jobs:
           $startName = (Get-CimInstance Win32_Service -Filter "Name='hMailServer'").StartName
           if ($startName -ne 'NT SERVICE\hMailServer') { throw "The hMailServer service runs as '$startName', not the virtual account." }
 
-          # The COM reference in RegressionTests.csproj resolves through the registered type
-          # library, so a missing registration would surface as a compile error later.
+          # The test projects generate their interop from the registered type library, so a
+          # missing registration would surface as a build error later.
           $application = New-Object -ComObject 'hMailServer.Application'
           "Installed hMailServer $($application.Version)"
-
-      - name: Restore the NuGet packages
-        run: |
-          # packages\ is not committed, and the test projects use packages.config - which
-          # msbuild does not restore on its own.
-          nuget restore 'hmailserver\test\hMailServer Tests.sln'
-          if ($LASTEXITCODE -ne 0) { throw "nuget restore failed with exit code $LASTEXITCODE" }
 
       - name: Build the test solution
         env:
@@ -114,9 +107,11 @@ jobs:
           $msbuild = Find-MsBuild
           if (-not $msbuild) { throw "MSBuild was not found." }
 
-          # Every project in the solution targets .NET Framework 4.8, which the runner image
-          # has, so none of build.yml's targeting-pack juggling is needed here.
-          & $msbuild 'hmailserver\test\hMailServer Tests.sln' /m "/p:Configuration=$env:CONFIGURATION" /p:Platform=x64
+          # The projects target .NET 10, whose SDK the runner image has. /restore pulls the
+          # packages Directory.Packages.props pins into hmailserver\test\packages\, the NUnit
+          # console runner among them. The interop is generated from the type library the
+          # installed server registered (see hmailserver\test\Directory.Build.props).
+          & $msbuild 'hmailserver\test\hMailServer Tests.sln' /restore /m "/p:Configuration=$env:CONFIGURATION" /p:Platform=x64
           if ($LASTEXITCODE -ne 0) { throw "Building hMailServer Tests.sln failed with exit code $LASTEXITCODE" }
 
       - name: Run the regression tests
@@ -124,8 +119,8 @@ jobs:
         env:
           CONFIGURATION: ${{ inputs.configuration }}
         run: |
-          # The runner comes from packages.config, so find it rather than pinning a version
-          # here that a package bump would silently leave behind.
+          # The runner comes from Directory.Packages.props, so find it rather than pinning a
+          # version here that a package bump would silently leave behind.
           $console = Get-ChildItem 'hmailserver\test\packages' -Recurse -Filter 'nunit3-console.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $console) { throw "nunit3-console.exe was not found - did the NuGet restore run?" }
 

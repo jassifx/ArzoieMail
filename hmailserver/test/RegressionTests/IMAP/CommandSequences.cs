@@ -24,7 +24,7 @@ namespace RegressionTests.IMAP
          commandSequence = commandSequence.TrimEnd("\r\n".ToCharArray());
 
          var result = simulator.Send(commandSequence);
-         Assert.IsFalse(result.StartsWith("* BYE"));
+         Assert.That(result.StartsWith("* BYE"), Is.False);
 
          simulator.Disconnect();
 
@@ -35,7 +35,7 @@ namespace RegressionTests.IMAP
          commandSequence = commandSequence.TrimEnd("\r\n".ToCharArray());
 
          result = simulator.Send(commandSequence);
-         Assert.IsFalse(result.StartsWith("* BYE Excessive number of buffered commands"));
+         Assert.That(result.StartsWith("* BYE Excessive number of buffered commands"), Is.False);
          simulator.Disconnect();
       }
 
@@ -53,7 +53,7 @@ namespace RegressionTests.IMAP
          for (var i = 0; i < 240000; i++) sb.Append("A");
 
          var result = simulator.Send("A01 " + sb);
-         Assert.IsTrue(result.Length == 0 || result.StartsWith("A01"));
+         Assert.That(result.Length == 0 || result.StartsWith("A01"), Is.True);
       }
    }
 }

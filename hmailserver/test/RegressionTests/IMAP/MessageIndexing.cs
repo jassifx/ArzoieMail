@@ -84,10 +84,10 @@ namespace RegressionTests.IMAP
          switch (locale)
          {
             case "en-US":
-               Assert.AreEqual("1 3 2", result);
+               Assert.That(result, Is.EqualTo("1 3 2"));
                break;
             case "sv-SE":
-               Assert.AreEqual("3 1 2", result);
+               Assert.That(result, Is.EqualTo("3 1 2"));
                break;
             default:
                throw new InvalidOperationException("Unsupported system locale: " + locale);
@@ -101,7 +101,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          var resultAfter = sim.Sort("(CC) UTF-8 ALL");
 
-         Assert.AreEqual(result, resultAfter);
+         Assert.That(resultAfter, Is.EqualTo(result));
       }
 
       [Test]
@@ -133,7 +133,7 @@ namespace RegressionTests.IMAP
 
          var result = sim.Sort("(DATE) UTF-8 ALL");
 
-         Assert.AreEqual("1 2 3 4 5", result);
+         Assert.That(result, Is.EqualTo("1 2 3 4 5"));
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -142,7 +142,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          var resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         Assert.AreEqual(result, resultAfter);
+         Assert.That(resultAfter, Is.EqualTo(result));
       }
 
       [Test]
@@ -165,7 +165,7 @@ namespace RegressionTests.IMAP
 
          var result = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         Assert.IsTrue(result.StartsWith("1 2"));
+         Assert.That(result.StartsWith("1 2"), Is.True);
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -174,7 +174,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          var resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         Assert.AreEqual(result, resultAfter);
+         Assert.That(resultAfter, Is.EqualTo(result));
       }
 
 
@@ -216,7 +216,7 @@ namespace RegressionTests.IMAP
 
          var result = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         Assert.AreEqual("2 4 3 5 1 6", result);
+         Assert.That(result, Is.EqualTo("2 4 3 5 1 6"));
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -225,7 +225,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          var resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         Assert.AreEqual(result, resultAfter);
+         Assert.That(resultAfter, Is.EqualTo(result));
       }
 
       [Test]
@@ -256,10 +256,10 @@ namespace RegressionTests.IMAP
          switch (locale)
          {
             case "en-US":
-               Assert.AreEqual("1 3 2", result);
+               Assert.That(result, Is.EqualTo("1 3 2"));
                break;
             case "sv-SE":
-               Assert.AreEqual("3 1 2", result);
+               Assert.That(result, Is.EqualTo("3 1 2"));
                break;
             default:
                throw new InvalidOperationException("Unsupported system locale: " + locale);
@@ -272,7 +272,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          var resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         Assert.AreEqual(result, resultAfter);
+         Assert.That(resultAfter, Is.EqualTo(result));
       }
 
       [Test]
@@ -309,7 +309,7 @@ namespace RegressionTests.IMAP
 
          var result = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         Assert.AreEqual("3 2 1 5 4", result);
+         Assert.That(result, Is.EqualTo("3 2 1 5 4"));
 
          // Disable the indexing functionality
          _indexing.Enabled = false;
@@ -318,7 +318,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          var resultAfter = sim.Sort("(SUBJECT) UTF-8 ALL");
 
-         Assert.AreEqual(result, resultAfter);
+         Assert.That(resultAfter, Is.EqualTo(result));
       }
 
       [Test]
@@ -349,10 +349,10 @@ namespace RegressionTests.IMAP
          switch (locale)
          {
             case "en-US":
-               Assert.AreEqual("3 1 2", result);
+               Assert.That(result, Is.EqualTo("3 1 2"));
                break;
             case "sv-SE":
-               Assert.AreEqual("1 3 2", result);
+               Assert.That(result, Is.EqualTo("1 3 2"));
                break;
             default:
                throw new InvalidOperationException("Unsupported system locale: " + locale);
@@ -365,7 +365,7 @@ namespace RegressionTests.IMAP
          // Make sure the sort order is the same.
          var resultAfter = sim.Sort("(TO) UTF-8 ALL");
 
-         Assert.AreEqual(result, resultAfter);
+         Assert.That(resultAfter, Is.EqualTo(result));
       }
 
       // P/Invoke signature

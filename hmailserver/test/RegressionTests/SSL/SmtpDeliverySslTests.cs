@@ -34,7 +34,7 @@ namespace RegressionTests.SSL
             // This should now be processed via the rule -> route -> external server we've set up.
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
@@ -64,7 +64,7 @@ namespace RegressionTests.SSL
 
             smtpServer.WaitForCompletion();
 
-            Assert.IsTrue(smtpServer.MessageData.Contains("Test message"), smtpServer.MessageData);
+            Assert.That(smtpServer.MessageData.Contains("Test message"), Is.True, smtpServer.MessageData);
          }
       }
 
@@ -94,7 +94,7 @@ namespace RegressionTests.SSL
 
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
@@ -127,7 +127,7 @@ namespace RegressionTests.SSL
 
             var msg = Pop3ClientSimulator.AssertGetFirstMessageText("sender@example.test", "test");
 
-            Assert.IsTrue(msg.Contains("Server does not support STARTTLS"));
+            Assert.That(msg.Contains("Server does not support STARTTLS"), Is.True);
          }
       }
 
@@ -158,7 +158,7 @@ namespace RegressionTests.SSL
             // This should now be processed via the rule -> route -> external server we've set up.
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
    }

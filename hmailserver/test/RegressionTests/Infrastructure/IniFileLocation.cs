@@ -21,7 +21,7 @@ namespace RegressionTests.Infrastructure
       [Description("The ini file the server uses should exist where the lookup expects it")]
       public void IniFileShouldExist()
       {
-         Assert.IsTrue(File.Exists(IniFileLocator.GetIniFileName()));
+         Assert.That(File.Exists(IniFileLocator.GetIniFileName()), Is.True);
       }
 
       [Test]
@@ -30,9 +30,9 @@ namespace RegressionTests.Infrastructure
       {
          var directories = SingletonProvider<TestSetup>.Instance.GetApp().Settings.Directories;
 
-         Assert.AreEqual(ReadIniSetting("DataFolder"), directories.DataDirectory.TrimEnd('\\'));
-         Assert.AreEqual(ReadIniSetting("LogFolder"), directories.LogDirectory.TrimEnd('\\'));
-         Assert.AreEqual(ReadIniSetting("EventFolder"), directories.EventDirectory.TrimEnd('\\'));
+         Assert.That(directories.DataDirectory.TrimEnd('\\'), Is.EqualTo(ReadIniSetting("DataFolder")));
+         Assert.That(directories.LogDirectory.TrimEnd('\\'), Is.EqualTo(ReadIniSetting("LogFolder")));
+         Assert.That(directories.EventDirectory.TrimEnd('\\'), Is.EqualTo(ReadIniSetting("EventFolder")));
       }
 
       [Test]
@@ -45,9 +45,9 @@ namespace RegressionTests.Infrastructure
             IniFileLocator.GetProgramDataDirectory(IniFileLocator.LegacyProgramDataFolderName), "hMailServer.ini");
 
          if (File.Exists(programDataFile))
-            Assert.AreEqual(programDataFile, iniFile);
+            Assert.That(iniFile, Is.EqualTo(programDataFile));
          else if (File.Exists(legacyProgramDataFile))
-            Assert.AreEqual(legacyProgramDataFile, iniFile);
+            Assert.That(iniFile, Is.EqualTo(legacyProgramDataFile));
          else
             Assert.Inconclusive("This installation keeps hMailServer.ini in the Bin directory.");
       }

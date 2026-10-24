@@ -184,9 +184,9 @@ namespace RegressionTests.Infrastructure
          var expectedBodyLength = TestSetup.LargeBodyLine.Length * TestSetup.LargeBodyLineCount;
 
          var fileContent = File.ReadAllText(message.Filename);
-         Assert.GreaterOrEqual(fileContent.Length, expectedBodyLength, "The message lost its content.");
-         StringAssert.Contains("Subject: " + subject + "\r\n", fileContent);
-         StringAssert.Contains(TestSetup.LargeBodyLine, fileContent);
+         Assert.That(fileContent.Length, Is.GreaterThanOrEqualTo(expectedBodyLength), "The message lost its content.");
+         Assert.That(fileContent, Does.Contain("Subject: " + subject + "\r\n"));
+         Assert.That(fileContent, Does.Contain(TestSetup.LargeBodyLine));
       }
 
       public static Message AssertGetFirstMessage(Account account, string folderName)
@@ -335,7 +335,7 @@ namespace RegressionTests.Infrastructure
             }
          }
 
-         Assert.AreEqual(expectedFileCount, count);
+         Assert.That(count, Is.EqualTo(expectedFileCount));
       }
 
       public static void Throws<T>(AssertionBody func) where T : Exception

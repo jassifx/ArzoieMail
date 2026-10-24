@@ -20,16 +20,16 @@ namespace RegressionTests.Infrastructure
          using (var conn2 = new TcpConnection())
          using (var conn3 = new TcpConnection())
          {
-            Assert.IsTrue(conn1.Connect(143));
+            Assert.That(conn1.Connect(143), Is.True);
             conn1.Receive();
-            Assert.IsTrue(conn2.Connect(143));
+            Assert.That(conn2.Connect(143), Is.True);
             conn2.Receive();
-            Assert.IsTrue(conn3.Connect(143));
-            Assert.IsEmpty(conn3.Receive());
+            Assert.That(conn3.Connect(143), Is.True);
+            Assert.That(conn3.Receive(), Is.Empty);
          }
 
          var log2 = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsTrue(log2.Contains("Blocked either by IP range or by connection limit."));
+         Assert.That(log2.Contains("Blocked either by IP range or by connection limit."), Is.True);
       }
 
       [Test]
@@ -41,16 +41,16 @@ namespace RegressionTests.Infrastructure
          using (var conn2 = new TcpConnection())
          using (var conn3 = new TcpConnection())
          {
-            Assert.IsTrue(conn1.Connect(25));
+            Assert.That(conn1.Connect(25), Is.True);
             conn1.Receive();
-            Assert.IsTrue(conn2.Connect(25));
+            Assert.That(conn2.Connect(25), Is.True);
             conn2.Receive();
-            Assert.IsTrue(conn3.Connect(25));
-            Assert.IsEmpty(conn3.Receive());
+            Assert.That(conn3.Connect(25), Is.True);
+            Assert.That(conn3.Receive(), Is.Empty);
          }
 
          var log2 = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsTrue(log2.Contains("Blocked either by IP range or by connection limit."));
+         Assert.That(log2.Contains("Blocked either by IP range or by connection limit."), Is.True);
       }
 
       [Test]
@@ -62,12 +62,12 @@ namespace RegressionTests.Infrastructure
          using (var conn2 = new TcpConnection())
          using (var conn3 = new TcpConnection())
          {
-            Assert.IsTrue(conn1.Connect(110));
+            Assert.That(conn1.Connect(110), Is.True);
             conn1.Receive();
-            Assert.IsTrue(conn2.Connect(110));
+            Assert.That(conn2.Connect(110), Is.True);
             conn2.Receive();
-            Assert.IsTrue(conn3.Connect(110));
-            Assert.IsEmpty(conn3.Receive());
+            Assert.That(conn3.Connect(110), Is.True);
+            Assert.That(conn3.Receive(), Is.Empty);
          }
       }
 
@@ -81,7 +81,7 @@ namespace RegressionTests.Infrastructure
 
          using (var conn1 = new TcpConnection())
          {
-            Assert.IsTrue(conn1.Connect(25));
+            Assert.That(conn1.Connect(25), Is.True);
 
             CustomAsserts.AssertSessionCount(eSessionType.eSTSMTP, countBefore + 1);
          }
@@ -96,7 +96,7 @@ namespace RegressionTests.Infrastructure
 
          using (var conn1 = new TcpConnection())
          {
-            Assert.IsTrue(conn1.Connect(143));
+            Assert.That(conn1.Connect(143), Is.True);
             CustomAsserts.AssertSessionCount(eSessionType.eSTIMAP, countBefore + 1);
          }
       }
@@ -110,7 +110,7 @@ namespace RegressionTests.Infrastructure
 
          using (var conn1 = new TcpConnection())
          {
-            Assert.IsTrue(conn1.Connect(110));
+            Assert.That(conn1.Connect(110), Is.True);
             CustomAsserts.AssertSessionCount(eSessionType.eSTPOP3, countBefore + 1);
          }
       }
@@ -125,7 +125,7 @@ namespace RegressionTests.Infrastructure
          var countBefore = status.get_SessionCount(eSessionType.eSTSMTP);
          using (var conn1 = new TcpConnection())
          {
-            Assert.IsTrue(conn1.Connect(25));
+            Assert.That(conn1.Connect(25), Is.True);
          }
 
          CustomAsserts.AssertSessionCount(eSessionType.eSTSMTP, countBefore);
@@ -140,7 +140,7 @@ namespace RegressionTests.Infrastructure
          var countBefore = status.get_SessionCount(eSessionType.eSTIMAP);
          using (var conn1 = new TcpConnection())
          {
-            Assert.IsTrue(conn1.Connect(143));
+            Assert.That(conn1.Connect(143), Is.True);
          }
 
          AssertMaxSessionCount(eSessionType.eSTPOP3, countBefore);
@@ -155,7 +155,7 @@ namespace RegressionTests.Infrastructure
          var countBefore = status.get_SessionCount(eSessionType.eSTPOP3);
          using (var conn1 = new TcpConnection())
          {
-            Assert.IsTrue(conn1.Connect(110));
+            Assert.That(conn1.Connect(110), Is.True);
          }
 
          AssertMaxSessionCount(eSessionType.eSTPOP3, countBefore);
@@ -181,8 +181,8 @@ namespace RegressionTests.Infrastructure
 
          using (var socket = new TcpConnection())
          {
-            Assert.IsTrue(socket.Connect(110));
-            Assert.IsEmpty(socket.Receive());
+            Assert.That(socket.Connect(110), Is.True);
+            Assert.That(socket.Receive(), Is.Empty);
          }
 
          AssertMaxSessionCount(eSessionType.eSTPOP3, countBefore);

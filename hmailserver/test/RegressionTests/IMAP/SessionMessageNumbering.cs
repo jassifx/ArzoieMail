@@ -60,14 +60,14 @@ namespace RegressionTests.IMAP
          var sim1 = SelectInbox(account);
 
          var before = sim1.Fetch("2 BODYSTRUCTURE");
-         Assert.IsTrue(before.Contains("two.txt"), before);
+         Assert.That(before.Contains("two.txt"), Is.True, before);
 
          ExpungeMessageInSeparateSession(account, 1);
 
          var after = sim1.Fetch("2 BODYSTRUCTURE");
 
-         Assert.IsFalse(after.Contains("three.txt"), after);
-         Assert.IsTrue(after.Contains("two.txt"), after);
+         Assert.That(after.Contains("three.txt"), Is.False, after);
+         Assert.That(after.Contains("two.txt"), Is.True, after);
 
          sim1.Disconnect();
       }
@@ -91,7 +91,7 @@ namespace RegressionTests.IMAP
          // command to fail, and RFC 5530 chapter 3 gives it the EXPUNGEISSUED response code.
          AssertDoesNotContainAttachment(after, MarkerThree);
          AssertDoesNotContainAttachment(after, MarkerTwo);
-         Assert.IsTrue(after.Contains("A17 NO [EXPUNGEISSUED]"), after);
+         Assert.That(after.Contains("A17 NO [EXPUNGEISSUED]"), Is.True, after);
 
          sim1.Disconnect();
       }
@@ -113,22 +113,22 @@ namespace RegressionTests.IMAP
          ExpungeMessageInSeparateSession(account, 1);
 
          var fetch = sim1.Fetch("3 (UID)");
-         Assert.IsTrue(fetch.Contains("UID " + uids[3]), "FETCH 3 returned the wrong message. " + fetch);
+         Assert.That(fetch.Contains("UID " + uids[3]), Is.True, "FETCH 3 returned the wrong message. " + fetch);
          AssertNoUntaggedExpunge(fetch, "FETCH");
 
          var store = sim1.SendSingleCommand("A40 STORE 3 +FLAGS (\\Flagged)");
-         Assert.IsTrue(store.Contains("UID " + uids[3]), "STORE 3 hit the wrong message. " + store);
+         Assert.That(store.Contains("UID " + uids[3]), Is.True, "STORE 3 hit the wrong message. " + store);
          AssertNoUntaggedExpunge(store, "STORE");
 
          var search = sim1.SendSingleCommand("A41 SEARCH FLAGGED");
-         Assert.IsTrue(SearchResult(search, "A41") == "3", "SEARCH returned " + search);
+         Assert.That(SearchResult(search, "A41") == "3", Is.True, "SEARCH returned " + search);
          AssertNoUntaggedExpunge(search, "SEARCH");
 
          // Message 1 was expunged elsewhere so it cannot be returned (RFC 2180 4.3), but the
          // messages that remain must keep the numbers this session knows them by. The bug
          // would renumber them to 1 2 3 4.
          var sort = sim1.SendSingleCommand("A42 SORT (DATE) UTF-8 ALL");
-         Assert.IsTrue(SearchResult(sort, "A42") == "2 3 4 5", "SORT returned " + sort);
+         Assert.That(SearchResult(sort, "A42") == "2 3 4 5", Is.True, "SORT returned " + sort);
          AssertNoUntaggedExpunge(sort, "SORT");
 
          sim1.Disconnect();
@@ -146,7 +146,7 @@ namespace RegressionTests.IMAP
          AssertNoUntaggedExpunge(fetch, "FETCH");
 
          var noop = sim1.NOOP() + sim1.NOOP();
-         Assert.IsTrue(noop.Contains("* 1 EXPUNGE"), "EXPUNGE not delivered by NOOP. " + noop);
+         Assert.That(noop.Contains("* 1 EXPUNGE"), Is.True, "EXPUNGE not delivered by NOOP. " + noop);
 
          sim1.Disconnect();
       }
@@ -165,8 +165,8 @@ namespace RegressionTests.IMAP
 
          var store = sim1.SendSingleCommand("A43 STORE 2 +FLAGS (\\Flagged)");
 
-         Assert.IsFalse(store.Contains("UID " + uids[3]), "STORE flagged the wrong message. " + store);
-         Assert.IsTrue(store.Contains("UID " + uids[2]), store);
+         Assert.That(store.Contains("UID " + uids[3]), Is.False, "STORE flagged the wrong message. " + store);
+         Assert.That(store.Contains("UID " + uids[2]), Is.True, store);
 
          sim1.Disconnect();
       }
@@ -185,20 +185,20 @@ namespace RegressionTests.IMAP
          // The expunge is held back while COPY runs, since the client sent its sequence numbers
          // before hearing about it. So message 2 is still the second message.
          var copy = sim1.SendSingleCommand("A44 COPY 2 \"Target\"");
-         Assert.IsTrue(copy.Contains("A44 OK"), copy);
-         Assert.IsFalse(copy.Contains("EXPUNGE"), "COPY reported the expunge before using the client's numbering. " + copy);
+         Assert.That(copy.Contains("A44 OK"), Is.True, copy);
+         Assert.That(copy.Contains("EXPUNGE"), Is.False, "COPY reported the expunge before using the client's numbering. " + copy);
 
          // The next command reports it.
          var noop = sim1.SendSingleCommand("A45 NOOP");
-         Assert.IsTrue(noop.Contains("* 1 EXPUNGE"), noop);
+         Assert.That(noop.Contains("* 1 EXPUNGE"), Is.True, noop);
 
          sim1.Disconnect();
 
          ImapClientSimulator.AssertMessageCount(account.Address, "test", "Target", 1);
 
          var reader = new ImapClientSimulator();
-         Assert.IsTrue(reader.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(reader.SelectFolder("Target"));
+         Assert.That(reader.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(reader.SelectFolder("Target"), Is.True);
          var copied = reader.Fetch("1 BODY[2]");
          reader.Disconnect();
 
@@ -216,7 +216,7 @@ namespace RegressionTests.IMAP
          ExpungeMessageInSeparateSession(account, 1);
 
          var search = sim1.SendSingleCommand("A46 SEARCH FLAGGED");
-         Assert.AreEqual("3", SearchResult(search, "A46"), search);
+         Assert.That(SearchResult(search, "A46"), Is.EqualTo("3"), search);
 
          sim1.Disconnect();
       }
@@ -238,9 +238,9 @@ namespace RegressionTests.IMAP
          var expunge = noop.IndexOf("* 1 EXPUNGE", StringComparison.Ordinal);
          var exists = noop.IndexOf("* 2 EXISTS", StringComparison.Ordinal);
 
-         Assert.IsTrue(expunge >= 0, "No EXPUNGE delivered. " + noop);
-         Assert.IsTrue(exists >= 0, "No EXISTS delivered. " + noop);
-         Assert.IsTrue(expunge < exists, "EXISTS was sent before the EXPUNGE. " + noop);
+         Assert.That(expunge >= 0, Is.True, "No EXPUNGE delivered. " + noop);
+         Assert.That(exists >= 0, Is.True, "No EXISTS delivered. " + noop);
+         Assert.That(expunge < exists, Is.True, "EXISTS was sent before the EXPUNGE. " + noop);
 
          // Only now may the client's message 2 mean the third message.
          AssertContainsAttachment(sim1.Fetch("2 BODY[2]"), MarkerThree);
@@ -265,7 +265,7 @@ namespace RegressionTests.IMAP
          ExpungeMessageInSeparateSession(account, 1);
 
          var pushed = ReceiveUntil(sim1, "EXPUNGE");
-         Assert.IsTrue(pushed.Contains("* 1 EXPUNGE"), pushed);
+         Assert.That(pushed.Contains("* 1 EXPUNGE"), Is.True, pushed);
 
          sim1.SendRaw("DONE\r\n");
          ReceiveUntil(sim1, "A47 OK");
@@ -284,7 +284,7 @@ namespace RegressionTests.IMAP
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 4);
 
          var noop = sim1.NOOP() + sim1.NOOP();
-         Assert.IsTrue(noop.Contains("* 4 EXISTS"), noop);
+         Assert.That(noop.Contains("* 4 EXISTS"), Is.True, noop);
 
          AssertContainsAttachment(sim1.Fetch("1 BODY[2]"), MarkerOne);
          AssertContainsAttachment(sim1.Fetch("2 BODY[2]"), MarkerTwo);
@@ -315,9 +315,9 @@ namespace RegressionTests.IMAP
          var expunge = noop.IndexOf("* 1 EXPUNGE", StringComparison.Ordinal);
          var flags = noop.IndexOf("* 2 FETCH (FLAGS", StringComparison.Ordinal);
 
-         Assert.IsTrue(expunge >= 0, "No EXPUNGE delivered. " + noop);
-         Assert.IsTrue(flags >= 0, "Flag change not reported with the post-expunge number. " + noop);
-         Assert.IsTrue(expunge < flags, "Flag change was reported before the EXPUNGE. " + noop);
+         Assert.That(expunge >= 0, Is.True, "No EXPUNGE delivered. " + noop);
+         Assert.That(flags >= 0, Is.True, "Flag change not reported with the post-expunge number. " + noop);
+         Assert.That(expunge < flags, Is.True, "Flag change was reported before the EXPUNGE. " + noop);
 
          sim1.Disconnect();
       }
@@ -339,8 +339,8 @@ namespace RegressionTests.IMAP
 
          var result = sim1.SendSingleCommand("A49 UID FETCH " + uids[1] + " (UID)");
 
-         Assert.IsTrue(result.Contains("A49 OK"), result);
-         Assert.IsFalse(result.Contains("UID " + uids[1]), "Data returned for an expunged UID. " + result);
+         Assert.That(result.Contains("A49 OK"), Is.True, result);
+         Assert.That(result.Contains("UID " + uids[1]), Is.False, "Data returned for an expunged UID. " + result);
 
          sim1.Disconnect();
       }
@@ -369,11 +369,11 @@ namespace RegressionTests.IMAP
          if (expunge < 0)
          {
             // The client was not told, so the numbering must be unchanged.
-            Assert.IsTrue(result.Contains("* 3 FETCH"), "Silent renumbering in UID FETCH. " + result);
+            Assert.That(result.Contains("* 3 FETCH"), Is.True, "Silent renumbering in UID FETCH. " + result);
          }
          else
          {
-            Assert.IsTrue(fetch > expunge, "The message was renumbered before the EXPUNGE. " + result);
+            Assert.That(fetch > expunge, Is.True, "The message was renumbered before the EXPUNGE. " + result);
          }
 
          sim1.Disconnect();
@@ -412,8 +412,8 @@ namespace RegressionTests.IMAP
          AssertContainsAttachment(sim1.Fetch("2 BODY[2]"), MarkerTwo);
 
          var pop3 = new Pop3ClientSimulator();
-         Assert.IsTrue(pop3.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(pop3.DELE(1));
+         Assert.That(pop3.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(pop3.DELE(1), Is.True);
          pop3.QUIT();
          pop3.Disconnect();
 
@@ -438,8 +438,8 @@ namespace RegressionTests.IMAP
          AssertContainsAttachment(sim1.Fetch("2 BODY[2]"), MarkerTwo);
 
          var sim2 = SelectInbox(account);
-         Assert.IsTrue(sim2.SetDeletedFlag(1));
-         Assert.IsTrue(sim2.Close());
+         Assert.That(sim2.SetDeletedFlag(1), Is.True);
+         Assert.That(sim2.Close(), Is.True);
          sim2.Disconnect();
 
          var after = sim1.Fetch("2 BODY[2]");
@@ -448,7 +448,7 @@ namespace RegressionTests.IMAP
 
          // ...and the removal must eventually be reported.
          var noop = sim1.NOOP() + sim1.NOOP();
-         Assert.IsTrue(noop.Contains("* 1 EXPUNGE"), "CLOSE was never reported to the other session. " + noop);
+         Assert.That(noop.Contains("* 1 EXPUNGE"), Is.True, "CLOSE was never reported to the other session. " + noop);
 
          sim1.Disconnect();
       }
@@ -508,8 +508,8 @@ namespace RegressionTests.IMAP
       private static ImapClientSimulator SelectInbox(Account account)
       {
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
          return simulator;
       }
 
@@ -517,11 +517,11 @@ namespace RegressionTests.IMAP
       {
          var simulator = SelectInbox(account);
 
-         Assert.IsTrue(simulator.SetDeletedFlag(messageIndex));
+         Assert.That(simulator.SetDeletedFlag(messageIndex), Is.True);
 
          string result;
-         Assert.IsTrue(simulator.Expunge(out result), result);
-         Assert.IsTrue(result.Contains("EXPUNGE"), result);
+         Assert.That(simulator.Expunge(out result), Is.True, result);
+         Assert.That(result.Contains("EXPUNGE"), Is.True, result);
 
          simulator.Disconnect();
       }
@@ -537,7 +537,7 @@ namespace RegressionTests.IMAP
          foreach (Match match in Regex.Matches(response, @"\* (\d+) FETCH \(UID (\d+)\)"))
             uids[int.Parse(match.Groups[1].Value)] = int.Parse(match.Groups[2].Value);
 
-         Assert.AreEqual(expectedCount, uids.Count, response);
+         Assert.That(uids.Count, Is.EqualTo(expectedCount), response);
 
          return uids;
       }
@@ -585,19 +585,22 @@ namespace RegressionTests.IMAP
       /// </summary>
       private static void AssertNoUntaggedExpunge(string response, string command)
       {
-         Assert.IsFalse(Regex.IsMatch(response, @"^\* \d+ EXPUNGE", RegexOptions.Multiline),
+         Assert.That(Regex.IsMatch(response, @"^\* \d+ EXPUNGE", RegexOptions.Multiline),
+            Is.False,
             "EXPUNGE sent during " + command + ". " + response);
       }
 
       private static void AssertContainsAttachment(string response, string marker)
       {
-         Assert.IsTrue(ContainsAttachment(response, marker),
+         Assert.That(ContainsAttachment(response, marker),
+            Is.True,
             "Expected the attachment holding " + marker + ". " + response);
       }
 
       private static void AssertDoesNotContainAttachment(string response, string marker)
       {
-         Assert.IsFalse(ContainsAttachment(response, marker),
+         Assert.That(ContainsAttachment(response, marker),
+            Is.False,
             "Returned the attachment holding " + marker + ". " + response);
       }
 

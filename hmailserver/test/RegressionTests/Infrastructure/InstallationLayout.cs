@@ -17,7 +17,7 @@ namespace RegressionTests.Infrastructure
       private static string GetBinDirectory()
       {
          var processes = Process.GetProcessesByName("hmailserver");
-         Assert.AreEqual(1, processes.Length, "Expected exactly one running hMailServer.exe.");
+         Assert.That(processes.Length, Is.EqualTo(1), "Expected exactly one running hMailServer.exe.");
 
          return Path.GetDirectoryName(processes[0].MainModule.FileName);
       }
@@ -29,7 +29,7 @@ namespace RegressionTests.Infrastructure
          var bin = GetBinDirectory();
 
          foreach (var file in new[] { "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll" })
-            Assert.IsTrue(File.Exists(Path.Combine(bin, file)), file + " is missing from " + bin);
+            Assert.That(File.Exists(Path.Combine(bin, file)), Is.True, file + " is missing from " + bin);
       }
 
       [Test]
@@ -39,7 +39,7 @@ namespace RegressionTests.Infrastructure
          var versionInfo = FileVersionInfo.GetVersionInfo(Path.Combine(GetBinDirectory(), "vcruntime140.dll"));
          var version = new Version(versionInfo.FileMajorPart, versionInfo.FileMinorPart);
 
-         Assert.GreaterOrEqual(version, new Version(14, 50));
+         Assert.That(version, Is.GreaterThanOrEqualTo(new Version(14, 50)));
       }
 
       [Test]
@@ -53,7 +53,7 @@ namespace RegressionTests.Infrastructure
             .Select(Path.GetFileName)
             .ToList();
 
-         CollectionAssert.IsEmpty(ucrtFiles);
+         Assert.That(ucrtFiles, Is.Empty);
       }
    }
 }

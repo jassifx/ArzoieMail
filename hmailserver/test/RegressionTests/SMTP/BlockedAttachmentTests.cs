@@ -78,8 +78,8 @@ namespace RegressionTests.SMTP
          ImapClientSimulator.AssertMessageCount("test@example.test", "test", "Inbox", 1);
 
          var message = CustomAsserts.AssertRetrieveFirstMessage(_account.IMAPFolders.get_ItemByName("INBOX"));
-         Assert.AreEqual(1, message.Attachments.Count);
-         Assert.AreEqual("AUTOEXEC.dll.txt", message.Attachments[0].Filename);
+         Assert.That(message.Attachments.Count, Is.EqualTo(1));
+         Assert.That(message.Attachments[0].Filename, Is.EqualTo("AUTOEXEC.dll.txt"));
 
          var tempFile = Path.Combine(TestSetup.GetSharedTempDirectory(), TestSetup.UniqueString());
          message.Attachments[0].SaveAs(tempFile);
@@ -92,7 +92,7 @@ namespace RegressionTests.SMTP
             message.Attachments[0].Filename.Substring(0,
                message.Attachments[0].Filename.Length - 4));
 
-         Assert.IsTrue(contents.Contains(removedMessage));
+         Assert.That(contents.Contains(removedMessage), Is.True);
          File.Delete(tempFile);
       }
 
@@ -123,8 +123,9 @@ namespace RegressionTests.SMTP
 
             // Check that the message exists
             var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-            Assert.IsTrue(message.Contains(
-               $"The attachment {attachmentName} was blocked for del="));
+            Assert.That(message.Contains(
+               $"The attachment {attachmentName} was blocked for del="),
+               Is.True);
          }
          finally
          {
@@ -163,8 +164,8 @@ namespace RegressionTests.SMTP
 
             // Check that the message exists
             var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-            Assert.IsTrue(message.Contains($"The attachment {attachment1Name} was blocked for del="));
-            Assert.IsTrue(message.Contains($"The attachment {attachment2Name} was blocked for del="));
+            Assert.That(message.Contains($"The attachment {attachment1Name} was blocked for del="), Is.True);
+            Assert.That(message.Contains($"The attachment {attachment2Name} was blocked for del="), Is.True);
          }
          finally
          {
@@ -213,13 +214,13 @@ namespace RegressionTests.SMTP
          ImapClientSimulator.AssertMessageCount("test@example.test", "test", "Inbox", 1);
 
          var message = CustomAsserts.AssertRetrieveFirstMessage(_account.IMAPFolders.get_ItemByName("INBOX"));
-         Assert.AreEqual(1, message.Attachments.Count);
-         Assert.AreEqual(expectedName, message.Attachments[0].Filename);
+         Assert.That(message.Attachments.Count, Is.EqualTo(1));
+         Assert.That(message.Attachments[0].Filename, Is.EqualTo(expectedName));
 
          var tempFile = Path.Combine(TestSetup.GetSharedTempDirectory(), TestSetup.UniqueString());
          message.Attachments[0].SaveAs(tempFile);
          var contents = File.ReadAllText(tempFile);
-         Assert.IsTrue(contents.Contains("The attachment " + originalName + " was blocked"), contents);
+         Assert.That(contents.Contains("The attachment " + originalName + " was blocked"), Is.True, contents);
          File.Delete(tempFile);
       }
 
@@ -263,13 +264,13 @@ namespace RegressionTests.SMTP
          ImapClientSimulator.AssertMessageCount("test@example.test", "test", "Inbox", 1);
 
          var message = CustomAsserts.AssertRetrieveFirstMessage(_account.IMAPFolders.get_ItemByName("INBOX"));
-         Assert.AreEqual(1, message.Attachments.Count);
-         Assert.AreEqual(expectedName, message.Attachments[0].Filename);
+         Assert.That(message.Attachments.Count, Is.EqualTo(1));
+         Assert.That(message.Attachments[0].Filename, Is.EqualTo(expectedName));
 
          var tempFile = Path.Combine(TestSetup.GetSharedTempDirectory(), TestSetup.UniqueString());
          message.Attachments[0].SaveAs(tempFile);
          var contents = File.ReadAllText(tempFile);
-         Assert.IsTrue(contents.Contains("The attachment " + originalName + " was blocked"), contents);
+         Assert.That(contents.Contains("The attachment " + originalName + " was blocked"), Is.True, contents);
          File.Delete(tempFile);
       }
 
@@ -312,13 +313,13 @@ namespace RegressionTests.SMTP
          ImapClientSimulator.AssertMessageCount("test@example.test", "test", "Inbox", 1);
 
          var message = CustomAsserts.AssertRetrieveFirstMessage(_account.IMAPFolders.get_ItemByName("INBOX"));
-         Assert.AreEqual(1, message.Attachments.Count);
-         Assert.AreEqual(expectedName, message.Attachments[0].Filename);
+         Assert.That(message.Attachments.Count, Is.EqualTo(1));
+         Assert.That(message.Attachments[0].Filename, Is.EqualTo(expectedName));
 
          var tempFile = Path.Combine(TestSetup.GetSharedTempDirectory(), TestSetup.UniqueString());
          message.Attachments[0].SaveAs(tempFile);
          var contents = File.ReadAllText(tempFile);
-         Assert.IsTrue(contents.Contains("The attachment " + originalName + " was blocked"), contents);
+         Assert.That(contents.Contains("The attachment " + originalName + " was blocked"), Is.True, contents);
          File.Delete(tempFile);
       }
 
@@ -351,16 +352,18 @@ namespace RegressionTests.SMTP
             ImapClientSimulator.AssertMessageCount("test@example.test", "test", "Inbox", 1);
 
             var message = CustomAsserts.AssertRetrieveFirstMessage(_account.IMAPFolders.get_ItemByName("INBOX"));
-            Assert.AreEqual(1, message.Attachments.Count);
-            Assert.AreEqual(expectedNewAttachmentName, message.Attachments[0].Filename);
+            Assert.That(message.Attachments.Count, Is.EqualTo(1));
+            Assert.That(message.Attachments[0].Filename, Is.EqualTo(expectedNewAttachmentName));
 
             var attachmentOnDisk = Path.Combine(TestSetup.GetSharedTempDirectory(), TestSetup.UniqueString());
             message.Attachments[0].SaveAs(attachmentOnDisk);
             var contents = File.ReadAllText(attachmentOnDisk);
 
-            Assert.IsTrue(
+            Assert.That(
                contents.Contains(string.Format("The attachment {0} was blocked for delivery by the e-mail server.",
-                  attachmentName)), contents);
+                  attachmentName)),
+               Is.True,
+               contents);
 
             File.Delete(attachmentOnDisk);
          }

@@ -28,10 +28,10 @@ namespace RegressionTests.IMAP
 
          for (var i = 0; i < 5; i++)
          {
-            Assert.IsTrue(simulator.CreateFolder("Recreated"));
+            Assert.That(simulator.CreateFolder("Recreated"), Is.True);
             var current = GetUidValidity(simulator, "Recreated");
-            Assert.Greater(current, previous);
-            Assert.IsTrue(simulator.DeleteFolder("Recreated"));
+            Assert.That(current, Is.GreaterThan(previous));
+            Assert.That(simulator.DeleteFolder("Recreated"), Is.True);
 
             previous = current;
          }
@@ -46,9 +46,9 @@ namespace RegressionTests.IMAP
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "uidvalidity@example.test", Password);
 
          var simulator = ConnectAndLogon(account);
-         Assert.IsTrue(simulator.CreateFolder("Restart"));
+         Assert.That(simulator.CreateFolder("Restart"), Is.True);
          var before = GetUidValidity(simulator, "Restart");
-         Assert.IsTrue(simulator.DeleteFolder("Restart"));
+         Assert.That(simulator.DeleteFolder("Restart"), Is.True);
          simulator.Disconnect();
 
          var application = SingletonProvider<TestSetup>.Instance.GetApp();
@@ -56,8 +56,8 @@ namespace RegressionTests.IMAP
          application.Start();
 
          simulator = ConnectAndLogon(account);
-         Assert.IsTrue(simulator.CreateFolder("Restart"));
-         Assert.Greater(GetUidValidity(simulator, "Restart"), before);
+         Assert.That(simulator.CreateFolder("Restart"), Is.True);
+         Assert.That(GetUidValidity(simulator, "Restart"), Is.GreaterThan(before));
          simulator.Disconnect();
       }
 
@@ -69,16 +69,16 @@ namespace RegressionTests.IMAP
          var other = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "other@example.test", Password);
 
          var observerSimulator = ConnectAndLogon(observer);
-         Assert.IsTrue(observerSimulator.CreateFolder("First"));
+         Assert.That(observerSimulator.CreateFolder("First"), Is.True);
          var first = GetUidValidity(observerSimulator, "First");
 
          var otherSimulator = ConnectAndLogon(other);
          for (var i = 0; i < 5; i++)
-            Assert.IsTrue(otherSimulator.CreateFolder("Folder" + i));
+            Assert.That(otherSimulator.CreateFolder("Folder" + i), Is.True);
          otherSimulator.Disconnect();
 
-         Assert.IsTrue(observerSimulator.CreateFolder("Second"));
-         Assert.AreEqual(first + 1, GetUidValidity(observerSimulator, "Second"));
+         Assert.That(observerSimulator.CreateFolder("Second"), Is.True);
+         Assert.That(GetUidValidity(observerSimulator, "Second"), Is.EqualTo(first + 1));
 
          observerSimulator.Disconnect();
       }
@@ -86,7 +86,7 @@ namespace RegressionTests.IMAP
       private static ImapClientSimulator ConnectAndLogon(Account account)
       {
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, Password));
+         Assert.That(simulator.ConnectAndLogon(account.Address, Password), Is.True);
          return simulator;
       }
 
@@ -94,7 +94,7 @@ namespace RegressionTests.IMAP
       {
          var response = simulator.Status(folderName, "UIDVALIDITY");
          var match = Regex.Match(response, @"UIDVALIDITY (\d+)");
-         Assert.IsTrue(match.Success, response);
+         Assert.That(match.Success, Is.True, response);
          return long.Parse(match.Groups[1].Value);
       }
    }

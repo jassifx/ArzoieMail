@@ -34,7 +34,7 @@ namespace VolumeTests
          sb.Append(Environment.NewLine);
 
          string result = sim.Send(sb.ToString());
-         Assert.IsTrue(result.StartsWith("* BYE Excessive amount of data sent to server."));
+         Assert.That(result.StartsWith("* BYE Excessive amount of data sent to server."), Is.True);
 
          sim.Disconnect();
       }

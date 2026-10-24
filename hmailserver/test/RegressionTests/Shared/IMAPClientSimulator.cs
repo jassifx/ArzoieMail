@@ -26,8 +26,8 @@ namespace RegressionTests.Shared
       {
          _tcpConnection = new TcpConnection();
 
-         Assert.IsTrue(ConnectAndLogon(username, password));
-         Assert.IsTrue(SelectFolder(mailbox));
+         Assert.That(ConnectAndLogon(username, password), Is.True);
+         Assert.That(SelectFolder(mailbox), Is.True);
       }
 
       public ImapClientSimulator(bool useSSL, int port)
@@ -249,7 +249,7 @@ namespace RegressionTests.Shared
          if (result.Contains("A14 OK"))
             return true;
 
-         Assert.Fail("IMAPClientSimulator.Close() - Expected BAD/OK, received: \"{0}\"", result);
+         Assert.Fail($"IMAPClientSimulator.Close() - Expected BAD/OK, received: \"{result}\"");
          return false;
       }
 
@@ -679,7 +679,7 @@ namespace RegressionTests.Shared
             CustomAsserts.AssertRecipientsInDeliveryQueue(0);
 
          var imap = new ImapClientSimulator();
-         Assert.IsTrue(imap.ConnectAndLogon(accountName, accountPassword));
+         Assert.That(imap.ConnectAndLogon(accountName, accountPassword), Is.True);
 
          if (expectedCount != 0)
             imap.AssertFolderExists(folderName);

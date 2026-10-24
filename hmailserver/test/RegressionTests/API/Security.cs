@@ -25,7 +25,7 @@ namespace RegressionTests.API
             var v = newApplication.BackupManager;
          });
 
-         StringAssert.Contains("You do not have access to this property / method.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("You do not have access to this property / method."));
       }
 
       [Test]
@@ -39,7 +39,7 @@ namespace RegressionTests.API
          newApplication.Authenticate("user@example.test", "test");
          var database = newApplication.Database;
          var ex = Assert.Throws<COMException>(() => database.ExecuteSQL("select"));
-         StringAssert.Contains("You do not have access to this property / method.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("You do not have access to this property / method."));
       }
 
       [Test]
@@ -53,10 +53,10 @@ namespace RegressionTests.API
 
          var newApplication = new Application();
          newApplication.Authenticate("user@example.test", "test");
-         Assert.AreEqual(1, newApplication.Domains.Count);
+         Assert.That(newApplication.Domains.Count, Is.EqualTo(1));
 
          var domains = SingletonProvider<TestSetup>.Instance.GetApp().Domains;
-         Assert.AreEqual(2, domains.Count);
+         Assert.That(domains.Count, Is.EqualTo(2));
 
          try
          {
@@ -65,7 +65,7 @@ namespace RegressionTests.API
          }
          catch (COMException ex)
          {
-            Assert.IsTrue(ex.Message.Contains("Invalid index."));
+            Assert.That(ex.Message.Contains("Invalid index."), Is.True);
          }
       }
 
@@ -83,7 +83,7 @@ namespace RegressionTests.API
             var settings = newApplication.Settings;
          });
 
-         StringAssert.Contains("You do not have access to this property / method.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("You do not have access to this property / method."));
       }
 
       [Test]
@@ -99,7 +99,7 @@ namespace RegressionTests.API
          {
             var backupManager = newApplication.BackupManager;
          });
-         StringAssert.Contains("You do not have access to this property / method.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("You do not have access to this property / method."));
       }
 
       [Test]
@@ -114,7 +114,7 @@ namespace RegressionTests.API
          var database = newApplication.Database;
 
          var ex = Assert.Throws<COMException>(() => database.ExecuteSQL("select"));
-         StringAssert.Contains("You do not have access to this property / method.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("You do not have access to this property / method."));
       }
 
       [Test]
@@ -130,8 +130,8 @@ namespace RegressionTests.API
 
          var newApplication = new Application();
          newApplication.Authenticate("user@example.test", "test");
-         Assert.AreEqual(1, newApplication.Domains.Count);
-         Assert.AreEqual(1, newApplication.Domains[0].Accounts.Count);
+         Assert.That(newApplication.Domains.Count, Is.EqualTo(1));
+         Assert.That(newApplication.Domains[0].Accounts.Count, Is.EqualTo(1));
 
          var myAccount = newApplication.Domains[0].Accounts.get_ItemByAddress("user@example.test");
 
@@ -143,11 +143,11 @@ namespace RegressionTests.API
          }
          catch (COMException ex)
          {
-            Assert.IsTrue(ex.Message.Contains("Invalid index."));
+            Assert.That(ex.Message.Contains("Invalid index."), Is.True);
          }
 
          var domains = SingletonProvider<TestSetup>.Instance.GetApp().Domains;
-         Assert.AreEqual(2, domains[0].Accounts.Count);
+         Assert.That(domains[0].Accounts.Count, Is.EqualTo(2));
       }
 
       [Test]
@@ -161,10 +161,10 @@ namespace RegressionTests.API
 
          var newApplication = new Application();
          newApplication.Authenticate("user@example.test", "test");
-         Assert.AreEqual(1, newApplication.Domains.Count);
+         Assert.That(newApplication.Domains.Count, Is.EqualTo(1));
 
          var domains = SingletonProvider<TestSetup>.Instance.GetApp().Domains;
-         Assert.AreEqual(2, domains.Count);
+         Assert.That(domains.Count, Is.EqualTo(2));
 
          try
          {
@@ -173,7 +173,7 @@ namespace RegressionTests.API
          }
          catch (COMException ex)
          {
-            Assert.IsTrue(ex.Message.Contains("Invalid index."));
+            Assert.That(ex.Message.Contains("Invalid index."), Is.True);
          }
       }
 
@@ -190,7 +190,7 @@ namespace RegressionTests.API
          {
             var settings = newApplication.Settings;
          });
-         StringAssert.Contains("You do not have access to this property / method.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("You do not have access to this property / method."));
       }
    }
 }

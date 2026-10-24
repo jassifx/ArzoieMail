@@ -47,7 +47,7 @@ namespace RegressionTests.AntiSpam.DKIM
          SmtpClientSimulator.StaticSendRaw(account1.Address, account1.Address, TestResources.MessageWithInvalidDkim);
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
 
-         Assert.IsTrue(text.Contains("Rejected by DKIM. - (Score: 6)"));
+         Assert.That(text.Contains("Rejected by DKIM. - (Score: 6)"), Is.True);
       }
 
       [Test]

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Xml;
 
@@ -10,9 +11,8 @@ namespace VMTestRunner.Console
       private const string NuGetPackagesRelativePath = @"..\..\..\..\packages\";
       private const string RegressionTestsBinRelativePath = @"..\..\..\..\RegressionTests\bin\x64\Debug\";
       private const string VolumeTestsBinRelativePath = @"..\..\..\..\VolumeTests\bin\x64\Debug\";
-      private const string NUnitConsoleRunnerPackagePath = @"NUnit.ConsoleRunner.3.15.5\tools";
-      private const string NUnitPackagePath = @"NUnit.3.13.3\lib\net45";
-      private readonly string _nUnitPath;
+      // Directory.Build.props restores the packages into hmailserver\test\packages\<id>\<version>\.
+      private const string NUnitConsoleRunnerPackageId = "nunit.consolerunner";
       private readonly string _nUnitConsolePath;
 
       private const string Username = "vmware";
@@ -36,17 +36,29 @@ namespace VMTestRunner.Console
          _softwareUnderTest = softwareUnderTest;
          _testIndex = testIndex;
 
-         var packagePath = Path.Combine(Environment.CurrentDirectory, NuGetPackagesRelativePath);
+         var packagePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, NuGetPackagesRelativePath));
 
-         _nUnitConsolePath = Path.Combine(packagePath, NUnitConsoleRunnerPackagePath);
+         _nUnitConsolePath = FindNUnitConsole(Path.Combine(packagePath, NUnitConsoleRunnerPackageId));
+      }
 
-         if (!Directory.Exists(_nUnitConsolePath))
-            throw new InvalidOperationException($"NUnit console not found in {_nUnitConsolePath}");
+      /// <summary>
+      /// The tools folder of the restored NUnit.ConsoleRunner package. Only the version
+      /// Directory.Packages.props pins is restored, but an older one can be left behind.
+      /// </summary>
+      private static string FindNUnitConsole(string packageDirectory)
+      {
+         var toolsDirectory = Directory.Exists(packageDirectory)
+            ? Directory.GetDirectories(packageDirectory)
+               .Select(versionDirectory => Path.Combine(versionDirectory, "tools"))
+               .Where(tools => File.Exists(Path.Combine(tools, "nunit3-console.exe")))
+               .OrderByDescending(tools => Version.TryParse(Path.GetFileName(Path.GetDirectoryName(tools)), out var version) ? version : new Version())
+               .FirstOrDefault()
+            : null;
 
-         _nUnitPath = Path.Combine(packagePath, NUnitPackagePath);
+         if (toolsDirectory == null)
+            throw new InvalidOperationException($"NUnit console not found in {packageDirectory}. Build hMailServer Tests.sln, which restores it.");
 
-         if (!Directory.Exists(_nUnitPath))
-            throw new InvalidOperationException($"NUnit not found in {_nUnitPath}");
+         return toolsDirectory;
       }
 
       public void Run()
@@ -64,8 +76,6 @@ namespace VMTestRunner.Console
          if (!Directory.Exists(testAssemblyDirectory))
             throw new InvalidOperationException($"The {_environment.TestSuite} assemblies were not found in " +
                $"{Path.GetFullPath(testAssemblyDirectory)}. Build them with build\\build-tests.ps1.");
-
-         var testAssemblyNames = GetTestAssemblyNames();
 
          string guestTestPath = @"C:\Nunit";
 
@@ -97,10 +107,11 @@ namespace VMTestRunner.Console
                   guest.CopyFileToGuest(copyOperation.From, copyOperation.To);
 
                guest.CopyFolderToGuest(_nUnitConsolePath, guestTestPath);
-               guest.CopyFolderToGuest(_nUnitPath, guestTestPath);
 
-               foreach (var testAssemblyName in testAssemblyNames)
-                  guest.CopyFileToGuest(Path.Combine(testAssemblyDirectory, testAssemblyName), Path.Combine(guestTestPath, testAssemblyName));
+               // The whole build output: a .NET test assembly needs its .deps.json and
+               // .runtimeconfig.json, NUnit and the interop next to it. The volume tests' output
+               // includes RegressionTests.dll, whose shared infrastructure they use.
+               guest.CopyFolderToGuest(testAssemblyDirectory, guestTestPath);
 
                guest.CopyFileToGuest(Path.Combine(currentDirectory, RunTestScriptName), Path.Combine(guestTestPath, RunTestScriptName));
 
@@ -181,21 +192,6 @@ namespace VMTestRunner.Console
                return VolumeTestsBinRelativePath;
             default:
                return RegressionTestsBinRelativePath;
-         }
-      }
-
-      /// <summary>
-      /// The assemblies the suite needs in the guest. The volume tests use the shared
-      /// infrastructure of the regression tests, so that assembly goes along as well.
-      /// </summary>
-      private string[] GetTestAssemblyNames()
-      {
-         switch (_environment.TestSuite)
-         {
-            case TestSuite.VolumeTests:
-               return new[] { "VolumeTests.dll", "RegressionTests.dll", "Interop.hMailServer.dll" };
-            default:
-               return new[] { "RegressionTests.dll", "Interop.hMailServer.dll" };
          }
       }
 

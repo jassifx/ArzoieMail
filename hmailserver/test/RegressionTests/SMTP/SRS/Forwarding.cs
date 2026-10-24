@@ -24,23 +24,23 @@ namespace RegressionTests.SMTP.SRS
 
             var address = SrsAddress.Parse(sender);
 
-            Assert.AreEqual("SRS0", address.Tag);
+            Assert.That(address.Tag, Is.EqualTo("SRS0"));
 
             // The message now comes from a domain we host, which is what makes it pass
             // the SPF check at the receiving server.
-            Assert.AreEqual(_domain.Name, address.ForwardingDomain);
+            Assert.That(address.ForwardingDomain, Is.EqualTo(_domain.Name));
 
             // And the address it came from is still in there, so that a bounce can be
             // passed on to whoever sent the message.
-            Assert.AreEqual(ExternalSender, address.OriginalAddress);
+            Assert.That(address.OriginalAddress, Is.EqualTo(ExternalSender));
 
-            Assert.AreEqual(SrsAddress.CreateTimestamp(DateTime.UtcNow), address.Timestamp);
-            Assert.AreEqual(SrsAddress.DefaultHashLength, address.Hash.Length);
-            Assert.IsTrue(address.HasValidHash(Secret), "The address was not signed with the server's SRS secret.");
+            Assert.That(address.Timestamp, Is.EqualTo(SrsAddress.CreateTimestamp(DateTime.UtcNow)));
+            Assert.That(address.Hash.Length, Is.EqualTo(SrsAddress.DefaultHashLength));
+            Assert.That(address.HasValidHash(Secret), Is.True, "The address was not signed with the server's SRS secret.");
 
             // The whole address, built here rather than by the server, matches what the
             // server produced.
-            Assert.AreEqual(SrsAddress.Create(Secret, ExternalSender, _domain.Name), sender);
+            Assert.That(sender, Is.EqualTo(SrsAddress.Create(Secret, ExternalSender, _domain.Name)));
          }
       }
 
@@ -60,7 +60,7 @@ namespace RegressionTests.SMTP.SRS
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(recipient.Address, "test");
 
-         Assert.IsTrue(message.Contains("Return-Path: <" + ExternalSender + ">"), message);
+         Assert.That(message.Contains("Return-Path: <" + ExternalSender + ">"), Is.True, message);
       }
 
       [Test]
@@ -78,8 +78,8 @@ namespace RegressionTests.SMTP.SRS
             // Our own domain already lists this server as a permitted sender, so there is
             // nothing to fix, and leaving the address alone keeps the message aligned
             // with its From header for DMARC.
-            Assert.AreEqual(sender.Address,
-               GetSenderOfForwardedMessage(server, sender.Address, "forwarder@example.test"));
+            Assert.That(GetSenderOfForwardedMessage(server, sender.Address, "forwarder@example.test"),
+               Is.EqualTo(sender.Address));
          }
       }
 
@@ -95,7 +95,7 @@ namespace RegressionTests.SMTP.SRS
 
          using (var server = StartExternalServer(1, ForwardTarget))
          {
-            Assert.AreEqual("", GetSenderOfForwardedMessage(server, "", "forwarder@example.test"));
+            Assert.That(GetSenderOfForwardedMessage(server, "", "forwarder@example.test"), Is.EqualTo(""));
          }
       }
 
@@ -103,14 +103,14 @@ namespace RegressionTests.SMTP.SRS
       [Description("Nothing is rewritten while SRS is switched off.")]
       public void TheSenderIsNotRewrittenWhenSrsIsDisabled()
       {
-         Assert.IsFalse(_settings.SRSEnabled);
+         Assert.That(_settings.SRSEnabled, Is.False);
 
          AddForwardingAccount("forwarder@example.test", ForwardTarget);
 
          using (var server = StartExternalServer(1, ForwardTarget))
          {
-            Assert.AreEqual(ExternalSender,
-               GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"));
+            Assert.That(GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"),
+               Is.EqualTo(ExternalSender));
          }
       }
 
@@ -144,7 +144,7 @@ namespace RegressionTests.SMTP.SRS
          {
             var sender = GetSenderOfForwardedMessage(server, ExternalSender, account.Address);
 
-            Assert.AreEqual(SrsAddress.Create(Secret, ExternalSender, _domain.Name), sender);
+            Assert.That(sender, Is.EqualTo(SrsAddress.Create(Secret, ExternalSender, _domain.Name)));
          }
       }
 
@@ -167,15 +167,15 @@ namespace RegressionTests.SMTP.SRS
 
             var address = SrsAddress.Parse(sender);
 
-            Assert.AreEqual("SRS1", address.Tag);
+            Assert.That(address.Tag, Is.EqualTo("SRS1"));
 
             // The first hop is kept as it is, so that a bounce goes back the way the
             // message came rather than the address growing with every hop.
-            Assert.AreEqual("hop1.example", address.Domain);
-            Assert.AreEqual(_domain.Name, address.ForwardingDomain);
-            Assert.IsTrue(address.HasValidHash(Secret), "The address was not signed with the server's SRS secret.");
+            Assert.That(address.Domain, Is.EqualTo("hop1.example"));
+            Assert.That(address.ForwardingDomain, Is.EqualTo(_domain.Name));
+            Assert.That(address.HasValidHash(Secret), Is.True, "The address was not signed with the server's SRS secret.");
 
-            Assert.AreEqual(SrsAddress.CreateChained(Secret, firstHop, _domain.Name, SrsAddress.DefaultHashLength), sender);
+            Assert.That(sender, Is.EqualTo(SrsAddress.CreateChained(Secret, firstHop, _domain.Name, SrsAddress.DefaultHashLength)));
          }
       }
 
@@ -194,7 +194,7 @@ namespace RegressionTests.SMTP.SRS
             // Rewriting it would produce an address longer than the 255 characters a
             // message can carry, so the message is forwarded as it is rather than with
             // an address which cannot be delivered or stored.
-            Assert.AreEqual(longSender, GetSenderOfForwardedMessage(server, longSender, "forwarder@example.test"));
+            Assert.That(GetSenderOfForwardedMessage(server, longSender, "forwarder@example.test"), Is.EqualTo(longSender));
          }
       }
 
@@ -213,8 +213,8 @@ namespace RegressionTests.SMTP.SRS
             // The older setting would have put the forwarding account here, leaving a
             // bounce with the person who set the forwarding up. SRS wins, and the
             // address it creates leads back to whoever wrote the message.
-            Assert.AreEqual(SrsAddress.Create(Secret, ExternalSender, _domain.Name),
-               GetSenderOfForwardedMessage(server, ExternalSender, forwarder.Address));
+            Assert.That(GetSenderOfForwardedMessage(server, ExternalSender, forwarder.Address),
+               Is.EqualTo(SrsAddress.Create(Secret, ExternalSender, _domain.Name)));
          }
       }
 
@@ -233,8 +233,8 @@ namespace RegressionTests.SMTP.SRS
          {
             // SRS does not rewrite a sender in one of our own domains, so the message is
             // forwarded the way it was before SRS existed.
-            Assert.AreEqual(forwarder.Address,
-               GetSenderOfForwardedMessage(server, localSender.Address, forwarder.Address));
+            Assert.That(GetSenderOfForwardedMessage(server, localSender.Address, forwarder.Address),
+               Is.EqualTo(forwarder.Address));
          }
       }
 
@@ -253,8 +253,8 @@ namespace RegressionTests.SMTP.SRS
 
          using (var server = StartExternalServer(1, ForwardTarget))
          {
-            Assert.AreEqual(SrsAddress.Create(Secret, ExternalSender, _domain.Name),
-               GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"));
+            Assert.That(GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"),
+               Is.EqualTo(SrsAddress.Create(Secret, ExternalSender, _domain.Name)));
          }
       }
 
@@ -275,8 +275,8 @@ namespace RegressionTests.SMTP.SRS
          {
             // One of the members is outside, and a message has a single envelope sender,
             // so the one the message leaves with is the rewritten one.
-            Assert.AreEqual(SrsAddress.Create(Secret, ExternalSender, _domain.Name),
-               GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"));
+            Assert.That(GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"),
+               Is.EqualTo(SrsAddress.Create(Secret, ExternalSender, _domain.Name)));
          }
       }
 
@@ -298,7 +298,7 @@ namespace RegressionTests.SMTP.SRS
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(recipient.Address, "test");
 
-         Assert.IsTrue(message.Contains("Return-Path: <" + ExternalSender + ">"), message);
+         Assert.That(message.Contains("Return-Path: <" + ExternalSender + ">"), Is.True, message);
       }
 
       [Test]
@@ -318,8 +318,8 @@ namespace RegressionTests.SMTP.SRS
 
          using (var server = StartExternalServer(1, ForwardTarget))
          {
-            Assert.AreEqual(SrsAddress.Create(Secret, ExternalSender, _domain.Name),
-               GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"));
+            Assert.That(GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"),
+               Is.EqualTo(SrsAddress.Create(Secret, ExternalSender, _domain.Name)));
          }
       }
 
@@ -344,7 +344,7 @@ namespace RegressionTests.SMTP.SRS
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(postmaster.Address, "test");
 
-         Assert.IsTrue(message.Contains("Return-Path: <" + ExternalSender + ">"), message);
+         Assert.That(message.Contains("Return-Path: <" + ExternalSender + ">"), Is.True, message);
       }
 
       [Test]
@@ -360,8 +360,8 @@ namespace RegressionTests.SMTP.SRS
          {
             AddForwardingAccount("forwarder@example.test", "routed@example.test");
 
-            Assert.AreEqual(SrsAddress.Create(Secret, ExternalSender, _domain.Name),
-               GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"));
+            Assert.That(GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"),
+               Is.EqualTo(SrsAddress.Create(Secret, ExternalSender, _domain.Name)));
          }
       }
 
@@ -383,8 +383,8 @@ namespace RegressionTests.SMTP.SRS
          {
             AddForwardingAccount("forwarder@example.test", "routed@alias.test");
 
-            Assert.AreEqual(SrsAddress.Create(Secret, ExternalSender, _domain.Name),
-               GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"));
+            Assert.That(GetSenderOfForwardedMessage(server, ExternalSender, "forwarder@example.test"),
+               Is.EqualTo(SrsAddress.Create(Secret, ExternalSender, _domain.Name)));
          }
       }
 
@@ -420,7 +420,7 @@ namespace RegressionTests.SMTP.SRS
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(postmaster.Address, "test");
 
-         Assert.IsTrue(message.Contains("Return-Path: <" + ExternalSender + ">"), message);
+         Assert.That(message.Contains("Return-Path: <" + ExternalSender + ">"), Is.True, message);
       }
 
       [Test]
@@ -447,7 +447,7 @@ namespace RegressionTests.SMTP.SRS
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(recipient.Address, "test");
 
-         Assert.IsTrue(message.Contains("Return-Path: <" + ExternalSender + ">"), message);
+         Assert.That(message.Contains("Return-Path: <" + ExternalSender + ">"), Is.True, message);
       }
 
       [Test]
@@ -485,8 +485,8 @@ namespace RegressionTests.SMTP.SRS
 
          using (var server = StartExternalServer(1, ForwardTarget))
          {
-            Assert.AreEqual(SrsAddress.Create(Secret, ExternalSender, _domain.Name),
-               GetSenderOfForwardedMessage(server, ExternalSender, recipient.Address));
+            Assert.That(GetSenderOfForwardedMessage(server, ExternalSender, recipient.Address),
+               Is.EqualTo(SrsAddress.Create(Secret, ExternalSender, _domain.Name)));
          }
       }
 
@@ -506,8 +506,8 @@ namespace RegressionTests.SMTP.SRS
 
             var address = SrsAddress.Parse(sender);
 
-            Assert.AreEqual(12, address.Hash.Length);
-            Assert.IsTrue(address.HasValidHash(Secret), "The address was not signed with the server's SRS secret.");
+            Assert.That(address.Hash.Length, Is.EqualTo(12));
+            Assert.That(address.HasValidHash(Secret), Is.True, "The address was not signed with the server's SRS secret.");
          }
       }
    }

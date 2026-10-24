@@ -38,7 +38,7 @@ namespace RegressionTests.Stress
 
          var executionTime = DateTime.Now - timeBeforeDelete;
 
-         Assert.Greater(1500, executionTime.TotalMilliseconds);
+         Assert.That(executionTime.TotalMilliseconds, Is.LessThan(1500));
       }
 
       [Test]
@@ -65,7 +65,7 @@ namespace RegressionTests.Stress
          }
 
          watch.Stop();
-         Assert.Greater(10000, watch.ElapsedMilliseconds);
+         Assert.That(watch.ElapsedMilliseconds, Is.LessThan(10000));
 
          // an error log file may have been created. if we're using MySQL,
          // the value may have been silently truncated.
@@ -125,7 +125,7 @@ namespace RegressionTests.Stress
          File.Delete(message.Filename);
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
-         Assert.IsTrue(text.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)));
+         Assert.That(text.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)), Is.True);
 
          CustomAsserts.AssertReportedError("Message retrieval failed because message file");
       }
@@ -152,7 +152,7 @@ namespace RegressionTests.Stress
          parent.Delete(true);
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
-         Assert.IsTrue(text.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)));
+         Assert.That(text.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)), Is.True);
          CustomAsserts.AssertReportedError("Message retrieval failed because message file");
       }
 
@@ -183,7 +183,7 @@ namespace RegressionTests.Stress
          sim.SelectFolder("INBOX");
          var result = sim.Fetch("1 BODY[1]");
 
-         Assert.IsTrue(result.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)));
+         Assert.That(result.Contains(deletedMessageText.Replace("%MACRO_FILE%", message.Filename)), Is.True);
          CustomAsserts.AssertReportedError("Message retrieval failed because message file");
       }
    }

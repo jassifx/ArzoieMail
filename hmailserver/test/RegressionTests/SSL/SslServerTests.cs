@@ -37,7 +37,7 @@ namespace RegressionTests.SSL
 
          for (var i = 0; i <= 40; i++)
          {
-            Assert.IsTrue(i != 40);
+            Assert.That(i != 40, Is.True);
 
             var liveLog = _application.Settings.Logging.LiveLog;
             if (liveLog.Contains("TCPConnection - TLS/SSL handshake failed."))
@@ -61,10 +61,10 @@ namespace RegressionTests.SSL
             {
                var imapSim = new ImapClientSimulator(true, 14301);
                imapSim.ConnectAndLogon(account.Address, "test");
-               Assert.IsTrue(imapSim.SelectFolder("Inbox"), "SelectInbox");
+               Assert.That(imapSim.SelectFolder("Inbox"), Is.True, "SelectInbox");
                imapSim.CreateFolder("Test");
-               Assert.IsTrue(imapSim.SelectFolder("Test"), "SelectTest");
-               Assert.IsTrue(imapSim.Logout(), "Logout");
+               Assert.That(imapSim.SelectFolder("Test"), Is.True, "SelectTest");
+               Assert.That(imapSim.Logout(), Is.True, "Logout");
 
                imapSim.Disconnect();
                break;
@@ -91,7 +91,7 @@ namespace RegressionTests.SSL
                var pop3Sim = new Pop3ClientSimulator(true, 11001);
                var text = pop3Sim.GetFirstMessageText(account.Address, "test");
 
-               Assert.IsTrue(text.Contains("MyBody"));
+               Assert.That(text.Contains("MyBody"), Is.True);
 
                break;
             }
@@ -129,7 +129,7 @@ namespace RegressionTests.SSL
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", i + 1);
          var pop3Sim = new Pop3ClientSimulator(false, 110);
          var text = pop3Sim.GetFirstMessageText(account.Address, "test");
-         Assert.IsTrue(text.Contains("MyBody"));
+         Assert.That(text.Contains("MyBody"), Is.True);
       }
 
       [Test]

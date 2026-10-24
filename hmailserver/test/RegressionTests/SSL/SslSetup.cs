@@ -98,7 +98,7 @@ namespace RegressionTests.SSL
          var pfxPath = GetCertificatePfx();
 
          Console.WriteLine("Using certificate: " + pfxPath);
-         var x509 = new X509Certificate2(pfxPath, "Secret1");
+         var x509 = X509CertificateLoader.LoadPkcs12FromFile(pfxPath, "Secret1");
 
          if (!x509.HasPrivateKey) throw new Exception("Private key could not be accessed for test certificate.");
 

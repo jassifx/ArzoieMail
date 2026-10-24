@@ -20,11 +20,11 @@ namespace RegressionTests.API
 
          var newApp = new Application();
          var authenticated = newApp.Authenticate(account.Address, "test");
-         Assert.IsNotNull(authenticated);
+         Assert.That(authenticated, Is.Not.Null);
 
          // This should throw an exception.
          var ex = Assert.Throws<COMException>(() => newApp.Domains.Add());
-         StringAssert.Contains("You do not have access to this property / method.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("You do not have access to this property / method."));
       }
 
       [Test]
@@ -38,11 +38,11 @@ namespace RegressionTests.API
 
          var newApp = new Application();
          var authenticated = newApp.Authenticate(account.Address, "test");
-         Assert.IsNotNull(authenticated);
+         Assert.That(authenticated, Is.Not.Null);
 
          // This should throw an exception.
          var ex = Assert.Throws<COMException>(() => newApp.Domains.Add());
-         StringAssert.Contains("You do not have access to this property / method.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("You do not have access to this property / method."));
       }
 
       [Test]
@@ -58,7 +58,7 @@ namespace RegressionTests.API
 
          var newApp = new Application();
          var authenticated = newApp.Authenticate(account.Address, "test");
-         Assert.IsNotNull(authenticated);
+         Assert.That(authenticated, Is.Not.Null);
 
          // This should throw an exception.
          var newDomain = newApp.Domains.Add();
@@ -76,9 +76,9 @@ namespace RegressionTests.API
 
          var newApp = new Application();
          var authenticated = newApp.Authenticate(account.Address, "test");
-         Assert.IsNotNull(authenticated);
+         Assert.That(authenticated, Is.Not.Null);
 
-         Assert.AreEqual(1, newApp.Domains.Count);
+         Assert.That(newApp.Domains.Count, Is.EqualTo(1));
 
          // Retrieve our domain.
          var newDomain = newApp.Domains[0];
@@ -97,14 +97,14 @@ namespace RegressionTests.API
 
          var newApp = new Application();
          var authenticated = newApp.Authenticate(account.Address, "test");
-         Assert.IsNotNull(authenticated);
+         Assert.That(authenticated, Is.Not.Null);
 
-         Assert.AreEqual(1, newApp.Domains.Count);
+         Assert.That(newApp.Domains.Count, Is.EqualTo(1));
 
          // Retrieve our domain.
          var newDomain = newApp.Domains[0];
          var ex = Assert.Throws<COMException>(() => newDomain.Save());
-         StringAssert.Contains("You do not have access to this property / method.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("You do not have access to this property / method."));
       }
    }
 }

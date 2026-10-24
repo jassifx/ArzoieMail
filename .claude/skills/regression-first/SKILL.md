@@ -42,7 +42,7 @@ the tests stop and start the service without a UAC prompt.
 
 ```
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File build/build-tests.ps1
-hmailserver\test\RegressionTests\packages\NUnit.ConsoleRunner.<version>\tools\nunit3-console.exe ^
+hmailserver\test\packages\nunit.consolerunner\<version>\tools\nunit3-console.exe ^
   hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll ^
   --where "class == RegressionTests.<Area>.<Fixture>"
 ```

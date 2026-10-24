@@ -33,10 +33,10 @@ namespace RegressionTests.SMTP.SRS
 
             // The bounce leaves here addressed to the person who wrote the message that
             // was forwarded, rather than to the account which forwarded it.
-            Assert.AreEqual(1, server.RcptTos.Count);
-            Assert.AreEqual(ExternalSender, server.RcptTos[0]);
-            Assert.AreEqual("", server.MailFrom);
-            Assert.IsTrue(server.MessageData.Contains("The message could not be delivered."));
+            Assert.That(server.RcptTos.Count, Is.EqualTo(1));
+            Assert.That(server.RcptTos[0], Is.EqualTo(ExternalSender));
+            Assert.That(server.MailFrom, Is.EqualTo(""));
+            Assert.That(server.MessageData.Contains("The message could not be delivered."), Is.True);
          }
       }
 
@@ -57,7 +57,8 @@ namespace RegressionTests.SMTP.SRS
             CustomAsserts.AssertRecipientsInDeliveryQueue(0);
 
             // Whatever the receiving server was told to bounce to, we send a bounce to.
-            Assert.IsTrue(Poll.Until(TimeSpan.FromSeconds(20), () => server.MailFrom.StartsWith("SRS0=")),
+            Assert.That(Poll.Until(TimeSpan.FromSeconds(20), () => server.MailFrom.StartsWith("SRS0=")),
+               Is.True,
                "The forwarded message did not have a rewritten sender: " + server.MailFrom);
 
             var bounceAddress = server.MailFrom;
@@ -68,9 +69,9 @@ namespace RegressionTests.SMTP.SRS
 
             server.WaitForCompletion();
 
-            Assert.AreEqual(2, server.RcptTos.Count);
-            Assert.AreEqual(ForwardTarget, server.RcptTos[0]);
-            Assert.AreEqual(ExternalSender, server.RcptTos[1]);
+            Assert.That(server.RcptTos.Count, Is.EqualTo(2));
+            Assert.That(server.RcptTos[0], Is.EqualTo(ForwardTarget));
+            Assert.That(server.RcptTos[1], Is.EqualTo(ExternalSender));
          }
       }
 
@@ -208,7 +209,7 @@ namespace RegressionTests.SMTP.SRS
 
             server.WaitForCompletion();
 
-            Assert.AreEqual("sender.name@" + ExternalDomain, server.RcptTos[0]);
+            Assert.That(server.RcptTos[0], Is.EqualTo("sender.name@" + ExternalDomain));
          }
       }
 
@@ -232,7 +233,7 @@ namespace RegressionTests.SMTP.SRS
 
             server.WaitForCompletion();
 
-            Assert.AreEqual(firstHopAddress, server.RcptTos[0]);
+            Assert.That(server.RcptTos[0], Is.EqualTo(firstHopAddress));
          }
       }
 
@@ -253,7 +254,7 @@ namespace RegressionTests.SMTP.SRS
       [Description("With SRS switched off, an address which looks like one of ours is just an unknown address.")]
       public void AddressesAreNotReversedWhenSrsIsDisabled()
       {
-         Assert.IsFalse(_settings.SRSEnabled);
+         Assert.That(_settings.SRSEnabled, Is.False);
 
          var address = SrsAddress.Create(Secret, ExternalSender, _domain.Name);
 
@@ -351,7 +352,8 @@ namespace RegressionTests.SMTP.SRS
          var exception = Assert.Throws<DeliveryFailedException>(
             () => client.Send("", address, "Undelivered mail", "The body"));
 
-         Assert.IsTrue(exception.Message.Contains(expectedError),
+         Assert.That(exception.Message.Contains(expectedError),
+            Is.True,
             "Expected the delivery to fail with '" + expectedError + "', but it failed with: " + exception.Message);
       }
 
@@ -365,7 +367,7 @@ namespace RegressionTests.SMTP.SRS
 
             server.WaitForCompletion();
 
-            Assert.AreEqual(ExternalSender, server.RcptTos[0]);
+            Assert.That(server.RcptTos[0], Is.EqualTo(ExternalSender));
          }
       }
    }

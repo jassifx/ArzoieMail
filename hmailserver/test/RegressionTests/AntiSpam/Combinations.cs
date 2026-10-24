@@ -58,8 +58,8 @@ namespace RegressionTests.AntiSpam
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
 
-         Assert.IsTrue(message.Contains("X-hMailServer-Reason-1:"));
-         Assert.IsTrue(message.Contains("X-hMailServer-Reason-2:"));
+         Assert.That(message.Contains("X-hMailServer-Reason-1:"), Is.True);
+         Assert.That(message.Contains("X-hMailServer-Reason-2:"), Is.True);
       }
 
       [Test]
@@ -97,8 +97,8 @@ namespace RegressionTests.AntiSpam
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
 
-         Assert.IsTrue(message.Contains("X-hMailServer-Reason-1:"));
-         Assert.IsFalse(message.Contains("X-hMailServer-Reason-2:"));
+         Assert.That(message.Contains("X-hMailServer-Reason-1:"), Is.True);
+         Assert.That(message.Contains("X-hMailServer-Reason-2:"), Is.False);
       }
 
       [Test]
@@ -154,11 +154,11 @@ namespace RegressionTests.AntiSpam
 
          var iFirst = liveLog.IndexOf("Spam test:");
          var iLast = liveLog.LastIndexOf("Spam test:");
-         Assert.AreNotEqual(-1, iFirst);
+         Assert.That(iFirst, Is.Not.EqualTo(-1));
 
          // there should only be one spam test, since any spam match
          // should result in a spam score over the delete threshold.
-         Assert.AreEqual(iFirst, iLast);
+         Assert.That(iLast, Is.EqualTo(iFirst));
       }
    }
 }

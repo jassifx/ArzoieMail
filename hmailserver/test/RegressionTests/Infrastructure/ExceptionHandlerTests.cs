@@ -92,7 +92,7 @@ namespace RegressionTests.Infrastructure
          AssertMinidumpsGeneratedAndErrorsLogged(0, false);
 
          var defaultLog = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsTrue(defaultLog.Contains("Connection was terminated - Client is disconnected."));
+         Assert.That(defaultLog.Contains("Connection was terminated - Client is disconnected."), Is.True);
       }
 
       [Test]

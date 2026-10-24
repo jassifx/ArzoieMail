@@ -1,71 +1,45 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
-  <Import Project="..\packages\NUnit3TestAdapter.3.17.0\build\net35\NUnit3TestAdapter.props" Condition="Exists('..\packages\NUnit3TestAdapter.3.17.0\build\net35\NUnit3TestAdapter.props')" />
-  <Import Project="..\packages\NUnit.3.13.3\build\NUnit.props" Condition="Exists('..\packages\NUnit.3.13.3\build\NUnit.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{8F691179-0851-4A25-AC78-3548DD0514FA}</ProjectGuid>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <!-- Properties\AssemblyInfo.cs carries the title, company, product and version; the SDK
+         generates the rest, including SupportedOSPlatform. -->
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <!-- The item lists below are explicit, as they were before the move to .NET 10. -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RegressionTests</RootNamespace>
     <AssemblyName>RegressionTests</AssemblyName>
-    <IsWebBootstrapper>true</IsWebBootstrapper>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <PublishUrl>http://localhost/UnitTest/</PublishUrl>
-    <Install>true</Install>
-    <InstallFrom>Web</InstallFrom>
-    <UpdateEnabled>true</UpdateEnabled>
-    <UpdateMode>Foreground</UpdateMode>
-    <UpdateInterval>7</UpdateInterval>
-    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
-    <UpdatePeriodically>false</UpdatePeriodically>
-    <UpdateRequired>false</UpdateRequired>
-    <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <UseApplicationTrust>false</UseApplicationTrust>
-    <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
+    <RootNamespace>RegressionTests</RootNamespace>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Microsoft.VisualBasic" />
-    <Reference Include="nunit.framework, Version=3.13.3.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.13.3\lib\net45\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.ServiceProcess" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="NUnit.ConsoleRunner" PrivateAssets="all" />
+    <PackageReference Include="NUnit3TestAdapter" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" PrivateAssets="all" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" />
   </ItemGroup>
+
   <ItemGroup>
     <Compile Include="API\StatusTests.cs" />
     <Compile Include="API\Messages.cs" />
@@ -86,6 +60,7 @@
     <Compile Include="Infrastructure\Persistence\DomainNameValidation.cs" />
     <None Include="Resources\MessageWithInvalidDkim.eml" />
     <None Include="Resources\MessageWithValidDkim.eml" />
+    <Compile Include="Shared\CodePages.cs" />
     <Compile Include="Shared\DeliveryFailedException.cs" />
     <Compile Include="Shared\RetryableAssert.cs" />
     <Compile Include="Shared\ServiceRestartDetector.cs" />
@@ -126,56 +101,21 @@
     <Compile Include="Stress\IMAP\ConcurrentConnectionsStressTests.cs" />
     <Compile Include="Stress\IMAP\NotificationThreadingStressTests.cs" />
     <Compile Include="Stress\IMAP\UidPlusStressTests.cs" />
-    <Compile Include="Stress\Scripting\MemoryUsage.cs" />    
+    <Compile Include="Stress\Scripting\MemoryUsage.cs" />
     <Compile Include="TestResources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>TestResources.resx</DependentUpon>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="hMailServer">
-      <Guid>{DB241B59-A1B1-4C59-98FC-8D101A2995F2}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-    </COMReference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="API\Unicode.cs" />
     <Compile Include="Infrastructure\BackupRestore.cs" />
     <Compile Include="Shared\TcpServer.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="API\Message.cs" />
     <Compile Include="IMAP\ACL.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="IMAP\CommandSequences.cs" />
     <Compile Include="IMAP\Folders.cs" />
     <Compile Include="IMAP\SpecialUse.cs" />
     <Compile Include="IMAP\Search.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="AntiSpam\DKIM\Signing.cs" />
     <Compile Include="AntiSpam\DKIM\Verification.cs" />
     <Compile Include="AntiSpam\AuthenticationResults.cs" />
@@ -200,13 +140,9 @@
     <Compile Include="Infrastructure\Persistence\Limitations.cs" />
     <Compile Include="SSL\CertificateTypes.cs" />
     <Compile Include="Stress\StabilitySanityTests.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="IMAP\HierarchyDelimiter.cs" />
     <Compile Include="Security\PasswordHashing.cs" />
     <Compile Include="Security\PasswordMasking.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="AntiSpam\GreyListing.cs" />
     <Compile Include="AntiSpam\Whitelisting.cs" />
     <Compile Include="IMAP\MessageIndexing.cs" />
@@ -221,14 +157,8 @@
     <Compile Include="MIME\Parameters.cs" />
     <Compile Include="Security\Basics.cs" />
     <Compile Include="Shared\TestFixtureBase.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Messages\MessageContainingGreekAndJapanese.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Messages\MessageContainingGreekSubject.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="AntiVirus\ClamAV.cs" />
     <Compile Include="API\Security.cs" />
     <Compile Include="API\Utilities.cs" />
@@ -262,56 +192,22 @@
     <Compile Include="SSL\StartTls\ImapServerTests.cs" />
     <Compile Include="SSL\StartTls\Pop3ServerTests.cs" />
     <Compile Include="SSL\StartTls\SmtpServerTests.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Messages\MultipartMessageWithNoMainBodyText.txt" />
     <EmbeddedResource Include="TestResources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>TestResources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
     <None Include="Resources\EmailWith-TextPlainBody-TextPlainContentType.txt" />
     <None Include="Resources\SecuniaBody1.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\EmailWith-TextPlainBody+TextHtmlBody+TextPlainAttachment.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\EmailWith-TextPlainBody-NoContentType.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\EmailWith-TextHtmlBody-TextHtmlContentType.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\EmailWith-TextPlainBody+TextHtmlBody.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\EmailWith-TextPlainBody+TextHtmlBody+TextHtmlAttachment.txt" />
   </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\NUnit.3.13.3\build\NUnit.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit.3.13.3\build\NUnit.props'))" />
-    <Error Condition="!Exists('..\packages\NUnit3TestAdapter.3.17.0\build\net35\NUnit3TestAdapter.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NUnit3TestAdapter.3.17.0\build\net35\NUnit3TestAdapter.props'))" />
-  </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets...
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
-  <!-- The 4.5.2 reference assemblies come from a package. Build agents only carry the
-       targeting packs of the most recent .NET Framework versions. -->
-  <Import Project="..\packages\Microsoft.NETFramework.ReferenceAssemblies.net452.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net452.targets" Condition="Exists('..\packages\Microsoft.NETFramework.ReferenceAssemblies.net452.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net452.targets')" />
-  <Target Name="EnsureReferenceAssembliesPackage" BeforeTargets="ResolveAssemblyReferences"
-          Condition="!Exists('..\packages\Microsoft.NETFramework.ReferenceAssemblies.net452.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net452.targets')">
-    <Error Text="..\packages\Microsoft.NETFramework.ReferenceAssemblies.net452.1.0.3\build\Microsoft.NETFramework.ReferenceAssemblies.net452.targets is missing. Run a NuGet restore." />
-  </Target>
+
+  <!-- Interop.hMailServer.dll, from the type library Directory.Build.props picks. -->
+  <Import Project="..\..\source\Tools\Interop.hMailServer.targets" />
+
 </Project>

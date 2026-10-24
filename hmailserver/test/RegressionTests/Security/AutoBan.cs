@@ -29,24 +29,24 @@ namespace RegressionTests.Security
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
          var sim = new Pop3ClientSimulator();
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
          sim.Disconnect();
 
          // confirm that we can retrieve welcome message.
-         Assert.IsTrue(sim.GetWelcomeMessage().StartsWith("+OK"));
+         Assert.That(sim.GetWelcomeMessage().StartsWith("+OK"), Is.True);
 
          string errorMessage;
          // fail to log on 3 times.
          for (var i = 0; i < 5; i++)
          {
-            Assert.IsFalse(sim.ConnectAndLogon(account.Address, "testA", out errorMessage));
+            Assert.That(sim.ConnectAndLogon(account.Address, "testA", out errorMessage), Is.False);
             sim.Disconnect();
          }
 
-         Assert.IsTrue(sim.GetWelcomeMessage().StartsWith("+OK"));
+         Assert.That(sim.GetWelcomeMessage().StartsWith("+OK"), Is.True);
 
          var logText = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsFalse(logText.Contains("Blocked either by IP range or by connection limit."), logText);
+         Assert.That(logText.Contains("Blocked either by IP range or by connection limit."), Is.False, logText);
       }
 
       [Test]
@@ -60,27 +60,27 @@ namespace RegressionTests.Security
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
          var sim = new ImapClientSimulator();
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
          sim.Disconnect();
 
          // confirm that we can retrieve welcome message.
-         Assert.IsTrue(sim.GetWelcomeMessage().StartsWith("* OK"));
+         Assert.That(sim.GetWelcomeMessage().StartsWith("* OK"), Is.True);
 
          // fail to log on 3 times.
          for (var i = 0; i < 4; i++)
          {
             string errorMessage;
 
-            Assert.IsFalse(sim.ConnectAndLogon(account.Address, "testA", out errorMessage));
+            Assert.That(sim.ConnectAndLogon(account.Address, "testA", out errorMessage), Is.False);
             sim.Disconnect();
 
-            if (i == 3) Assert.IsTrue(errorMessage.Contains("Too many invalid logon attempts."));
+            if (i == 3) Assert.That(errorMessage.Contains("Too many invalid logon attempts."), Is.True);
          }
 
-         Assert.IsTrue(sim.GetWelcomeMessage().Length == 0);
+         Assert.That(sim.GetWelcomeMessage().Length == 0, Is.True);
 
          var logText = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsTrue(logText.Contains("Blocked either by IP range or by connection limit."), logText);
+         Assert.That(logText.Contains("Blocked either by IP range or by connection limit."), Is.True, logText);
       }
 
       [Test]
@@ -91,31 +91,31 @@ namespace RegressionTests.Security
          _settings.MaxInvalidLogonAttemptsWithin = 5;
          _settings.AutoBanMinutes = 3;
 
-         Assert.AreEqual(2, _settings.SecurityRanges.Count);
+         Assert.That(_settings.SecurityRanges.Count, Is.EqualTo(2));
 
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
          var sim = new Pop3ClientSimulator();
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
          sim.Disconnect();
 
          // confirm that we can retrieve welcome message.
-         Assert.IsTrue(sim.GetWelcomeMessage().StartsWith("+OK"));
+         Assert.That(sim.GetWelcomeMessage().StartsWith("+OK"), Is.True);
 
          string errorMessage;
          // fail to log on 3 times.
          for (var i = 0; i < 3; i++)
          {
-            Assert.IsFalse(sim.ConnectAndLogon(account.Address, "testA", out errorMessage));
+            Assert.That(sim.ConnectAndLogon(account.Address, "testA", out errorMessage), Is.False);
             sim.Disconnect();
 
-            if (i == 2) Assert.IsTrue(errorMessage.Contains("Too many invalid logon attempts."));
+            if (i == 2) Assert.That(errorMessage.Contains("Too many invalid logon attempts."), Is.True);
          }
 
-         Assert.IsTrue(sim.GetWelcomeMessage().Length == 0);
+         Assert.That(sim.GetWelcomeMessage().Length == 0, Is.True);
 
-         Assert.AreEqual(3, _settings.SecurityRanges.Count);
-         Assert.AreEqual("Auto-ban: test@example.test", _settings.SecurityRanges[2].Name);
+         Assert.That(_settings.SecurityRanges.Count, Is.EqualTo(3));
+         Assert.That(_settings.SecurityRanges[2].Name, Is.EqualTo("Auto-ban: test@example.test"));
       }
 
       [Test]
@@ -129,26 +129,26 @@ namespace RegressionTests.Security
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "te'st@example.test", "test");
 
          var sim = new Pop3ClientSimulator(TestSetup.GetLocalIpAddress(), false, 110);
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
          sim.Disconnect();
 
          // confirm that we can retrieve welcome message.
-         Assert.IsTrue(sim.GetWelcomeMessage().StartsWith("+OK"));
+         Assert.That(sim.GetWelcomeMessage().StartsWith("+OK"), Is.True);
 
          string errorMessage;
          // fail to log on 3 times.
          for (var i = 0; i < 3; i++)
          {
-            Assert.IsFalse(sim.ConnectAndLogon(account.Address, "testA", out errorMessage));
+            Assert.That(sim.ConnectAndLogon(account.Address, "testA", out errorMessage), Is.False);
             sim.Disconnect();
 
-            if (i == 2) Assert.IsTrue(errorMessage.Contains("Too many invalid logon attempts."));
+            if (i == 2) Assert.That(errorMessage.Contains("Too many invalid logon attempts."), Is.True);
          }
 
-         Assert.IsTrue(sim.GetWelcomeMessage().Length == 0);
+         Assert.That(sim.GetWelcomeMessage().Length == 0, Is.True);
 
          var logText = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsTrue(logText.Contains("Blocked either by IP range or by connection limit."), logText);
+         Assert.That(logText.Contains("Blocked either by IP range or by connection limit."), Is.True, logText);
       }
 
       [Test]
@@ -169,7 +169,7 @@ namespace RegressionTests.Security
          sim.Disconnect();
 
          // confirm that we can retrieve welcome message.
-         Assert.IsTrue(sim.GetWelcomeMessage().StartsWith("220"));
+         Assert.That(sim.GetWelcomeMessage().StartsWith("220"), Is.True);
 
          // fail to log on 3 times.
          for (var i = 0; i < 2; i++)
@@ -178,13 +178,13 @@ namespace RegressionTests.Security
                sim.ConnectAndLogon("dGVzdEBleGFtcGxlLnRlc3Q=", "Vaffe==", out errorMessage));
             sim.Disconnect();
 
-            if (i == 2) Assert.IsTrue(errorMessage.Contains("Too many invalid logon attempts."));
+            if (i == 2) Assert.That(errorMessage.Contains("Too many invalid logon attempts."), Is.True);
          }
 
-         Assert.IsTrue(sim.GetWelcomeMessage().Length == 0);
+         Assert.That(sim.GetWelcomeMessage().Length == 0, Is.True);
 
          var logText = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsTrue(logText.Contains("Blocked either by IP range or by connection limit."), logText);
+         Assert.That(logText.Contains("Blocked either by IP range or by connection limit."), Is.True, logText);
       }
    }
 }

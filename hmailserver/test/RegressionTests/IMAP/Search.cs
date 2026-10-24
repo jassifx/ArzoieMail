@@ -38,12 +38,12 @@ namespace RegressionTests.IMAP
          var result =
             simulator.SendSingleCommand(
                "A4 SEARCH OR OR OR OR OR OR SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 ALL");
-         Assert.IsTrue(result.StartsWith("* SEARCH"), result);
+         Assert.That(result.StartsWith("* SEARCH"), Is.True, result);
 
          result =
             simulator.SendSingleCommand(
                "A4 SEARCH OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR OR SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008 ALL");
-         Assert.IsTrue(result.StartsWith("A4 NO"), result);
+         Assert.That(result.StartsWith("A4 NO"), Is.True, result);
       }
 
       [Test]
@@ -68,13 +68,13 @@ namespace RegressionTests.IMAP
 
          var result =
             simulator.SendSingleCommand("A4 SEARCH ALL OR OR SINCE 28-May-2008 SINCE 28-May-2008 SINCE 28-May-2008");
-         Assert.IsTrue(result.StartsWith("* SEARCH 1"), result);
+         Assert.That(result.StartsWith("* SEARCH 1"), Is.True, result);
 
          result = simulator.SendSingleCommand("A4 SEARCH ALL OR SMALLER 1 LARGER 10000");
-         Assert.IsTrue(result.StartsWith("* SEARCH\r\n"), result);
+         Assert.That(result.StartsWith("* SEARCH\r\n"), Is.True, result);
 
          result = simulator.SendSingleCommand("A4 SEARCH ALL OR OR SMALLER 1 LARGER 10000 SMALLER 10000");
-         Assert.IsTrue(result.StartsWith("* SEARCH 1\r\n"), result);
+         Assert.That(result.StartsWith("* SEARCH 1\r\n"), Is.True, result);
       }
 
       [Test]
@@ -94,7 +94,7 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon(account.Address, "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          simulator.SetFlagOnFirstMessage(true, "\\ANSWERED");
          if (simulator.Search("ANSWERED") != "1")
@@ -192,11 +192,11 @@ namespace RegressionTests.IMAP
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.SendSingleCommand("A01 SEARCH CHARSET NONEXISTENT ALL SUBJECT MySubject");
-         Assert.AreEqual("A01 NO [BADCHARSET]\r\n", result);
+         Assert.That(result, Is.EqualTo("A01 NO [BADCHARSET]\r\n"));
       }
 
       [Test]
@@ -217,22 +217,22 @@ namespace RegressionTests.IMAP
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
          var result = simulator.Search("CHARSET UTF-8 ALL TEXT InvalidText");
-         Assert.AreEqual("", result);
+         Assert.That(result, Is.EqualTo(""));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT TestStringA");
-         Assert.AreEqual("", result);
+         Assert.That(result, Is.EqualTo(""));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT TestString");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT TestStr");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("UNDELETED BODY \"TestString\"");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          simulator.Close();
       }
@@ -255,7 +255,7 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var formattedTomorrow =
             (DateTime.Now + new TimeSpan(1, 0, 0, 0)).ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper();
@@ -282,19 +282,19 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("1", simulator.Search("OR SINCE 28-May-2001 ON 28-May-2001 ALL"));
+         Assert.That(simulator.Search("OR SINCE 28-May-2001 ON 28-May-2001 ALL"), Is.EqualTo("1"));
 
          // Searching for mail sent a year from now or a specific date 2012 should not return any matches.
          var nextYear = DateTime.UtcNow.Year + 1;
          Assert.That(simulator.Search($"OR SINCE 28-May-{nextYear} ON 28-May-2012 ALL"), Is.Null.Or.Empty);
 
          var formattedToday = DateTime.Now.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture).ToUpper();
-         Assert.AreEqual("1", simulator.Search("OR SINCE 28-May-2017 ON " + formattedToday + " ALL"));
+         Assert.That(simulator.Search("OR SINCE 28-May-2017 ON " + formattedToday + " ALL"), Is.EqualTo("1"));
 
          var formatted2001 = new DateTime(2001, 01, 01).ToString("dd-MMM-yyyy").ToUpper();
-         Assert.AreEqual("1", simulator.Search("OR SINCE 28-May-2008 ON " + formatted2001 + " ALL"));
+         Assert.That(simulator.Search("OR SINCE 28-May-2008 ON " + formatted2001 + " ALL"), Is.EqualTo("1"));
       }
 
       [Test]
@@ -319,12 +319,12 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.Send("A01 SEARCH ALL OR (HEADER SUBJECT {5}");
          result = simulator.Send("Test1) (HEADER SUBJECT {5}");
          result = simulator.Send("Test2)");
-         Assert.IsTrue(result.StartsWith("* SEARCH 1 2"));
+         Assert.That(result.StartsWith("* SEARCH 1 2"), Is.True);
       }
 
       [Test]
@@ -349,12 +349,12 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.Send("A01 SEARCH ALL OR (HEADER SUBJECT {5}");
          result = simulator.Send("Test1) (HEADER SUBJECT {5}");
          result = simulator.Send("Test5)");
-         Assert.IsTrue(result.StartsWith("* SEARCH 1"));
+         Assert.That(result.StartsWith("* SEARCH 1"), Is.True);
       }
 
       [Test]
@@ -379,12 +379,12 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.Send("A01 SEARCH ALL OR (HEADER SUBJECT {5}");
          result = simulator.Send("Test5) (HEADER SUBJECT {5}");
          result = simulator.Send("Test2)");
-         Assert.IsTrue(result.StartsWith("* SEARCH 2"));
+         Assert.That(result.StartsWith("* SEARCH 2"), Is.True);
       }
 
       [Test]
@@ -407,7 +407,7 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          if (simulator.Search("OR (SINCE 28-May-2001) (ON 28-May-2001) ALL") != "1 2")
             throw new Exception("ERROR - Search or flag failed");
@@ -434,7 +434,7 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          if (simulator.Search("OR (SUBJECT \"Test1\") (ON 28-May-2001) ALL") != "1")
             throw new Exception("ERROR - Search or flag failed");
@@ -464,7 +464,7 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          if (simulator.Search("ALL (OR (HEADER SUBJECT \"Test1\") (HEADER SUBJECT \"Test2\"))") != "1 2")
             throw new Exception("ERROR - Search or flag failed");
@@ -490,22 +490,22 @@ namespace RegressionTests.IMAP
          var simulator = new ImapClientSimulator();
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.SendSingleCommand("a01 search 2:4");
-         Assert.IsTrue(result.StartsWith("* SEARCH 2 3 4"));
+         Assert.That(result.StartsWith("* SEARCH 2 3 4"), Is.True);
 
          result = simulator.SendSingleCommand("a01 search 3,2");
-         Assert.IsTrue(result.StartsWith("* SEARCH 2 3"));
+         Assert.That(result.StartsWith("* SEARCH 2 3"), Is.True);
 
          result = simulator.SendSingleCommand("a01 search 3:*");
-         Assert.IsTrue(result.StartsWith("* SEARCH 3 4 5"));
+         Assert.That(result.StartsWith("* SEARCH 3 4 5"), Is.True);
 
          result = simulator.SendSingleCommand("a01 search 3,1,3");
-         Assert.IsTrue(result.StartsWith("* SEARCH 1 3"));
+         Assert.That(result.StartsWith("* SEARCH 1 3"), Is.True);
 
          result = simulator.SendSingleCommand("a01 search 1:*");
-         Assert.IsTrue(result.StartsWith("* SEARCH 1 2 3 4 5"));
+         Assert.That(result.StartsWith("* SEARCH 1 2 3 4 5"), Is.True);
       }
 
       [Test]
@@ -529,7 +529,7 @@ namespace RegressionTests.IMAP
          var simulator = new ImapClientSimulator();
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.SendSingleCommand("* UID SEARCH UID 1:*");
 
@@ -545,11 +545,11 @@ namespace RegressionTests.IMAP
             if (int.TryParse(token, out temp)) uids.Add(temp);
          }
 
-         Assert.AreEqual(3, uids.Count, result);
+         Assert.That(uids.Count, Is.EqualTo(3), result);
 
-         Assert.AreEqual(1, uids[0]);
-         Assert.AreEqual(2, uids[1]);
-         Assert.AreEqual(3, uids[2]);
+         Assert.That(uids[0], Is.EqualTo(1));
+         Assert.That(uids[1], Is.EqualTo(2));
+         Assert.That(uids[2], Is.EqualTo(3));
       }
 
       [Test]
@@ -562,14 +562,14 @@ namespace RegressionTests.IMAP
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.Search("CHARSET US-ASCII ALL SUBJECT MySubject");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("CHARSET US-ASCII ALL SUBJECT MySubjact");
-         Assert.AreEqual("", result);
+         Assert.That(result, Is.EqualTo(""));
       }
 
       [Test]
@@ -584,32 +584,32 @@ namespace RegressionTests.IMAP
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.Search("CHARSET UTF-8 ALL TEXT GRΣΣK");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT ÅÄÖ");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT 標準語標準語");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT ßEßEß");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT ÅÅÅ");
-         Assert.AreEqual("", result);
+         Assert.That(result, Is.EqualTo(""));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT GREEK");
-         Assert.AreEqual("", result);
+         Assert.That(result, Is.EqualTo(""));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT ßEEEß");
-         Assert.AreEqual("", result);
+         Assert.That(result, Is.EqualTo(""));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT 標準語標語語");
-         Assert.AreEqual("", result);
+         Assert.That(result, Is.EqualTo(""));
       }
 
       [Test]
@@ -623,20 +623,20 @@ namespace RegressionTests.IMAP
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.Search("CHARSET UTF-8 ALL TEXT GRΣΣK");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT 標準語");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT GRΣΣK標準語");
-         Assert.AreEqual("1", result);
+         Assert.That(result, Is.EqualTo("1"));
 
          result = simulator.Search("CHARSET UTF-8 ALL TEXT GRΣΣKWHAT標準語");
-         Assert.AreEqual("", result);
+         Assert.That(result, Is.EqualTo(""));
       }
 
       [Test]
@@ -660,13 +660,13 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.SendSingleCommandWithLiteral("A01 SEARCH HEADER SUBJECT {5}", "Test1");
-         Assert.IsTrue(result.StartsWith("* SEARCH 1\r\n"));
+         Assert.That(result.StartsWith("* SEARCH 1\r\n"), Is.True);
 
          result = simulator.SendSingleCommandWithLiteral("A01 SEARCH HEADER SUBJECT {5}", "Test2");
-         Assert.IsTrue(result.StartsWith("* SEARCH 2\r\n"));
+         Assert.That(result.StartsWith("* SEARCH 2\r\n"), Is.True);
       }
 
       [Test]
@@ -690,7 +690,7 @@ namespace RegressionTests.IMAP
          var searchResult =
             simulator.Search("(OR FROM \"TestSubject\" (OR SUBJECT \"TestSubject\" BODY \"TestSubject\")) NOT DELETED");
 
-         Assert.AreEqual("1", searchResult);
+         Assert.That(searchResult, Is.EqualTo("1"));
       }
    }
 }

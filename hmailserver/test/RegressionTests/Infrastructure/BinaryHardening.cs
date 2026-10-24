@@ -25,7 +25,7 @@ namespace RegressionTests.Infrastructure
       private static string GetBinFile(string fileName)
       {
          var processes = Process.GetProcessesByName("hmailserver");
-         Assert.AreEqual(1, processes.Length, "Expected exactly one running hMailServer.exe.");
+         Assert.That(processes.Length, Is.EqualTo(1), "Expected exactly one running hMailServer.exe.");
 
          return Path.Combine(Path.GetDirectoryName(processes[0].MainModule.FileName), fileName);
       }
@@ -41,14 +41,14 @@ namespace RegressionTests.Infrastructure
          var data = File.ReadAllBytes(path);
 
          int peOffset = BitConverter.ToInt32(data, 0x3C);
-         Assert.AreEqual(0x00004550, BitConverter.ToUInt32(data, peOffset), "PE signature");
+         Assert.That(BitConverter.ToUInt32(data, peOffset), Is.EqualTo(0x00004550), "PE signature");
 
          int coffOffset = peOffset + 4;
          int numberOfSections = BitConverter.ToUInt16(data, coffOffset + 2);
          int sizeOfOptionalHeader = BitConverter.ToUInt16(data, coffOffset + 16);
 
          int optionalOffset = coffOffset + 20;
-         Assert.AreEqual(0x20B, BitConverter.ToUInt16(data, optionalOffset), "PE32+ (x64) optional header");
+         Assert.That(BitConverter.ToUInt16(data, optionalOffset), Is.EqualTo(0x20B), "PE32+ (x64) optional header");
 
          var image = new PeImage { DllCharacteristics = BitConverter.ToUInt16(data, optionalOffset + 70) };
 
@@ -89,9 +89,9 @@ namespace RegressionTests.Infrastructure
       {
          var image = ReadPeImage(GetBinFile(fileName));
 
-         Assert.AreEqual(DynamicBase, image.DllCharacteristics & DynamicBase, "DYNAMIC_BASE (ASLR)");
-         Assert.AreEqual(HighEntropyVa, image.DllCharacteristics & HighEntropyVa, "HIGH_ENTROPY_VA");
-         Assert.AreEqual(NxCompat, image.DllCharacteristics & NxCompat, "NX_COMPAT (DEP)");
+         Assert.That(image.DllCharacteristics & DynamicBase, Is.EqualTo(DynamicBase), "DYNAMIC_BASE (ASLR)");
+         Assert.That(image.DllCharacteristics & HighEntropyVa, Is.EqualTo(HighEntropyVa), "HIGH_ENTROPY_VA");
+         Assert.That(image.DllCharacteristics & NxCompat, Is.EqualTo(NxCompat), "NX_COMPAT (DEP)");
       }
 
       [TestCase("hMailServer.exe")]
@@ -101,7 +101,7 @@ namespace RegressionTests.Infrastructure
       {
          var image = ReadPeImage(GetBinFile(fileName));
 
-         Assert.AreEqual(GuardCf, image.DllCharacteristics & GuardCf, "GUARD_CF");
+         Assert.That(image.DllCharacteristics & GuardCf, Is.EqualTo(GuardCf), "GUARD_CF");
       }
 
       [TestCase("hMailServer.exe")]
@@ -111,7 +111,7 @@ namespace RegressionTests.Infrastructure
       {
          var image = ReadPeImage(GetBinFile(fileName));
 
-         Assert.AreEqual(ExDllCharacteristicsCetCompat, image.ExDllCharacteristics & ExDllCharacteristicsCetCompat, "CET_COMPAT");
+         Assert.That(image.ExDllCharacteristics & ExDllCharacteristicsCetCompat, Is.EqualTo(ExDllCharacteristicsCetCompat), "CET_COMPAT");
       }
    }
 }

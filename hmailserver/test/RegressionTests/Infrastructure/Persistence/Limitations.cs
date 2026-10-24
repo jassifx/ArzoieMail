@@ -311,7 +311,7 @@ namespace RegressionTests.Infrastructure.Persistence
          route2.DomainName = "example.test";
 
          var ex = Assert.Throws<COMException>(() => route2.Save());
-         StringAssert.Contains("Another route with this name already exists.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Another route with this name already exists."));
       }
 
       [Test]
@@ -394,7 +394,7 @@ namespace RegressionTests.Infrastructure.Persistence
          range.LowerIP = "1.1.1.1";
          range.UpperIP = "0.0.0.0";
          var ex = Assert.Throws<COMException>(() => range.Save());
-         StringAssert.Contains("The lower IP address must be lower or the same as the upper IP address.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("The lower IP address must be lower or the same as the upper IP address."));
       }
 
 

@@ -134,10 +134,10 @@ namespace VolumeTests
          string result;
          sock.Send("EHLO test.com\r\n");
          result = sock.ReadUntil("\r\n");
-         Assert.IsTrue(result.StartsWith("250"));
+         Assert.That(result.StartsWith("250"), Is.True);
          sock.Send("MAIL FROM: sender@example.test\r\n");
          result = sock.ReadUntil("\r\n");
-         Assert.IsTrue(result.StartsWith("250"));
+         Assert.That(result.StartsWith("250"), Is.True);
 
          const int recipientCount = 51000;
 
@@ -149,11 +149,11 @@ namespace VolumeTests
             result = sock.ReadUntil("\r\n");
             if (i <= 50000)
             {
-               Assert.IsTrue(result.StartsWith("250"));
+               Assert.That(result.StartsWith("250"), Is.True);
             }
             else
             {
-               Assert.IsFalse(result.StartsWith("250"));
+               Assert.That(result.StartsWith("250"), Is.False);
             }
 
             if (i % 100 == 0)
@@ -208,7 +208,7 @@ namespace VolumeTests
                   throw new Exception("Not all messages have been delivered yet.");
             }, TimeSpan.FromSeconds(30), TimeSpan.FromHours(12));
 
-         Assert.GreaterOrEqual(GetNumberOfFilesInFolder(accountDir), numberOfMessages);
+         Assert.That(GetNumberOfFilesInFolder(accountDir), Is.GreaterThanOrEqualTo(numberOfMessages));
 
          _domain.Delete();
 
@@ -354,7 +354,7 @@ namespace VolumeTests
 
          socket.Send("\r\n.\r\n");
          string result = socket.Receive();
-         Assert.IsTrue(result.StartsWith("250"));
+         Assert.That(result.StartsWith("250"), Is.True);
 
          socket.Send("QUIT\r\n");
          socket.Receive();
@@ -416,7 +416,7 @@ namespace VolumeTests
          socket.Send("\r\n.\r\n");
          string result = socket.Receive();
 
-         Assert.IsTrue(result.StartsWith("554 Too long line was received. Transmission aborted."));
+         Assert.That(result.StartsWith("554 Too long line was received. Transmission aborted."), Is.True);
 
          socket.Send("QUIT\r\n");
          socket.Receive();
@@ -482,7 +482,7 @@ namespace VolumeTests
                                                     filesInFolder, expectedCount));
             }, TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(5));
 
-         Assert.GreaterOrEqual(GetNumberOfFilesInFolder(folder), expectedCount);
+         Assert.That(GetNumberOfFilesInFolder(folder), Is.GreaterThanOrEqualTo(expectedCount));
       }
 
       private int GetNumberOfFilesInFolder(string folder)
@@ -533,7 +533,7 @@ namespace VolumeTests
                                                  connCount, count));
          }, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30));
 
-         Assert.GreaterOrEqual(status.get_SessionCount(eSessionType.eSTSMTP), count);
+         Assert.That(status.get_SessionCount(eSessionType.eSTSMTP), Is.GreaterThanOrEqualTo(count));
 
          foreach (var conn in connections)
             conn.Dispose();
@@ -547,7 +547,7 @@ namespace VolumeTests
                                                  after, before));
          }, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30));
 
-         Assert.GreaterOrEqual(before, status.get_SessionCount(eSessionType.eSTSMTP));
+         Assert.That(before, Is.GreaterThanOrEqualTo(status.get_SessionCount(eSessionType.eSTSMTP)));
 
          
       }

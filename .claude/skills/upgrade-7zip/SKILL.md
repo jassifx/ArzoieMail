@@ -188,7 +188,7 @@ Finally — and this is the check that actually matters — run the backup/resto
 which drive a real backup and restore through the COM API and so exercise `7za.exe` end to end:
 
 ```
-hmailserver\test\RegressionTests\packages\NUnit.ConsoleRunner.<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll --where "class =~ BackupRestore"
+hmailserver\test\packages\nunit.consolerunner\<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll --where "class =~ BackupRestore"
 ```
 
 They need an installed and running hMailServer. A version bump that breaks the command-line

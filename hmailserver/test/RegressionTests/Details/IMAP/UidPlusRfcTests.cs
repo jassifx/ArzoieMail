@@ -71,8 +71,8 @@ namespace RegressionTests.Details.IMAP
 
          var uid = AssertAppendUid(appender.Append("INBOX", CreateMessage("a@example.test")));
 
-         Assert.AreEqual(uid + 1, GetStatusValue(watcher.Command("STATUS INBOX (UIDNEXT)"), "UIDNEXT"));
-         Assert.AreEqual(uid + 1, GetResponseCodeValue(watcher.Select("INBOX"), "UIDNEXT"));
+         Assert.That(GetStatusValue(watcher.Command("STATUS INBOX (UIDNEXT)"), "UIDNEXT"), Is.EqualTo(uid + 1));
+         Assert.That(GetResponseCodeValue(watcher.Select("INBOX"), "UIDNEXT"), Is.EqualTo(uid + 1));
 
          watcher.Disconnect();
          appender.Disconnect();
@@ -87,7 +87,7 @@ namespace RegressionTests.Details.IMAP
          var appender = Connect("appender");
 
          var uid = AssertAppendUid(appender.Append("#Public.Share", CreateMessage("a@example.test")));
-         Assert.AreEqual(uid + 1, GetStatusValue(watcher.Command("STATUS \"#Public.Share\" (UIDNEXT)"), "UIDNEXT"));
+         Assert.That(GetStatusValue(watcher.Command("STATUS \"#Public.Share\" (UIDNEXT)"), "UIDNEXT"), Is.EqualTo(uid + 1));
 
          watcher.Disconnect();
          appender.Disconnect();
@@ -100,7 +100,7 @@ namespace RegressionTests.Details.IMAP
       {
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "quota@example.test", Password, 1);
          var session = new TrackedImapSession(account.Address, Password);
-         Assert.IsTrue(TrackedImapSession.IsOk(session.Command("CREATE \"Target\"")));
+         Assert.That(TrackedImapSession.IsOk(session.Command("CREATE \"Target\"")), Is.True);
 
          var body = string.Concat(Enumerable.Repeat(new string('x', 98) + "\r\n", 3072));
          for (var i = 0; i < 2; i++)
@@ -109,14 +109,14 @@ namespace RegressionTests.Details.IMAP
          session.Select("INBOX");
 
          // The first message is copied, then the second fails and the copy is removed again.
-         Assert.IsTrue(TrackedImapSession.IsNo(session.Command("COPY 1:2 \"Target\"")));
+         Assert.That(TrackedImapSession.IsNo(session.Command("COPY 1:2 \"Target\"")), Is.True);
          var uidNext = GetStatusValue(session.Command("STATUS \"Target\" (UIDNEXT)"), "UIDNEXT");
-         Assert.GreaterOrEqual(uidNext, 2, "The rolled-back UID 1 may be handed out again.");
+         Assert.That(uidNext, Is.GreaterThanOrEqualTo(2), "The rolled-back UID 1 may be handed out again.");
 
          var copyUid = ParseCopyUid(session.Command("COPY 1 \"Target\""));
-         Assert.IsNotNull(copyUid);
-         Assert.AreEqual(uidNext, copyUid.Destination[0]);
-         Assert.AreEqual(uidNext + 1, GetStatusValue(session.Command("STATUS \"Target\" (UIDNEXT)"), "UIDNEXT"));
+         Assert.That(copyUid, Is.Not.Null);
+         Assert.That(copyUid.Destination[0], Is.EqualTo(uidNext));
+         Assert.That(GetStatusValue(session.Command("STATUS \"Target\" (UIDNEXT)"), "UIDNEXT"), Is.EqualTo(uidNext + 1));
 
          session.Disconnect();
       }
@@ -126,7 +126,7 @@ namespace RegressionTests.Details.IMAP
       public void UidValiditySurvivesServerRestart()
       {
          var session = Connect();
-         Assert.IsTrue(TrackedImapSession.IsOk(session.Command("CREATE \"Restart\"")));
+         Assert.That(TrackedImapSession.IsOk(session.Command("CREATE \"Restart\"")), Is.True);
          var before = long.Parse(ParseAppendUid(session.Append("Restart", CreateMessage("a@example.test"))).Groups[1].Value);
          session.Disconnect();
 
@@ -134,10 +134,10 @@ namespace RegressionTests.Details.IMAP
          _application.Start();
 
          session = Connect();
-         Assert.AreEqual(before, GetStatusValue(session.Command("STATUS \"Restart\" (UIDVALIDITY)"), "UIDVALIDITY"));
+         Assert.That(GetStatusValue(session.Command("STATUS \"Restart\" (UIDVALIDITY)"), "UIDVALIDITY"), Is.EqualTo(before));
          var after = ParseAppendUid(session.Append("Restart", CreateMessage("b@example.test")));
-         Assert.AreEqual(before, long.Parse(after.Groups[1].Value));
-         Assert.AreEqual(2, long.Parse(after.Groups[2].Value));
+         Assert.That(long.Parse(after.Groups[1].Value), Is.EqualTo(before));
+         Assert.That(long.Parse(after.Groups[2].Value), Is.EqualTo(2));
          session.Disconnect();
       }
 
@@ -147,15 +147,15 @@ namespace RegressionTests.Details.IMAP
       public void RenameKeepsUidsOrChangesUidValidity()
       {
          var session = Connect();
-         Assert.IsTrue(TrackedImapSession.IsOk(session.Command("CREATE \"Before\"")));
+         Assert.That(TrackedImapSession.IsOk(session.Command("CREATE \"Before\"")), Is.True);
          var append = ParseAppendUid(session.Append("Before", CreateMessage("renamed@example.test")));
-         Assert.IsTrue(TrackedImapSession.IsOk(session.Command("RENAME \"Before\" \"After\"")));
+         Assert.That(TrackedImapSession.IsOk(session.Command("RENAME \"Before\" \"After\"")), Is.True);
 
          var validity = GetResponseCodeValue(session.Select("After"), "UIDVALIDITY");
          if (validity == long.Parse(append.Groups[1].Value))
          {
             var uid = long.Parse(append.Groups[2].Value);
-            Assert.AreEqual("renamed@example.test", FetchMessageIds(session, uid.ToString())[uid]);
+            Assert.That(FetchMessageIds(session, uid.ToString())[uid], Is.EqualTo("renamed@example.test"));
          }
 
          session.Disconnect();
@@ -175,8 +175,8 @@ namespace RegressionTests.Details.IMAP
 
          var append = session.Append("INBOX", CreateMessage("examined@example.test"));
          var uid = AssertAppendUid(append);
-         Assert.AreEqual(2, session.KnownCount, append);
-         Assert.AreEqual("examined@example.test", FetchMessageIds(session, uid.ToString())[uid]);
+         Assert.That(session.KnownCount, Is.EqualTo(2), append);
+         Assert.That(FetchMessageIds(session, uid.ToString())[uid], Is.EqualTo("examined@example.test"));
 
          session.AssertNoViolations();
          session.Disconnect();
@@ -198,7 +198,7 @@ namespace RegressionTests.Details.IMAP
          session.Select("#Public.NoDelete");
 
          var flags = session.Command("UID FETCH " + uid + " (FLAGS)");
-         StringAssert.DoesNotContain("\\Deleted", flags);
+         Assert.That(flags, Does.Not.Contain("\\Deleted"));
 
          session.Disconnect();
       }
@@ -214,11 +214,11 @@ namespace RegressionTests.Details.IMAP
          session.Select("INBOX");
 
          var copyUid = ParseCopyUid(session.Command("UID COPY 1 \"#Public.NoDelete\""));
-         Assert.IsNotNull(copyUid);
+         Assert.That(copyUid, Is.Not.Null);
 
          session.Select("#Public.NoDelete");
          var flags = session.Command("UID FETCH " + copyUid.Destination[0] + " (FLAGS)");
-         StringAssert.DoesNotContain("\\Deleted", flags);
+         Assert.That(flags, Does.Not.Contain("\\Deleted"));
 
          session.Disconnect();
       }
@@ -261,7 +261,7 @@ namespace RegressionTests.Details.IMAP
                break;
          }
 
-         StringAssert.IsMatch(@" NO \[NOPERM\]", response);
+         Assert.That(response, Does.Match(@" NO \[NOPERM\]"));
          session.Disconnect();
       }
 
@@ -275,7 +275,7 @@ namespace RegressionTests.Details.IMAP
       public void UidCopyRacingWithExpungeIsNeverBad()
       {
          var setup = Connect("setup");
-         Assert.IsTrue(TrackedImapSession.IsOk(setup.Command("CREATE \"Target\"")));
+         Assert.That(TrackedImapSession.IsOk(setup.Command("CREATE \"Target\"")), Is.True);
          setup.Disconnect();
 
          var failures = new List<string>();
@@ -327,7 +327,7 @@ namespace RegressionTests.Details.IMAP
          copier.Join();
          churner.Join();
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures.Take(10)));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures.Take(10)));
       }
 
       #endregion

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace VolumeTests
 {
@@ -20,7 +21,7 @@ namespace VolumeTests
 
          long l = process[0].PrivateMemorySize64 / 1024 / 1024;
 
-         Assert.Less(l, max);
+         Assert.That(l, Is.LessThan(max));
 
          return process[0].PrivateMemorySize64;
       }

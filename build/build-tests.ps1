@@ -26,6 +26,7 @@ Write-Host "Configuration: $Configuration"
 
 $msbuildArgs = @(
     "$solution"
+    '/restore'
     '/m'
     "/p:Configuration=$Configuration"
     '/p:Platform=x64'

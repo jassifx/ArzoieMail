@@ -53,10 +53,10 @@ namespace RegressionTests.Security
             "externaladdress@gmail.com", "Mail 1", "Mail 1",
             out result4));
 
-         Assert.IsTrue(result1.Contains("550 Delivery is not allowed to this address."));
-         Assert.IsTrue(result2.Contains("550 Delivery is not allowed to this address."));
-         Assert.IsTrue(result3.Contains("550 Delivery is not allowed to this address."));
-         Assert.IsTrue(result4.Contains("550 Delivery is not allowed to this address."));
+         Assert.That(result1.Contains("550 Delivery is not allowed to this address."), Is.True);
+         Assert.That(result2.Contains("550 Delivery is not allowed to this address."), Is.True);
+         Assert.That(result3.Contains("550 Delivery is not allowed to this address."), Is.True);
+         Assert.That(result4.Contains("550 Delivery is not allowed to this address."), Is.True);
       }
 
       [Test]
@@ -73,7 +73,7 @@ namespace RegressionTests.Security
          CustomAsserts.Throws<DeliveryFailedException>(() => smtpClientSimulator.Send("externaladdress@example.com",
             "someexternaladdress@example.com", "Mail 1",
             "Mail 1", out result));
-         Assert.IsTrue(result.Contains("SMTP authentication is required."));
+         Assert.That(result.Contains("SMTP authentication is required."), Is.True);
 
          range.RequireSMTPAuthExternalToExternal = false;
          range.AllowDeliveryFromRemoteToRemote = false;
@@ -82,7 +82,7 @@ namespace RegressionTests.Security
          CustomAsserts.Throws<DeliveryFailedException>(() => smtpClientSimulator.Send("externaladdress@example.com",
             "someexternaladdress@example.com", "Mail 1",
             "Mail 1", out result));
-         Assert.IsTrue(result.Contains("550 Delivery is not allowed to this address."));
+         Assert.That(result.Contains("550 Delivery is not allowed to this address."), Is.True);
       }
 
       [Test]
@@ -140,7 +140,7 @@ namespace RegressionTests.Security
 
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Mail 1"), server.MessageData);
+            Assert.That(server.MessageData.Contains("Mail 1"), Is.True, server.MessageData);
          }
       }
 
@@ -160,7 +160,7 @@ namespace RegressionTests.Security
          CustomAsserts.Throws<DeliveryFailedException>(() => smtpClientSimulator.Send(account1.Address,
             "someexternaladdress@example.com", "Mail 1", "Mail 1",
             out result));
-         Assert.IsTrue(result.Contains("SMTP authentication is required"));
+         Assert.That(result.Contains("SMTP authentication is required"), Is.True);
       }
 
       [Test]
@@ -178,7 +178,7 @@ namespace RegressionTests.Security
          var result = "";
          CustomAsserts.Throws<DeliveryFailedException>(() =>
             smtpClientSimulator.Send(account1.Address, account1.Address, "Mail 1", "Mail 1", out result));
-         Assert.IsTrue(result.Contains("SMTP authentication is required."));
+         Assert.That(result.Contains("SMTP authentication is required."), Is.True);
 
          range.RequireSMTPAuthLocalToLocal = false;
          range.Save();
@@ -234,7 +234,7 @@ namespace RegressionTests.Security
          smtpClientSimulator.Send("someone@dummy-example.com", account1.Address, "Mail 1", "Mail 1", out result);
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsTrue(text.Contains("Mail 1"));
+         Assert.That(text.Contains("Mail 1"), Is.True);
       }
 
       [Test]
@@ -257,7 +257,7 @@ namespace RegressionTests.Security
          var result = "";
          CustomAsserts.Throws<DeliveryFailedException>(() =>
             smtpClientSimulator.Send("someone@dummy-example.com", "test@example.com", "Mail 1", "Mail 1", out result));
-         Assert.IsTrue(result.Contains("530 SMTP authentication is required."));
+         Assert.That(result.Contains("530 SMTP authentication is required."), Is.True);
       }
 
       [Test]
@@ -282,7 +282,7 @@ namespace RegressionTests.Security
          var result = "";
          CustomAsserts.Throws<DeliveryFailedException>(() =>
             smtpClientSimulator.Send("someone@dummy-example.com", account1.Address, "Mail 1", "Mail 1", out result));
-         Assert.IsTrue(result.Contains("530 SMTP authentication is required."));
+         Assert.That(result.Contains("530 SMTP authentication is required."), Is.True);
       }
 
       [Test]
@@ -308,7 +308,7 @@ namespace RegressionTests.Security
          smtpClientSimulator.Send("someone@dummy-example.com", account1.Address, "Mail 1", "Mail 1", out result);
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsTrue(text.Contains("Mail 1"));
+         Assert.That(text.Contains("Mail 1"), Is.True);
       }
 
 
@@ -358,7 +358,7 @@ namespace RegressionTests.Security
          smtpClientSimulator.Send("someone@dummy-example.com", account1.Address, "Mail 1", "Mail 1", out result);
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsTrue(text.Contains("Mail 1"));
+         Assert.That(text.Contains("Mail 1"), Is.True);
       }
 
       [Test]
@@ -408,7 +408,7 @@ namespace RegressionTests.Security
          var result = "";
          CustomAsserts.Throws<DeliveryFailedException>(() =>
             smtpClientSimulator.Send("someone@example.com", "test@dummy-example.com", "Mail 1", "Mail 1", out result));
-         Assert.IsTrue(result.Contains("530 SMTP authentication is required."));
+         Assert.That(result.Contains("530 SMTP authentication is required."), Is.True);
       }
 
 
@@ -482,7 +482,7 @@ namespace RegressionTests.Security
       {
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
-         Assert.IsTrue(SendAuthPlain("\0" + account.Address + "\0test").StartsWith("235"));
+         Assert.That(SendAuthPlain("\0" + account.Address + "\0test").StartsWith("235"), Is.True);
       }
 
       [Test]
@@ -491,8 +491,8 @@ namespace RegressionTests.Security
       {
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
-         Assert.IsTrue(SendAuthPlain(account.Address + "\0" + account.Address + "\0test").StartsWith("235"));
-         Assert.IsTrue(SendAuthPlain(account.Address.ToUpper() + "\0" + account.Address + "\0test").StartsWith("235"));
+         Assert.That(SendAuthPlain(account.Address + "\0" + account.Address + "\0test").StartsWith("235"), Is.True);
+         Assert.That(SendAuthPlain(account.Address.ToUpper() + "\0" + account.Address + "\0test").StartsWith("235"), Is.True);
       }
 
       [Test]
@@ -502,7 +502,7 @@ namespace RegressionTests.Security
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "other@example.test", "test");
 
-         Assert.IsTrue(SendAuthPlain("other@example.test\0" + account.Address + "\0test").StartsWith("535"));
+         Assert.That(SendAuthPlain("other@example.test\0" + account.Address + "\0test").StartsWith("535"), Is.True);
       }
 
       [Test]
@@ -511,7 +511,7 @@ namespace RegressionTests.Security
       {
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "te\tst");
 
-         Assert.IsTrue(SendAuthPlain("\0" + account.Address + "\0te\tst").StartsWith("235"));
+         Assert.That(SendAuthPlain("\0" + account.Address + "\0te\tst").StartsWith("235"), Is.True);
       }
 
       [Test]
@@ -521,11 +521,11 @@ namespace RegressionTests.Security
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
          // Missing null characters.
-         Assert.IsTrue(SendAuthPlain(account.Address + "test").StartsWith("535"));
-         Assert.IsTrue(SendAuthPlain("\0" + account.Address + "test").StartsWith("535"));
+         Assert.That(SendAuthPlain(account.Address + "test").StartsWith("535"), Is.True);
+         Assert.That(SendAuthPlain("\0" + account.Address + "test").StartsWith("535"), Is.True);
          // Missing user name or password.
-         Assert.IsTrue(SendAuthPlain("\0\0test").StartsWith("535"));
-         Assert.IsTrue(SendAuthPlain("\0" + account.Address + "\0").StartsWith("535"));
+         Assert.That(SendAuthPlain("\0\0test").StartsWith("535"), Is.True);
+         Assert.That(SendAuthPlain("\0" + account.Address + "\0").StartsWith("535"), Is.True);
       }
 
       [Test]
@@ -540,7 +540,7 @@ namespace RegressionTests.Security
          {
             var message = EncodeBase64(account.Address + "\0" + account.Address + "\0test");
             socket.Send("AUTH PLAIN " + message + "\r\n");
-            Assert.IsTrue(socket.Receive().StartsWith("235"));
+            Assert.That(socket.Receive().StartsWith("235"), Is.True);
          }
       }
 
@@ -551,7 +551,7 @@ namespace RegressionTests.Security
          using (var socket = ConnectAndSayHello())
          {
             socket.Send("AUTH PLAIN\r\n");
-            Assert.IsTrue(socket.Receive().StartsWith("334"));
+            Assert.That(socket.Receive().StartsWith("334"), Is.True);
 
             socket.Send(EncodeBase64(message) + "\r\n");
             return socket.Receive();
@@ -562,9 +562,9 @@ namespace RegressionTests.Security
       {
          var socket = new TcpConnection();
          socket.Connect(25);
-         Assert.IsTrue(socket.Receive().StartsWith("220"));
+         Assert.That(socket.Receive().StartsWith("220"), Is.True);
          socket.Send("EHLO test.com\r\n");
-         Assert.IsTrue(socket.Receive().StartsWith("250"));
+         Assert.That(socket.Receive().StartsWith("250"), Is.True);
 
          return socket;
       }

@@ -32,7 +32,7 @@ namespace RegressionTests.AntiVirus
 
          // +OK POP3, since we are connecting to POP3 port
          var defaultLog = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsTrue(defaultLog.Contains("No virus detected: +OK POP3"));
+         Assert.That(defaultLog.Contains("No virus detected: +OK POP3"), Is.True);
       }
 
       [Test]
@@ -53,7 +53,7 @@ namespace RegressionTests.AntiVirus
          SmtpClientSimulator.StaticSend(account1.Address, account1.Address, "Mail 1", "Mail 1");
          Pop3ClientSimulator.AssertMessageCount(account1.Address, "test", 1);
          var defaultLog = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsFalse(defaultLog.Contains("Connecting to ClamAV"));
+         Assert.That(defaultLog.Contains("Connecting to ClamAV"), Is.False);
       }
 
       [Test]
@@ -93,13 +93,13 @@ namespace RegressionTests.AntiVirus
          Pop3ClientSimulator.AssertMessageCount(account1.Address, "test", 1);
 
          var notification = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsFalse(notification.Contains(secondPart));
-         Assert.IsTrue(notification.Contains("In-Reply-To: " + messageID));
-         Assert.IsTrue(notification.Contains("References: " + previousReference + " " + messageID));
+         Assert.That(notification.Contains(secondPart), Is.False);
+         Assert.That(notification.Contains("In-Reply-To: " + messageID), Is.True);
+         Assert.That(notification.Contains("References: " + previousReference + " " + messageID), Is.True);
 
          var defaultLog = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsTrue(defaultLog.Contains("Connecting to ClamAV"));
-         Assert.IsTrue(defaultLog.Contains("Message will be deleted (contained virus Eicar-Signature)."));
+         Assert.That(defaultLog.Contains("Connecting to ClamAV"), Is.True);
+         Assert.That(defaultLog.Contains("Message will be deleted (contained virus Eicar-Signature)."), Is.True);
       }
    }
 }

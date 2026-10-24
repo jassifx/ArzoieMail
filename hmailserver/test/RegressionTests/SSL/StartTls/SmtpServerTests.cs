@@ -22,7 +22,7 @@ namespace RegressionTests.SSL.StartTls
          var data1 = smtpClientSimulator.Receive();
          var data = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
 
-         Assert.IsFalse(data.Contains("STARTTLS"));
+         Assert.That(data.Contains("STARTTLS"), Is.False);
       }
 
       [Test]
@@ -33,7 +33,7 @@ namespace RegressionTests.SSL.StartTls
          var data1 = smtpClientSimulator.Receive();
          var data = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
 
-         Assert.IsTrue(data.Contains("STARTTLS"));
+         Assert.That(data.Contains("STARTTLS"), Is.True);
       }
 
       [Test]
@@ -43,14 +43,14 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25002);
          var banner = smtpClientSimulator.Receive();
          var capabilities1 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities1.Contains("STARTTLS"));
+         Assert.That(capabilities1.Contains("STARTTLS"), Is.True);
 
          smtpClientSimulator.SendAndReceive("STARTTLS\r\n");
          smtpClientSimulator.HandshakeAsClient();
 
          // Send a command over TLS.
          var capabilities2 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsFalse(capabilities2.Contains("STARTTLS"));
+         Assert.That(capabilities2.Contains("STARTTLS"), Is.False);
 
          // We're now on SSL.
       }
@@ -63,16 +63,16 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25002);
          var banner = smtpClientSimulator.Receive();
          var capabilities1 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities1.Contains("STARTTLS"));
+         Assert.That(capabilities1.Contains("STARTTLS"), Is.True);
 
          var startTlsResultText = smtpClientSimulator.SendAndReceive("STARTTLS \r\n");
-         StringAssert.Contains("220 Ready to start TLS", startTlsResultText);
+         Assert.That(startTlsResultText, Does.Contain("220 Ready to start TLS"));
 
          smtpClientSimulator.HandshakeAsClient();
 
          // Send a command over TLS.
          var capabilities2 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsFalse(capabilities2.Contains("STARTTLS"));
+         Assert.That(capabilities2.Contains("STARTTLS"), Is.False);
       }
 
       [Test]
@@ -82,10 +82,10 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25002);
          var banner = smtpClientSimulator.Receive();
          var capabilities1 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities1.Contains("STARTTLS"));
+         Assert.That(capabilities1.Contains("STARTTLS"), Is.True);
 
          var startTlsResultText = smtpClientSimulator.SendAndReceive("STARTTLS A=B\r\n");
-         StringAssert.Contains("501 Syntax error (no parameters allowed)", startTlsResultText);
+         Assert.That(startTlsResultText, Does.Contain("501 Syntax error (no parameters allowed)"));
       }
 
 
@@ -96,7 +96,7 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25002);
          var banner = smtpClientSimulator.Receive();
          var capabilities1 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities1.Contains("STARTTLS"));
+         Assert.That(capabilities1.Contains("STARTTLS"), Is.True);
 
          smtpClientSimulator.SendAndReceive("STARTTLS\r\n");
          smtpClientSimulator.HandshakeAsClient();
@@ -105,9 +105,9 @@ namespace RegressionTests.SSL.StartTls
 
          var default_log = LogHandler.ReadCurrentDefaultLog();
 
-         Assert.IsTrue(default_log.Contains("Version: TLS"));
-         Assert.IsTrue(default_log.Contains("Cipher: "));
-         Assert.IsTrue(default_log.Contains("Bits: "));
+         Assert.That(default_log.Contains("Version: TLS"), Is.True);
+         Assert.That(default_log.Contains("Cipher: "), Is.True);
+         Assert.That(default_log.Contains("Bits: "), Is.True);
       }
 
       [Test]
@@ -117,7 +117,7 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25003);
          var banner = smtpClientSimulator.Receive();
          var capabilities1 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities1.Contains("STARTTLS"));
+         Assert.That(capabilities1.Contains("STARTTLS"), Is.True);
 
          smtpClientSimulator.SendAndReceive("STARTTLS\r\n");
          smtpClientSimulator.HandshakeAsClient();
@@ -125,7 +125,7 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
 
          var loginResult = smtpClientSimulator.SendAndReceive("AUTH LOGIN\r\n");
-         Assert.IsTrue(loginResult.StartsWith("334"));
+         Assert.That(loginResult.StartsWith("334"), Is.True);
       }
 
       [Test]
@@ -135,10 +135,10 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25003);
          var banner = smtpClientSimulator.Receive();
          var capabilities1 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities1.Contains("STARTTLS"));
+         Assert.That(capabilities1.Contains("STARTTLS"), Is.True);
 
          var loginResult = smtpClientSimulator.SendAndReceive("AUTH LOGIN\r\n");
-         Assert.IsTrue(loginResult.StartsWith("530 Must issue STARTTLS first."));
+         Assert.That(loginResult.StartsWith("530 Must issue STARTTLS first."), Is.True);
       }
 
       [Test]
@@ -153,12 +153,13 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25002);
          var banner = smtpClientSimulator.Receive();
          var capabilities1 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities1.Contains("STARTTLS"));
+         Assert.That(capabilities1.Contains("STARTTLS"), Is.True);
 
          var loginResult = smtpClientSimulator.SendAndReceive("AUTH LOGIN\r\n");
-         Assert.IsTrue(
+         Assert.That(
             loginResult.StartsWith(
-               "530 A SSL/TLS-connection is required for authentication.")); // must run starttls first.
+               "530 A SSL/TLS-connection is required for authentication."),
+            Is.True); // must run starttls first.
       }
 
 
@@ -171,13 +172,13 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25002);
          smtpClientSimulator.Receive(); // banner
          var capabilities = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities.Contains("STARTTLS"));
+         Assert.That(capabilities.Contains("STARTTLS"), Is.True);
 
          smtpClientSimulator.SendAndReceive("STARTTLS\r\n");
          smtpClientSimulator.HandshakeAsClient();
 
          var result = smtpClientSimulator.SendAndReceive("MAIL FROM:<test@example.com>\r\n");
-         StringAssert.Contains("503 Bad sequence of commands", result);
+         Assert.That(result, Does.Contain("503 Bad sequence of commands"));
       }
 
       [Test]
@@ -188,15 +189,15 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25002);
          smtpClientSimulator.Receive(); // banner
          var capabilities = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities.Contains("STARTTLS"));
+         Assert.That(capabilities.Contains("STARTTLS"), Is.True);
 
          smtpClientSimulator.SendAndReceive("STARTTLS\r\n");
          smtpClientSimulator.HandshakeAsClient();
 
-         StringAssert.Contains("250 OK", smtpClientSimulator.SendAndReceive("RSET\r\n"));
+         Assert.That(smtpClientSimulator.SendAndReceive("RSET\r\n"), Does.Contain("250 OK"));
 
          var result = smtpClientSimulator.SendAndReceive("MAIL FROM:<test@example.com>\r\n");
-         StringAssert.Contains("503 Bad sequence of commands", result);
+         Assert.That(result, Does.Contain("503 Bad sequence of commands"));
       }
 
       [Test]
@@ -206,7 +207,7 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25002);
          smtpClientSimulator.Receive(); // banner
          var capabilities = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities.Contains("STARTTLS"));
+         Assert.That(capabilities.Contains("STARTTLS"), Is.True);
 
          smtpClientSimulator.SendAndReceive("STARTTLS\r\n");
          smtpClientSimulator.HandshakeAsClient();
@@ -214,7 +215,7 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
 
          var result = smtpClientSimulator.SendAndReceive("MAIL FROM:<test@example.com>\r\n");
-         StringAssert.Contains("250 OK", result);
+         Assert.That(result, Does.Contain("250 OK"));
       }
 
       [Test]
@@ -224,17 +225,17 @@ namespace RegressionTests.SSL.StartTls
          smtpClientSimulator.Connect(25002);
          var banner = smtpClientSimulator.Receive();
          var capabilities1 = smtpClientSimulator.SendAndReceive("EHLO example.com\r\n");
-         Assert.IsTrue(capabilities1.Contains("STARTTLS"));
+         Assert.That(capabilities1.Contains("STARTTLS"), Is.True);
 
          var resp = smtpClientSimulator.SendAndReceive("STARTTLS\r\nRSET\r\n");
-         Assert.AreEqual("220 Ready to start TLS\r\n", resp);
+         Assert.That(resp, Is.EqualTo("220 Ready to start TLS\r\n"));
          smtpClientSimulator.HandshakeAsClient();
 
          var quitResponse = smtpClientSimulator.SendAndReceive("QUIT\r\n");
-         Assert.AreEqual(quitResponse, "221 goodbye\r\n");
+         Assert.That(quitResponse, Is.EqualTo("221 goodbye\r\n"));
 
          var default_log = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsFalse(default_log.Contains("RSET"));
+         Assert.That(default_log.Contains("RSET"), Is.False);
       }
    }
 }

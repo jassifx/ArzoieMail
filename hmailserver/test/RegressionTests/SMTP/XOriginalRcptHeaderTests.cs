@@ -34,7 +34,7 @@ namespace RegressionTests.SMTP
          SmtpClientSimulator.StaticSend(account.Address, account.Address, "Test", "Test");
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, Password);
-         StringAssert.Contains("X-Original-Rcpt-To: test@example.test" + Environment.NewLine, text);
+         Assert.That(text, Does.Contain("X-Original-Rcpt-To: test@example.test" + Environment.NewLine));
       }
 
       [Test]
@@ -52,7 +52,7 @@ namespace RegressionTests.SMTP
          SmtpClientSimulator.StaticSend(account1.Address, recipients, "Test", "Test");
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, Password);
-         StringAssert.Contains("X-Original-Rcpt-To: test1@example.test,test2@example.test" + Environment.NewLine, text);
+         Assert.That(text, Does.Contain("X-Original-Rcpt-To: test1@example.test,test2@example.test" + Environment.NewLine));
       }
 
       [Test]
@@ -74,10 +74,10 @@ namespace RegressionTests.SMTP
          SmtpClientSimulator.StaticSend(account1.Address, recipients, "Test", "Test");
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, Password);
-         StringAssert.Contains(
-            "X-Original-Rcpt-To: my-alias@example.test,test1@example.test," + Environment.NewLine +
-            "\ttest2@example.test" + Environment.NewLine,
-            text);
+         Assert.That(
+            text,
+            Does.Contain("X-Original-Rcpt-To: my-alias@example.test,test1@example.test," + Environment.NewLine +
+            "\ttest2@example.test" + Environment.NewLine));
       }
 
       [Test]
@@ -97,7 +97,7 @@ namespace RegressionTests.SMTP
          SmtpClientSimulator.StaticSend(account1.Address, distributionList.Address, "Test", "Test");
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, Password);
-         StringAssert.Contains("X-Original-Rcpt-To: my-list@example.test" + Environment.NewLine, text);
+         Assert.That(text, Does.Contain("X-Original-Rcpt-To: my-list@example.test" + Environment.NewLine));
       }
 
       [Test]
@@ -135,7 +135,7 @@ namespace RegressionTests.SMTP
             "\tshort-1@example.test,short-2@example.test,short-3@example.test," + Environment.NewLine +
             "\tz-very-very-very-very-very-very-very-very-very-long-address-3@example.test" + Environment.NewLine;
 
-         StringAssert.Contains(expected, text);
+         Assert.That(text, Does.Contain(expected));
       }
 
       [Test]
@@ -157,7 +157,7 @@ namespace RegressionTests.SMTP
             var headerEnd = text.IndexOf("From: ");
             var header = text.Substring(headerStart, headerEnd - headerStart);
 
-            foreach (var recipient in accountAddresses) StringAssert.Contains(recipient, header);
+            foreach (var recipient in accountAddresses) Assert.That(header, Does.Contain(recipient));
          }
       }
 

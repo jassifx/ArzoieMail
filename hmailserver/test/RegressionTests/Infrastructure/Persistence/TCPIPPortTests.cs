@@ -20,7 +20,7 @@ namespace RegressionTests.Infrastructure.Persistence
          port.ConnectionSecurity = eConnectionSecurity.eCSTLS;
 
          var ex = Assert.Throws<COMException>(() => port.Save());
-         StringAssert.Contains("Certificate must be specified.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Certificate must be specified."));
       }
 
       [Test]
@@ -35,7 +35,7 @@ namespace RegressionTests.Infrastructure.Persistence
          port.ConnectionSecurity = eConnectionSecurity.eCSSTARTTLSOptional;
 
          var ex = Assert.Throws<COMException>(() => port.Save());
-         StringAssert.Contains("Certificate must be specified.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Certificate must be specified."));
       }
 
       [Test]
@@ -50,7 +50,7 @@ namespace RegressionTests.Infrastructure.Persistence
          port.ConnectionSecurity = eConnectionSecurity.eCSSTARTTLSRequired;
 
          var ex = Assert.Throws<COMException>(() => port.Save());
-         StringAssert.Contains("Certificate must be specified.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Certificate must be specified."));
       }
    }
 }

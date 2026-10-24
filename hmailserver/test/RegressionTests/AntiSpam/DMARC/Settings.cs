@@ -20,20 +20,20 @@ namespace RegressionTests.AntiSpam.DMARC
          antiSpam.DMARCHonorPolicy = true;
          antiSpam.AddAuthenticationResultsHeader = true;
 
-         Assert.IsTrue(antiSpam.DMARCEnabled);
-         Assert.AreEqual(17, antiSpam.DMARCFailureScore);
-         Assert.IsTrue(antiSpam.DMARCHonorPolicy);
-         Assert.IsTrue(antiSpam.AddAuthenticationResultsHeader);
+         Assert.That(antiSpam.DMARCEnabled, Is.True);
+         Assert.That(antiSpam.DMARCFailureScore, Is.EqualTo(17));
+         Assert.That(antiSpam.DMARCHonorPolicy, Is.True);
+         Assert.That(antiSpam.AddAuthenticationResultsHeader, Is.True);
 
          antiSpam.DMARCEnabled = false;
          antiSpam.DMARCFailureScore = 5;
          antiSpam.DMARCHonorPolicy = false;
          antiSpam.AddAuthenticationResultsHeader = false;
 
-         Assert.IsFalse(antiSpam.DMARCEnabled);
-         Assert.AreEqual(5, antiSpam.DMARCFailureScore);
-         Assert.IsFalse(antiSpam.DMARCHonorPolicy);
-         Assert.IsFalse(antiSpam.AddAuthenticationResultsHeader);
+         Assert.That(antiSpam.DMARCEnabled, Is.False);
+         Assert.That(antiSpam.DMARCFailureScore, Is.EqualTo(5));
+         Assert.That(antiSpam.DMARCHonorPolicy, Is.False);
+         Assert.That(antiSpam.AddAuthenticationResultsHeader, Is.False);
       }
    }
 }

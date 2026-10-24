@@ -27,33 +27,33 @@ namespace RegressionTests.SSL
       [Test]
       public void TlsOptionPreferServerCiphersEnabled_DefaultsToFalse()
       {
-         Assert.IsFalse(_application.Settings.TlsOptionPreferServerCiphersEnabled);
+         Assert.That(_application.Settings.TlsOptionPreferServerCiphersEnabled, Is.False);
       }
 
       [Test]
       public void TlsOptionPrioritizeChaChaEnabled_DefaultsToFalse()
       {
-         Assert.IsFalse(_application.Settings.TlsOptionPrioritizeChaChaEnabled);
+         Assert.That(_application.Settings.TlsOptionPrioritizeChaChaEnabled, Is.False);
       }
 
       [Test]
       public void TlsOptionPreferServerCiphersEnabled_CanBeToggled()
       {
          _application.Settings.TlsOptionPreferServerCiphersEnabled = true;
-         Assert.IsTrue(_application.Settings.TlsOptionPreferServerCiphersEnabled);
+         Assert.That(_application.Settings.TlsOptionPreferServerCiphersEnabled, Is.True);
 
          _application.Settings.TlsOptionPreferServerCiphersEnabled = false;
-         Assert.IsFalse(_application.Settings.TlsOptionPreferServerCiphersEnabled);
+         Assert.That(_application.Settings.TlsOptionPreferServerCiphersEnabled, Is.False);
       }
 
       [Test]
       public void TlsOptionPrioritizeChaChaEnabled_CanBeToggled()
       {
          _application.Settings.TlsOptionPrioritizeChaChaEnabled = true;
-         Assert.IsTrue(_application.Settings.TlsOptionPrioritizeChaChaEnabled);
+         Assert.That(_application.Settings.TlsOptionPrioritizeChaChaEnabled, Is.True);
 
          _application.Settings.TlsOptionPrioritizeChaChaEnabled = false;
-         Assert.IsFalse(_application.Settings.TlsOptionPrioritizeChaChaEnabled);
+         Assert.That(_application.Settings.TlsOptionPrioritizeChaChaEnabled, Is.False);
       }
 
       [Test]

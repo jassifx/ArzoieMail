@@ -61,8 +61,8 @@ namespace RegressionTests.Infrastructure.Persistence
          domain.Name = domainName;
 
          var exception = Assert.Throws<COMException>(() => domain.Save());
-         Assert.AreEqual("Failed to save object. The domain name you have entered is not a valid domain name.",
-            exception.Message);
+         Assert.That(exception.Message,
+            Is.EqualTo("Failed to save object. The domain name you have entered is not a valid domain name."));
       }
 
       private void AssertValidDomainName(string domainName)

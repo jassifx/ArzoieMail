@@ -33,8 +33,8 @@ namespace RegressionTests.AntiSpam.DMARC
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsFalse(text.Contains("X-hMailServer-Spam"), text);
-         Assert.IsFalse(text.Contains("Rejected by DMARC"), text);
+         Assert.That(text.Contains("X-hMailServer-Spam"), Is.False, text);
+         Assert.That(text.Contains("Rejected by DMARC"), Is.False, text);
       }
 
       [Test]
@@ -49,8 +49,8 @@ namespace RegressionTests.AntiSpam.DMARC
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(text.Contains("Rejected by DMARC. (outlook.com) - (Score: 6)"), text);
-         Assert.IsTrue(text.Contains("X-hMailServer-Spam: YES"), text);
+         Assert.That(text.Contains("Rejected by DMARC. (outlook.com) - (Score: 6)"), Is.True, text);
+         Assert.That(text.Contains("X-hMailServer-Spam: YES"), Is.True, text);
       }
 
       [Test]
@@ -68,8 +68,8 @@ namespace RegressionTests.AntiSpam.DMARC
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsFalse(text.Contains("X-hMailServer-Spam"), text);
-         Assert.IsFalse(text.Contains("Rejected by DMARC"), text);
+         Assert.That(text.Contains("X-hMailServer-Spam"), Is.False, text);
+         Assert.That(text.Contains("Rejected by DMARC"), Is.False, text);
       }
 
       [Test]
@@ -96,7 +96,7 @@ namespace RegressionTests.AntiSpam.DMARC
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(text.Contains("Rejected by DMARC. (example.com) - (Score: 6)"), text);
+         Assert.That(text.Contains("Rejected by DMARC. (example.com) - (Score: 6)"), Is.True, text);
       }
 
       [Test]
@@ -119,7 +119,7 @@ namespace RegressionTests.AntiSpam.DMARC
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(text.Contains("X-hMailServer-Spam: YES"), text);
+         Assert.That(text.Contains("X-hMailServer-Spam: YES"), Is.True, text);
       }
 
       [Test]
@@ -139,7 +139,7 @@ namespace RegressionTests.AntiSpam.DMARC
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(text.Contains("Rejected by DMARC. (outlook.com)"), text);
+         Assert.That(text.Contains("Rejected by DMARC. (outlook.com)"), Is.True, text);
       }
 
       private static string GetMessage_(string fromAddress)
@@ -162,7 +162,7 @@ namespace RegressionTests.AntiSpam.DMARC
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsFalse(text.Contains("Rejected by DMARC"), text);
+         Assert.That(text.Contains("Rejected by DMARC"), Is.False, text);
       }
    }
 }

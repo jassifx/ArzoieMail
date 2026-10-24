@@ -36,13 +36,13 @@ namespace RegressionTests.IMAP
 
          var first = simulator.Append("INBOX", CreateMessage("first@example.test"));
          var firstUid = AssertAppendUid(first, uidValidity);
-         Assert.AreEqual(uidNext, firstUid, first);
+         Assert.That(firstUid, Is.EqualTo(uidNext), first);
 
          var second = simulator.Append("INBOX", CreateMessage("second@example.test"));
-         Assert.AreEqual(firstUid + 1, AssertAppendUid(second, uidValidity), second);
+         Assert.That(AssertAppendUid(second, uidValidity), Is.EqualTo(firstUid + 1), second);
 
          // The reported UID must be the UID of the message that was appended.
-         Assert.AreEqual(firstUid.ToString(), UidSearch(simulator, "HEADER Message-ID first@example.test"));
+         Assert.That(UidSearch(simulator, "HEADER Message-ID first@example.test"), Is.EqualTo(firstUid.ToString()));
 
          simulator.Disconnect();
       }
@@ -56,12 +56,12 @@ namespace RegressionTests.IMAP
          var simulator = ConnectAndLogon(account);
 
          var select = simulator.SendSingleCommand("A01 SELECT \"#Public.Share\"");
-         Assert.IsTrue(select.Contains("A01 OK"), select);
+         Assert.That(select.Contains("A01 OK"), Is.True, select);
          var uidValidity = GetResponseCodeValue(select, "UIDVALIDITY");
          var uidNext = GetResponseCodeValue(select, "UIDNEXT");
 
          var append = simulator.Append("#Public.Share", CreateMessage("public@example.test"));
-         Assert.AreEqual(uidNext, AssertAppendUid(append, uidValidity), append);
+         Assert.That(AssertAppendUid(append, uidValidity), Is.EqualTo(uidNext), append);
 
          simulator.Disconnect();
       }
@@ -76,8 +76,8 @@ namespace RegressionTests.IMAP
          var simulator = ConnectAndLogon(account);
 
          var append = simulator.Append("#Public.Dropbox", CreateMessage("dropbox@example.test"));
-         Assert.IsTrue(append.Contains("A40 OK"), append);
-         Assert.IsFalse(append.Contains("APPENDUID"), append);
+         Assert.That(append.Contains("A40 OK"), Is.True, append);
+         Assert.That(append.Contains("APPENDUID"), Is.False, append);
 
          simulator.Disconnect();
 
@@ -89,16 +89,16 @@ namespace RegressionTests.IMAP
       {
          var account = AddAccount();
          var simulator = ConnectAndLogon(account);
-         Assert.IsTrue(simulator.CreateFolder("Other"));
+         Assert.That(simulator.CreateFolder("Other"), Is.True);
 
          var status = simulator.Status("Other", "UIDVALIDITY UIDNEXT");
          var uidValidity = GetStatusValue(status, "UIDVALIDITY");
          var uidNext = GetStatusValue(status, "UIDNEXT");
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var append = simulator.Append("Other", CreateMessage("other@example.test"));
-         Assert.AreEqual(uidNext, AssertAppendUid(append, uidValidity), append);
+         Assert.That(AssertAppendUid(append, uidValidity), Is.EqualTo(uidNext), append);
 
          simulator.Disconnect();
       }
@@ -157,15 +157,15 @@ namespace RegressionTests.IMAP
          foreach (var thread in threads)
             thread.Join();
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
-         Assert.AreEqual(threadCount * appendsPerThread, reported.Distinct().Count(), "Duplicate APPENDUID reported.");
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures));
+         Assert.That(reported.Distinct().Count(), Is.EqualTo(threadCount * appendsPerThread), "Duplicate APPENDUID reported.");
 
          var reader = ConnectAndLogon(account);
-         Assert.IsTrue(reader.SelectFolder("INBOX"));
+         Assert.That(reader.SelectFolder("INBOX"), Is.True);
          var actual = UidSearch(reader, "ALL").Split(' ').Select(long.Parse).OrderBy(uid => uid);
          reader.Disconnect();
 
-         CollectionAssert.AreEqual(reported.OrderBy(uid => uid), actual);
+         Assert.That(actual, Is.EqualTo(reported.OrderBy(uid => uid)).AsCollection);
       }
 
       #endregion
@@ -177,20 +177,20 @@ namespace RegressionTests.IMAP
       {
          var account = AddAccount();
          var simulator = ConnectAndLogon(account);
-         Assert.IsTrue(simulator.CreateFolder("Target"));
+         Assert.That(simulator.CreateFolder("Target"), Is.True);
 
          AppendMessages(simulator, "INBOX", 3);
          AppendMessages(simulator, "Target", 3);
 
          var uidValidity = GetStatusValue(simulator.Status("Target", "UIDVALIDITY"), "UIDVALIDITY");
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var copy = simulator.SendSingleCommand("A01 COPY 1:3 \"Target\"");
-         Assert.IsTrue(copy.Contains("A01 OK [COPYUID " + uidValidity + " 1:3 4:6]"), copy);
+         Assert.That(copy.Contains("A01 OK [COPYUID " + uidValidity + " 1:3 4:6]"), Is.True, copy);
 
          var uidCopy = simulator.UidCopy("1,3", "Target");
-         Assert.IsTrue(uidCopy.Contains("A41 OK [COPYUID " + uidValidity + " 1,3 7:8]"), uidCopy);
+         Assert.That(uidCopy.Contains("A41 OK [COPYUID " + uidValidity + " 1,3 7:8]"), Is.True, uidCopy);
 
          simulator.Disconnect();
       }
@@ -202,16 +202,16 @@ namespace RegressionTests.IMAP
       {
          var account = AddAccount();
          var simulator = ConnectAndLogon(account);
-         Assert.IsTrue(simulator.CreateFolder("Target"));
+         Assert.That(simulator.CreateFolder("Target"), Is.True);
 
          AppendMessages(simulator, "INBOX", 5);
 
          var uidValidity = GetStatusValue(simulator.Status("Target", "UIDVALIDITY"), "UIDVALIDITY");
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var uidCopy = simulator.UidCopy("1:2,4:5", "Target");
-         Assert.IsTrue(uidCopy.Contains("A41 OK [COPYUID " + uidValidity + " 1:2,4:5 1:4]"), uidCopy);
+         Assert.That(uidCopy.Contains("A41 OK [COPYUID " + uidValidity + " 1:2,4:5 1:4]"), Is.True, uidCopy);
 
          simulator.Disconnect();
       }
@@ -221,14 +221,14 @@ namespace RegressionTests.IMAP
       {
          var account = AddAccount();
          var simulator = ConnectAndLogon(account);
-         Assert.IsTrue(simulator.CreateFolder("Target"));
+         Assert.That(simulator.CreateFolder("Target"), Is.True);
 
          AppendMessages(simulator, "INBOX", 1);
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var uidCopy = simulator.UidCopy("100", "Target");
-         Assert.IsTrue(uidCopy.Contains("A41 OK"), uidCopy);
-         Assert.IsFalse(uidCopy.Contains("COPYUID"), uidCopy);
+         Assert.That(uidCopy.Contains("A41 OK"), Is.True, uidCopy);
+         Assert.That(uidCopy.Contains("COPYUID"), Is.False, uidCopy);
 
          simulator.Disconnect();
       }
@@ -245,7 +245,7 @@ namespace RegressionTests.IMAP
          var uidValidity = GetResponseCodeValue(select, "UIDVALIDITY");
 
          var copy = simulator.SendSingleCommand("A02 COPY 1:2 INBOX");
-         Assert.IsTrue(copy.Contains("A02 OK [COPYUID " + uidValidity + " 1:2 3:4]"), copy);
+         Assert.That(copy.Contains("A02 OK [COPYUID " + uidValidity + " 1:2 3:4]"), Is.True, copy);
 
          simulator.Disconnect();
       }
@@ -261,10 +261,10 @@ namespace RegressionTests.IMAP
 
          var uidValidity = GetResponseCodeValue(simulator.SendSingleCommand("A01 SELECT \"#Public.Share\""), "UIDVALIDITY");
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var copy = simulator.SendSingleCommand("A02 COPY 1 \"#Public.Share\"");
-         Assert.IsTrue(copy.Contains("A02 OK [COPYUID " + uidValidity + " 1 1]"), copy);
+         Assert.That(copy.Contains("A02 OK [COPYUID " + uidValidity + " 1 1]"), Is.True, copy);
 
          simulator.Disconnect();
       }
@@ -278,15 +278,15 @@ namespace RegressionTests.IMAP
 
          var simulator = ConnectAndLogon(account);
          AppendMessages(simulator, "INBOX", 2);
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var copy = simulator.SendSingleCommand("A01 COPY 1 \"#Public.Dropbox\"");
-         Assert.IsTrue(copy.Contains("A01 OK"), copy);
-         Assert.IsFalse(copy.Contains("COPYUID"), copy);
+         Assert.That(copy.Contains("A01 OK"), Is.True, copy);
+         Assert.That(copy.Contains("COPYUID"), Is.False, copy);
 
          var uidCopy = simulator.UidCopy("2", "#Public.Dropbox");
-         Assert.IsTrue(uidCopy.Contains("A41 OK"), uidCopy);
-         Assert.IsFalse(uidCopy.Contains("COPYUID"), uidCopy);
+         Assert.That(uidCopy.Contains("A41 OK"), Is.True, uidCopy);
+         Assert.That(uidCopy.Contains("COPYUID"), Is.False, uidCopy);
 
          simulator.Disconnect();
 
@@ -301,24 +301,24 @@ namespace RegressionTests.IMAP
          // 1 MB quota. Two 300 KB messages and one copy fit, a second copy does not.
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "uidplus@example.test", Password, 1);
          var simulator = ConnectAndLogon(account);
-         Assert.IsTrue(simulator.CreateFolder("Target"));
+         Assert.That(simulator.CreateFolder("Target"), Is.True);
 
          var body = string.Concat(Enumerable.Repeat(new string('x', 98) + "\r\n", 3072));
 
          for (var i = 0; i < 2; i++)
             AssertAppendUid(simulator.Append("INBOX", CreateMessage(Guid.NewGuid() + "@example.test", body)));
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var copy = simulator.SendSingleCommand("A01 COPY 1:2 \"Target\"");
-         Assert.IsTrue(copy.Contains("A01 NO"), copy);
-         Assert.IsFalse(copy.Contains("COPYUID"), copy);
+         Assert.That(copy.Contains("A01 NO"), Is.True, copy);
+         Assert.That(copy.Contains("COPYUID"), Is.False, copy);
 
-         Assert.AreEqual(0, GetStatusValue(simulator.Status("Target", "MESSAGES"), "MESSAGES"));
+         Assert.That(GetStatusValue(simulator.Status("Target", "MESSAGES"), "MESSAGES"), Is.EqualTo(0));
 
          // The removed copy no longer counts against the quota.
          copy = simulator.SendSingleCommand("A02 COPY 1 \"Target\"");
-         Assert.IsTrue(copy.Contains("A02 OK"), copy);
+         Assert.That(copy.Contains("A02 OK"), Is.True, copy);
 
          simulator.Disconnect();
       }
@@ -331,23 +331,23 @@ namespace RegressionTests.IMAP
       {
          var account = AddAccount();
          var simulator = ConnectAndLogon(account);
-         Assert.IsTrue(simulator.CreateFolder("Target"));
+         Assert.That(simulator.CreateFolder("Target"), Is.True);
          AppendMessages(simulator, "INBOX", 2);
 
          var inbox = account.IMAPFolders.get_ItemByName("INBOX");
          File.Delete(inbox.Messages[0].Filename);
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var copy = simulator.SendSingleCommand("A01 " + command + " \"Target\"");
-         Assert.IsTrue(copy.Contains("A01 NO"), copy);
-         Assert.IsFalse(copy.Contains("EXPUNGE"), copy);
-         Assert.IsFalse(copy.Contains("COPYUID"), copy);
+         Assert.That(copy.Contains("A01 NO"), Is.True, copy);
+         Assert.That(copy.Contains("EXPUNGE"), Is.False, copy);
+         Assert.That(copy.Contains("COPYUID"), Is.False, copy);
 
-         Assert.AreEqual(0, GetStatusValue(simulator.Status("Target", "MESSAGES"), "MESSAGES"));
+         Assert.That(GetStatusValue(simulator.Status("Target", "MESSAGES"), "MESSAGES"), Is.EqualTo(0));
 
          // The session still sees the message.
-         Assert.AreEqual("1 2", UidSearch(simulator, "ALL"));
+         Assert.That(UidSearch(simulator, "ALL"), Is.EqualTo("1 2"));
 
          simulator.Disconnect();
 
@@ -366,28 +366,28 @@ namespace RegressionTests.IMAP
          var simulator = ConnectAndLogon(account);
 
          AppendMessages(simulator, "INBOX", 4);
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          simulator.SendSingleCommand("A01 UID STORE 1,3 +FLAGS (\\Deleted)");
 
          var expunge = simulator.UidExpunge("3");
-         Assert.IsTrue(expunge.Contains("A42 OK"), expunge);
-         Assert.AreEqual(new[] {"3"}, GetExpungedSequences(expunge), expunge);
+         Assert.That(expunge.Contains("A42 OK"), Is.True, expunge);
+         Assert.That(GetExpungedSequences(expunge), Is.EqualTo(new[] {"3"}), expunge);
 
          // Message 1 is still there and still flagged.
          var flags = simulator.SendSingleCommand("A02 UID FETCH 1 (FLAGS)");
-         Assert.IsTrue(flags.Contains("\\Deleted"), flags);
+         Assert.That(flags.Contains("\\Deleted"), Is.True, flags);
 
          // An unflagged message in the set is left alone.
          expunge = simulator.UidExpunge("2");
-         Assert.IsTrue(expunge.Contains("A42 OK"), expunge);
-         Assert.IsEmpty(GetExpungedSequences(expunge), expunge);
+         Assert.That(expunge.Contains("A42 OK"), Is.True, expunge);
+         Assert.That(GetExpungedSequences(expunge), Is.Empty, expunge);
 
          expunge = simulator.UidExpunge("1:*");
-         Assert.IsTrue(expunge.Contains("A42 OK"), expunge);
-         Assert.AreEqual(new[] {"1"}, GetExpungedSequences(expunge), expunge);
+         Assert.That(expunge.Contains("A42 OK"), Is.True, expunge);
+         Assert.That(GetExpungedSequences(expunge), Is.EqualTo(new[] {"1"}), expunge);
 
-         Assert.AreEqual("2 4", UidSearch(simulator, "ALL"));
+         Assert.That(UidSearch(simulator, "ALL"), Is.EqualTo("2 4"));
 
          simulator.Disconnect();
       }
@@ -402,18 +402,18 @@ namespace RegressionTests.IMAP
          setup.Disconnect();
 
          var observer = ConnectAndLogon(account);
-         Assert.IsTrue(observer.SelectFolder("INBOX"));
+         Assert.That(observer.SelectFolder("INBOX"), Is.True);
 
          var expunger = ConnectAndLogon(account);
-         Assert.IsTrue(expunger.SelectFolder("INBOX"));
+         Assert.That(expunger.SelectFolder("INBOX"), Is.True);
          expunger.SendSingleCommand("A01 UID STORE 1,2 +FLAGS (\\Deleted)");
          var expunge = expunger.UidExpunge("2");
-         Assert.AreEqual(new[] {"2"}, GetExpungedSequences(expunge), expunge);
+         Assert.That(GetExpungedSequences(expunge), Is.EqualTo(new[] {"2"}), expunge);
          expunger.Disconnect();
 
          var noop = observer.NOOP() + observer.NOOP();
-         Assert.AreEqual(new[] {"2"}, GetExpungedSequences(noop), noop);
-         Assert.AreEqual("1 3", UidSearch(observer, "ALL"));
+         Assert.That(GetExpungedSequences(noop), Is.EqualTo(new[] {"2"}), noop);
+         Assert.That(UidSearch(observer, "ALL"), Is.EqualTo("1 3"));
 
          observer.Disconnect();
       }
@@ -425,16 +425,16 @@ namespace RegressionTests.IMAP
          var simulator = ConnectAndLogon(account);
 
          AppendMessages(simulator, "INBOX", 1);
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
          simulator.SendSingleCommand("A01 UID STORE 1 +FLAGS (\\Deleted)");
 
          simulator.ExamineFolder("INBOX");
 
          var expunge = simulator.UidExpunge("1");
-         Assert.IsTrue(expunge.Contains("A42 NO"), expunge);
+         Assert.That(expunge.Contains("A42 NO"), Is.True, expunge);
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
-         Assert.AreEqual("1", UidSearch(simulator, "ALL"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
+         Assert.That(UidSearch(simulator, "ALL"), Is.EqualTo("1"));
 
          simulator.Disconnect();
       }
@@ -447,18 +447,18 @@ namespace RegressionTests.IMAP
 
          var simulator = ConnectAndLogon(account);
          AppendMessages(simulator, "#Public.Share", 1);
-         Assert.IsTrue(simulator.SelectFolder("#Public.Share"));
+         Assert.That(simulator.SelectFolder("#Public.Share"), Is.True);
          simulator.SendSingleCommand("A01 UID STORE 1 +FLAGS (\\Deleted)");
 
          var expunge = simulator.UidExpunge("1");
-         Assert.IsFalse(expunge.Contains("A42 OK"), expunge);
+         Assert.That(expunge.Contains("A42 OK"), Is.False, expunge);
 
          permission.set_Permission(eACLPermission.ePermissionExpunge, true);
          permission.Save();
 
          expunge = simulator.UidExpunge("1");
-         Assert.IsTrue(expunge.Contains("A42 OK"), expunge);
-         Assert.AreEqual(new[] {"1"}, GetExpungedSequences(expunge), expunge);
+         Assert.That(expunge.Contains("A42 OK"), Is.True, expunge);
+         Assert.That(GetExpungedSequences(expunge), Is.EqualTo(new[] {"1"}), expunge);
 
          simulator.Disconnect();
       }
@@ -468,10 +468,10 @@ namespace RegressionTests.IMAP
       {
          var account = AddAccount();
          var simulator = ConnectAndLogon(account);
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.SendSingleCommand("A01 UID EXPUNGE");
-         Assert.IsTrue(result.Contains("A01 BAD"), result);
+         Assert.That(result.Contains("A01 BAD"), Is.True, result);
 
          simulator.Disconnect();
       }
@@ -484,14 +484,14 @@ namespace RegressionTests.IMAP
          var simulator = ConnectAndLogon(account);
 
          AppendMessages(simulator, "INBOX", 2);
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
          simulator.SendSingleCommand("A01 UID STORE 1:2 +FLAGS (\\Deleted)");
 
          var expunge = simulator.UidExpunge("1,,2");
-         Assert.IsTrue(expunge.Contains("A42 BAD"), expunge);
-         Assert.IsEmpty(GetExpungedSequences(expunge), expunge);
+         Assert.That(expunge.Contains("A42 BAD"), Is.True, expunge);
+         Assert.That(GetExpungedSequences(expunge), Is.Empty, expunge);
 
-         Assert.AreEqual("1 2", UidSearch(simulator, "ALL"));
+         Assert.That(UidSearch(simulator, "ALL"), Is.EqualTo("1 2"));
 
          simulator.Disconnect();
       }
@@ -504,12 +504,12 @@ namespace RegressionTests.IMAP
          var simulator = ConnectAndLogon(account);
 
          AppendMessages(simulator, "INBOX", 3);
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
          simulator.SendSingleCommand("A01 UID STORE 1:3 +FLAGS (\\Deleted)");
 
          var expunge = simulator.UidExpunge("*");
-         Assert.IsTrue(expunge.Contains("A42 OK"), expunge);
-         Assert.AreEqual(new[] {"3"}, GetExpungedSequences(expunge), expunge);
+         Assert.That(expunge.Contains("A42 OK"), Is.True, expunge);
+         Assert.That(GetExpungedSequences(expunge), Is.EqualTo(new[] {"3"}), expunge);
 
          simulator.Disconnect();
       }
@@ -522,29 +522,29 @@ namespace RegressionTests.IMAP
          var account = AddAccount();
 
          var setup = ConnectAndLogon(account);
-         Assert.IsTrue(setup.CreateFolder("MyDrafts"));
+         Assert.That(setup.CreateFolder("MyDrafts"), Is.True);
          setup.Append("MyDrafts", CreateMessage("unrelated@example.test"));
          setup.Disconnect();
 
          var other = ConnectAndLogon(account);
-         Assert.IsTrue(other.SelectFolder("MyDrafts"));
+         Assert.That(other.SelectFolder("MyDrafts"), Is.True);
          other.SendSingleCommand("A01 STORE 1 +FLAGS (\\Deleted)");
 
          var client = ConnectAndLogon(account);
-         Assert.IsTrue(client.SelectFolder("MyDrafts"));
+         Assert.That(client.SelectFolder("MyDrafts"), Is.True);
 
          var oldUid = AssertAppendUid(client.Append("MyDrafts", CreateMessage("draft-1@example.test")));
          var newUid = AssertAppendUid(client.Append("MyDrafts", CreateMessage("draft-2@example.test")));
 
          client.SendSingleCommand("A02 UID STORE " + oldUid + " +FLAGS (\\Deleted)");
          var expunge = client.UidExpunge(oldUid.ToString());
-         Assert.IsTrue(expunge.Contains("A42 OK"), expunge);
-         Assert.AreEqual(new[] {"2"}, GetExpungedSequences(expunge), expunge);
+         Assert.That(expunge.Contains("A42 OK"), Is.True, expunge);
+         Assert.That(GetExpungedSequences(expunge), Is.EqualTo(new[] {"2"}), expunge);
 
-         Assert.AreEqual("1 " + newUid, UidSearch(client, "ALL"));
+         Assert.That(UidSearch(client, "ALL"), Is.EqualTo("1 " + newUid));
 
          other.NOOP();
-         Assert.AreEqual("1 " + newUid, UidSearch(other, "ALL"));
+         Assert.That(UidSearch(other, "ALL"), Is.EqualTo("1 " + newUid));
 
          client.Disconnect();
          other.Disconnect();
@@ -562,7 +562,7 @@ namespace RegressionTests.IMAP
       private static ImapClientSimulator ConnectAndLogon(Account account)
       {
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, Password));
+         Assert.That(simulator.ConnectAndLogon(account.Address, Password), Is.True);
          return simulator;
       }
 
@@ -596,17 +596,17 @@ namespace RegressionTests.IMAP
          for (var i = 0; i < count; i++)
          {
             var response = simulator.Append(folderName, CreateMessage(Guid.NewGuid() + "@example.test"));
-            Assert.IsTrue(response.Contains("A40 OK"), response);
+            Assert.That(response.Contains("A40 OK"), Is.True, response);
          }
       }
 
       private static long AssertAppendUid(string response, long expectedUidValidity = -1)
       {
          var match = Regex.Match(response, @"A40 OK \[APPENDUID (\d+) (\d+)\]");
-         Assert.IsTrue(match.Success, "No APPENDUID in response. " + response);
+         Assert.That(match.Success, Is.True, "No APPENDUID in response. " + response);
 
          if (expectedUidValidity >= 0)
-            Assert.AreEqual(expectedUidValidity, long.Parse(match.Groups[1].Value), response);
+            Assert.That(long.Parse(match.Groups[1].Value), Is.EqualTo(expectedUidValidity), response);
 
          return long.Parse(match.Groups[2].Value);
       }
@@ -614,14 +614,14 @@ namespace RegressionTests.IMAP
       private static long GetResponseCodeValue(string response, string name)
       {
          var match = Regex.Match(response, @"\[" + name + @" (\d+)\]");
-         Assert.IsTrue(match.Success, name + " not found. " + response);
+         Assert.That(match.Success, Is.True, name + " not found. " + response);
          return long.Parse(match.Groups[1].Value);
       }
 
       private static long GetStatusValue(string response, string name)
       {
          var match = Regex.Match(response, name + @" (\d+)");
-         Assert.IsTrue(match.Success, name + " not found. " + response);
+         Assert.That(match.Success, Is.True, name + " not found. " + response);
          return long.Parse(match.Groups[1].Value);
       }
 
@@ -636,10 +636,10 @@ namespace RegressionTests.IMAP
       private static string UidSearch(ImapClientSimulator simulator, string criteria)
       {
          var response = simulator.SendSingleCommand("A43 UID SEARCH " + criteria);
-         Assert.IsTrue(response.Contains("A43 OK"), response);
+         Assert.That(response.Contains("A43 OK"), Is.True, response);
 
          var match = Regex.Match(response, @"^\* SEARCH ?(.*)\r$", RegexOptions.Multiline);
-         Assert.IsTrue(match.Success, response);
+         Assert.That(match.Success, Is.True, response);
 
          return match.Groups[1].Value.Trim();
       }

@@ -1,0 +1,23 @@
+﻿<Project>
+  <!-- The NuGet package versions of hMailServer Tests.sln, in one place. -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="NUnit" Version="5.0.0" />
+    <PackageVersion Include="NUnit.Analyzers" Version="4.15.0" />
+    <PackageVersion Include="NUnit.ConsoleRunner" Version="3.22.0" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="6.3.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+
+    <PackageVersion Include="CommandLineParser" Version="2.9.1" />
+    <PackageVersion Include="Microsoft.PowerShell.SDK" Version="7.6.8" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="NLog" Version="6.2.2" />
+
+    <PackageVersion Include="System.Management" Version="10.0.13" />
+    <PackageVersion Include="System.ServiceProcess.ServiceController" Version="10.0.13" />
+  </ItemGroup>
+</Project>
