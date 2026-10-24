@@ -39,7 +39,13 @@ namespace HM
       virtual bool RollbackTransaction(String &sErrorMessage);
       virtual void SetTimeout(int seconds) {}
 
-      virtual bool GetSupportsCommandParameters() const {return false; }
+      // True with MariaDB Connector/C, which runs a command with parameters as a prepared
+      // statement. libmysql.dll, still loaded when libmariadb.dll is missing, gets the values
+      // written into the SQL instead.
+      virtual bool GetSupportsCommandParameters() const;
+
+      // What the callers make of a MySQL error number: a lost connection is retried.
+      static ExecutionResult GetErrorResult(unsigned int errorNumber);
       ColumnPositionCache& GetColumnPositionCache() {return column_position_cache_;}
 
       virtual bool CheckServerVersion(String &errorMessage);
@@ -53,6 +59,9 @@ namespace HM
    private:
 
       DALConnection::ExecutionResult GetErrorType_(hm_MYSQL *pSQL);
+      static DALConnection::ExecutionResult GetErrorType_(unsigned int errorNumber);
+
+      ExecutionResult TryExecuteStatement_(const SQLCommand &command, String &sErrorMessage, __int64 *iInsertID, int iIgnoreErrors);
 
       void UpdatePassword_();
       void RunScriptFile_(const String &sFile) ;

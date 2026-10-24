@@ -18,7 +18,9 @@ namespace HM
 {
    MySQLRecordset::MySQLRecordset() :
       result_(0),
-      current_(0)
+      current_(0),
+      from_statement_(false),
+      next_statement_row_(0)
    {
       
    }
@@ -49,6 +51,30 @@ namespace HM
       try
       {
          hm_MYSQL *pMYSQL = pConn->GetConnection();
+
+         // A command still has its parameters only when they are to be bound (see
+         // MySQLConnection::GetSupportsCommandParameters).
+         if (!command.GetParameters().empty())
+         {
+            MySQLStatement statement(pMYSQL);
+
+            String statementError;
+            if (!statement.Execute(command, &statement_rows_, nullptr, statementError))
+            {
+               sErrorMessage.Format(_T("MySQL: %s (Additional info: %s)"), statementError.c_str(), sSQL.c_str());
+               return MySQLConnection::GetErrorResult(statement.GetErrorNumber());
+            }
+
+            from_statement_ = true;
+            next_statement_row_ = 0;
+
+            MoveNext();
+
+            // Keyed by the query with its parameter names, which is the same for every
+            // execution of the statement, whatever the values.
+            column_positions_ = pConn->GetColumnPositionCache().GetPositions(AnsiString(sSQL), this);
+            return DALConnection::DALSuccess;
+         }
 
          AnsiString sQuery;
          if (!Unicode::WideToMultiByte(sSQL, sQuery))
@@ -97,6 +123,12 @@ namespace HM
             MySQLInterface::Instance()->p_mysql_free_result(result_);
             result_ = 0;
          }
+
+         current_ = 0;
+         from_statement_ = false;
+         statement_rows_ = MySQLStatement::Rows();
+         next_statement_row_ = 0;
+         current_statement_row_.clear();
       }
       catch (...)
       {
@@ -111,9 +143,12 @@ namespace HM
    // Returns the number of rows in current recordset. 
    //---------------------------------------------------------------------------()
    {
+      if (from_statement_)
+         return (long) statement_rows_.values.size();
+
       if (!result_)
          return 0;
- 
+
       try
       {
          long lResult = (long) MySQLInterface::Instance()->p_mysql_num_rows(result_);
@@ -140,6 +175,29 @@ namespace HM
    // Moves the cursor to the next row in the recordset.
    //---------------------------------------------------------------------------()
    {
+      if (from_statement_)
+      {
+         if (next_statement_row_ >= statement_rows_.values.size())
+         {
+            current_ = 0;
+            return false;
+         }
+
+         // The values as mysql_fetch_row gives them: a null-terminated string, or a null
+         // pointer for NULL.
+         std::vector<std::optional<std::string>> &row = statement_rows_.values[next_statement_row_++];
+
+         current_statement_row_.assign(row.size(), nullptr);
+         for (size_t column = 0; column < row.size(); column++)
+         {
+            if (row[column].has_value())
+               current_statement_row_[column] = row[column]->data();
+         }
+
+         current_ = current_statement_row_.data();
+         return true;
+      }
+
       if (!result_)
       {
          return false;
@@ -330,7 +388,13 @@ namespace HM
    std::vector<AnsiString> 
    MySQLRecordset::GetColumnNames() const
    {
+      if (from_statement_)
+         return statement_rows_.columns;
+
       std::vector<AnsiString> result;
+      if (!result_)
+         return result;
+
       unsigned int iFieldCount = MySQLInterface::Instance()->p_mysql_num_fields(result_);
 
       for (unsigned int i = 0; i < iFieldCount; i++)

@@ -567,8 +567,10 @@ namespace HM
    String
    SQLStatement::GenerateFromCommand(const SQLCommand &command)
    {
-      // Used for the database clients that take no command parameters (MySQL, PostgreSQL),
-      // so the values are written into the query as literals.
+      // Used for a database client that takes no command parameters, so the values are
+      // written into the query as literals. PostgreSQL and MySQL through MariaDB Connector/C
+      // bind them; only MySQL through Oracle's libmysql.dll, still loaded when libmariadb.dll
+      // is missing, comes here.
       //
       // The query is scanned once, as written, and every parameter name is replaced where
       // it stands. A value that has been written into the query is never scanned again.
@@ -643,12 +645,16 @@ namespace HM
 
    bool
    SQLStatement::ToPositionalParameters(const SQLCommand &command, String &positionalQuery,
-                                        std::vector<const SQLParameter *> &orderedParameters)
+                                        std::vector<const SQLParameter *> &orderedParameters,
+                                        PlaceholderStyle style)
    {
-      // For the database clients that bind parameters by position (PostgreSQL's $1, $2, ...).
-      // The query is scanned once, as GenerateFromCommand does, and every parameter name is
-      // replaced by the position of its parameter. A parameter used twice gets the same
-      // position both times; the positions follow the order the names first appear in.
+      // For the database clients that bind parameters by position. The query is scanned once,
+      // as GenerateFromCommand does, and every parameter name is replaced by a placeholder.
+      //
+      // Numbered placeholders are PostgreSQL's $1, $2, ...: a parameter used twice gets the
+      // same number both times, and the numbers follow the order the names first appear in.
+      // MySQL's ? placeholders carry no number, so each one is bound to the next value in
+      // turn, and a parameter used twice is listed twice.
       //
       // A bound parameter is a value, so it cannot stand inside a literal of the query, where
       // the server would read $1 as the two characters. Such a query is refused: false, and
@@ -697,12 +703,20 @@ namespace HM
             if (insideLiteral)
                return false;
 
-            auto bound = std::find(orderedParameters.begin(), orderedParameters.end(), &*parameter);
-            size_t index = bound - orderedParameters.begin();
-            if (bound == orderedParameters.end())
+            if (style == QuestionMarkPlaceholders)
+            {
                orderedParameters.push_back(&*parameter);
+               positionalQuery += _T("?");
+            }
+            else
+            {
+               auto bound = std::find(orderedParameters.begin(), orderedParameters.end(), &*parameter);
+               size_t index = bound - orderedParameters.begin();
+               if (bound == orderedParameters.end())
+                  orderedParameters.push_back(&*parameter);
 
-            positionalQuery += _T("$") + StringParser::IntToString((int) index + 1);
+               positionalQuery += _T("$") + StringParser::IntToString((int) index + 1);
+            }
          }
 
          position = end;
@@ -751,12 +765,13 @@ namespace HM
          }
       }
 
-      void AssertPositional(const SQLCommand &command, const String &expectedQuery, const std::vector<AnsiString> &expectedNames)
+      void AssertPositional(const SQLCommand &command, const String &expectedQuery, const std::vector<AnsiString> &expectedNames,
+                            SQLStatement::PlaceholderStyle style = SQLStatement::NumberedPlaceholders)
       {
          String actualQuery;
          std::vector<const SQLParameter *> actualParameters;
 
-         if (!SQLStatement::ToPositionalParameters(command, actualQuery, actualParameters))
+         if (!SQLStatement::ToPositionalParameters(command, actualQuery, actualParameters, style))
             throw std::logic_error(("SQLStatement::ToPositionalParameters refused [" + AnsiString(command.GetQueryString()) + "].").c_str());
 
          if (actualQuery != expectedQuery)
@@ -771,12 +786,13 @@ namespace HM
             throw std::logic_error(("SQLStatement::ToPositionalParameters: wrong parameter order for [" + AnsiString(expectedQuery) + "].").c_str());
       }
 
-      void AssertPositionalRefused(const SQLCommand &command)
+      void AssertPositionalRefused(const SQLCommand &command,
+                                   SQLStatement::PlaceholderStyle style = SQLStatement::NumberedPlaceholders)
       {
          String query;
          std::vector<const SQLParameter *> parameters;
 
-         if (SQLStatement::ToPositionalParameters(command, query, parameters))
+         if (SQLStatement::ToPositionalParameters(command, query, parameters, style))
             throw std::logic_error(("SQLStatement::ToPositionalParameters accepted a parameter inside a literal: [" +
                AnsiString(command.GetQueryString()) + "].").c_str());
       }
@@ -874,6 +890,24 @@ namespace HM
          SQLCommand escaped(_T("select * from t where a = 'it''s @A'"));
          escaped.AddParameter("@A", 1);
          AssertPositionalRefused(escaped);
+      }
+
+      // Question marks: one per occurrence, in the order they appear, so a name used twice
+      // is listed twice, and nothing else in the query changes.
+      {
+         SQLCommand command(_T("select @@IDENTITY, 'a@b' from t where a = @A and b = @B and c = @A and d = @UNKNOWN"));
+         command.AddParameter("@B", 2);
+         command.AddParameter("@A", String(_T("x@B")));
+         command.AddParameter("@UNUSED", 3);
+         AssertPositional(command, _T("select @@IDENTITY, 'a@b' from t where a = ? and b = ? and c = ? and d = @UNKNOWN"),
+                          { "@A", "@B", "@A" }, SQLStatement::QuestionMarkPlaceholders);
+      }
+
+      // A parameter inside a literal is refused with question marks too.
+      {
+         SQLCommand command(_T("select * from t where a = 'it''s @A'"));
+         command.AddParameter("@A", 1);
+         AssertPositionalRefused(command, SQLStatement::QuestionMarkPlaceholders);
       }
    }
 }
