@@ -564,92 +564,16 @@ namespace HM
       }
    }
 
-   String
-   SQLStatement::GenerateFromCommand(const SQLCommand &command)
-   {
-      // Used for a database client that takes no command parameters, so the values are
-      // written into the query as literals. PostgreSQL and MySQL through MariaDB Connector/C
-      // bind them; only MySQL through Oracle's libmysql.dll, still loaded when libmariadb.dll
-      // is missing, comes here.
-      //
-      // The query is scanned once, as written, and every parameter name is replaced where
-      // it stands. A value that has been written into the query is never scanned again.
-      // Replacing one parameter name at a time across the whole query would also replace
-      // it inside the values already written: a sender address "x@RECIPIENTADDRESS" would
-      // have the recipient written into the middle of it, quotes and all, and the quotes
-      // would end the literal and leave the rest of the recipient as SQL.
-      //
-      // A name is matched as a whole token, @ followed by letters, digits and underscores,
-      // so @ID never matches the start of @IDX. Anything else, such as @@IDENTITY or an
-      // @ in the query text that names no parameter, is copied unchanged.
-      const String queryString = command.GetQueryString();
-      const std::list<SQLParameter> &parameters = command.GetParameters();
-
-      // Indexed through std::wstring, whose operator[] takes a size_t. String overloads it
-      // for int and other types, which a size_t index makes ambiguous.
-      const std::wstring &query = queryString;
-
-      String result;
-      result.reserve(query.size());
-
-      size_t position = 0;
-      while (position < query.size())
-      {
-         if (query[position] != '@')
-         {
-            result += query[position];
-            position++;
-            continue;
-         }
-
-         size_t end = position + 1;
-         while (end < query.size() && IsParameterNameCharacter(query[end]))
-            end++;
-
-         const String token = query.substr(position, end - position);
-
-         auto parameter = std::find_if(parameters.begin(), parameters.end(),
-            [&token](const SQLParameter &candidate) { return candidate.GetName() == token; });
-
-         if (end == position + 1 || parameter == parameters.end())
-            result += token;
-         else
-         {
-            switch (parameter->GetType())
-            {
-            case SQLParameter::ParamTypeInt32:
-               result += StringParser::IntToString(parameter->GetInt32Value());
-               break;
-            case SQLParameter::ParamTypeInt64:
-               result += StringParser::IntToString(parameter->GetInt64Value());
-               break;
-            case SQLParameter::ParamTypeUnsignedInt32:
-               result += StringParser::IntToString(parameter->GetUnsignedInt32Value());
-               break;
-            case SQLParameter::ParamTypeString:
-               result += _T("'") + Escape(parameter->GetStringValue()) + _T("'");
-               break;
-            default:
-               // Left as it is, so that the query fails rather than runs with a value this
-               // function does not know how to write.
-               result += token;
-               break;
-            }
-         }
-
-         position = end;
-      }
-
-      return result;
-   }
-
    bool
    SQLStatement::ToPositionalParameters(const SQLCommand &command, String &positionalQuery,
                                         std::vector<const SQLParameter *> &orderedParameters,
                                         PlaceholderStyle style)
    {
       // For the database clients that bind parameters by position. The query is scanned once,
-      // as GenerateFromCommand does, and every parameter name is replaced by a placeholder.
+      // as written, and every parameter name is replaced by a placeholder where it stands.
+      // A name is matched as a whole token, @ followed by letters, digits and underscores, so
+      // @ID never matches the start of @IDX; anything else, such as @@IDENTITY or an @ that
+      // names no parameter, is copied unchanged.
       //
       // Numbered placeholders are PostgreSQL's $1, $2, ...: a parameter used twice gets the
       // same number both times, and the numbers follow the order the names first appear in.
@@ -752,19 +676,6 @@ namespace HM
 
    namespace
    {
-      void AssertGenerated(const SQLCommand &command, const String &expected)
-      {
-         SQLStatement statement;
-         String actual = statement.GenerateFromCommand(command);
-
-         if (actual != expected)
-         {
-            AnsiString message = "SQLStatement::GenerateFromCommand: expected [" + AnsiString(expected) +
-               "], got [" + AnsiString(actual) + "].";
-            throw std::logic_error(message.c_str());
-         }
-      }
-
       void AssertPositional(const SQLCommand &command, const String &expectedQuery, const std::vector<AnsiString> &expectedNames,
                             SQLStatement::PlaceholderStyle style = SQLStatement::NumberedPlaceholders)
       {
@@ -801,68 +712,6 @@ namespace HM
    void
    SQLStatementTester::Test()
    {
-      // The values used here contain no backslash, since Escape doubles backslashes only
-      // for some of the database types.
-
-      // Strings are quoted and escaped, numbers written as they are.
-      {
-         SQLCommand command(_T("select * from t where a = @A and b = @B and c = @C"));
-         command.AddParameter("@A", String(_T("O'Brien")));
-         command.AddParameter("@B", 5);
-         command.AddParameter("@C", (__int64) 12345678901);
-         AssertGenerated(command, _T("select * from t where a = 'O''Brien' and b = 5 and c = 12345678901"));
-      }
-
-      // A value containing the name of a parameter substituted after it stays a value.
-      // Before, the recipient was written into the sender's literal, and its own quotes
-      // ended that literal, leaving the rest of the recipient as SQL.
-      {
-         SQLCommand command(_T("select * from hm_greylisting_triplets where glsenderaddress = @SENDERADDRESS and glrecipientaddress = @RECIPIENTADDRESS"));
-         command.AddParameter("@SENDERADDRESS", String(_T("x@RECIPIENTADDRESS")));
-         command.AddParameter("@RECIPIENTADDRESS", String(_T("OR/**/1=1#@example.test")));
-         AssertGenerated(command, _T("select * from hm_greylisting_triplets where glsenderaddress = 'x@RECIPIENTADDRESS' and glrecipientaddress = 'OR/**/1=1#@example.test'"));
-      }
-
-      // The same with the parameters added the other way around, so that the value naming
-      // the other parameter is written first, and a value containing its own name.
-      {
-         SQLCommand command(_T("select @A, @B"));
-         command.AddParameter("@B", String(_T("@A' or '1'='1")));
-         command.AddParameter("@A", String(_T("@A")));
-         AssertGenerated(command, _T("select '@A', '@A'' or ''1''=''1'"));
-      }
-
-      // Names are matched as whole tokens, whatever order the parameters were added in.
-      {
-         SQLCommand command(_T("values (@ID, @IDX, @ID)"));
-         command.AddParameter("@ID", 1);
-         command.AddParameter("@IDX", 2);
-         AssertGenerated(command, _T("values (1, 2, 1)"));
-      }
-
-      // Anything that is not a parameter name is copied unchanged.
-      {
-         SQLCommand command(_T("select @@IDENTITY, @UNKNOWN, 'a@b', @"));
-         command.AddParameter("@KNOWN", 1);
-         AssertGenerated(command, _T("select @@IDENTITY, @UNKNOWN, 'a@b', @"));
-      }
-
-      // A parameter inside a literal of the query, as the PostgreSQL interval of
-      // PersistentFetchAccount once had. Written as text, it still works.
-      {
-         SQLCommand command(_T("update hm_fetchaccounts set fanexttry = current_timestamp + INTERVAL '@MINUTES minutes' where faid = @FAID"));
-         command.AddParameter("@MINUTES", 15);
-         command.AddParameter("@FAID", (__int64) 7);
-         AssertGenerated(command, _T("update hm_fetchaccounts set fanexttry = current_timestamp + INTERVAL '15 minutes' where faid = 7"));
-      }
-
-      // An empty string is an empty literal, not a missing value.
-      {
-         SQLCommand command(_T("select * from t where a = @A"));
-         command.AddParameter("@A", String(_T("")));
-         AssertGenerated(command, _T("select * from t where a = ''"));
-      }
-
       // Positional parameters: numbered in the order the names first appear, a name used
       // twice gets one position, and nothing else in the query changes.
       {
@@ -871,6 +720,17 @@ namespace HM
          command.AddParameter("@A", String(_T("x@B")));
          command.AddParameter("@UNUSED", 3);
          AssertPositional(command, _T("select @@IDENTITY, 'a@b' from t where a = $1 and b = $2 and c = $1 and d = @UNKNOWN"), { "@A", "@B" });
+      }
+
+      // Names are matched as whole tokens, whatever order the parameters were added in, and
+      // an @ that names no parameter is copied unchanged.
+      {
+         SQLCommand command(_T("values (@ID, @IDX, @ID, @@IDENTITY, @)"));
+         command.AddParameter("@IDX", 2);
+         command.AddParameter("@ID", 1);
+         AssertPositional(command, _T("values ($1, $2, $1, @@IDENTITY, @)"), { "@ID", "@IDX" });
+         AssertPositional(command, _T("values (?, ?, ?, @@IDENTITY, @)"), { "@ID", "@IDX", "@ID" },
+                          SQLStatement::QuestionMarkPlaceholders);
       }
 
       // An escaped quote does not end the literal it is in, and a literal that has ended

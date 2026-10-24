@@ -40,7 +40,7 @@ The below steps are the same for most hMailServer version. For version specific 
 8. Click Exit to return to the setup wizard
 9. Click Finish to exit the setup and start hMailAdmin.
 
-The setup installs the MySQL/MariaDB client library libmariadb.dll into the hMailServer Bin directory. If you previously placed a libmysql.dll there yourself, it is left untouched, but hMailServer now uses libmariadb.dll instead. Delete libmariadb.dll if you want hMailServer to keep using your own libmysql.dll.
+The setup installs the MySQL/MariaDB client library libmariadb.dll (MariaDB Connector/C) into the Bin directory, and the server uses only that library to connect to MySQL and MariaDB. If you previously placed a libmysql.dll there yourself, the setup leaves it untouched, but the server no longer loads it, so you can delete it. libmariadb.dll must stay: without it, the server cannot connect to a MySQL or MariaDB database.
 
 ### Upgrading multiple version steps
 

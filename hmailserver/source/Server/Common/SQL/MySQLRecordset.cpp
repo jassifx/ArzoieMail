@@ -52,8 +52,8 @@ namespace HM
       {
          hm_MYSQL *pMYSQL = pConn->GetConnection();
 
-         // A command still has its parameters only when they are to be bound (see
-         // MySQLConnection::GetSupportsCommandParameters).
+         // As in MySQLConnection::TryExecute: a command with parameters runs as a prepared
+         // statement.
          if (!command.GetParameters().empty())
          {
             MySQLStatement statement(pMYSQL);

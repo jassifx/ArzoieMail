@@ -28,16 +28,15 @@ namespace HM
    {
       String sErrMsg;
 
-      SQLCommand commandCopy = command;
-
+      // As in DALConnection::Execute: values are never written into the SQL.
       if (!pConn->GetSupportsCommandParameters() && command.GetParameters().size() > 0)
       {
-         SQLStatement statement;
-         String nonParameterQueryString = statement.GenerateFromCommand(command);
-
-         commandCopy.ClearParameters();
-         commandCopy.SetQueryString(nonParameterQueryString);
+         ErrorManager::Instance()->ReportError(ErrorManager::High, 5033, "DALRecordset::Open",
+            "The database client cannot bind command parameters, so the command was not run: " + command.GetQueryString());
+         return false;
       }
+
+      const SQLCommand &commandCopy = command;
 
       int iNoOfTries = 6;
       for (int i = 1 ; i <= iNoOfTries; i++)

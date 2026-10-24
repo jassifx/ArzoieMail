@@ -76,9 +76,8 @@ namespace HM
          // Restore a "prefer TLS, fall back to plaintext" behavior: keep using
          // TLS when the server offers it, but do not require it and do not
          // verify the server certificate (matching the previous, unencrypted
-         // default). These option enum values are MariaDB-specific, so only
-         // apply them when the MariaDB connector is loaded.
-         if (MySQLInterface::Instance()->IsMariaDB() && MySQLInterface::Instance()->p_mysql_options != 0)
+         // default). These option enum values are MariaDB Connector/C's, the
+         // only client MySQLInterface loads.
          {
             const int HM_MYSQL_OPT_SSL_VERIFY_SERVER_CERT = 21;
             const int HM_MYSQL_OPT_SSL_ENFORCE = 38;
@@ -166,12 +165,6 @@ namespace HM
       return true;
    }
 
-   bool
-   MySQLConnection::GetSupportsCommandParameters() const
-   {
-      return MySQLInterface::Instance()->SupportsPreparedStatements();
-   }
-
    DALConnection::ExecutionResult
    MySQLConnection::TryExecuteStatement_(const SQLCommand &command, String &sErrorMessage, __int64 *iInsertID, int iIgnoreErrors)
    {
@@ -211,8 +204,8 @@ namespace HM
    DALConnection::ExecutionResult
    MySQLConnection::TryExecute(const SQLCommand &command, String &sErrorMessage, __int64 *iInsertID, int iIgnoreErrors)
    {
-      // A command still has its parameters only when they are to be bound (see
-      // GetSupportsCommandParameters); otherwise DALConnection has written them into the SQL.
+      // A command with parameters runs as a prepared statement; one without, such as SET NAMES
+      // or USE, as a query.
       if (!command.GetParameters().empty())
          return TryExecuteStatement_(command, sErrorMessage, iInsertID, iIgnoreErrors);
 

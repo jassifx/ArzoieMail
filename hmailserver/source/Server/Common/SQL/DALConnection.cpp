@@ -29,16 +29,16 @@ namespace HM
    bool 
    DALConnection::Execute(const SQLCommand &command, String &sErrorMessage, __int64 *iInsertID, int iIgnoreErrors) 
    {
-      SQLCommand commandCopy = command;
-
+      // Every database client binds command parameters. Values are never written into the
+      // SQL: a client that could not bind them gets its command refused instead.
       if (!GetSupportsCommandParameters() && command.GetParameters().size() > 0)
       {
-         SQLStatement statement;
-         String nonParameterQueryString = statement.GenerateFromCommand(command);
-
-         commandCopy.ClearParameters();
-         commandCopy.SetQueryString(nonParameterQueryString);
+         sErrorMessage = "The database client cannot bind command parameters, so the command was not run: " + command.GetQueryString();
+         ErrorManager::Instance()->ReportError(ErrorManager::High, 5032, "DALConnection::Execute", sErrorMessage);
+         return false;
       }
+
+      const SQLCommand &commandCopy = command;
 
       int iNoOfTries = 6;
       for (int i = 1 ; i <= try_count_; i++)
