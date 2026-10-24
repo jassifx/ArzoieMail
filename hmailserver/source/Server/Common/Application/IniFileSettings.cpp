@@ -247,9 +247,20 @@ namespace HM
    String 
    IniFileSettings::ReadIniSettingString_(const String &sSection, const String &sKey, const String &sDefault)
    {
-      TCHAR Value[255];
-      GetPrivateProfileString( sSection, sKey, sDefault, Value, 255, GetInitializationFile() );
-      return Value;
+      // GetPrivateProfileString cuts a value off at the buffer's size and returns size - 1 when
+      // it did. The secret key and a protected password are longer than the 255 characters this
+      // once allowed, so the buffer grows until the value fits.
+      std::vector<TCHAR> value(256);
+
+      for (;;)
+      {
+         DWORD length = GetPrivateProfileString(sSection, sKey, sDefault, value.data(), (DWORD) value.size(), GetInitializationFile());
+
+         if (length < value.size() - 1 || value.size() >= 65536)
+            return String(value.data());
+
+         value.resize(value.size() * 2);
+      }
    }
 
    int 
