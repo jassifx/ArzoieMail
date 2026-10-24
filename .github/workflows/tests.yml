@@ -31,7 +31,8 @@ on:
         default: Debug
       database:
         description: 'Database the installed server runs on: internal (SQL Server Compact, what
-          a silent install sets up) or postgresql (the PostgreSQL server of the runner image).
+          a silent install sets up), postgresql (the PostgreSQL server of the runner image) or
+          mysql (the MySQL server of the runner image, on a data directory of its own).
           The MySQL and PostgreSQL connections write their command parameters into the SQL
           themselves rather than binding them, so they need runs of their own.'
         required: false
@@ -70,7 +71,7 @@ jobs:
         run: |
           # A workflow_call input is whatever the caller passes; an unknown database would
           # otherwise quietly run the tests on the internal one.
-          if ($env:DATABASE -notin @('internal', 'postgresql')) { throw "The database must be internal or postgresql, was '$env:DATABASE'." }
+          if ($env:DATABASE -notin @('internal', 'postgresql', 'mysql')) { throw "The database must be internal, postgresql or mysql, was '$env:DATABASE'." }
 
           $setup = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'installer\*.exe') | Select-Object -First 1
           if (-not $setup) { throw "The '$env:INSTALLER_ARTIFACT' artifact contains no executable." }
@@ -131,6 +132,76 @@ jobs:
           $database = $application.Database
           if ($database.DatabaseType -ne $hDBTypePostgreSQL) { throw "The server runs on database type $($database.DatabaseType), not PostgreSQL." }
           "hMailServer now runs on PostgreSQL ($($database.ServerName), database $($database.DatabaseName), version $($database.CurrentVersion))"
+
+      - name: Move the server to MySQL
+        if: inputs.database == 'mysql'
+        run: |
+          # The runner image carries a MySQL server, but no data directory to run it on. A new
+          # one, initialised without a root password, is what a run needs - whatever service or
+          # password the image may come with.
+          $mysqld = Get-ChildItem 'C:\Program Files\MySQL' -Recurse -Filter 'mysqld.exe' -ErrorAction SilentlyContinue |
+              Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $mysqld) { throw "The runner image has no MySQL server." }
+          & $mysqld.FullName --version
+
+          # The server reads only this file (--defaults-file), not whatever option file the image
+          # put where mysqld looks by default.
+          #
+          # Its own port, clear of any instance the image starts. The default authentication,
+          # caching_sha2_password, is left as it is: libmariadb carries the plugin.
+          #
+          # Without the binary log, and with the redo log flushed once a second rather than at
+          # every commit: the server writes with autocommit, so by default each write waits for
+          # two disk flushes. On the test VM a setting write took 200 ms by default and 4.5 ms
+          # like this, and API.UtilitiesTests went from 267 seconds to 26 (17 on the internal
+          # database). Durability is no concern for a database thrown away with the runner.
+          $port = 3307
+          $dataDirectory = Join-Path $env:RUNNER_TEMP 'mysql-data'
+          $optionFile = Join-Path $env:RUNNER_TEMP 'mysql.ini'
+          @(
+              '[mysqld]'
+              "datadir=$($dataDirectory -replace '\\', '/')"
+              "port=$port"
+              'skip-log-bin'
+              'innodb_flush_log_at_trx_commit=2'
+          ) | Set-Content -Path $optionFile -Encoding ascii
+
+          & $mysqld.FullName "--defaults-file=$optionFile" --initialize-insecure --console
+          if ($LASTEXITCODE -ne 0) { throw "mysqld --initialize-insecure failed with exit code $LASTEXITCODE" }
+
+          # A service, as the PostgreSQL server is. The runner ends every process a step started
+          # when the step ends, so a mysqld started here with Start-Process was gone by the time
+          # the tests ran: each test then failed in its setup after the server's connection
+          # attempts ("Can't connect to server on '127.0.0.1' (10061)") had all timed out.
+          & $mysqld.FullName --install ArzoieTestMySQL "--defaults-file=$optionFile"
+          if ($LASTEXITCODE -ne 0) { throw "mysqld --install failed with exit code $LASTEXITCODE" }
+          Start-Service ArzoieTestMySQL
+
+          $deadline = (Get-Date).AddMinutes(2)
+          while (-not (Test-NetConnection -ComputerName 127.0.0.1 -Port $port -InformationLevel Quiet -WarningAction SilentlyContinue)) {
+              if ((Get-Date) -gt $deadline) { Get-Content (Join-Path $dataDirectory '*.err'); throw "MySQL did not start listening on port $port." }
+              Start-Sleep -Seconds 2
+          }
+          "MySQL listens on port $port"
+
+          # The settings that decide how the server's writes behave, for the record.
+          $mysql = Join-Path (Split-Path $mysqld.FullName) 'mysql.exe'
+          & $mysql --no-defaults --host=127.0.0.1 "--port=$port" --user=root --table `
+              -e 'SELECT @@version, @@autocommit, @@transaction_isolation, @@innodb_lock_wait_timeout, @@sql_mode, @@lower_case_table_names, @@character_set_server'
+
+          # What DBSetup does: create the database and its tables, point hMailServer.ini at
+          # it, and have the server reconnect.
+          $application = New-Object -ComObject 'hMailServer.Application'
+          if (-not $application.Authenticate('Administrator', '')) { throw "Could not authenticate with the blank administrator password." }
+
+          $hDBTypeMySQL = 1
+          $application.Database.CreateExternalDatabase($hDBTypeMySQL, '127.0.0.1', $port, 'hmailserver', 'root', '')
+          $application.Database.SetDefaultDatabase($hDBTypeMySQL, '127.0.0.1', $port, 'hmailserver', 'root', '')
+          $application.Reinitialize()
+
+          $database = $application.Database
+          if ($database.DatabaseType -ne $hDBTypeMySQL) { throw "The server runs on database type $($database.DatabaseType), not MySQL." }
+          "hMailServer now runs on MySQL ($($database.ServerName), database $($database.DatabaseName), version $($database.CurrentVersion))"
 
       - name: Build the test solution
         env:

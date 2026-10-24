@@ -47,14 +47,25 @@ namespace RegressionTests.Shared
       {
          if (TestContext.CurrentContext.Result.FailCount > 0)
          {
+            // The console runner only prints the failures once the whole run is over. Printed
+            // here as well, a run that is cut short - a job timeout - still says why tests failed.
+            Console.WriteLine("Failure: " + TestContext.CurrentContext.Result.Message);
+            Console.WriteLine(TestContext.CurrentContext.Result.StackTrace);
+
             Console.WriteLine("hMailServer log:");
             Console.WriteLine(LogHandler.ReadCurrentDefaultLog());
             Console.WriteLine();
          }
 
-         // Deleted, so an error fails only the test that caused it.
+         // Deleted, so an error fails only the test that caused it. Printed too, for the same
+         // reason as the failure above: a failure in TearDown is only reported at the end.
          if (File.Exists(LogHandler.GetErrorLogFileName()))
-            Assert.Fail("Errors were logged during the test:" + Environment.NewLine + LogHandler.ReadAndDeleteErrorLog());
+         {
+            var errors = LogHandler.ReadAndDeleteErrorLog();
+            Console.WriteLine("Errors were logged during the test:");
+            Console.WriteLine(errors);
+            Assert.Fail("Errors were logged during the test:" + Environment.NewLine + errors);
+         }
       }
    }
 }
