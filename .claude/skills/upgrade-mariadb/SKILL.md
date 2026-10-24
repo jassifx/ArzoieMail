@@ -101,6 +101,7 @@ with the new one (`libmariadb-<old>` -> `libmariadb-<new>`) in these files:
 |------|-------------|
 | `hmailserver/source/Server/hMailServer/post-build.bat` | 1 (the `xcopy` of `libmariadb.dll`) |
 | `hmailserver/installation/hMailServer64.iss` | 1 (`MARIADB_LIBS_PATH`) |
+| `hmailserver/source/Server/hMailServer/hMailServer.vcxproj` | 2 (the include directories of `MySQLStatement.cpp`) |
 | `BUILDING.md` | 1 (the `-Version` argument in "Building MariaDB Connector/C") |
 
 Then grep the whole repo for `libmariadb-\d` and confirm the only remaining matches are the
@@ -111,7 +112,10 @@ version.
 `MySQLInterface::GetLibraryFileName_` and its 5094 error message
 (`Common/SQL/MySQLInterface.cpp`), and in the VM test runner's `TestEnvironments.json`. None of
 those are version-bearing. hMailServer resolves every entry point with `GetProcAddress`, so
-there is no header, import lib or project setting to update either.
+there is no import lib to update. The connector's headers are used by one file only,
+`Common/SQL/MySQLStatement.cpp`, for the `MYSQL_BIND` and `MYSQL_FIELD` layouts of its
+prepared statements; its include directories are the `hMailServer.vcxproj` entries above. If a
+release changes either structure, the server must be rebuilt against the new headers.
 
 ### 4. Keep build instructions current
 
@@ -138,7 +142,7 @@ is loaded with `LoadLibrary` + `GetProcAddress`, so a missing export is a runtim
 link error:
 
 ```
-powershell.exe -NoProfile -Command "$d = Get-ChildItem 'C:\Program Files*\Microsoft Visual Studio\*\*\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1; $names = & $d.FullName /nologo /exports \"$env:hMailServerLibs\libmariadb-<new>\build64\libmariadb\RelWithDebInfo\libmariadb.dll\" | ForEach-Object { if ($_ -match '^\s+\d+\s+[0-9A-F]+\s+[0-9A-F]{8}\s+(\S+)') { $matches[1] } }; 'mysql_real_connect','mysql_close','mysql_init','mysql_error','mysql_query','mysql_store_result','mysql_free_result','mysql_insert_id','mysql_errno','mysql_num_rows','mysql_fetch_row','mysql_num_fields','mysql_fetch_field_direct','mysql_get_server_version','mysql_options' | Where-Object { $names -notcontains $_ }"
+powershell.exe -NoProfile -Command "$d = Get-ChildItem 'C:\Program Files*\Microsoft Visual Studio\*\*\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1; $names = & $d.FullName /nologo /exports \"$env:hMailServerLibs\libmariadb-<new>\build64\libmariadb\RelWithDebInfo\libmariadb.dll\" | ForEach-Object { if ($_ -match '^\s+\d+\s+[0-9A-F]+\s+[0-9A-F]{8}\s+(\S+)') { $matches[1] } }; 'mysql_real_connect','mysql_close','mysql_init','mysql_error','mysql_query','mysql_store_result','mysql_free_result','mysql_insert_id','mysql_errno','mysql_num_rows','mysql_fetch_row','mysql_num_fields','mysql_fetch_field_direct','mysql_get_server_version','mysql_options','mysql_stmt_init','mysql_stmt_prepare','mysql_stmt_bind_param','mysql_stmt_execute','mysql_stmt_result_metadata','mysql_stmt_attr_set','mysql_stmt_store_result','mysql_stmt_bind_result','mysql_stmt_fetch','mysql_stmt_fetch_column','mysql_stmt_close','mysql_stmt_errno','mysql_stmt_error','mysql_stmt_insert_id' | Where-Object { $names -notcontains $_ }"
 ```
 
 It must print nothing. Finally, run the regression tests against a MySQL or MariaDB database to prove the
@@ -146,7 +150,7 @@ connector actually authenticates and queries.
 
 ## Reference: all MariaDB Connector/C touch points
 
-- **Version-pinned (edited by step 3):** `post-build.bat`, `hMailServer64.iss`, `BUILDING.md`.
+- **Version-pinned (edited by step 3):** `post-build.bat`, `hMailServer64.iss`, `hMailServer.vcxproj`, `BUILDING.md`.
 - **Build recipe (edited only if the release changes it):** `libraries\build-mariadb.ps1`,
   `BUILDING.md`.
 - **Not version-bearing (leave alone):** the `libmariadb.dll` name in `section_files_64.iss`,

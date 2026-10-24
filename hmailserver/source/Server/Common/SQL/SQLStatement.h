@@ -73,10 +73,20 @@ namespace HM
 
       String GenerateFromCommand(const SQLCommand &command);
 
+      enum PlaceholderStyle
+      {
+         // $1, $2, ... (PostgreSQL). A parameter used twice is bound once.
+         NumberedPlaceholders,
+         // ? (MySQL). Every occurrence is a placeholder of its own, bound in turn.
+         QuestionMarkPlaceholders
+      };
+
       static bool ToPositionalParameters(const SQLCommand &command, String &positionalQuery,
-                                         std::vector<const SQLParameter *> &orderedParameters);
-      // Rewrites the parameter names of the command into $1, $2, ... for a client that binds
-      // parameters by position. False if a parameter stands inside a literal of the query.
+                                         std::vector<const SQLParameter *> &orderedParameters,
+                                         PlaceholderStyle style = NumberedPlaceholders);
+      // Rewrites the parameter names of the command into placeholders for a client that binds
+      // parameters by position, and lists the parameters in the order they are to be bound.
+      // False if a parameter stands inside a literal of the query.
 
       static String GetCurrentTimestamp();
       static String GetCurrentTimestampPlusMinutes(int iMinutes);

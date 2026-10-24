@@ -5,6 +5,7 @@
 
 #include "DALRecordset.h"
 #include "MySQLInterface.h"
+#include "MySQLStatement.h"
 
 namespace HM
 {
@@ -40,10 +41,16 @@ namespace HM
 
       void Close_();
 
+      // A query's rows stay in the client's result. A prepared statement's are read into
+      // statement_rows_, and current_ points at the values of the row it is on, so that
+      // both are read the same way.
       hm_MYSQL_RES *result_;
       hm_MYSQL_ROW current_;
 
-      std::vector<AnsiString> columns_;
+      bool from_statement_;
+      MySQLStatement::Rows statement_rows_;
+      size_t next_statement_row_;
+      std::vector<char *> current_statement_row_;
 
       std::shared_ptr<ColumnPositions> column_positions_;
    };
