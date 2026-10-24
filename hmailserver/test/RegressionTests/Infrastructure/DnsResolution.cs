@@ -25,7 +25,7 @@ namespace RegressionTests.Infrastructure
          var actualServer = _utilities.GetMailServer("example@cname-test.hmailserver.com");
          var expectedServer = _utilities.GetMailServer("example@hmailserver.com");
 
-         Assert.AreEqual(expectedServer, actualServer);
+         Assert.That(actualServer, Is.EqualTo(expectedServer));
       }
 
       [Test]
@@ -36,7 +36,7 @@ namespace RegressionTests.Infrastructure
          // but many do and hMailServer has supported this historically.
          var actualServer = _utilities.GetMailServer("example@invalid.hmailserver.com");
 
-         Assert.AreEqual("", actualServer);
+         Assert.That(actualServer, Is.EqualTo(""));
       }
    }
 }

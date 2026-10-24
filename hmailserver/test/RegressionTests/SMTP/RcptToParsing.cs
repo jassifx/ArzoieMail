@@ -172,34 +172,34 @@ namespace RegressionTests.SMTP
       {
          var smtpClientSimulator = new TcpConnection();
          smtpClientSimulator.Connect(25);
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("220"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("220"), Is.True);
          smtpClientSimulator.Send("HELO test\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
          smtpClientSimulator.Send("MAIL FROM: <test@example.test>\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
 
          var result = smtpClientSimulator.SendAndReceive(command + "\r\n");
 
          smtpClientSimulator.Disconnect();
 
-         Assert.AreEqual(expectedResponse + "\r\n", result);
+         Assert.That(result, Is.EqualTo(expectedResponse + "\r\n"));
       }
 
       private void AssertValidMailRcptToCommand(string command)
       {
          var smtpClientSimulator = new TcpConnection();
          smtpClientSimulator.Connect(25);
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("220"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("220"), Is.True);
          smtpClientSimulator.Send("HELO test\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
          smtpClientSimulator.Send("MAIL FROM: <test@example.test>\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
 
          var result = smtpClientSimulator.SendAndReceive(command + "\r\n");
 
          smtpClientSimulator.Disconnect();
 
-         Assert.AreEqual("250 OK\r\n", result);
+         Assert.That(result, Is.EqualTo("250 OK\r\n"));
       }
    }
 }

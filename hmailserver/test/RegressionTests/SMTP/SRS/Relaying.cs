@@ -52,7 +52,7 @@ namespace RegressionTests.SMTP.SRS
 
             server.WaitForCompletion();
 
-            Assert.AreEqual(ExternalSender, server.RcptTos[0]);
+            Assert.That(server.RcptTos[0], Is.EqualTo(ExternalSender));
          }
       }
 
@@ -73,8 +73,8 @@ namespace RegressionTests.SMTP.SRS
          var rewritten = SrsAddress.Create(Secret, sender, _domain.Name);
          var parsed = SrsAddress.Parse(rewritten);
 
-         Assert.AreEqual("SRS0", parsed.Tag);
-         Assert.IsTrue(parsed.HasValidHash(Secret), "The address was not signed with the server's SRS secret.");
+         Assert.That(parsed.Tag, Is.EqualTo("SRS0"));
+         Assert.That(parsed.HasValidHash(Secret), Is.True, "The address was not signed with the server's SRS secret.");
 
          var crafted = "SRS1=" + parsed.Hash + "=" + parsed.Timestamp + "==" + ExternalDomain +
                        "=7g=example.org=victim@" + _domain.Name;
@@ -113,7 +113,7 @@ namespace RegressionTests.SMTP.SRS
 
             server.WaitForCompletion();
 
-            Assert.AreEqual(ExternalSender, server.RcptTos[0]);
+            Assert.That(server.RcptTos[0], Is.EqualTo(ExternalSender));
          }
       }
    }

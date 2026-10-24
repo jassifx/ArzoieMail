@@ -69,17 +69,19 @@ namespace RegressionTests.MIME
          var storedContent = File.ReadAllText(storedFilename);
          var originalContent = ToSmtpWireMessage(TestResources.MessageWithValidDkim);
 
-         StringAssert.Contains("X-Test: test-value", storedContent,
+         Assert.That(storedContent, Does.Contain("X-Test: test-value"),
             "The rule should have added the X-Test header");
 
          var originalDkim = ExtractHeaderValue(originalContent, "DKIM-Signature");
          var storedDkim = ExtractHeaderValue(storedContent, "DKIM-Signature");
-         Assert.AreEqual(originalDkim, storedDkim,
+         Assert.That(storedDkim,
+            Is.EqualTo(originalDkim),
             "DKIM-Signature header value was modified during re-serialization");
 
          var originalFrom = ExtractHeaderValue(originalContent, "From");
          var storedFrom = ExtractHeaderValue(storedContent, "From");
-         Assert.AreEqual(originalFrom, storedFrom,
+         Assert.That(storedFrom,
+            Is.EqualTo(originalFrom),
             "From header value was modified during re-serialization");
       }
 
@@ -98,12 +100,13 @@ namespace RegressionTests.MIME
          var storedContent = File.ReadAllText(storedFilename);
          var originalContent = TestResources.EmailWith_TextPlainBody_TextPlainContentType;
 
-         StringAssert.Contains("X-Test: test-value", storedContent,
+         Assert.That(storedContent, Does.Contain("X-Test: test-value"),
             "The rule should have added the X-Test header");
 
          var originalBody = ExtractBody(originalContent);
          var storedBody = ExtractBody(storedContent);
-         Assert.AreEqual(originalBody, storedBody,
+         Assert.That(storedBody,
+            Is.EqualTo(originalBody),
             "Plain-text body content was modified during re-serialization");
       }
 
@@ -123,17 +126,20 @@ namespace RegressionTests.MIME
          var originalContent = TestResources.EmailWith_TextPlainBody_TextPlainContentType;
 
          var storedSubject = ExtractHeaderValue(storedContent, "Subject");
-         Assert.AreEqual("modified-subject", storedSubject,
+         Assert.That(storedSubject,
+            Is.EqualTo("modified-subject"),
             "Subject header should contain the rule's new value, not the original raw bytes");
 
          var originalFrom = ExtractHeaderValue(originalContent, "From");
          var storedFrom = ExtractHeaderValue(storedContent, "From");
-         Assert.AreEqual(originalFrom, storedFrom,
+         Assert.That(storedFrom,
+            Is.EqualTo(originalFrom),
             "Unmodified From header must not be re-encoded during re-serialization");
 
          var originalBody = ExtractBody(originalContent);
          var storedBody = ExtractBody(storedContent);
-         Assert.AreEqual(originalBody, storedBody,
+         Assert.That(storedBody,
+            Is.EqualTo(originalBody),
             "Body must not be modified when only a header is changed");
       }
 
@@ -152,12 +158,13 @@ namespace RegressionTests.MIME
          var storedContent = File.ReadAllText(storedFilename);
          var originalContent = TestResources.EmailWith_TextPlainBody_NoContentType;
 
-         StringAssert.Contains("X-Test: test-value", storedContent,
+         Assert.That(storedContent, Does.Contain("X-Test: test-value"),
             "The rule should have added the X-Test header");
 
          var originalBody = ExtractBody(originalContent);
          var storedBody = ExtractBody(storedContent);
-         Assert.AreEqual(originalBody, storedBody,
+         Assert.That(storedBody,
+            Is.EqualTo(originalBody),
             "Body content was modified during re-serialization of a message with no Content-Type");
       }
 
@@ -176,12 +183,13 @@ namespace RegressionTests.MIME
          var storedContent = File.ReadAllText(storedFilename);
          var originalContent = TestResources.EmailWith_TextHtmlBody_TextHtmlContentType;
 
-         StringAssert.Contains("X-Test: test-value", storedContent,
+         Assert.That(storedContent, Does.Contain("X-Test: test-value"),
             "The rule should have added the X-Test header");
 
          var originalBody = ExtractBody(originalContent);
          var storedBody = ExtractBody(storedContent);
-         Assert.AreEqual(originalBody, storedBody,
+         Assert.That(storedBody,
+            Is.EqualTo(originalBody),
             "HTML body content was modified during re-serialization");
       }
 
@@ -202,14 +210,16 @@ namespace RegressionTests.MIME
 
          var originalContentType = ExtractHeaderValue(originalContent, "Content-Type");
          var storedContentType = ExtractHeaderValue(storedContent, "Content-Type");
-         Assert.AreEqual(originalContentType, storedContentType,
+         Assert.That(storedContentType,
+            Is.EqualTo(originalContentType),
             "Content-Type header (including multipart boundary) was modified during re-serialization");
 
          var originalBody = ExtractBody(originalContent);
          var storedBody = ExtractBody(storedContent);
-         Assert.AreEqual(originalBody, storedBody,
+         Assert.That(storedBody,
+            Is.EqualTo(originalBody),
             "Multipart body content was modified during re-serialization");
-         StringAssert.EndsWith("\r\n", storedContent,
+         Assert.That(storedContent, Does.EndWith("\r\n"),
             "Multipart message should retain the trailing CRLF after the closing boundary");
       }
 
@@ -226,14 +236,14 @@ namespace RegressionTests.MIME
 
          var storedFilename = account.IMAPFolders.get_ItemByName("Inbox").Messages[0].Filename;
          var storedContent = File.ReadAllText(storedFilename);
-         StringAssert.Contains("X-Test: test-value", storedContent,
+         Assert.That(storedContent, Does.Contain("X-Test: test-value"),
             "The rule should have added the X-Test header before the message is parsed again");
 
          var imapSim = new ImapClientSimulator(account.Address, "test", "INBOX");
          var result = imapSim.Fetch("1 BODYSTRUCTURE");
          imapSim.Logout();
 
-         StringAssert.Contains("A17 OK FETCH completed", result,
+         Assert.That(result, Does.Contain("A17 OK FETCH completed"),
             "The round-tripped multipart message should still be parseable over IMAP");
 
          CustomAsserts.AssertNoReportedError();

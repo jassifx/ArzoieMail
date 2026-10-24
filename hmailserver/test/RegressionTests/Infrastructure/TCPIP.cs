@@ -32,7 +32,7 @@ namespace RegressionTests.Infrastructure
          var application = SingletonProvider<TestSetup>.Instance.GetApp();
 
          var query = application.Utilities.GetMailServer("martin@23sdfakm52lvcxbmvxcbmdtapvxcpaasdf.com");
-         Assert.IsTrue(query.Length == 0);
+         Assert.That(query.Length == 0, Is.True);
       }
 
       [Test]
@@ -64,9 +64,9 @@ namespace RegressionTests.Infrastructure
 
          application.Start();
 
-         Assert.IsTrue(tcpConnection.TestConnect(2500));
-         Assert.IsTrue(tcpConnection.TestConnect(11000));
-         Assert.IsTrue(tcpConnection.TestConnect(14300));
+         Assert.That(tcpConnection.TestConnect(2500), Is.True);
+         Assert.That(tcpConnection.TestConnect(11000), Is.True);
+         Assert.That(tcpConnection.TestConnect(14300), Is.True);
 
          application.Stop();
 
@@ -78,7 +78,7 @@ namespace RegressionTests.Infrastructure
          application.Start();
 
          // Try to connect to the new port
-         Assert.IsTrue(tcpConnection.TestConnect(25000));
+         Assert.That(tcpConnection.TestConnect(25000), Is.True);
 
          application.Stop();
 
@@ -87,10 +87,10 @@ namespace RegressionTests.Infrastructure
 
          application.Start();
 
-         Assert.IsTrue(tcpConnection.TestConnect(25));
-         Assert.IsTrue(tcpConnection.TestConnect(587));
-         Assert.IsTrue(tcpConnection.TestConnect(110));
-         Assert.IsTrue(tcpConnection.TestConnect(143));
+         Assert.That(tcpConnection.TestConnect(25), Is.True);
+         Assert.That(tcpConnection.TestConnect(587), Is.True);
+         Assert.That(tcpConnection.TestConnect(110), Is.True);
+         Assert.That(tcpConnection.TestConnect(143), Is.True);
       }
 
       [Test]
@@ -105,7 +105,7 @@ namespace RegressionTests.Infrastructure
 
          var ports = application.Settings.TCPIPPorts;
 
-         Assert.AreEqual(4, ports.Count);
+         Assert.That(ports.Count, Is.EqualTo(4));
       }
    }
 }

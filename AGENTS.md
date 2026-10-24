@@ -174,7 +174,7 @@ volumes through the server and take a long time to run, so they are never run au
 them by hand when needed:
 
 ```
-nunit3-console.exe hmailserver\test\VolumeTests\bin\x64\Debug\VolumeTests.dll
+hmailserver\test\packages\nunit.consolerunner\<version>\tools\nunit3-console.exe hmailserver\test\VolumeTests\bin\x64\Debug\VolumeTests.dll
 ```
 
 `VMTestRunner.Console/` defines its runs in `TestEnvironments.json`. A run picks its suite with
@@ -238,4 +238,4 @@ The below scripts will automatically locate prerequisites. They must be run usin
 * Run `build/grant-service-control.ps1` once, elevated, to let your account start and stop the hMailServer
   service without a UAC prompt. Re-run it if the service is ever deleted and recreated.
 * Use `build/build-tests.ps1` to build the regression test solution.
-* Run the regression tests with the NUnit console runner from the restored packages, for example `hmailserver\test\RegressionTests\packages\NUnit.ConsoleRunner.<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll`. They need an installed and running hMailServer, since they drive it through its COM API.
+* Run the regression tests with the NUnit console runner from the restored packages, for example `hmailserver\test\packages\nunit.consolerunner\<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll`. They need an installed and running hMailServer, since they drive it through its COM API. The test projects target .NET 10 and NUnit 5; the package versions are pinned in `hmailserver\test\Directory.Packages.props`.

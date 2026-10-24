@@ -74,12 +74,12 @@ namespace RegressionTests.Security
             }
 
             if (usernameExpected)
-               Assert.IsTrue(text.Contains(_username) || text.Contains(EncodeBase64(_username)), text);
+               Assert.That(text.Contains(_username) || text.Contains(EncodeBase64(_username)), Is.True, text);
             else
-               Assert.IsFalse(text.Contains(_username) || text.Contains(EncodeBase64(_username)), text);
+               Assert.That(text.Contains(_username) || text.Contains(EncodeBase64(_username)), Is.False, text);
 
-            Assert.IsFalse(text.Contains(_password) || text.Contains(EncodeBase64(_password)), text);
-            Assert.IsTrue(text.Contains("***"), text);
+            Assert.That(text.Contains(_password) || text.Contains(EncodeBase64(_password)), Is.False, text);
+            Assert.That(text.Contains("***"), Is.True, text);
          }
       }
 
@@ -107,7 +107,7 @@ namespace RegressionTests.Security
       {
          var sim = new ImapClientSimulator();
          sim.Connect();
-         Assert.IsTrue(sim.Send("a01 login " + GetUsername() + " {4}").StartsWith("+"));
+         Assert.That(sim.Send("a01 login " + GetUsername() + " {4}").StartsWith("+"), Is.True);
          sim.Send(GetPassword());
          EnsureNoPassword();
       }
@@ -117,8 +117,8 @@ namespace RegressionTests.Security
       {
          var sim = new ImapClientSimulator();
          sim.Connect();
-         Assert.IsTrue(sim.Send("a01 login {" + GetUsername().Length + "} {4}").StartsWith("+"));
-         Assert.IsTrue(sim.Send(GetUsername() + " {" + GetPassword().Length + "}").StartsWith("+"));
+         Assert.That(sim.Send("a01 login {" + GetUsername().Length + "} {4}").StartsWith("+"), Is.True);
+         Assert.That(sim.Send(GetUsername() + " {" + GetPassword().Length + "}").StartsWith("+"), Is.True);
          sim.Send(GetPassword());
          EnsureNoPassword();
       }
@@ -170,7 +170,7 @@ namespace RegressionTests.Security
             fa.Delete();
 
             var downloadedMessage = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
-            StringAssert.Contains("Hello!", downloadedMessage);
+            Assert.That(downloadedMessage, Does.Contain("Hello!"));
 
             EnsureNoPassword();
          }
@@ -189,7 +189,7 @@ namespace RegressionTests.Security
       {
          var account1 = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
-         Assert.AreEqual(0, _status.UndeliveredMessages.Length);
+         Assert.That(_status.UndeliveredMessages.Length, Is.EqualTo(0));
 
          // No valid recipients...
          var deliveryResults = new Dictionary<string, int>();
@@ -241,16 +241,16 @@ namespace RegressionTests.Security
 
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
          sock.Send("EHLO test.com\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
 
          var base64EncodedUsername = EncodeBase64(GetUsername());
          sock.Send("AUTH LOGIN " + base64EncodedUsername + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("334"));
+         Assert.That(sock.Receive().StartsWith("334"), Is.True);
 
          sock.Send(EncodeBase64(GetPassword()) + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("535"));
+         Assert.That(sock.Receive().StartsWith("535"), Is.True);
          EnsureNoPassword();
       }
 
@@ -261,16 +261,16 @@ namespace RegressionTests.Security
 
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
          sock.Send("EHLO test.com\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
          sock.Send("AUTH PLAIN\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("334"));
+         Assert.That(sock.Receive().StartsWith("334"), Is.True);
 
          var str = "\t" + GetUsername() + "\t" + GetPassword();
 
          sock.Send(EncodeBase64(str) + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("535"));
+         Assert.That(sock.Receive().StartsWith("535"), Is.True);
          EnsureNoPassword();
       }
 
@@ -281,11 +281,11 @@ namespace RegressionTests.Security
 
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
          sock.Send("EHLO test.com\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
          sock.Send("AUTH PLAIN 77+9dXNlcm5hbWVAZG9tYWluLmNvbe+/vVBAc3N3b3Jk\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("535"));
+         Assert.That(sock.Receive().StartsWith("535"), Is.True);
 
          EnsureNoPassword(false);
       }
@@ -298,18 +298,18 @@ namespace RegressionTests.Security
 
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
          sock.Send("EHLO test.com\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
          sock.Send("AUTH PLAIN\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("334"));
+         Assert.That(sock.Receive().StartsWith("334"), Is.True);
 
          var str = GetUsername() + "\0" + GetUsername() + "\0" + GetPassword();
 
          sock.Send(EncodeBase64(str) + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("535"));
+         Assert.That(sock.Receive().StartsWith("535"), Is.True);
 
-         Assert.IsTrue(LogHandler.DefaultLogContains("RECEIVED: " + EncodeBase64(GetUsername()) + " ***"));
+         Assert.That(LogHandler.DefaultLogContains("RECEIVED: " + EncodeBase64(GetUsername()) + " ***"), Is.True);
          EnsureNoPassword();
       }
 
@@ -321,16 +321,16 @@ namespace RegressionTests.Security
 
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
          sock.Send("EHLO test.com\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
 
          var str = GetUsername() + "\0" + GetUsername() + "\0" + GetPassword();
 
          sock.Send("AUTH PLAIN " + EncodeBase64(str) + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("535"));
+         Assert.That(sock.Receive().StartsWith("535"), Is.True);
 
-         Assert.IsTrue(LogHandler.DefaultLogContains("RECEIVED: AUTH PLAIN " + EncodeBase64(GetUsername()) + " ***"));
+         Assert.That(LogHandler.DefaultLogContains("RECEIVED: AUTH PLAIN " + EncodeBase64(GetUsername()) + " ***"), Is.True);
          EnsureNoPassword();
       }
 
@@ -342,11 +342,11 @@ namespace RegressionTests.Security
 
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
 
          var credentials = EncodeBase64("\0" + GetUsername() + "\0" + GetPassword());
          sock.Send("AUTH PLAIN " + credentials + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("503"));
+         Assert.That(sock.Receive().StartsWith("503"), Is.True);
 
          EnsureCredentialsNotLogged(sock, credentials);
       }
@@ -389,11 +389,11 @@ namespace RegressionTests.Security
 
          var sock = ConnectAndSayHello();
          sock.Send("AUTH PLAIN\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("504"));
+         Assert.That(sock.Receive().StartsWith("504"), Is.True);
 
          var credentials = EncodeBase64("\0" + GetUsername() + "\0" + GetPassword());
          sock.Send(credentials + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("503"));
+         Assert.That(sock.Receive().StartsWith("503"), Is.True);
 
          EnsureCredentialsNotLogged(sock, credentials);
       }
@@ -404,23 +404,23 @@ namespace RegressionTests.Security
       {
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
 
          // AUTH is refused before EHLO.
          sock.Send("AUTH LOGIN\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("503"));
+         Assert.That(sock.Receive().StartsWith("503"), Is.True);
 
          sock.Send(EncodeBase64(GetUsername()) + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("503"));
+         Assert.That(sock.Receive().StartsWith("503"), Is.True);
 
          var credentials = EncodeBase64(GetPassword());
          sock.Send(credentials + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("503"));
+         Assert.That(sock.Receive().StartsWith("503"), Is.True);
 
          EnsureCredentialsNotLogged(sock, credentials);
 
          // The user name is not secret, so it is logged, as for an accepted AUTH LOGIN.
-         Assert.IsTrue(LogHandler.DefaultLogContains("RECEIVED: " + EncodeBase64(GetUsername())));
+         Assert.That(LogHandler.DefaultLogContains("RECEIVED: " + EncodeBase64(GetUsername())), Is.True);
       }
 
       [Test]
@@ -429,16 +429,16 @@ namespace RegressionTests.Security
       {
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
 
          // AUTH is refused before EHLO.
          sock.Send("AUTH LOGIN " + EncodeBase64(GetUsername()) + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("503"));
+         Assert.That(sock.Receive().StartsWith("503"), Is.True);
 
          // The user name was on the AUTH line, so the next line is the password.
          var credentials = EncodeBase64(GetPassword());
          sock.Send(credentials + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("503"));
+         Assert.That(sock.Receive().StartsWith("503"), Is.True);
 
          EnsureCredentialsNotLogged(sock, credentials);
       }
@@ -450,23 +450,23 @@ namespace RegressionTests.Security
          var sock = ConnectAndSayHello();
 
          sock.Send("XFOO\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("503"));
+         Assert.That(sock.Receive().StartsWith("503"), Is.True);
 
          sock.Send("NOOP\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("RECEIVED: NOOP"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("RECEIVED: NOOP"), Is.True);
 
          var log = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsTrue(log.Contains("RECEIVED: XFOO"), log);
+         Assert.That(log.Contains("RECEIVED: XFOO"), Is.True, log);
       }
 
       private TcpConnection ConnectAndSayHello()
       {
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
          sock.Send("EHLO test.com\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
          return sock;
       }
 
@@ -474,12 +474,12 @@ namespace RegressionTests.Security
       {
          // Wait until the commands sent so far have been logged.
          sock.Send("NOOP\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("RECEIVED: NOOP"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("RECEIVED: NOOP"), Is.True);
 
          var log = LogHandler.ReadCurrentDefaultLog();
-         Assert.IsFalse(log.Contains(credentials), log);
-         Assert.IsFalse(log.Contains(GetPassword()), log);
+         Assert.That(log.Contains(credentials), Is.False, log);
+         Assert.That(log.Contains(GetPassword()), Is.False, log);
       }
    }
 }

@@ -19,8 +19,8 @@ namespace RegressionTests.IMAP
          // so a brand-new account should only get INBOX.
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "specialuse11@example.test", "test");
 
-         Assert.AreEqual(1, account.IMAPFolders.Count);
-         Assert.AreEqual("INBOX", account.IMAPFolders[0].Name);
+         Assert.That(account.IMAPFolders.Count, Is.EqualTo(1));
+         Assert.That(account.IMAPFolders[0].Name, Is.EqualTo("INBOX"));
       }
 
       [Test]
@@ -31,10 +31,10 @@ namespace RegressionTests.IMAP
 
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "specialuse12@example.test", "test");
 
-         Assert.AreEqual(eSpecialUse.eSUSent, account.IMAPFolders.get_ItemByName("Sent").SpecialUse);
-         Assert.AreEqual(eSpecialUse.eSUDrafts, account.IMAPFolders.get_ItemByName("Drafts").SpecialUse);
-         Assert.AreEqual(eSpecialUse.eSUTrash, account.IMAPFolders.get_ItemByName("Trash").SpecialUse);
-         Assert.AreEqual(eSpecialUse.eSUJunk, account.IMAPFolders.get_ItemByName("Junk").SpecialUse);
+         Assert.That(account.IMAPFolders.get_ItemByName("Sent").SpecialUse, Is.EqualTo(eSpecialUse.eSUSent));
+         Assert.That(account.IMAPFolders.get_ItemByName("Drafts").SpecialUse, Is.EqualTo(eSpecialUse.eSUDrafts));
+         Assert.That(account.IMAPFolders.get_ItemByName("Trash").SpecialUse, Is.EqualTo(eSpecialUse.eSUTrash));
+         Assert.That(account.IMAPFolders.get_ItemByName("Junk").SpecialUse, Is.EqualTo(eSpecialUse.eSUJunk));
       }
 
       [Test]
@@ -45,8 +45,8 @@ namespace RegressionTests.IMAP
 
          var capabilities = simulator.GetCapabilities();
 
-         Assert.IsTrue(capabilities.Contains("SPECIAL-USE"));
-         Assert.IsTrue(capabilities.Contains("CREATE-SPECIAL-USE"));
+         Assert.That(capabilities.Contains("SPECIAL-USE"), Is.True);
+         Assert.That(capabilities.Contains("CREATE-SPECIAL-USE"), Is.True);
 
          simulator.Disconnect();
       }
@@ -69,8 +69,8 @@ namespace RegressionTests.IMAP
 
          var result = simulator.List();
 
-         Assert.IsTrue(result.Contains("\\Sent"));
-         Assert.IsTrue(result.Contains("Verzonden"));
+         Assert.That(result.Contains("\\Sent"), Is.True);
+         Assert.That(result.Contains("Verzonden"), Is.True);
 
          simulator.Disconnect();
       }
@@ -89,7 +89,7 @@ namespace RegressionTests.IMAP
          var reloadedAccount = _domain.Accounts.get_ItemByDBID(account.ID);
          var reloadedFolder = reloadedAccount.IMAPFolders.get_ItemByName("Papierkorb");
 
-         Assert.AreEqual(eSpecialUse.eSUTrash, reloadedFolder.SpecialUse);
+         Assert.That(reloadedFolder.SpecialUse, Is.EqualTo(eSpecialUse.eSUTrash));
       }
 
       [Test]
@@ -107,8 +107,8 @@ namespace RegressionTests.IMAP
 
          var result = simulator.List();
 
-         Assert.IsTrue(result.Contains("\\Drafts"));
-         Assert.IsTrue(result.Contains("\\Trash"));
+         Assert.That(result.Contains("\\Drafts"), Is.True);
+         Assert.That(result.Contains("\\Trash"), Is.True);
 
          simulator.Disconnect();
       }
@@ -123,11 +123,11 @@ namespace RegressionTests.IMAP
          simulator.Logon(account.Address, "test");
 
          var createResult = simulator.Send("A01 CREATE \"Archive\" (USE (\\Archive))");
-         Assert.IsTrue(createResult.Contains("A01 OK"));
+         Assert.That(createResult.Contains("A01 OK"), Is.True);
 
          var listResult = simulator.List();
-         Assert.IsTrue(listResult.Contains("\\Archive"));
-         Assert.IsTrue(listResult.Contains("Archive"));
+         Assert.That(listResult.Contains("\\Archive"), Is.True);
+         Assert.That(listResult.Contains("Archive"), Is.True);
 
          simulator.Disconnect();
       }
@@ -142,11 +142,11 @@ namespace RegressionTests.IMAP
          simulator.Logon(account.Address, "test");
 
          var firstCreateResult = simulator.Send("A01 CREATE \"Archive1\" (USE (\\Archive))");
-         Assert.IsTrue(firstCreateResult.Contains("A01 OK"));
+         Assert.That(firstCreateResult.Contains("A01 OK"), Is.True);
 
          var secondCreateResult = simulator.Send("A02 CREATE \"Archive2\" (USE (\\Archive))");
-         Assert.IsTrue(secondCreateResult.Contains("A02 NO"));
-         Assert.IsTrue(secondCreateResult.Contains("USEATTR"));
+         Assert.That(secondCreateResult.Contains("A02 NO"), Is.True);
+         Assert.That(secondCreateResult.Contains("USEATTR"), Is.True);
 
          simulator.Disconnect();
       }
@@ -164,8 +164,8 @@ namespace RegressionTests.IMAP
          simulator.Logon(account.Address, "test");
 
          var createResult = simulator.Send("A01 CREATE \"Bogus\" (USE (\\NotARealAttribute))");
-         Assert.IsTrue(createResult.Contains("A01 NO"));
-         Assert.IsTrue(createResult.Contains("USEATTR"));
+         Assert.That(createResult.Contains("A01 NO"), Is.True);
+         Assert.That(createResult.Contains("USEATTR"), Is.True);
 
          simulator.Disconnect();
       }
@@ -183,8 +183,8 @@ namespace RegressionTests.IMAP
          simulator.Logon(account.Address, "test");
 
          var createResult = simulator.Send("A01 CREATE \"AllMail\" (USE (\\All))");
-         Assert.IsTrue(createResult.Contains("A01 NO"));
-         Assert.IsTrue(createResult.Contains("USEATTR"));
+         Assert.That(createResult.Contains("A01 NO"), Is.True);
+         Assert.That(createResult.Contains("USEATTR"), Is.True);
 
          simulator.Disconnect();
       }
@@ -201,8 +201,8 @@ namespace RegressionTests.IMAP
          simulator.Logon(account.Address, "test");
 
          var createResult = simulator.Send("A01 CREATE \"Starred\" (USE (\\Flagged))");
-         Assert.IsTrue(createResult.Contains("A01 NO"));
-         Assert.IsTrue(createResult.Contains("USEATTR"));
+         Assert.That(createResult.Contains("A01 NO"), Is.True);
+         Assert.That(createResult.Contains("USEATTR"), Is.True);
 
          simulator.Disconnect();
       }
@@ -225,8 +225,8 @@ namespace RegressionTests.IMAP
 
          var result = simulator.Send("A01 LIST \"\" \"*\" RETURN (SPECIAL-USE)");
 
-         Assert.IsTrue(result.Contains("A01 OK"), "Expected extended LIST with RETURN (SPECIAL-USE) to succeed. Result: " + result);
-         Assert.IsTrue(result.Contains("\\Sent"));
+         Assert.That(result.Contains("A01 OK"), Is.True, "Expected extended LIST with RETURN (SPECIAL-USE) to succeed. Result: " + result);
+         Assert.That(result.Contains("\\Sent"), Is.True);
 
          simulator.Disconnect();
       }
@@ -250,9 +250,9 @@ namespace RegressionTests.IMAP
 
          var result = simulator.Send("A01 LIST (SPECIAL-USE) \"\" \"*\"");
 
-         Assert.IsTrue(result.Contains("A01 OK"), "Expected extended LIST with SPECIAL-USE selection option to succeed. Result: " + result);
-         Assert.IsTrue(result.Contains("Trash"));
-         Assert.IsFalse(result.Contains("NotSpecial"));
+         Assert.That(result.Contains("A01 OK"), Is.True, "Expected extended LIST with SPECIAL-USE selection option to succeed. Result: " + result);
+         Assert.That(result.Contains("Trash"), Is.True);
+         Assert.That(result.Contains("NotSpecial"), Is.False);
 
          simulator.Disconnect();
       }
@@ -279,15 +279,15 @@ namespace RegressionTests.IMAP
 
          var reloadedAccount = _domain.Accounts.get_ItemByDBID(account.ID);
 
-         Assert.IsNotNull(reloadedAccount.IMAPFolders.get_ItemByName("INBOX"));
+         Assert.That(reloadedAccount.IMAPFolders.get_ItemByName("INBOX"), Is.Not.Null);
 
          var reloadedSent = reloadedAccount.IMAPFolders.get_ItemByName("Sent");
-         Assert.IsNotNull(reloadedSent, "Expected the Sent folder to survive emptying the account.");
-         Assert.AreEqual(eSpecialUse.eSUSent, reloadedSent.SpecialUse);
+         Assert.That(reloadedSent, Is.Not.Null, "Expected the Sent folder to survive emptying the account.");
+         Assert.That(reloadedSent.SpecialUse, Is.EqualTo(eSpecialUse.eSUSent));
 
          var reloadedTrash = reloadedAccount.IMAPFolders.get_ItemByName("Trash");
-         Assert.IsNotNull(reloadedTrash, "Expected the Trash folder to survive emptying the account.");
-         Assert.AreEqual(eSpecialUse.eSUTrash, reloadedTrash.SpecialUse);
+         Assert.That(reloadedTrash, Is.Not.Null, "Expected the Trash folder to survive emptying the account.");
+         Assert.That(reloadedTrash.SpecialUse, Is.EqualTo(eSpecialUse.eSUTrash));
 
          Assert.Throws<COMException>(() => reloadedAccount.IMAPFolders.get_ItemByName("NotSpecial"), "Expected the non-special-use folder to be deleted.");
       }
@@ -312,8 +312,8 @@ namespace RegressionTests.IMAP
          var reloadedInbox = reloadedAccount.IMAPFolders.get_ItemByName("INBOX");
          var reloadedArchive = reloadedInbox.SubFolders.get_ItemByName("Archive");
 
-         Assert.IsNotNull(reloadedArchive, "Expected the nested special-use folder to survive emptying the account.");
-         Assert.AreEqual(eSpecialUse.eSUArchive, reloadedArchive.SpecialUse);
+         Assert.That(reloadedArchive, Is.Not.Null, "Expected the nested special-use folder to survive emptying the account.");
+         Assert.That(reloadedArchive.SpecialUse, Is.EqualTo(eSpecialUse.eSUArchive));
       }
 
       [Test]
@@ -410,7 +410,7 @@ namespace RegressionTests.IMAP
          simulator.Connect();
          simulator.Logon(account.Address, "test");
 
-         Assert.IsTrue(simulator.DeleteFolder("Archive"));
+         Assert.That(simulator.DeleteFolder("Archive"), Is.True);
 
          simulator.Disconnect();
 
@@ -454,7 +454,8 @@ namespace RegressionTests.IMAP
          simulator.Connect();
          simulator.Logon(account.Address, "test");
 
-         Assert.IsFalse(simulator.DeleteFolder("Inbox"),
+         Assert.That(simulator.DeleteFolder("Inbox"),
+            Is.False,
             "Expected the IMAP DELETE command to reject a request to delete the Inbox.");
 
          simulator.Disconnect();

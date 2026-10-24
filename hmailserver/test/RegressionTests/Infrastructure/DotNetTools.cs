@@ -20,7 +20,7 @@ namespace RegressionTests.Infrastructure
       private static string GetBinDirectory()
       {
          var processes = Process.GetProcessesByName("hmailserver");
-         Assert.AreEqual(1, processes.Length, "Expected exactly one running hMailServer.exe.");
+         Assert.That(processes.Length, Is.EqualTo(1), "Expected exactly one running hMailServer.exe.");
 
          return Path.GetDirectoryName(processes[0].MainModule.FileName);
       }
@@ -35,7 +35,7 @@ namespace RegressionTests.Infrastructure
          var bin = GetBinDirectory();
 
          foreach (var suffix in new[] { ".exe", ".dll", ".runtimeconfig.json", ".deps.json" })
-            Assert.IsTrue(File.Exists(Path.Combine(bin, tool + suffix)), tool + suffix + " is missing from " + bin);
+            Assert.That(File.Exists(Path.Combine(bin, tool + suffix)), Is.True, tool + suffix + " is missing from " + bin);
       }
 
       [TestCase("hMailAdmin")]
@@ -47,14 +47,14 @@ namespace RegressionTests.Infrastructure
       {
          var runtimeConfig = File.ReadAllText(Path.Combine(GetBinDirectory(), tool + ".runtimeconfig.json"));
 
-         StringAssert.IsMatch("\"name\"\\s*:\\s*\"Microsoft.WindowsDesktop.App\"\\s*,\\s*\"version\"\\s*:\\s*\"10\\.", runtimeConfig);
+         Assert.That(runtimeConfig, Does.Match("\"name\"\\s*:\\s*\"Microsoft.WindowsDesktop.App\"\\s*,\\s*\"version\"\\s*:\\s*\"10\\."));
       }
 
       [Test]
       [Description("The .NET Framework configuration files of earlier versions are removed on upgrade")]
       public void NoDotNetFrameworkConfigFilesShouldRemain()
       {
-         CollectionAssert.IsEmpty(Directory.GetFiles(GetBinDirectory(), "*.exe.config").Select(Path.GetFileName).ToList());
+         Assert.That(Directory.GetFiles(GetBinDirectory(), "*.exe.config").Select(Path.GetFileName).ToList(), Is.Empty);
       }
 
       [Test]
@@ -69,7 +69,8 @@ namespace RegressionTests.Infrastructure
             ? Directory.GetDirectories(frameworkDirectory).Select(Path.GetFileName).ToList()
             : new System.Collections.Generic.List<string>();
 
-         Assert.IsTrue(versions.Any(v => Regex.IsMatch(v, @"^10\.")),
+         Assert.That(versions.Any(v => Regex.IsMatch(v, @"^10\.")),
+            Is.True,
             "No .NET 10 Desktop Runtime in " + frameworkDirectory + ". Found: " + string.Join(", ", versions));
       }
 
@@ -83,7 +84,8 @@ namespace RegressionTests.Infrastructure
             if (key == null)
                Assert.Inconclusive("The .NET Desktop Runtime here was not installed by a .NET installer, so it is not registered.");
 
-            Assert.IsTrue(key.GetValueNames().Any(v => Regex.IsMatch(v, @"^10\.")),
+            Assert.That(key.GetValueNames().Any(v => Regex.IsMatch(v, @"^10\.")),
+               Is.True,
                "No .NET 10 Desktop Runtime is registered. Found: " + string.Join(", ", key.GetValueNames()));
          }
       }

@@ -91,7 +91,7 @@ namespace RegressionTests.Stress.IMAP
          const int copiesPerThread = 40;
 
          var setup = Connect("setup");
-         Assert.IsTrue(TrackedImapSession.IsOk(setup.Command("CREATE \"Target\"")));
+         Assert.That(TrackedImapSession.IsOk(setup.Command("CREATE \"Target\"")), Is.True);
          setup.Disconnect();
 
          var sources = Preload("INBOX", 40);
@@ -129,24 +129,25 @@ namespace RegressionTests.Stress.IMAP
          })).ToArray();
 
          RunWorkers(failures, workers);
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures.Take(20)));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures.Take(20)));
 
          var destinations = copies.SelectMany(copy => copy.Destination).ToList();
-         CollectionAssert.AllItemsAreUnique(destinations, "Two COPY commands reported the same destination UID.");
+         Assert.That(destinations, Is.Unique, "Two COPY commands reported the same destination UID.");
 
          var reader = Connect("reader");
          reader.Select("Target");
          var actual = FetchMessageIds(reader, "1:*");
          reader.Disconnect();
 
-         Assert.AreEqual(destinations.Count, actual.Count, "Target holds a different number of messages than reported.");
+         Assert.That(actual.Count, Is.EqualTo(destinations.Count), "Target holds a different number of messages than reported.");
 
          foreach (var copy in copies)
          {
             for (var i = 0; i < copy.Source.Count; i++)
             {
-               Assert.IsTrue(actual.ContainsKey(copy.Destination[i]), "Destination UID " + copy.Destination[i] + " missing.");
-               Assert.AreEqual(sources[copy.Source[i]], actual[copy.Destination[i]],
+               Assert.That(actual.ContainsKey(copy.Destination[i]), Is.True, "Destination UID " + copy.Destination[i] + " missing.");
+               Assert.That(actual[copy.Destination[i]],
+                  Is.EqualTo(sources[copy.Source[i]]),
                   "Destination UID " + copy.Destination[i] + " holds the wrong message.");
             }
          }
@@ -162,7 +163,7 @@ namespace RegressionTests.Stress.IMAP
          const int clientCount = 6;
 
          var setup = Connect("setup");
-         Assert.IsTrue(TrackedImapSession.IsOk(setup.Command("CREATE \"SharedDrafts\"")));
+         Assert.That(TrackedImapSession.IsOk(setup.Command("CREATE \"SharedDrafts\"")), Is.True);
          setup.Disconnect();
 
          var failures = new List<string>();
@@ -233,15 +234,15 @@ namespace RegressionTests.Stress.IMAP
 
          observer.Command("NOOP");
          AddViolations(failures, observer);
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures.Take(20)));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures.Take(20)));
 
-         CollectionAssert.AreEqual(expected, UidSearchAll(observer), "Observer's view did not converge.");
-         Assert.AreEqual(expected.Count, observer.KnownCount);
+         Assert.That(UidSearchAll(observer), Is.EqualTo(expected).AsCollection, "Observer's view did not converge.");
+         Assert.That(observer.KnownCount, Is.EqualTo(expected.Count));
          observer.Disconnect();
 
          var reader = Connect("reader");
          reader.Select("SharedDrafts");
-         CollectionAssert.AreEqual(expected, UidSearchAll(reader));
+         Assert.That(UidSearchAll(reader), Is.EqualTo(expected).AsCollection);
          reader.Disconnect();
 
          CustomAsserts.AssertNoReportedError();
@@ -290,11 +291,11 @@ namespace RegressionTests.Stress.IMAP
             session.Disconnect();
          }
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures.Take(20)));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures.Take(20)));
 
          var reader = Connect("reader");
          reader.Select("INBOX");
-         Assert.AreEqual(0, reader.KnownCount);
+         Assert.That(reader.KnownCount, Is.EqualTo(0));
          reader.Disconnect();
 
          CustomAsserts.AssertNoReportedError();
@@ -306,7 +307,7 @@ namespace RegressionTests.Stress.IMAP
       public void MixedWorkloadKeepsEverySessionConsistent()
       {
          var setup = Connect("setup");
-         Assert.IsTrue(TrackedImapSession.IsOk(setup.Command("CREATE \"Mixed\"")));
+         Assert.That(TrackedImapSession.IsOk(setup.Command("CREATE \"Mixed\"")), Is.True);
          setup.Disconnect();
 
          Preload("INBOX", 20);
@@ -437,7 +438,7 @@ namespace RegressionTests.Stress.IMAP
             observer.Disconnect();
          }
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures.Take(30)));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures.Take(30)));
          CustomAsserts.AssertNoReportedError();
       }
 
@@ -449,7 +450,7 @@ namespace RegressionTests.Stress.IMAP
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "quota@example.test", Password, 3);
 
          var setup = new TrackedImapSession(account.Address, Password, "setup");
-         Assert.IsTrue(TrackedImapSession.IsOk(setup.Command("CREATE \"Target\"")));
+         Assert.That(TrackedImapSession.IsOk(setup.Command("CREATE \"Target\"")), Is.True);
          var body = string.Concat(Enumerable.Repeat(new string('x', 98) + "\r\n", 4000));
          for (var i = 0; i < 2; i++)
             AssertAppendUid(setup.Append("INBOX", CreateMessage("big" + i + "@example.test", body)));
@@ -533,8 +534,8 @@ namespace RegressionTests.Stress.IMAP
          if (lost.Any())
             failures.Add("Reported destination UIDs that vanished without being expunged: " + string.Join(",", lost));
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures.Take(20)));
-         Assert.Greater(no, 0, "Quota never stopped a COPY, so rollback was not exercised.");
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures.Take(20)));
+         Assert.That(no, Is.GreaterThan(0), "Quota never stopped a COPY, so rollback was not exercised.");
          CustomAsserts.AssertNoReportedError();
       }
 
@@ -545,7 +546,7 @@ namespace RegressionTests.Stress.IMAP
          const int iterations = 3000;
 
          var setup = Connect("setup");
-         Assert.IsTrue(TrackedImapSession.IsOk(setup.Command("CREATE \"FuzzTarget\"")));
+         Assert.That(TrackedImapSession.IsOk(setup.Command("CREATE \"FuzzTarget\"")), Is.True);
          setup.Disconnect();
 
          Preload("INBOX", 30);
@@ -555,7 +556,7 @@ namespace RegressionTests.Stress.IMAP
 
          // Gaps between the UIDs.
          session.Command("UID STORE 3,7:9,20,30 +FLAGS.SILENT (\\Deleted)");
-         Assert.IsTrue(TrackedImapSession.IsOk(session.Command("UID EXPUNGE 1:*")));
+         Assert.That(TrackedImapSession.IsOk(session.Command("UID EXPUNGE 1:*")), Is.True);
          var uids = UidSearchAll(session);
 
          var random = new Random(4242);
@@ -604,7 +605,7 @@ namespace RegressionTests.Stress.IMAP
          session.AssertNoViolations();
          session.Disconnect();
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures));
          CustomAsserts.AssertNoReportedError();
       }
 
@@ -618,9 +619,9 @@ namespace RegressionTests.Stress.IMAP
          for (var i = 0; i < messageCount; i++)
             session.Simulator.SendSingleCommandWithLiteral("P01 APPEND INBOX (\\Deleted) {4}", "ABCD");
 
-         Assert.IsTrue(TrackedImapSession.IsOk(session.Command("CREATE \"Target\"")));
+         Assert.That(TrackedImapSession.IsOk(session.Command("CREATE \"Target\"")), Is.True);
          session.Select("INBOX");
-         Assert.AreEqual(messageCount, session.KnownCount);
+         Assert.That(session.KnownCount, Is.EqualTo(messageCount));
 
          var set = string.Join(",", Enumerable.Range(0, parts).Select(i => (i * 2 + 1).ToString()));
          TestContext.WriteLine("Set is {0} characters.", set.Length);
@@ -632,11 +633,11 @@ namespace RegressionTests.Stress.IMAP
             watch.Stop();
 
             TestContext.WriteLine("{0}: {1} ms", command.Substring(0, 10), watch.ElapsedMilliseconds);
-            Assert.IsTrue(TrackedImapSession.IsOk(response), Trim(response));
-            Assert.Less(watch.Elapsed, TimeSpan.FromSeconds(20), command.Substring(0, 10));
+            Assert.That(TrackedImapSession.IsOk(response), Is.True, Trim(response));
+            Assert.That(watch.Elapsed, Is.LessThan(TimeSpan.FromSeconds(20)), command.Substring(0, 10));
          }
 
-         Assert.AreEqual(messageCount - parts, session.KnownCount);
+         Assert.That(session.KnownCount, Is.EqualTo(messageCount - parts));
          session.AssertNoViolations();
          session.Disconnect();
       }
@@ -670,13 +671,13 @@ namespace RegressionTests.Stress.IMAP
                var response = session.Command(prefix + set + " (UID)");
                watch.Stop();
 
-               Assert.IsTrue(Regex.IsMatch(response, @"^T\d{5} (OK|NO|BAD)", RegexOptions.Multiline), Trim(response));
-               Assert.Less(watch.Elapsed, TimeSpan.FromSeconds(20), prefix + Trim(set));
+               Assert.That(Regex.IsMatch(response, @"^T\d{5} (OK|NO|BAD)", RegexOptions.Multiline), Is.True, Trim(response));
+               Assert.That(watch.Elapsed, Is.LessThan(TimeSpan.FromSeconds(20)), prefix + Trim(set));
             }
          }
 
          // The server is still alive and the messages are intact.
-         CollectionAssert.AreEqual(new[] {1L, 2L, 3L, 4L, 5L}, UidSearchAll(session));
+         Assert.That(UidSearchAll(session), Is.EqualTo(new[] { 1L, 2L, 3L, 4L, 5L }).AsCollection);
          session.AssertNoViolations();
          session.Disconnect();
 

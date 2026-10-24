@@ -16,7 +16,7 @@ namespace RegressionTests.Infrastructure.Persistence
       {
          var ex = Assert.Throws<COMException>(() =>
             _application.Utilities.PerformMaintenance((eMaintenanceOperation)234));
-         StringAssert.Contains("Unknown maintenance operation.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Unknown maintenance operation."));
       }
 
       [Test]

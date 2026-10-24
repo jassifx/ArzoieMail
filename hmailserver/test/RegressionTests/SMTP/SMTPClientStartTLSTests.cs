@@ -45,9 +45,9 @@ namespace RegressionTests.SMTP
 
             CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
-            Assert.That(server.MessageData, Is.Not.Null.Or.Empty);
+            Assert.That(server.MessageData, Is.Not.Null.And.Not.Empty);
 
-            Assert.IsTrue(LogHandler.DefaultLogContains("220 Ready to start TLS"));
+            Assert.That(LogHandler.DefaultLogContains("220 Ready to start TLS"), Is.True);
          }
       }
 
@@ -76,9 +76,9 @@ namespace RegressionTests.SMTP
 
             CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
-            Assert.That(server.MessageData, Is.Not.Null.Or.Empty);
+            Assert.That(server.MessageData, Is.Not.Null.And.Not.Empty);
 
-            Assert.IsTrue(LogHandler.DefaultLogDoesNotContain("220 Ready to start TLS"));
+            Assert.That(LogHandler.DefaultLogDoesNotContain("220 Ready to start TLS"), Is.True);
          }
       }
 
@@ -107,9 +107,9 @@ namespace RegressionTests.SMTP
 
             CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
-            Assert.That(server.MessageData, Is.Not.Null.Or.Empty);
+            Assert.That(server.MessageData, Is.Not.Null.And.Not.Empty);
 
-            Assert.IsTrue(LogHandler.DefaultLogDoesNotContain("220 Ready to start TLS"));
+            Assert.That(LogHandler.DefaultLogDoesNotContain("220 Ready to start TLS"), Is.True);
          }
       }
 
@@ -137,9 +137,9 @@ namespace RegressionTests.SMTP
 
             CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
-            Assert.That(server.MessageData, Is.Not.Null.Or.Empty);
+            Assert.That(server.MessageData, Is.Not.Null.And.Not.Empty);
 
-            Assert.IsTrue(LogHandler.DefaultLogDoesNotContain("220 Ready to start TLS"));
+            Assert.That(LogHandler.DefaultLogDoesNotContain("220 Ready to start TLS"), Is.True);
          }
       }
 
@@ -147,7 +147,7 @@ namespace RegressionTests.SMTP
       [Test]
       public void TestDelivertoServerNotSupportingEHLOOptionalConnectionSecurity()
       {
-         Assert.AreEqual(0, _status.UndeliveredMessages.Length);
+         Assert.That(_status.UndeliveredMessages.Length, Is.EqualTo(0));
 
          var deliveryResults = new Dictionary<string, int>
          {
@@ -173,14 +173,14 @@ namespace RegressionTests.SMTP
 
             CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
       [Test]
       public void TestDeliverToServerNotSupportingEHLORequiredConnectionSecurity()
       {
-         Assert.AreEqual(0, _status.UndeliveredMessages.Length);
+         Assert.That(_status.UndeliveredMessages.Length, Is.EqualTo(0));
 
          var deliveryResults = new Dictionary<string, int>
          {
@@ -207,7 +207,7 @@ namespace RegressionTests.SMTP
             CustomAsserts.AssertRecipientsInDeliveryQueue(0, true);
 
             var msg = Pop3ClientSimulator.AssertGetFirstMessageText("test@example.test", "test");
-            Assert.IsTrue(msg.Contains("Server does not support EHLO command."));
+            Assert.That(msg.Contains("Server does not support EHLO command."), Is.True);
          }
       }
    }

@@ -27,8 +27,8 @@ namespace RegressionTests.IMAP
 
          // NOOP flushes cached notifications. EXISTS must be 2, RECENT must be 0.
          var response = sim.NOOP();
-         Assert.IsTrue(response.Contains("* 2 EXISTS"), response);
-         Assert.IsTrue(response.Contains("* 0 RECENT"), response);
+         Assert.That(response.Contains("* 2 EXISTS"), Is.True, response);
+         Assert.That(response.Contains("* 0 RECENT"), Is.True, response);
 
          sim.Disconnect();
       }
@@ -43,20 +43,20 @@ namespace RegressionTests.IMAP
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          var sim1 = new ImapClientSimulator();
-         Assert.IsTrue(sim1.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(sim1.SelectFolder("Inbox"));
+         Assert.That(sim1.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(sim1.SelectFolder("Inbox"), Is.True);
 
          var sim2 = new ImapClientSimulator();
-         Assert.IsTrue(sim2.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(sim2.SelectFolder("Inbox"));
+         Assert.That(sim2.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(sim2.SelectFolder("Inbox"), Is.True);
 
          sim1.SetFlagOnMessage(1, true, "\\Deleted");
 
          var flags1 = sim1.GetFlags(1);
          var flags2 = sim2.GetFlags(1);
 
-         Assert.IsTrue(flags2.Contains(@"* 1 FETCH (FLAGS (\Deleted))"), flags2);
-         Assert.IsTrue(flags2.Contains(@"* 1 FETCH (FLAGS (\Deleted) UID 1)"), flags2);
+         Assert.That(flags2.Contains(@"* 1 FETCH (FLAGS (\Deleted))"), Is.True, flags2);
+         Assert.That(flags2.Contains(@"* 1 FETCH (FLAGS (\Deleted) UID 1)"), Is.True, flags2);
       }
    }
 }

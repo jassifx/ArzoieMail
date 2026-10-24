@@ -51,11 +51,11 @@ namespace RegressionTests.AntiSpam
 
          // The active black lists should be looked up, and since they don't resolve there should
          // be no match.
-         Assert.IsTrue(result.Contains("." + FirstActiveBlackList + ", 0 addresses found: (none), Match: False"), result);
-         Assert.IsTrue(result.Contains("." + SecondActiveBlackList + ", 0 addresses found: (none), Match: False"), result);
+         Assert.That(result.Contains("." + FirstActiveBlackList + ", 0 addresses found: (none), Match: False"), Is.True, result);
+         Assert.That(result.Contains("." + SecondActiveBlackList + ", 0 addresses found: (none), Match: False"), Is.True, result);
 
          // The inactive black list should not be looked up at all.
-         Assert.IsFalse(result.Contains(InactiveBlackList), result);
+         Assert.That(result.Contains(InactiveBlackList), Is.False, result);
       }
 
       private static void AddDNSBlackList(hMailServer.DNSBlackLists dnsBlackLists, string dnsHost,
@@ -282,7 +282,7 @@ namespace RegressionTests.AntiSpam
             "Wrapped URL - <a href=3D\"http://surbl-org-perm\r\nanent-test-point.com\">Test</a>");
 
          var sMessageContents = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsFalse(sMessageContents.Contains("X-hMailServer-Spam"), "Non-spam message detected as spam");
+         Assert.That(sMessageContents.Contains("X-hMailServer-Spam"), Is.False, "Non-spam message detected as spam");
 
          surblServer.Active = false;
          surblServer.Save();
@@ -377,7 +377,7 @@ namespace RegressionTests.AntiSpam
              sMessageContents.Contains("ThisIsSpam"))
             throw new Exception("Non-Spam message detected as spam");
 
-         Assert.IsTrue(sMessageContents.Contains(_domain.SignaturePlainText));
+         Assert.That(sMessageContents.Contains(_domain.SignaturePlainText), Is.True);
 
          smtpClientSimulator.Send("surbltest@example.test", "surbltest@example.test", "SURBL-No-Match",
             "This is a test message with a SURBL url: -> http://surbl-org-permanent-test-point.com/ <-");
@@ -387,7 +387,7 @@ namespace RegressionTests.AntiSpam
              !sMessageContents.Contains("ThisIsSpam"))
             throw new Exception("Spam message not detected as spam");
 
-         Assert.IsTrue(sMessageContents.Contains(_domain.SignaturePlainText));
+         Assert.That(sMessageContents.Contains(_domain.SignaturePlainText), Is.True);
       }
 
       [Test]
@@ -449,7 +449,7 @@ namespace RegressionTests.AntiSpam
             "Wrapped URL - <a href=3D\"http://surbl-org-perma=\r\nnent-test-point.com\">Test</a>");
 
          var sMessageContents = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsTrue(sMessageContents.Contains("X-hMailServer-Spam"), "Spam message not detected as spam");
+         Assert.That(sMessageContents.Contains("X-hMailServer-Spam"), Is.True, "Spam message not detected as spam");
 
          surblServer.Active = false;
          surblServer.Save();
@@ -483,7 +483,7 @@ namespace RegressionTests.AntiSpam
             "Wrapped URL - <a href=3D\"http://surbl-org-permanent-test-point.com\r\nHello\">Test</a>");
 
          var sMessageContents = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsTrue(sMessageContents.Contains("X-hMailServer-Spam"), "Spam message not detected as spam");
+         Assert.That(sMessageContents.Contains("X-hMailServer-Spam"), Is.True, "Spam message not detected as spam");
 
          surblServer.Active = false;
          surblServer.Save();
@@ -517,7 +517,7 @@ namespace RegressionTests.AntiSpam
             "Wrapped URL - <a href=3D\"http://surbl-org-permanent-test-point.com\">Test</a>\r\nWrapped URL - <a href=3D\"http://surbl-org-permanent-test-point.com\">Test</a>\r\nWrapped URL - <a href=3D\"http://surbl-org-permanent-test-point.com\">Test</a>\r\n");
 
          var sMessageContents = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsTrue(sMessageContents.Contains("X-hMailServer-Spam"), "Spam message not detected as spam");
+         Assert.That(sMessageContents.Contains("X-hMailServer-Spam"), Is.True, "Spam message not detected as spam");
 
          surblServer.Active = false;
          surblServer.Save();
@@ -556,9 +556,10 @@ namespace RegressionTests.AntiSpam
          surblServer.Active = false;
          surblServer.Save();
 
-         Assert.IsTrue(
-            LogHandler.DefaultLogDoesNotContain("Lookup: surbl-org-permanent-test-point.com'.multi.surbl.org"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("Lookup: surbl-org-permanent-test-point.com.multi.surbl.org"));
+         Assert.That(
+            LogHandler.DefaultLogDoesNotContain("Lookup: surbl-org-permanent-test-point.com'.multi.surbl.org"),
+            Is.True);
+         Assert.That(LogHandler.DefaultLogContains("Lookup: surbl-org-permanent-test-point.com.multi.surbl.org"), Is.True);
       }
 
       [Test]
@@ -591,14 +592,14 @@ namespace RegressionTests.AntiSpam
             "Wrapped URL - <a href=3D\"http://test.example1fdafdsfds.com\">Test</a>\r\nWrapped URL - <a href=3D\"http://test.example2fdafdsfds.com\">Test</a>\r\nWrapped URL - <a href=3D\"http://test.example3fdafdsfds.com\">Test</a>\r\n");
 
          var sMessageContents = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsFalse(sMessageContents.Contains("X-hMailServer-Spam"), "Spam message not detected as spam");
+         Assert.That(sMessageContents.Contains("X-hMailServer-Spam"), Is.False, "Spam message not detected as spam");
 
          surblServer.Active = false;
          surblServer.Save();
 
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: Lookup: example1fdafdsfds.com.multi.surbl.org"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: Lookup: example2fdafdsfds.com.multi.surbl.org"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: Lookup: example3fdafdsfds.com.multi.surbl.org"));
+         Assert.That(LogHandler.DefaultLogContains("SURBL: Lookup: example1fdafdsfds.com.multi.surbl.org"), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("SURBL: Lookup: example2fdafdsfds.com.multi.surbl.org"), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("SURBL: Lookup: example3fdafdsfds.com.multi.surbl.org"), Is.True);
       }
 
       [Test]
@@ -631,21 +632,21 @@ namespace RegressionTests.AntiSpam
             TestResources.SecuniaBody1);
 
          var sMessageContents = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsFalse(sMessageContents.Contains("X-hMailServer-Spam"), "Spam message not detected as spam");
+         Assert.That(sMessageContents.Contains("X-hMailServer-Spam"), Is.False, "Spam message not detected as spam");
 
          surblServer.Active = false;
          surblServer.Save();
 
 
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: 3 unique domain addresses found."));
-         Assert.IsTrue(LogHandler.DefaultLogContains("Found URL: secunia.com"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: Found URL: secunia.com"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: Found URL: ca.secunia.com"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: Found URL: ubuntu.com"));
+         Assert.That(LogHandler.DefaultLogContains("SURBL: 3 unique domain addresses found."), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("Found URL: secunia.com"), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("SURBL: Found URL: secunia.com"), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("SURBL: Found URL: ca.secunia.com"), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("SURBL: Found URL: ubuntu.com"), Is.True);
 
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: Lookup: secunia.com.multi.surbl.org"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: Lookup: ca.secunia.com.multi.surbl.org"));
-         Assert.IsTrue(LogHandler.DefaultLogContains("SURBL: Lookup: ubuntu.com.multi.surbl.org"));
+         Assert.That(LogHandler.DefaultLogContains("SURBL: Lookup: secunia.com.multi.surbl.org"), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("SURBL: Lookup: ca.secunia.com.multi.surbl.org"), Is.True);
+         Assert.That(LogHandler.DefaultLogContains("SURBL: Lookup: ubuntu.com.multi.surbl.org"), Is.True);
       }
 
       [Test]
@@ -692,9 +693,9 @@ namespace RegressionTests.AntiSpam
 
          var messageText = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(messageText.Contains("Subject: ThisIsSpam Test"), messageText);
-         Assert.IsTrue(messageText.Contains("X-hMailServer-Spam: YES"), messageText);
-         Assert.IsTrue(messageText.Contains("The host name specified in HELO"), messageText);
+         Assert.That(messageText.Contains("Subject: ThisIsSpam Test"), Is.True, messageText);
+         Assert.That(messageText.Contains("X-hMailServer-Spam: YES"), Is.True, messageText);
+         Assert.That(messageText.Contains("The host name specified in HELO"), Is.True, messageText);
       }
    }
 }

@@ -48,7 +48,7 @@ namespace RegressionTests.SMTP
 
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
@@ -96,7 +96,7 @@ namespace RegressionTests.SMTP
 
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
@@ -145,8 +145,8 @@ namespace RegressionTests.SMTP
 
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
-            Assert.AreEqual(deliveryResults.Count, server.RcptTosReceived);
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
+            Assert.That(server.RcptTosReceived, Is.EqualTo(deliveryResults.Count));
          }
       }
 
@@ -186,7 +186,7 @@ namespace RegressionTests.SMTP
 
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
@@ -212,7 +212,7 @@ namespace RegressionTests.SMTP
          var resultMessage = "";
          CustomAsserts.Throws<DeliveryFailedException>(() =>
             smtpClient.Send("example@example.com", "user1@example.test", "Test", "Test message", out resultMessage));
-         Assert.AreEqual("550 Recipient not in route list.", resultMessage);
+         Assert.That(resultMessage, Is.EqualTo("550 Recipient not in route list."));
       }
 
       [Test]
@@ -241,7 +241,7 @@ namespace RegressionTests.SMTP
             server.WaitForCompletion();
             var log = LogHandler.ReadCurrentDefaultLog();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
@@ -313,7 +313,7 @@ namespace RegressionTests.SMTP
 
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Body"));
+            Assert.That(server.MessageData.Contains("Body"), Is.True);
             Pop3ClientSimulator.AssertMessageCount("catchall@example.test", "test", 0);
          }
       }

@@ -30,28 +30,28 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.LogonWithLiteral("imapsort@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("Inbox"));
+         Assert.That(simulator.SelectFolder("Inbox"), Is.True);
 
          var response =
             simulator.SendSingleCommandWithLiteral("A04 APPEND INBOX \"22-Feb-2008 22:00:00 +0200\" {37}",
                "Date: Wed, 15 Dec 2010 13:00:00 +0000");
-         Assert.IsTrue(response.Contains("* 1 EXISTS"), response);
+         Assert.That(response.Contains("* 1 EXISTS"), Is.True, response);
 
          response = simulator.SendSingleCommandWithLiteral("A04 APPEND INBOX \"22-Feb-2008 21:00:00 +0200\" {37}",
             "Date: Wed, 15 Dec 2010 14:00:00 +0000");
-         Assert.IsTrue(response.Contains("* 2 EXISTS"), response);
+         Assert.That(response.Contains("* 2 EXISTS"), Is.True, response);
 
          response = simulator.SendSingleCommandWithLiteral("A04 APPEND INBOX \"22-Feb-2008 20:00:00 +0200\" {37}",
             "Date: Wed, 15 Dec 2010 12:00:00 +0000");
-         Assert.IsTrue(response.Contains("* 3 EXISTS"), response);
+         Assert.That(response.Contains("* 3 EXISTS"), Is.True, response);
 
          response = simulator.SendSingleCommandWithLiteral("A04 APPEND INBOX \"23-Feb-2008 01:30:23 +0200\" {37}",
             "Date: Wed, 15 Dec 2010 11:00:00 +0000");
-         Assert.IsTrue(response.Contains("* 4 EXISTS"), response);
+         Assert.That(response.Contains("* 4 EXISTS"), Is.True, response);
 
          var sortDateResponse = simulator.SendSingleCommand("A10 SORT (DATE) US-ASCII ALL");
 
-         Assert.IsTrue(sortDateResponse.Contains(" 4 3 1 2"));
+         Assert.That(sortDateResponse.Contains(" 4 3 1 2"), Is.True);
          simulator.Disconnect();
       }
 
@@ -64,23 +64,23 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.LogonWithLiteral("imapsort@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("Inbox"));
+         Assert.That(simulator.SelectFolder("Inbox"), Is.True);
 
          var response = simulator.SendSingleCommandWithLiteral(
             "A04 APPEND INBOX \"22-Feb-2008 22:00:00 +0200\" {4}", "ABCD");
-         Assert.IsTrue(response.Contains("* 1 EXISTS"), response);
+         Assert.That(response.Contains("* 1 EXISTS"), Is.True, response);
 
          response = simulator.SendSingleCommandWithLiteral("A04 APPEND INBOX \"22-Feb-2008 21:00:00 +0200\" {4}",
             "ABCD");
-         Assert.IsTrue(response.Contains("* 2 EXISTS"), response);
+         Assert.That(response.Contains("* 2 EXISTS"), Is.True, response);
 
          response = simulator.SendSingleCommandWithLiteral("A04 APPEND INBOX \"22-Feb-2008 20:00:00 +0200\" {4}",
             "ABCD");
-         Assert.IsTrue(response.Contains("* 3 EXISTS"), response);
+         Assert.That(response.Contains("* 3 EXISTS"), Is.True, response);
 
          response = simulator.SendSingleCommandWithLiteral("A04 APPEND INBOX \"23-Feb-2008 01:30:23 +0200\" {4}",
             "ABCD");
-         Assert.IsTrue(response.Contains("* 4 EXISTS"), response);
+         Assert.That(response.Contains("* 4 EXISTS"), Is.True, response);
 
          /*
           * RFC 5256 "2.2. Sent Date" chapter. If the sent date cannot be determined (a Date: header is missing or cannot be parsed), 
@@ -90,8 +90,8 @@ namespace RegressionTests.IMAP
          var sortDateResponse = simulator.SendSingleCommand("A10 SORT (DATE) US-ASCII ALL");
          var sortArivalDateResponse = simulator.SendSingleCommand("A10 SORT (ARRIVAL) US-ASCII ALL");
 
-         Assert.IsTrue(sortArivalDateResponse.Contains(" 3 2 1 4"));
-         Assert.AreEqual(sortDateResponse, sortArivalDateResponse);
+         Assert.That(sortArivalDateResponse.Contains(" 3 2 1 4"), Is.True);
+         Assert.That(sortArivalDateResponse, Is.EqualTo(sortDateResponse));
          simulator.Disconnect();
       }
 
@@ -119,7 +119,7 @@ namespace RegressionTests.IMAP
          var simulator = new ImapClientSimulator();
          simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result =
             simulator.SendSingleCommand(string.Format("a01 SORT (REVERSE DATE) UTF-8 ALL UID {0},{1}", second, third));
@@ -139,10 +139,10 @@ namespace RegressionTests.IMAP
       {
          var response = ParseSortResult(sortResponse);
 
-         Assert.AreEqual(expected.Length, response.Count, sortResponse);
+         Assert.That(response.Count, Is.EqualTo(expected.Length), sortResponse);
 
          foreach (var expectedItem in expected)
-            Assert.IsTrue(response.Contains(expectedItem), sortResponse);
+            Assert.That(response.Contains(expectedItem), Is.True, sortResponse);
       }
 
       private List<int> ParseSortResult(string resultText)
@@ -179,9 +179,9 @@ namespace RegressionTests.IMAP
          var simulator = new ImapClientSimulator();
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("", simulator.Sort("(DATE) UTF-8 ALL OR ANSWERED DELETED"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL OR ANSWERED DELETED"), Is.EqualTo(""));
       }
 
       [Test]
@@ -207,10 +207,10 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("1 2", simulator.Sort("(ARRIVAL) UTF-8 ALL"));
-         Assert.AreEqual("2 1", simulator.Sort("(REVERSE ARRIVAL) UTF-8 ALL"));
+         Assert.That(simulator.Sort("(ARRIVAL) UTF-8 ALL"), Is.EqualTo("1 2"));
+         Assert.That(simulator.Sort("(REVERSE ARRIVAL) UTF-8 ALL"), Is.EqualTo("2 1"));
       }
 
       [Test]
@@ -234,10 +234,10 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("2 1", simulator.Sort("(SIZE) UTF-8 ALL"));
-         Assert.AreEqual("1 2", simulator.Sort("(REVERSE SIZE) UTF-8 ALL"));
+         Assert.That(simulator.Sort("(SIZE) UTF-8 ALL"), Is.EqualTo("2 1"));
+         Assert.That(simulator.Sort("(REVERSE SIZE) UTF-8 ALL"), Is.EqualTo("1 2"));
       }
 
       [Test]
@@ -259,9 +259,9 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("1 2", simulator.Sort("(SUBJECT) UTF-8 ALL"));
+         Assert.That(simulator.Sort("(SUBJECT) UTF-8 ALL"), Is.EqualTo("1 2"));
       }
 
       [Test]
@@ -283,9 +283,9 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("2 1", simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL"));
+         Assert.That(simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL"), Is.EqualTo("2 1"));
       }
 
       [Test]
@@ -304,23 +304,23 @@ namespace RegressionTests.IMAP
          var simulator = new ImapClientSimulator();
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("1 2", simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR HEADER SUBJECT aa HEADER SUBJECT bb"));
-         Assert.AreEqual("1 2",
-            simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR (HEADER SUBJECT aa) (HEADER SUBJECT bb)"));
-         Assert.AreEqual("1 2",
-            simulator.Sort("(DATE) UTF-8 ALL UNANSWERED (OR HEADER SUBJECT aa HEADER SUBJECT bb)"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR HEADER SUBJECT aa HEADER SUBJECT bb"), Is.EqualTo("1 2"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR (HEADER SUBJECT aa) (HEADER SUBJECT bb)"),
+            Is.EqualTo("1 2"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL UNANSWERED (OR HEADER SUBJECT aa HEADER SUBJECT bb)"),
+            Is.EqualTo("1 2"));
 
-         Assert.AreEqual("1", simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR HEADER SUBJECT aa HEADER SUBJECT cc"));
-         Assert.AreEqual("1",
-            simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR (HEADER SUBJECT aa) (HEADER SUBJECT cc)"));
-         Assert.AreEqual("1", simulator.Sort("(DATE) UTF-8 ALL UNANSWERED (OR HEADER SUBJECT aa HEADER SUBJECT cc)"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR HEADER SUBJECT aa HEADER SUBJECT cc"), Is.EqualTo("1"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR (HEADER SUBJECT aa) (HEADER SUBJECT cc)"),
+            Is.EqualTo("1"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL UNANSWERED (OR HEADER SUBJECT aa HEADER SUBJECT cc)"), Is.EqualTo("1"));
 
-         Assert.AreEqual("2", simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR HEADER SUBJECT bb HEADER SUBJECT cc"));
-         Assert.AreEqual("2",
-            simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR (HEADER SUBJECT bb) (HEADER SUBJECT cc)"));
-         Assert.AreEqual("2", simulator.Sort("(DATE) UTF-8 ALL UNANSWERED (OR HEADER SUBJECT bb HEADER SUBJECT cc)"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR HEADER SUBJECT bb HEADER SUBJECT cc"), Is.EqualTo("2"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL UNANSWERED OR (HEADER SUBJECT bb) (HEADER SUBJECT cc)"),
+            Is.EqualTo("2"));
+         Assert.That(simulator.Sort("(DATE) UTF-8 ALL UNANSWERED (OR HEADER SUBJECT bb HEADER SUBJECT cc)"), Is.EqualTo("2"));
       }
 
 
@@ -343,12 +343,12 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("1", simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL HEADER SUBJECT \"Test1\""));
-         Assert.AreEqual("2", simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL HEADER SUBJECT \"Test2\""));
-         Assert.AreEqual("1", simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL (HEADER SUBJECT \"Test1\")"));
-         Assert.AreEqual("2", simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL (HEADER SUBJECT \"Test2\")"));
+         Assert.That(simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL HEADER SUBJECT \"Test1\""), Is.EqualTo("1"));
+         Assert.That(simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL HEADER SUBJECT \"Test2\""), Is.EqualTo("2"));
+         Assert.That(simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL (HEADER SUBJECT \"Test1\")"), Is.EqualTo("1"));
+         Assert.That(simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL (HEADER SUBJECT \"Test2\")"), Is.EqualTo("2"));
       }
 
 
@@ -374,14 +374,14 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("1 3", simulator.Sort("(SUBJECT) UTF-8 ALL HEADER SUBJECT \"Test1\""));
-         Assert.AreEqual("2", simulator.Sort("(SUBJECT) UTF-8 ALL HEADER SUBJECT \"TestA\""));
-         Assert.AreEqual("3 1", simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL HEADER SUBJECT \"Test1\""));
-         Assert.AreEqual("2", simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL HEADER SUBJECT \"TestA\""));
-         Assert.AreEqual("3 1", simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL (HEADER SUBJECT) \"Test1\""));
-         Assert.AreEqual("2", simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL (HEADER SUBJECT) \"TestA\""));
+         Assert.That(simulator.Sort("(SUBJECT) UTF-8 ALL HEADER SUBJECT \"Test1\""), Is.EqualTo("1 3"));
+         Assert.That(simulator.Sort("(SUBJECT) UTF-8 ALL HEADER SUBJECT \"TestA\""), Is.EqualTo("2"));
+         Assert.That(simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL HEADER SUBJECT \"Test1\""), Is.EqualTo("3 1"));
+         Assert.That(simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL HEADER SUBJECT \"TestA\""), Is.EqualTo("2"));
+         Assert.That(simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL (HEADER SUBJECT) \"Test1\""), Is.EqualTo("3 1"));
+         Assert.That(simulator.Sort("(REVERSE SUBJECT) UTF-8 ALL (HEADER SUBJECT) \"TestA\""), Is.EqualTo("2"));
       }
 
       [Test]
@@ -403,10 +403,10 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("search@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
-         Assert.AreEqual("1", simulator.Sort("(SUBJECT) UTF-8 ALL HEADER SUBJECT \"Te(st1\""));
-         Assert.AreEqual("2", simulator.Sort("(SUBJECT) UTF-8 ALL HEADER SUBJECT \"Te)st2\""));
+         Assert.That(simulator.Sort("(SUBJECT) UTF-8 ALL HEADER SUBJECT \"Te(st1\""), Is.EqualTo("1"));
+         Assert.That(simulator.Sort("(SUBJECT) UTF-8 ALL HEADER SUBJECT \"Te)st2\""), Is.EqualTo("2"));
       }
    }
 }

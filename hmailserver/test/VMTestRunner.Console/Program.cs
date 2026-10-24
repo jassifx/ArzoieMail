@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CommandLine;
+using NLog;
 
 namespace VMTestRunner.Console
 {
@@ -15,7 +16,7 @@ namespace VMTestRunner.Console
 
       static int Main(string[] args)
       {
-         NLog.Targets.Target.Register<TestBoardConsoleTarget>("TestBoardConsole");
+         NLog.LogManager.Setup().SetupExtensions(s => s.RegisterTarget<TestBoardConsoleTarget>("TestBoardConsole"));
 
          // Makes the log file and the NUnit result files share the same timestamp.
          NLog.GlobalDiagnosticsContext.Set(RunContext.TimestampVariableName, RunContext.Timestamp);

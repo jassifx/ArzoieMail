@@ -26,7 +26,7 @@ namespace VolumeTests
          for (int i = 1; i <= count; i++)
          {
             TcpConnection socket = new TcpConnection();
-            Assert.IsTrue(socket.Connect(25));
+            Assert.That(socket.Connect(25), Is.True);
 
             if ((i % 10) == 0)
             {
@@ -61,8 +61,8 @@ namespace VolumeTests
 
          string finalLog = LogHandler.ReadCurrentDefaultLog();
 
-         Assert.AreEqual(count, Regex.Matches(finalLog, connectionCreated).Count);
-         Assert.AreEqual(count, Regex.Matches(finalLog, connectionEnded).Count);
+         Assert.That(Regex.Matches(finalLog, connectionCreated).Count, Is.EqualTo(count));
+         Assert.That(Regex.Matches(finalLog, connectionEnded).Count, Is.EqualTo(count));
       }
    }
 }

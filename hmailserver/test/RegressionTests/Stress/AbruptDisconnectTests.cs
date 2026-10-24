@@ -22,13 +22,13 @@ namespace RegressionTests.Stress
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
          var socket = new TcpConnection();
-         Assert.IsTrue(socket.Connect(25));
-         Assert.IsTrue(socket.Receive().StartsWith("220"));
+         Assert.That(socket.Connect(25), Is.True);
+         Assert.That(socket.Receive().StartsWith("220"), Is.True);
 
-         Assert.IsTrue(socket.SendAndReceive("HELO example.com\r\n").StartsWith("250"));
-         Assert.IsTrue(socket.SendAndReceive("MAIL FROM: <sender@example.com>\r\n").StartsWith("250"));
-         Assert.IsTrue(socket.SendAndReceive("RCPT TO: <test@example.test>\r\n").StartsWith("250"));
-         Assert.IsTrue(socket.SendAndReceive("DATA\r\n").StartsWith("354"));
+         Assert.That(socket.SendAndReceive("HELO example.com\r\n").StartsWith("250"), Is.True);
+         Assert.That(socket.SendAndReceive("MAIL FROM: <sender@example.com>\r\n").StartsWith("250"), Is.True);
+         Assert.That(socket.SendAndReceive("RCPT TO: <test@example.test>\r\n").StartsWith("250"), Is.True);
+         Assert.That(socket.SendAndReceive("DATA\r\n").StartsWith("354"), Is.True);
 
          // Send a partial message, so that the server is waiting for more data, and then
          // close the connection without sending the terminating dot.
@@ -42,7 +42,8 @@ namespace RegressionTests.Stress
 
          var cpuTimeUsed = GetServerCpuTime() - cpuTimeBefore;
 
-         Assert.Less(cpuTimeUsed.TotalSeconds, 1,
+         Assert.That(cpuTimeUsed.TotalSeconds,
+            Is.LessThan(1),
             string.Format("hMailServer used {0} seconds of CPU time after the client disconnected, which indicates an endless read loop.",
                cpuTimeUsed.TotalSeconds));
       }
@@ -55,12 +56,12 @@ namespace RegressionTests.Stress
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
          var socket = new TcpConnection();
-         Assert.IsTrue(socket.Connect(25));
-         Assert.IsTrue(socket.Receive().StartsWith("220"));
+         Assert.That(socket.Connect(25), Is.True);
+         Assert.That(socket.Receive().StartsWith("220"), Is.True);
 
-         Assert.IsTrue(socket.SendAndReceive("HELO example.com\r\n").StartsWith("250"));
-         Assert.IsTrue(socket.SendAndReceive("MAIL FROM: <sender@example.com>\r\n").StartsWith("250"));
-         Assert.IsTrue(socket.SendAndReceive("RCPT TO: <test@example.test>\r\n").StartsWith("250"));
+         Assert.That(socket.SendAndReceive("HELO example.com\r\n").StartsWith("250"), Is.True);
+         Assert.That(socket.SendAndReceive("MAIL FROM: <sender@example.com>\r\n").StartsWith("250"), Is.True);
+         Assert.That(socket.SendAndReceive("RCPT TO: <test@example.test>\r\n").StartsWith("250"), Is.True);
 
          // Send DATA and the entire message in a single write. The server parses the DATA command
          // line but leaves the message in its receive buffer, and the client stops sending before

@@ -36,9 +36,9 @@ namespace RegressionTests.API
          var headerEnd = messageText.IndexOf("\r\n\r\n");
          var header = messageText.Substring(0, headerEnd);
 
-         Assert.IsTrue(header.Contains("Content-Type: multipart/mixed;"));
-         Assert.IsTrue(messageText.Contains("Hello"));
-         Assert.IsTrue(messageText.Contains("dummy.txt"));
+         Assert.That(header.Contains("Content-Type: multipart/mixed;"), Is.True);
+         Assert.That(messageText.Contains("Hello"), Is.True);
+         Assert.That(messageText.Contains("dummy.txt"), Is.True);
 
          File.Delete(filename);
       }
@@ -50,7 +50,7 @@ namespace RegressionTests.API
 
          // Send a message to the account.
          var message = new hMailServer.Message();
-         Assert.AreEqual(0, message.State);
+         Assert.That(message.State, Is.EqualTo(0));
 
          var scripting = SingletonProvider<TestSetup>.Instance.GetApp().Settings.Scripting;
 
@@ -67,7 +67,7 @@ namespace RegressionTests.API
          File.WriteAllText(scripting.CurrentScriptFile, script);
          scripting.Enabled = true;
          scripting.Reload();
-         Assert.IsEmpty(scripting.CheckSyntax());
+         Assert.That(scripting.CheckSyntax(), Is.Empty);
 
          // Send the message.
          var recipients = new List<string>();
@@ -77,9 +77,9 @@ namespace RegressionTests.API
          // Check that the message exists
          var firstMessageText = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
 
-         Assert.IsNotEmpty(firstMessageText);
-         Assert.IsTrue(firstMessageText.Contains(signature));
-         Assert.Less(0, firstMessageText.IndexOf("Hej"));
+         Assert.That(firstMessageText, Is.Not.Empty);
+         Assert.That(firstMessageText.Contains(signature), Is.True);
+         Assert.That(firstMessageText.IndexOf("Hej"), Is.GreaterThan(0));
       }
 
       [Test]
@@ -89,7 +89,7 @@ namespace RegressionTests.API
 
          // Send a message to the account.
          var message = new hMailServer.Message();
-         Assert.AreEqual(0, message.State);
+         Assert.That(message.State, Is.EqualTo(0));
 
          var scripting = SingletonProvider<TestSetup>.Instance.GetApp().Settings.Scripting;
 
@@ -120,8 +120,8 @@ namespace RegressionTests.API
          // Check that the message exists
          var firstMessageText = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
 
-         Assert.IsNotEmpty(firstMessageText, firstMessageText);
-         StringAssert.Contains(signature, firstMessageText, "The message retrieved from POP3 server does not contain signature.");
+         Assert.That(firstMessageText, Is.Not.Empty, firstMessageText);
+         Assert.That(firstMessageText, Does.Contain(signature), "The message retrieved from POP3 server does not contain signature.");
       }
 
       [Test]
@@ -132,7 +132,7 @@ namespace RegressionTests.API
 
          // Send a message to the account.
          var message = new hMailServer.Message();
-         Assert.AreEqual(0, message.State);
+         Assert.That(message.State, Is.EqualTo(0));
 
          var scripting = SingletonProvider<TestSetup>.Instance.GetApp().Settings.Scripting;
 
@@ -163,8 +163,8 @@ namespace RegressionTests.API
          // Check that the message exists
          var firstMessageText = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
 
-         Assert.IsNotEmpty(firstMessageText, firstMessageText);
-         StringAssert.Contains(signature, firstMessageText, "The message retrieved from POP3 server does not contain signature.");
+         Assert.That(firstMessageText, Is.Not.Empty, firstMessageText);
+         Assert.That(firstMessageText, Does.Contain(signature), "The message retrieved from POP3 server does not contain signature.");
       }
 
       [Test]
@@ -183,9 +183,9 @@ namespace RegressionTests.API
          var headerEnd = messageText.IndexOf("\r\n\r\n");
          var header = messageText.Substring(0, headerEnd);
 
-         Assert.IsTrue(header.Contains("Content-Type: text/html; charset=\"utf-8\""));
-         Assert.IsTrue(header.Contains("Content-Transfer-Encoding: quoted-printable"));
-         Assert.IsTrue(messageText.Contains("Hello"));
+         Assert.That(header.Contains("Content-Type: text/html; charset=\"utf-8\""), Is.True);
+         Assert.That(header.Contains("Content-Transfer-Encoding: quoted-printable"), Is.True);
+         Assert.That(messageText.Contains("Hello"), Is.True);
       }
 
       [Test]
@@ -205,10 +205,10 @@ namespace RegressionTests.API
          var headerEnd = messageText.IndexOf("\r\n\r\n");
          var header = messageText.Substring(0, headerEnd);
 
-         Assert.IsTrue(header.Contains("Content-Type: multipart/alternative"));
-         Assert.IsFalse(header.Contains("Content-Transfer-Encoding: quoted-printable"));
-         Assert.IsTrue(messageText.Contains("PlainTextBody"));
-         Assert.IsTrue(messageText.Contains("HTMLBody"));
+         Assert.That(header.Contains("Content-Type: multipart/alternative"), Is.True);
+         Assert.That(header.Contains("Content-Transfer-Encoding: quoted-printable"), Is.False);
+         Assert.That(messageText.Contains("PlainTextBody"), Is.True);
+         Assert.That(messageText.Contains("HTMLBody"), Is.True);
       }
 
       [Test]
@@ -228,10 +228,10 @@ namespace RegressionTests.API
          var headerEnd = messageText.IndexOf("\r\n\r\n");
          var header = messageText.Substring(0, headerEnd);
 
-         Assert.IsTrue(header.Contains("Content-Type: multipart/alternative"));
-         Assert.IsFalse(header.Contains("Content-Transfer-Encoding: quoted-printable"));
-         Assert.IsTrue(messageText.Contains("PlainTextBody"));
-         Assert.IsTrue(messageText.Contains("HTMLBody"));
+         Assert.That(header.Contains("Content-Type: multipart/alternative"), Is.True);
+         Assert.That(header.Contains("Content-Transfer-Encoding: quoted-printable"), Is.False);
+         Assert.That(messageText.Contains("PlainTextBody"), Is.True);
+         Assert.That(messageText.Contains("HTMLBody"), Is.True);
       }
 
       [Test]
@@ -250,9 +250,9 @@ namespace RegressionTests.API
          var headerEnd = messageText.IndexOf("\r\n\r\n");
          var header = messageText.Substring(0, headerEnd);
 
-         Assert.IsTrue(header.Contains("Content-Type: text/plain; charset=\"utf-8\""));
-         Assert.IsTrue(header.Contains("Content-Transfer-Encoding: quoted-printable"));
-         Assert.IsTrue(messageText.Contains("Hello"));
+         Assert.That(header.Contains("Content-Type: text/plain; charset=\"utf-8\""), Is.True);
+         Assert.That(header.Contains("Content-Transfer-Encoding: quoted-printable"), Is.True);
+         Assert.That(messageText.Contains("Hello"), Is.True);
       }
 
       [Test]
@@ -279,7 +279,7 @@ namespace RegressionTests.API
          var headerEnd = messageText.IndexOf("\r\n\r\n");
          var header = messageText.Substring(0, headerEnd);
 
-         Assert.IsTrue(header.Contains("Content-Type: multipart/mixed; charset=\"utf-8\""));
+         Assert.That(header.Contains("Content-Type: multipart/mixed; charset=\"utf-8\""), Is.True);
 
          File.Delete(filename);
       }
@@ -299,8 +299,8 @@ namespace RegressionTests.API
 
          var messageText = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(messageText.Contains("Content-Type: text/html; charset=\"utf-8\""));
-         Assert.IsTrue(messageText.Contains("Content-Type: text/plain; charset=\"utf-8\""));
+         Assert.That(messageText.Contains("Content-Type: text/html; charset=\"utf-8\""), Is.True);
+         Assert.That(messageText.Contains("Content-Type: text/plain; charset=\"utf-8\""), Is.True);
       }
 
       [Test]
@@ -319,7 +319,7 @@ namespace RegressionTests.API
          File.WriteAllText(scripting.CurrentScriptFile, script);
          scripting.Enabled = true;
          scripting.Reload();
-         Assert.IsEmpty(scripting.CheckSyntax());
+         Assert.That(scripting.CheckSyntax(), Is.Empty);
 
          var body = @"From: <test@example.com>" + Environment.NewLine +
                     "Subject: =?windows-1251?B?yuDr7Pvq7uLzIMji4O3zIC0g7/Do7OXwICLy5fXt6Pfl8eru4+4g8OX4?=" +

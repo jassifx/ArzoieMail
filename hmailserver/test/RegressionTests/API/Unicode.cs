@@ -60,7 +60,7 @@ namespace RegressionTests.API
             " =?utf-8?B?0KLQtdGB0YLQvtCy0KLQtdGB0YLQotC10YHRgtC+0YHRgtC10YDQvtC90L4=?=\" <encode3@example.test>";
 
 
-         Assert.IsTrue(messageText.Contains(match));
+         Assert.That(messageText.Contains(match), Is.True);
       }
 
       [Test]
@@ -87,9 +87,10 @@ namespace RegressionTests.API
          // 
          //   Also, there should be a space separating the encoded word with the following
          //   non-encoded word.
-         Assert.IsTrue(
+         Assert.That(
             messageText.Contains(
-               "To: \"=?utf-8?B?VNC10YHRgtC+0LIg0KLQtdGB0YIg0KLQtdGB0YLQvtGB0YLQtdGA0L7QvdC+?=\r\n =?utf-8?B?0LLQuNGH?=\" <encode@example.test>"));
+               "To: \"=?utf-8?B?VNC10YHRgtC+0LIg0KLQtdGB0YIg0KLQtdGB0YLQvtGB0YLQtdGA0L7QvdC+?=\r\n =?utf-8?B?0LLQuNGH?=\" <encode@example.test>"),
+            Is.True);
       }
 
       [Test]
@@ -105,7 +106,7 @@ namespace RegressionTests.API
 
          var messageText = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(messageText.Contains("To: \"=?utf-8?B?w5Y=?=\" <encode3@example.test>"));
+         Assert.That(messageText.Contains("To: \"=?utf-8?B?w5Y=?=\" <encode3@example.test>"), Is.True);
       }
 
       [Test]
@@ -119,7 +120,7 @@ namespace RegressionTests.API
          message.Body = "Test ÅÄÖ Test.";
 
          var body = message.Body;
-         Assert.IsTrue(body.Contains("Test ÅÄÖ Test."));
+         Assert.That(body.Contains("Test ÅÄÖ Test."), Is.True);
       }
 
       [Test]
@@ -140,7 +141,7 @@ namespace RegressionTests.API
          CustomAsserts.AssertFolderMessageCount(account.IMAPFolders[0], 1);
 
          var downloadedMessage = account.IMAPFolders[0].Messages[0];
-         Assert.AreEqual(croatianAndDanish, downloadedMessage.Subject);
+         Assert.That(downloadedMessage.Subject, Is.EqualTo(croatianAndDanish));
       }
 
       [Test]
@@ -183,9 +184,10 @@ namespace RegressionTests.API
 
          var apiMessage = account.Messages[0];
 
-         Assert.AreEqual("Vänligen återställ dina inställningar för meddelanden via e-post.", apiMessage.Subject);
-         Assert.IsTrue(
-            apiMessage.Body.StartsWith("Dina inställningar för meddelanden via e-post har tyvärr gått förlorade."));
+         Assert.That(apiMessage.Subject, Is.EqualTo("Vänligen återställ dina inställningar för meddelanden via e-post."));
+         Assert.That(
+            apiMessage.Body.StartsWith("Dina inställningar för meddelanden via e-post har tyvärr gått förlorade."),
+            Is.True);
       }
 
       [Test]
@@ -205,9 +207,9 @@ namespace RegressionTests.API
 
          var apiMessage = account.Messages[0];
 
-         Assert.AreEqual(apiMessage.Subject, croatianAndDanish);
+         Assert.That(croatianAndDanish, Is.EqualTo(apiMessage.Subject));
          var fileContents = File.ReadAllText(apiMessage.Filename);
-         Assert.IsFalse(fileContents.Contains(croatianAndDanish));
+         Assert.That(fileContents.Contains(croatianAndDanish), Is.False);
       }
 
       [Test]
@@ -235,7 +237,7 @@ namespace RegressionTests.API
                var subject = line.Substring("subject: ".Length + 1);
 
                // encoded part should not contain space.
-               Assert.IsFalse(subject.Contains(" "));
+               Assert.That(subject.Contains(" "), Is.False);
 
                break;
             }
@@ -250,7 +252,7 @@ namespace RegressionTests.API
          var folderName = "åäö";
          var folder = account.IMAPFolders.Add(folderName);
          var folder2 = account.IMAPFolders.get_ItemByName(folderName);
-         Assert.AreEqual(folderName, folder2.Name);
+         Assert.That(folder2.Name, Is.EqualTo(folderName));
       }
 
       [Test]
@@ -274,9 +276,9 @@ namespace RegressionTests.API
          CustomAsserts.AssertFolderMessageCount(account.IMAPFolders[0], 1);
 
          var downloadedMessage = account.IMAPFolders[0].Messages[0];
-         Assert.AreNotEqual(0, downloadedMessage.Attachments.Count);
+         Assert.That(downloadedMessage.Attachments.Count, Is.Not.EqualTo(0));
          var attachment = downloadedMessage.Attachments[0];
-         Assert.AreEqual(attachmentName, attachment.Filename);
+         Assert.That(attachment.Filename, Is.EqualTo(attachmentName));
       }
 
       [Test]
@@ -331,8 +333,9 @@ namespace RegressionTests.API
          // 
          //   Also, there should be a space separating the encoded word with the following
          //   non-encoded word.
-         Assert.IsTrue(
-            messageText.Contains("To: \"=?utf-8?B?VGVzdCBSZWNpcGllbnQ6INCi0LXRgdGC?=\" <encode@example.test>"));
+         Assert.That(
+            messageText.Contains("To: \"=?utf-8?B?VGVzdCBSZWNpcGllbnQ6INCi0LXRgdGC?=\" <encode@example.test>"),
+            Is.True);
       }
 
       [Test]
@@ -353,9 +356,9 @@ namespace RegressionTests.API
          CustomAsserts.AssertFolderMessageCount(account.IMAPFolders[0], 1);
 
          var downloadedMessage = account.IMAPFolders[0].Messages[0];
-         Assert.AreEqual(manyLanguages, downloadedMessage.Subject);
-         Assert.AreEqual(manyLanguages, downloadedMessage.From);
-         Assert.AreEqual(manyLanguages + Environment.NewLine, downloadedMessage.Body);
+         Assert.That(downloadedMessage.Subject, Is.EqualTo(manyLanguages));
+         Assert.That(downloadedMessage.From, Is.EqualTo(manyLanguages));
+         Assert.That(downloadedMessage.Body, Is.EqualTo(manyLanguages + Environment.NewLine));
       }
 
       [Test]
@@ -380,11 +383,11 @@ namespace RegressionTests.API
          CustomAsserts.AssertFolderMessageCount(account.IMAPFolders[0], 1);
 
          var downloadedMessage = account.IMAPFolders[0].Messages[0];
-         Assert.AreNotEqual(0, downloadedMessage.Attachments.Count);
+         Assert.That(downloadedMessage.Attachments.Count, Is.Not.EqualTo(0));
          var attachment = downloadedMessage.Attachments[0];
-         Assert.AreEqual(attachmentName, attachment.Filename);
+         Assert.That(attachment.Filename, Is.EqualTo(attachmentName));
 
-         Assert.AreEqual(swedishAndChinese + Environment.NewLine, downloadedMessage.Body);
+         Assert.That(downloadedMessage.Body, Is.EqualTo(swedishAndChinese + Environment.NewLine));
       }
 
       [Test]
@@ -395,7 +398,7 @@ namespace RegressionTests.API
 
          var message = new hMailServer.Message();
          message.Body = body;
-         Assert.AreEqual(body, message.Body);
+         Assert.That(message.Body, Is.EqualTo(body));
       }
    }
 }

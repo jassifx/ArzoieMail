@@ -1,0 +1,16 @@
+<Project>
+  <!-- Settings shared by the projects of hMailServer Tests.sln. -->
+
+  <PropertyGroup>
+    <!-- Packages are restored into hmailserver\test\packages\, where CI and VMTestRunner pick up
+         nunit3-console.exe (packages\nunit.consolerunner\<version>\tools\). -->
+    <RestorePackagesPath>$(MSBuildThisFileDirectory)packages\</RestorePackagesPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The tests run against the installed server, so the interop is generated from the type
+         library that server registered. Without an installed server, it falls back to the type
+         library of a local server build, like the tools. -->
+    <HMailServerTypeLibrary Condition="'$(HMailServerTypeLibrary)' == ''">$([MSBuild]::GetRegistryValueFromView('HKEY_CLASSES_ROOT\TypeLib\{DB241B59-A1B1-4C59-98FC-8D101A2995F2}\1.0\0\win64', '', null, RegistryView.Registry64))</HMailServerTypeLibrary>
+  </PropertyGroup>
+</Project>

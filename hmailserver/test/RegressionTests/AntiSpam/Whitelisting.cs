@@ -78,11 +78,11 @@ namespace RegressionTests.AntiSpam
 
          var emailAddress = @"A%B/C\D_@microsoft.com";
          address.EmailAddress = emailAddress;
-         Assert.AreEqual(emailAddress, address.EmailAddress);
+         Assert.That(address.EmailAddress, Is.EqualTo(emailAddress));
 
          emailAddress = @"\%%%__\_@microsoft.com";
          address.EmailAddress = emailAddress;
-         Assert.AreEqual(emailAddress, address.EmailAddress);
+         Assert.That(address.EmailAddress, Is.EqualTo(emailAddress));
       }
 
       [Test]
@@ -519,7 +519,7 @@ namespace RegressionTests.AntiSpam
             "Message body");
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText("whitelist@example.test", "test");
-         Assert.IsFalse(message.Contains("X-hMailServer-Reason-Score"));
+         Assert.That(message.Contains("X-hMailServer-Reason-Score"), Is.False);
       }
 
 

@@ -51,7 +51,7 @@ namespace RegressionTests.Shared
       {
          _stopServerEvent.Set();
 
-         Assert.IsTrue(_workerThreadFinished.WaitOne(TimeSpan.FromSeconds(15), false));
+         Assert.That(_workerThreadFinished.WaitOne(TimeSpan.FromSeconds(15), false), Is.True);
 
          // The listen thread stops the listener before signalling that it has finished.
          DisposeSocket();
@@ -75,7 +75,7 @@ namespace RegressionTests.Shared
 
          // Don't return until we have started to listen. This is done to prevent
          // someone from trying to continue the test before we're ready.
-         Assert.IsTrue(_listenThreadStarted.WaitOne(TimeSpan.FromSeconds(15), false));
+         Assert.That(_listenThreadStarted.WaitOne(TimeSpan.FromSeconds(15), false), Is.True);
 
          if (_workerThreadException != null)
             throw _workerThreadException;
@@ -120,7 +120,9 @@ namespace RegressionTests.Shared
 
             try
             {
-               _tcpListener.BeginAcceptSocket(OnAcceptSocket, null);
+               // BeginAcceptTcpClient, to match EndAcceptTcpClient. On .NET the two accept
+               // methods are task based, and ending one with the other throws.
+               _tcpListener.BeginAcceptTcpClient(OnAcceptSocket, null);
             }
             finally
             {
@@ -159,6 +161,14 @@ namespace RegressionTests.Shared
 
             HandleClient();
          }
+         catch (Exception ex)
+         {
+            // This runs on a thread pool thread, where an unhandled exception ends the test
+            // process on .NET. The .NET Framework NUnit agent ignored such exceptions, so the
+            // simulated server keeps doing so: it logs the error and the test goes on to judge
+            // the result by what the server under test did.
+            Console.WriteLine($"Simulated server: client handling failed: {ex}");
+         }
          finally
          {
             DisposeSocket();
@@ -193,12 +203,10 @@ namespace RegressionTests.Shared
 
          if (_numberOfConnectedClients < _maxNumberOfConnections)
             Assert.Fail(
-               "At {0} - Client did not connect to simulated server. Expected connection count: {1}, Actual: {2}\r\nLog:\r\n{3}",
-               DateTime.Now, _maxNumberOfConnections, _numberOfConnectedClients, log);
+               $"At {DateTime.Now} - Client did not connect to simulated server. Expected connection count: {_maxNumberOfConnections}, Actual: {_numberOfConnectedClients}\r\nLog:\r\n{log}");
          else
             Assert.Fail(
-               "At {0} - Client did not disconnect from simulated server. Expected connection count: {1}, Actual: {2}\r\nLog:\r\n{3}",
-               DateTime.Now, _maxNumberOfConnections, _numberOfConnectedClients, log);
+               $"At {DateTime.Now} - Client did not disconnect from simulated server. Expected connection count: {_maxNumberOfConnections}, Actual: {_numberOfConnectedClients}\r\nLog:\r\n{log}");
       }
 
       public void Disconnect()

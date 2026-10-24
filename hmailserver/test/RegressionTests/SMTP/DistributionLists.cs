@@ -84,7 +84,7 @@ namespace RegressionTests.SMTP
          }
          catch (Exception ex)
          {
-            Assert.IsTrue(ex.Message.Contains("The recipient address is empty"), ex.Message);
+            Assert.That(ex.Message.Contains("The recipient address is empty"), Is.True, ex.Message);
             return;
          }
 

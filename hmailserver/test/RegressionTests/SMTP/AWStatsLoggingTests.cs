@@ -46,10 +46,10 @@ namespace RegressionTests.SMTP
          CustomAsserts.AssertDeleteFile(_logging.CurrentAwstatsLog);
          var expectedString = string.Format("\ttest@external.com\ttest@example.test\t{0}\t127.0.0.1\tSMTP\t?\t250\t",
             localAddress);
-         StringAssert.Contains(expectedString, contents);
+         Assert.That(contents, Does.Contain(expectedString));
 
          // Verify there's just 1 logged line
-         Assert.AreEqual(1, contents.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Length);
+         Assert.That(contents.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Length, Is.EqualTo(1));
       }
 
       [Test]
@@ -69,10 +69,10 @@ namespace RegressionTests.SMTP
          CustomAsserts.AssertDeleteFile(_logging.CurrentAwstatsLog);
          var expectedString = string.Format("\ttest@example.test\ttest@example.test\t{0}\t127.0.0.1\tSMTP\t?\t530\t",
             localAddress);
-         StringAssert.Contains(expectedString, contents);
+         Assert.That(contents, Does.Contain(expectedString));
 
          // Verify there's just 1 logged line
-         Assert.AreEqual(1, contents.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Length);
+         Assert.That(contents.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Length, Is.EqualTo(1));
       }
 
       [Test]
@@ -89,10 +89,10 @@ namespace RegressionTests.SMTP
          var contents = TestSetup.ReadExistingTextFile(_logging.CurrentAwstatsLog);
          CustomAsserts.AssertDeleteFile(_logging.CurrentAwstatsLog);
          var expectedString = "\ttest@example.test\ttest@example.test\t127.0.0.1\t127.0.0.1\tSMTP\t?\t550\t";
-         StringAssert.Contains(expectedString, contents);
+         Assert.That(contents, Does.Contain(expectedString));
 
          // Verify there's just 1 logged line
-         Assert.AreEqual(1, contents.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Length);
+         Assert.That(contents.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Length, Is.EqualTo(1));
       }
 
       private void CreateDeleteAllMailRule()

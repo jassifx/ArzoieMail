@@ -28,7 +28,7 @@ namespace RegressionTests.IMAP
          simulator.SendSingleCommandWithLiteral("A01 APPEND INBOX {4}", "ABCD");
 
          // Confirm it exists in the IMAP folder.
-         Assert.AreEqual(1, simulator.GetMessageCount("INBOX"));
+         Assert.That(simulator.GetMessageCount("INBOX"), Is.EqualTo(1));
          simulator.Disconnect();
 
          // The public directory should still be empty - the message was added to the user account.
@@ -68,8 +68,8 @@ namespace RegressionTests.IMAP
          simulator.SendSingleCommandWithLiteral("A01 APPEND #Public.Share {4}", "ABCD");
 
          // Confirm that the message exists in the public folder and not in the inbox.
-         Assert.AreEqual(1, simulator.GetMessageCount("#Public.Share"));
-         Assert.AreEqual(0, simulator.GetMessageCount("INBOX"));
+         Assert.That(simulator.GetMessageCount("#Public.Share"), Is.EqualTo(1));
+         Assert.That(simulator.GetMessageCount("INBOX"), Is.EqualTo(0));
          simulator.Disconnect();
 
 
@@ -89,7 +89,7 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.LogonWithLiteral("check@example.test", "test");
          simulator.SendSingleCommandWithLiteral("A01 APPEND INBOX {4}", "ABCD");
-         Assert.AreEqual(1, simulator.GetMessageCount("INBOX"));
+         Assert.That(simulator.GetMessageCount("INBOX"), Is.EqualTo(1));
          simulator.Disconnect();
       }
 
@@ -112,7 +112,7 @@ namespace RegressionTests.IMAP
             message.ToString());
          imapSim.Logout();
 
-         Assert.IsFalse(result.StartsWith("A01 NO Message size exceeds fixed maximum message size."));
+         Assert.That(result.StartsWith("A01 NO Message size exceeds fixed maximum message size."), Is.False);
       }
 
       [Test]
@@ -134,7 +134,7 @@ namespace RegressionTests.IMAP
             message.ToString());
          imapSim.Logout();
 
-         Assert.IsTrue(result.StartsWith("A01 NO Message size exceeds fixed maximum message size."));
+         Assert.That(result.StartsWith("A01 NO Message size exceeds fixed maximum message size."), Is.True);
       }
 
       [Test]
@@ -155,7 +155,7 @@ namespace RegressionTests.IMAP
             message.ToString());
          imapSim.Logout();
 
-         Assert.IsFalse(result.StartsWith("A01 NO Message size exceeds fixed maximum message size."));
+         Assert.That(result.StartsWith("A01 NO Message size exceeds fixed maximum message size."), Is.False);
       }
 
       [Test]
@@ -176,7 +176,7 @@ namespace RegressionTests.IMAP
             message.ToString());
          imapSim.Logout();
 
-         Assert.IsTrue(result.StartsWith("A01 NO Message size exceeds fixed maximum message size."));
+         Assert.That(result.StartsWith("A01 NO Message size exceeds fixed maximum message size."), Is.True);
       }
 
 

@@ -38,7 +38,7 @@ namespace RegressionTests.SMTP
 
          var sMessageData = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
 
-         Assert.IsTrue(sMessageData.Contains("Regards Martin Knafve"));
+         Assert.That(sMessageData.Contains("Regards Martin Knafve"), Is.True);
       }
 
       /// <summary>
@@ -161,7 +161,7 @@ namespace RegressionTests.SMTP
 
          var sMessageData = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
 
-         Assert.IsTrue(sMessageData.Contains("Regards Knafve, Martin"));
+         Assert.That(sMessageData.Contains("Regards Knafve, Martin"), Is.True);
       }
 
       [Test]
@@ -222,7 +222,7 @@ namespace RegressionTests.SMTP
 
          var messageData = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsFalse(messageData.Contains(_domain.SignaturePlainText));
+         Assert.That(messageData.Contains(_domain.SignaturePlainText), Is.False);
       }
 
       /// <summary>
@@ -245,7 +245,7 @@ namespace RegressionTests.SMTP
 
          var messageData = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(messageData.Contains(_domain.SignaturePlainText));
+         Assert.That(messageData.Contains(_domain.SignaturePlainText), Is.True);
       }
 
       /// <summary>
@@ -269,7 +269,7 @@ namespace RegressionTests.SMTP
 
          var messageData = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(messageData.Contains("%User.FirstName%"));
+         Assert.That(messageData.Contains("%User.FirstName%"), Is.True);
       }
 
       [Test]
@@ -281,13 +281,13 @@ namespace RegressionTests.SMTP
          var tempFile = Path.Combine(TestSetup.GetSharedTempDirectory(), Guid.NewGuid().ToString());
          message.Attachments[1].SaveAs(tempFile);
 
-         Assert.IsTrue(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), message.Body);
-         Assert.IsTrue(message.HTMLBody.Contains("<b>HtmlBody</b>\r\n<br/>\r\nHtmlSignature"), message.HTMLBody);
+         Assert.That(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), Is.True, message.Body);
+         Assert.That(message.HTMLBody.Contains("<b>HtmlBody</b>\r\n<br/>\r\nHtmlSignature"), Is.True, message.HTMLBody);
 
          try
          {
             var content = File.ReadAllText(tempFile);
-            Assert.AreEqual("Test", content);
+            Assert.That(content, Is.EqualTo("Test"));
          }
          finally
          {
@@ -304,13 +304,13 @@ namespace RegressionTests.SMTP
          var tempFile = Path.Combine(TestSetup.GetSharedTempDirectory(), Guid.NewGuid().ToString());
          message.Attachments[1].SaveAs(tempFile);
 
-         Assert.IsTrue(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), message.Body);
-         Assert.IsTrue(message.HTMLBody.Contains("<b>HtmlBody</b>\r\n<br/>\r\nHtmlSignature"), message.HTMLBody);
+         Assert.That(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), Is.True, message.Body);
+         Assert.That(message.HTMLBody.Contains("<b>HtmlBody</b>\r\n<br/>\r\nHtmlSignature"), Is.True, message.HTMLBody);
 
          try
          {
             var content = File.ReadAllText(tempFile);
-            Assert.AreEqual("HtmlAttachment", content);
+            Assert.That(content, Is.EqualTo("HtmlAttachment"));
          }
          finally
          {
@@ -324,8 +324,8 @@ namespace RegressionTests.SMTP
          var message = SendMessageWithSignature("PlainTextSignature", "HtmlSignature",
             TestResources.EmailWith_TextPlainBody_NoContentType);
 
-         Assert.IsTrue(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), message.Body);
-         Assert.AreEqual("", message.HTMLBody);
+         Assert.That(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), Is.True, message.Body);
+         Assert.That(message.HTMLBody, Is.EqualTo(""));
       }
 
       [Test]
@@ -334,8 +334,8 @@ namespace RegressionTests.SMTP
          var message = SendMessageWithSignature("PlainTextSignature", "HtmlSignature",
             TestResources.EmailWith_TextPlainBody_TextPlainContentType);
 
-         Assert.IsTrue(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), message.Body);
-         Assert.AreEqual("", message.HTMLBody);
+         Assert.That(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), Is.True, message.Body);
+         Assert.That(message.HTMLBody, Is.EqualTo(""));
       }
 
       [Test]
@@ -344,8 +344,8 @@ namespace RegressionTests.SMTP
          var message = SendMessageWithSignature("PlainTextSignature", "HtmlSignature",
             TestResources.EmailWith_TextHtmlBody_TextHtmlContentType);
 
-         Assert.AreEqual("", message.Body);
-         Assert.IsTrue(message.HTMLBody.Contains("<b>HtmlBody</b>\r\n<br/>\r\nHtmlSignature"), message.HTMLBody);
+         Assert.That(message.Body, Is.EqualTo(""));
+         Assert.That(message.HTMLBody.Contains("<b>HtmlBody</b>\r\n<br/>\r\nHtmlSignature"), Is.True, message.HTMLBody);
       }
 
       [Test]
@@ -354,8 +354,8 @@ namespace RegressionTests.SMTP
          var message = SendMessageWithSignature("PlainTextSignature", "HtmlSignature",
             TestResources.EmailWith_TextPlainBody_TextHtmlBody);
 
-         Assert.IsTrue(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), message.Body);
-         Assert.IsTrue(message.HTMLBody.Contains("<b>HtmlBody</b>\r\n<br/>\r\nHtmlSignature"), message.HTMLBody);
+         Assert.That(message.Body.Contains("PlainTextBody\r\n\r\nPlainTextSignature"), Is.True, message.Body);
+         Assert.That(message.HTMLBody.Contains("<b>HtmlBody</b>\r\n<br/>\r\nHtmlSignature"), Is.True, message.HTMLBody);
       }
 
 
@@ -390,7 +390,8 @@ namespace RegressionTests.SMTP
          var message = CustomAsserts.AssertGetFirstMessage(_account, "Inbox");
 
          // The signature should have been appended.
-         Assert.IsTrue(message.Body.Contains("MyDomainSignature"),
+         Assert.That(message.Body.Contains("MyDomainSignature"),
+            Is.True,
             "Expected the domain signature to be present in the delivered message body.");
       }
 

@@ -17,7 +17,7 @@ namespace RegressionTests.SMTP
          smtpConn.SendAndReceive("EHLO example.com\r\n");
 
          var response = smtpConn.SendAndReceive("MAIL FROM: example@example.com A=B\r\n");
-         Assert.AreEqual("550 Unsupported ESMTP extension: A=B\r\n", response);
+         Assert.That(response, Is.EqualTo("550 Unsupported ESMTP extension: A=B\r\n"));
       }
 
       [Test]
@@ -32,7 +32,7 @@ namespace RegressionTests.SMTP
          var b = smtpConn.SendAndReceive("MAIL FROM: example@example.com\r\n");
 
          var response = smtpConn.SendAndReceive("RCPT TO: example@example.com A=B\r\n");
-         Assert.AreEqual("550 Unsupported ESMTP extension: A=B\r\n", response);
+         Assert.That(response, Is.EqualTo("550 Unsupported ESMTP extension: A=B\r\n"));
       }
    }
 }

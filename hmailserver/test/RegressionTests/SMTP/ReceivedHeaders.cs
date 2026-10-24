@@ -41,7 +41,7 @@ namespace RegressionTests.SMTP
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
 
-         Assert.IsTrue(message.Contains(" with ESMTPA"));
+         Assert.That(message.Contains(" with ESMTPA"), Is.True);
       }
 
       [Test]
@@ -55,7 +55,7 @@ namespace RegressionTests.SMTP
             out errorMessage);
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-         Assert.IsTrue(message.Contains(" with ESMTPS"));
+         Assert.That(message.Contains(" with ESMTPS"), Is.True);
       }
 
       [Test]
@@ -71,7 +71,7 @@ namespace RegressionTests.SMTP
                out errorMessage);
 
             var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-            Assert.IsTrue(message.Contains(" with ESMTPSA"));
+            Assert.That(message.Contains(" with ESMTPSA"), Is.True);
          }
          catch (Exception e)
          {
@@ -92,9 +92,9 @@ namespace RegressionTests.SMTP
                out errorMessage);
 
             var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-            Assert.IsTrue(message.Contains("version=TLS"));
-            Assert.IsTrue(message.Contains("cipher="));
-            Assert.IsTrue(message.Contains("bits="));
+            Assert.That(message.Contains("version=TLS"), Is.True);
+            Assert.That(message.Contains("cipher="), Is.True);
+            Assert.That(message.Contains("bits="), Is.True);
          }
          catch (Exception e)
          {
@@ -116,7 +116,7 @@ namespace RegressionTests.SMTP
                out errorMessage);
 
             var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-            Assert.IsFalse(message.Contains("cipher\r\n"));
+            Assert.That(message.Contains("cipher\r\n"), Is.False);
          }
          catch (Exception e)
          {
@@ -136,8 +136,8 @@ namespace RegressionTests.SMTP
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(recipient.Address, "test");
          var receivedHeader = GetReceivedHeader(message);
 
-         StringAssert.Contains("(envelope-from <test@example.test>)", receivedHeader);
-         StringAssert.Contains(" for <recipient@example.test>", receivedHeader);
+         Assert.That(receivedHeader, Does.Contain("(envelope-from <test@example.test>)"));
+         Assert.That(receivedHeader, Does.Contain(" for <recipient@example.test>"));
       }
 
       [Test]
@@ -153,9 +153,9 @@ namespace RegressionTests.SMTP
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
          var receivedHeader = GetReceivedHeader(message);
 
-         StringAssert.Contains(" with ESMTPA", receivedHeader);
-         StringAssert.DoesNotContain("envelope-from", receivedHeader);
-         StringAssert.Contains(" for <test@example.test>", receivedHeader);
+         Assert.That(receivedHeader, Does.Contain(" with ESMTPA"));
+         Assert.That(receivedHeader, Does.Not.Contain("envelope-from"));
+         Assert.That(receivedHeader, Does.Contain(" for <test@example.test>"));
       }
 
       [Test]
@@ -171,8 +171,8 @@ namespace RegressionTests.SMTP
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
          var receivedHeader = GetReceivedHeader(message);
 
-         StringAssert.Contains(" for <test@example.test>", receivedHeader);
-         StringAssert.Contains("version=TLS", receivedHeader);
+         Assert.That(receivedHeader, Does.Contain(" for <test@example.test>"));
+         Assert.That(receivedHeader, Does.Contain("version=TLS"));
       }
 
       [Test]
@@ -187,7 +187,7 @@ namespace RegressionTests.SMTP
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
          var receivedHeader = GetReceivedHeader(message);
 
-         StringAssert.Contains(" for <alias@example.test>", receivedHeader);
+         Assert.That(receivedHeader, Does.Contain(" for <alias@example.test>"));
       }
 
       [Test]
@@ -202,15 +202,15 @@ namespace RegressionTests.SMTP
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(recipient.Address, "test");
          var receivedHeader = GetReceivedHeader(message);
 
-         StringAssert.Contains("(envelope-from <sender@example.test>)", receivedHeader);
-         StringAssert.DoesNotContain(" for <", receivedHeader);
+         Assert.That(receivedHeader, Does.Contain("(envelope-from <sender@example.test>)"));
+         Assert.That(receivedHeader, Does.Not.Contain(" for <"));
       }
 
       private static string GetReceivedHeader(string message)
       {
          // The header ends at the first line which is not a continuation line.
          var start = message.IndexOf("Received: ", StringComparison.Ordinal);
-         Assert.GreaterOrEqual(start, 0, message);
+         Assert.That(start, Is.GreaterThanOrEqualTo(0), message);
 
          var end = start;
          do

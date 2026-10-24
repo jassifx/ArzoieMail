@@ -20,11 +20,20 @@ namespace RegressionTests.SMTP
       // helper
       private static void Send50Messages()
       {
-         for (var i = 0; i < 50; i++)
+         // Runs on its own thread, where an unhandled exception would end the test process on
+         // .NET. A failed send shows up in the message count the test checks.
+         try
          {
-            var smtpClientSimulator = new SmtpClientSimulator();
-            smtpClientSimulator.Send("test@example.test", "bigaccount@example.test", "Big account email",
-               "Body av email");
+            for (var i = 0; i < 50; i++)
+            {
+               var smtpClientSimulator = new SmtpClientSimulator();
+               smtpClientSimulator.Send("test@example.test", "bigaccount@example.test", "Big account email",
+                  "Body av email");
+            }
+         }
+         catch (Exception ex)
+         {
+            Console.WriteLine($"Sending failed: {ex}");
          }
       }
 
@@ -44,20 +53,20 @@ namespace RegressionTests.SMTP
          Thread.Sleep(1000);
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
          sock.Send("EHLO test.com\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
 
          var base64EncodedUsername = EncodeBase64("test@example.test");
          sock.Send("AUTH LOGIN " + base64EncodedUsername + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("334"));
+         Assert.That(sock.Receive().StartsWith("334"), Is.True);
 
          sock.Send(EncodeBase64("test") + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("235"));
+         Assert.That(sock.Receive().StartsWith("235"), Is.True);
 
          var lastLogonTimeAfter =
             Convert.ToDateTime(SingletonProvider<TestSetup>.Instance.GetApp().Domains[0].Accounts[0].LastLogonTime);
-         Assert.AreNotEqual(lastLogonTimeBefore, lastLogonTimeAfter);
+         Assert.That(lastLogonTimeAfter, Is.Not.EqualTo(lastLogonTimeBefore));
       }
 
       [Test]
@@ -67,20 +76,20 @@ namespace RegressionTests.SMTP
 
          var sock = new TcpConnection();
          sock.Connect(25);
-         Assert.IsTrue(sock.Receive().StartsWith("220"));
+         Assert.That(sock.Receive().StartsWith("220"), Is.True);
          sock.Send("EHLO test.com\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("250"));
+         Assert.That(sock.Receive().StartsWith("250"), Is.True);
 
          // Login a first time
          var base64EncodedUsername = EncodeBase64("test@example.test");
          sock.Send("AUTH LOGIN " + base64EncodedUsername + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("334"));
+         Assert.That(sock.Receive().StartsWith("334"), Is.True);
          sock.Send(EncodeBase64("test") + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("235"));
+         Assert.That(sock.Receive().StartsWith("235"), Is.True);
 
          // Login a second time
          sock.Send("AUTH LOGIN " + base64EncodedUsername + "\r\n");
-         Assert.IsTrue(sock.Receive().StartsWith("503 Already authenticated."));
+         Assert.That(sock.Receive().StartsWith("503 Already authenticated."), Is.True);
       }
 
 
@@ -116,13 +125,13 @@ namespace RegressionTests.SMTP
 
          // Make sure it bounced.
          var content = Pop3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
-         Assert.IsTrue(content.Contains("Inbox is full"));
-         Assert.IsTrue(content.Contains("Subject: Test subject"));
+         Assert.That(content.Contains("Inbox is full"), Is.True);
+         Assert.That(content.Contains("Subject: Test subject"), Is.True);
 
          // Make sure body contains year.
          var bodyStartPos = content.IndexOf("\r\n\r\n");
          var yearPos = content.IndexOf(DateTime.Now.Year.ToString(), bodyStartPos);
-         Assert.IsTrue(yearPos >= 0);
+         Assert.That(yearPos >= 0, Is.True);
       }
 
       [Test]
@@ -152,8 +161,8 @@ namespace RegressionTests.SMTP
 
          CustomAsserts.AssertRecipientsInDeliveryQueue(0);
          var bounce = Pop3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
-         Assert.IsTrue(bounce.Contains("In-Reply-To: " + messageID));
-         Assert.IsTrue(bounce.Contains("References: " + previousReference + " " + messageID));
+         Assert.That(bounce.Contains("In-Reply-To: " + messageID), Is.True);
+         Assert.That(bounce.Contains("References: " + previousReference + " " + messageID), Is.True);
       }
 
       [Test]
@@ -198,7 +207,7 @@ namespace RegressionTests.SMTP
             // This should now be processed via the rule -> route -> external server we've set up.
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
@@ -215,7 +224,7 @@ namespace RegressionTests.SMTP
          CustomAsserts.AssertRecipientsInDeliveryQueue(0);
          var lastLogonTimeAfter =
             Convert.ToDateTime(SingletonProvider<TestSetup>.Instance.GetApp().Domains[0].Accounts[0].LastLogonTime);
-         Assert.AreEqual(lastLogonTimeBefore, lastLogonTimeAfter);
+         Assert.That(lastLogonTimeAfter, Is.EqualTo(lastLogonTimeBefore));
       }
 
       [Test]
@@ -232,7 +241,7 @@ namespace RegressionTests.SMTP
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
          var message = account.IMAPFolders.get_ItemByName("INBOX").Messages[0];
-         Assert.IsTrue(message.get_Flag(eMessageFlag.eMFVirusScan));
+         Assert.That(message.get_Flag(eMessageFlag.eMFVirusScan), Is.True);
       }
 
 
@@ -264,10 +273,10 @@ namespace RegressionTests.SMTP
          var content = Pop3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
 
          // The bounce message should contain the MIME-version.
-         Assert.IsTrue(content.Contains("MIME-Version: 1.0"));
+         Assert.That(content.Contains("MIME-Version: 1.0"), Is.True);
 
          // Lines may not end with space if they are QP-encoded.
-         Assert.IsTrue(content.Contains("  Subject:=20"));
+         Assert.That(content.Contains("  Subject:=20"), Is.True);
       }
 
 
@@ -287,8 +296,8 @@ namespace RegressionTests.SMTP
 
          var test = Pop3ClientSimulator.AssertGetFirstMessageText("test@example.test", "test");
 
-         Assert.IsTrue(test.Contains("Message-Id"));
-         Assert.IsFalse(test.Contains("Message-ID"));
+         Assert.That(test.Contains("Message-Id"), Is.True);
+         Assert.That(test.Contains("Message-ID"), Is.False);
       }
 
       [Test]
@@ -307,7 +316,7 @@ namespace RegressionTests.SMTP
 
          var test = Pop3ClientSimulator.AssertGetFirstMessageText("test@example.test", "test");
 
-         Assert.IsTrue(test.Contains("Message-ID: <"));
+         Assert.That(test.Contains("Message-ID: <"), Is.True);
       }
 
       [Test]
@@ -320,7 +329,7 @@ namespace RegressionTests.SMTP
          // localhost rely on this.
          var range =
             SingletonProvider<TestSetup>.Instance.GetApp().Settings.SecurityRanges.get_ItemByName("My computer");
-         Assert.IsFalse(range.RequireSMTPAuthLocalToLocal);
+         Assert.That(range.RequireSMTPAuthLocalToLocal, Is.False);
 
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
@@ -328,7 +337,7 @@ namespace RegressionTests.SMTP
 
          var test = Pop3ClientSimulator.AssertGetFirstMessageText("test@example.test", "test");
 
-         Assert.IsTrue(test.Contains("Message-ID: <"));
+         Assert.That(test.Contains("Message-ID: <"), Is.True);
       }
 
       [Test]
@@ -343,7 +352,7 @@ namespace RegressionTests.SMTP
 
          var test = Pop3ClientSimulator.AssertGetFirstMessageText("test@example.test", "test");
 
-         Assert.IsFalse(test.Contains("Message-ID"));
+         Assert.That(test.Contains("Message-ID"), Is.False);
       }
 
       [Test]
@@ -354,12 +363,12 @@ namespace RegressionTests.SMTP
          settings.HostName = "examplify.com";
 
          var socket = new TcpConnection();
-         Assert.IsTrue(socket.Connect(25));
+         Assert.That(socket.Connect(25), Is.True);
          var result = socket.Receive();
          socket.Send("EHLO example.com\r\n");
          result = socket.Receive();
          socket.Disconnect();
-         Assert.IsTrue(result.Contains("250-" + settings.HostName));
+         Assert.That(result.Contains("250-" + settings.HostName), Is.True);
       }
 
       [Test]
@@ -421,36 +430,36 @@ namespace RegressionTests.SMTP
          var smtpClientSimulator = new TcpConnection();
          smtpClientSimulator.Connect(25);
 
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("220"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("220"), Is.True);
          smtpClientSimulator.Send("HELO test\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
 
          // A few tests of invalid syntax.
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@example.test\r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: test@example.test>\r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: <    test@example.test    \r\n")
-            .StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: <        \r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: >        \r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM: <sdsdfs@sdsdf.csd\r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM <sdsdfs@sdsdf.csd>\r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("MAIL FROM  sdsdfs@sdsdf.csd\r\n").StartsWith("250"));
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@example.test\r\n").StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: test@example.test>\r\n").StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: <    test@example.test    \r\n")
+            .StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: <        \r\n").StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: >        \r\n").StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: <sdsdfs@sdsdf.csd\r\n").StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM <sdsdfs@sdsdf.csd>\r\n").StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM  sdsdfs@sdsdf.csd\r\n").StartsWith("250"), Is.False);
 
          // Valid syntax, < and >
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@example.test>\r\n").StartsWith("250"));
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@example.test>\r\n").StartsWith("250"), Is.True);
+         Assert.That(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"), Is.True);
 
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM: test@example.test\r\n").StartsWith("250"));
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: test@example.test\r\n").StartsWith("250"), Is.True);
+         Assert.That(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"), Is.True);
 
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM:    test@example.test   \r\n").StartsWith("250"));
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM:    test@example.test   \r\n").StartsWith("250"), Is.True);
+         Assert.That(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"), Is.True);
 
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM:test@example.test\r\n").StartsWith("250"));
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM:test@example.test\r\n").StartsWith("250"), Is.True);
+         Assert.That(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"), Is.True);
 
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM:<test@example.test>\r\n").StartsWith("250"));
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"));
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM:<test@example.test>\r\n").StartsWith("250"), Is.True);
+         Assert.That(smtpClientSimulator.SendAndReceive("RSET\r\n").StartsWith("250"), Is.True);
 
          smtpClientSimulator.Disconnect();
       }
@@ -487,7 +496,7 @@ namespace RegressionTests.SMTP
 
          // Make sure it bounced.
          var content = Pop3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
-         Assert.IsTrue(content.Contains("Inbox is full"));
+         Assert.That(content.Contains("Inbox is full"), Is.True);
       }
 
       [Test]
@@ -504,7 +513,7 @@ namespace RegressionTests.SMTP
 
          var ehloResponse = smtpClient.SendAndReceive("EHLO example.com\r\n");
 
-         StringAssert.Contains("250-SIZE 104857600", ehloResponse, ehloResponse);
+         Assert.That(ehloResponse, Does.Contain("250-SIZE 104857600"), ehloResponse);
       }
 
       [Test]
@@ -585,7 +594,7 @@ namespace RegressionTests.SMTP
             server.WaitForCompletion();
 
             var log = LogHandler.ReadCurrentDefaultLog();
-            Assert.IsTrue(log.Contains("Truncating MX server list."));
+            Assert.That(log.Contains("Truncating MX server list."), Is.True);
          }
       }
 
@@ -707,13 +716,14 @@ namespace RegressionTests.SMTP
          var smtpClientSimulator = new TcpConnection();
          smtpClientSimulator.Connect(25);
 
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("220"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("220"), Is.True);
          smtpClientSimulator.Send("HELO test\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
 
          // A few tests of invalid syntax.
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@example.test> AUTH=<>\r\n")
-            .StartsWith("250"));
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@example.test> AUTH=<>\r\n")
+            .StartsWith("250"),
+            Is.True);
 
          smtpClientSimulator.Disconnect();
       }
@@ -729,19 +739,19 @@ namespace RegressionTests.SMTP
          var smtpClientSimulator = new TcpConnection();
          smtpClientSimulator.Connect(25);
 
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("220"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("220"), Is.True);
          smtpClientSimulator.Send("HELO test\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
 
          // A few tests of invalid syntax.
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@example.test>\r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("RCPT TO: test@example.test>\r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("RCPT TO: <test@example.test\r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("RCPT TO <test@example.test\r\n").StartsWith("250"));
-         Assert.IsFalse(smtpClientSimulator.SendAndReceive("RCPT TO<test@example.test\r\n").StartsWith("250"));
+         Assert.That(smtpClientSimulator.SendAndReceive("MAIL FROM: <test@example.test>\r\n").StartsWith("250"), Is.True);
+         Assert.That(smtpClientSimulator.SendAndReceive("RCPT TO: test@example.test>\r\n").StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("RCPT TO: <test@example.test\r\n").StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("RCPT TO <test@example.test\r\n").StartsWith("250"), Is.False);
+         Assert.That(smtpClientSimulator.SendAndReceive("RCPT TO<test@example.test\r\n").StartsWith("250"), Is.False);
 
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RCPT TO: <test@example.test>\r\n").StartsWith("250"));
-         Assert.IsTrue(smtpClientSimulator.SendAndReceive("RCPT TO: test@example.test\r\n").StartsWith("250"));
+         Assert.That(smtpClientSimulator.SendAndReceive("RCPT TO: <test@example.test>\r\n").StartsWith("250"), Is.True);
+         Assert.That(smtpClientSimulator.SendAndReceive("RCPT TO: test@example.test\r\n").StartsWith("250"), Is.True);
 
          smtpClientSimulator.Disconnect();
       }
@@ -762,15 +772,15 @@ namespace RegressionTests.SMTP
 
          var smtpClientSimulator = new TcpConnection();
          smtpClientSimulator.Connect(25);
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("220"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("220"), Is.True);
          smtpClientSimulator.Send("HELO test\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
          smtpClientSimulator.Send("MAIL FROM: test@example.test\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
          smtpClientSimulator.Send("RCPT TO: knafve@gmail.com\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
          smtpClientSimulator.Send("RCPT TO: knafve@gmail.com\r\n");
-         Assert.IsTrue(smtpClientSimulator.Receive().StartsWith("250"));
+         Assert.That(smtpClientSimulator.Receive().StartsWith("250"), Is.True);
 
          smtpClientSimulator.Disconnect();
       }
@@ -807,7 +817,7 @@ namespace RegressionTests.SMTP
             // This should now be processed via the rule -> route -> external server we've set up.
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
@@ -826,7 +836,7 @@ namespace RegressionTests.SMTP
             "test@sdag532sdfagdsa12fsdafdsa1.com",
             "test2@dummy-example.com", "Mail 1", "Test message"));
 
-         StringAssert.Contains("550 Delivery is not allowed to this address.", ex.Message, ex.Message);
+         Assert.That(ex.Message, Does.Contain("550 Delivery is not allowed to this address."), ex.Message);
       }
 
       [Test]
@@ -858,7 +868,7 @@ namespace RegressionTests.SMTP
             // This should now be processed via the rule -> route -> external server we've set up.
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
          }
       }
 
@@ -955,7 +965,7 @@ namespace RegressionTests.SMTP
             CustomAsserts.Throws<DeliveryFailedException>(() =>
                sim.Send(senderAccount.Address, recipientAccount.Address, "MySubject", "Test", out result));
 
-            Assert.IsTrue(result.StartsWith("4"), "Expected temporary error, but was: " + result);
+            Assert.That(result.StartsWith("4"), Is.True, "Expected temporary error, but was: " + result);
 
             CustomAsserts.AssertReportedError("Failed to write to the file",
                "Rejected message because no mail data has been saved in file");
@@ -989,7 +999,7 @@ namespace RegressionTests.SMTP
             // Send a invalid username
             sim.Send("YWNhZGVtaWE=\r\n");
             var passwordPrompt = sim.Receive();
-            StringAssert.Contains("334 UGFzc3dvcmQ6", passwordPrompt); // Base64 encoded "Password" prompt
+            Assert.That(passwordPrompt, Does.Contain("334 UGFzc3dvcmQ6")); // Base64 encoded "Password" prompt
 
             // Send a invalid password
             sim.Send("abc\r\n");
@@ -998,11 +1008,11 @@ namespace RegressionTests.SMTP
 
             if (i == 4)
             {
-               StringAssert.Contains("Too many invalid commands", loginResult);
+               Assert.That(loginResult, Does.Contain("Too many invalid commands"));
                return;
             }
 
-            StringAssert.Contains("535 Authentication failed. Restarting authentication process.", loginResult);
+            Assert.That(loginResult, Does.Contain("535 Authentication failed. Restarting authentication process."));
          }
 
          Assert.Fail("Wasn't disconnected");
@@ -1023,7 +1033,7 @@ namespace RegressionTests.SMTP
          sim.SendAndReceive("HELO\r\n");
          sim.SendAndReceive("HELO\r\n");
          var result = sim.SendAndReceive("HELO\r\n");
-         Assert.IsTrue(result.Contains("Too many invalid commands"), result);
+         Assert.That(result.Contains("Too many invalid commands"), Is.True, result);
       }
 
       [Test]
@@ -1035,10 +1045,10 @@ namespace RegressionTests.SMTP
          sim.Receive(); // banner
 
          var rsetResult = sim.SendAndReceive("RSET\r\n");
-         StringAssert.Contains("250 OK", rsetResult);
+         Assert.That(rsetResult, Does.Contain("250 OK"));
 
          var result = sim.SendAndReceive("MAIL FROM:<test@example.com>\r\n");
-         StringAssert.Contains("503 Bad sequence of commands", result);
+         Assert.That(result, Does.Contain("503 Bad sequence of commands"));
       }
 
       [Test]
@@ -1049,9 +1059,9 @@ namespace RegressionTests.SMTP
          sim.Connect(25);
          sim.Receive(); // banner
 
-         StringAssert.Contains("250 Hello.", sim.SendAndReceive("HELO example.com\r\n"));
-         StringAssert.Contains("250 OK", sim.SendAndReceive("RSET\r\n"));
-         StringAssert.Contains("250 OK", sim.SendAndReceive("MAIL FROM:<test@example.com>\r\n"));
+         Assert.That(sim.SendAndReceive("HELO example.com\r\n"), Does.Contain("250 Hello."));
+         Assert.That(sim.SendAndReceive("RSET\r\n"), Does.Contain("250 OK"));
+         Assert.That(sim.SendAndReceive("MAIL FROM:<test@example.com>\r\n"), Does.Contain("250 OK"));
       }
 
       [Test]
@@ -1062,12 +1072,12 @@ namespace RegressionTests.SMTP
          sim.Connect(25);
          sim.Receive(); // banner
 
-         StringAssert.Contains("250 Hello.", sim.SendAndReceive("HELO example.com\r\n"));
-         StringAssert.Contains("250 OK", sim.SendAndReceive("MAIL FROM:<test@example.com>\r\n"));
+         Assert.That(sim.SendAndReceive("HELO example.com\r\n"), Does.Contain("250 Hello."));
+         Assert.That(sim.SendAndReceive("MAIL FROM:<test@example.com>\r\n"), Does.Contain("250 OK"));
 
          // Without the RSET, a second MAIL FROM is rejected as a bad sequence.
-         StringAssert.Contains("250 OK", sim.SendAndReceive("RSET\r\n"));
-         StringAssert.Contains("250 OK", sim.SendAndReceive("MAIL FROM:<test@example.com>\r\n"));
+         Assert.That(sim.SendAndReceive("RSET\r\n"), Does.Contain("250 OK"));
+         Assert.That(sim.SendAndReceive("MAIL FROM:<test@example.com>\r\n"), Does.Contain("250 OK"));
       }
 
       [Test]
@@ -1085,7 +1095,7 @@ namespace RegressionTests.SMTP
          sim.SendAndReceive("HELO\r\n");
          sim.SendAndReceive("HELO\r\n");
          var result = sim.SendAndReceive("HELO test.com\r\n");
-         Assert.IsTrue(result.Contains("250 Hello."), result);
+         Assert.That(result.Contains("250 Hello."), Is.True, result);
       }
 
       [Test]
@@ -1102,13 +1112,13 @@ namespace RegressionTests.SMTP
          sim.SendAndReceive("HELO example.com\r\n");
          sim.SendAndReceive("MAIL FROM: example@example.com\r\n");
          var result = sim.SendAndReceive("RCPT TO: unknown@example.test\r\n");
-         Assert.IsTrue(result.Contains("550 Unknown user"), result);
+         Assert.That(result.Contains("550 Unknown user"), Is.True, result);
          result = sim.SendAndReceive("RCPT TO: unknown@example.test\r\n");
-         Assert.IsTrue(result.Contains("550 Unknown user"), result);
+         Assert.That(result.Contains("550 Unknown user"), Is.True, result);
          result = sim.SendAndReceive("RCPT TO: unknown@example.test\r\n");
-         Assert.IsTrue(result.Contains("550 Unknown user"), result);
+         Assert.That(result.Contains("550 Unknown user"), Is.True, result);
          result = sim.SendAndReceive("RCPT TO: unknown@example.test\r\n");
-         Assert.IsTrue(result.Contains("Too many invalid commands"), result);
+         Assert.That(result.Contains("Too many invalid commands"), Is.True, result);
       }
 
       [TestCase("", "VRFY test@example.test", "502 VRFY disallowed.")]
@@ -1129,13 +1139,13 @@ namespace RegressionTests.SMTP
 
          sim.SendAndReceive("HELO example.com\r\n");
          if (setupCommand != "")
-            StringAssert.Contains("250", sim.SendAndReceive(setupCommand + "\r\n"));
+            Assert.That(sim.SendAndReceive(setupCommand + "\r\n"), Does.Contain("250"));
 
          for (var i = 0; i < 3; i++)
-            StringAssert.Contains(expectedError, sim.SendAndReceive(invalidCommand + "\r\n"));
+            Assert.That(sim.SendAndReceive(invalidCommand + "\r\n"), Does.Contain(expectedError));
 
          var result = sim.SendAndReceive(invalidCommand + "\r\n");
-         StringAssert.Contains("Too many invalid commands", result);
+         Assert.That(result, Does.Contain("Too many invalid commands"));
       }
 
       [Test]
@@ -1153,10 +1163,10 @@ namespace RegressionTests.SMTP
 
          var longLine = "NOOP " + new string('A', 600) + "\r\n";
          for (var i = 0; i < 3; i++)
-            StringAssert.Contains("500 Line too long.", sim.SendAndReceive(longLine));
+            Assert.That(sim.SendAndReceive(longLine), Does.Contain("500 Line too long."));
 
          var result = sim.SendAndReceive(longLine);
-         StringAssert.Contains("Too many invalid commands", result);
+         Assert.That(result, Does.Contain("Too many invalid commands"));
       }
 
       [Test]
@@ -1288,11 +1298,11 @@ namespace RegressionTests.SMTP
 
          for (var i = 0; i < 3; i++)
          {
-            StringAssert.Contains(expectedError, attempt(sim));
+            Assert.That(attempt(sim), Does.Contain(expectedError));
             sim.SendAndReceive("RSET\r\n");
          }
 
-         StringAssert.Contains("Too many invalid commands", attempt(sim));
+         Assert.That(attempt(sim), Does.Contain("Too many invalid commands"));
       }
 
       // Returns the first reply which isn't a positive one.
@@ -1329,10 +1339,10 @@ namespace RegressionTests.SMTP
          sim.SendAndReceive("HELO\r\n");
          sim.SendAndReceive("HELO\r\n");
          var result = sim.SendAndReceive("HELO test.com\r\n");
-         Assert.IsTrue(result.Contains("250 Hello."), result);
+         Assert.That(result.Contains("250 Hello."), Is.True, result);
 
          result = sim.SendAndReceive("HELO\r\n");
-         Assert.IsTrue(result.Contains("Too many invalid commands"), result);
+         Assert.That(result.Contains("Too many invalid commands"), Is.True, result);
       }
 
       /// <summary>
@@ -1371,7 +1381,7 @@ namespace RegressionTests.SMTP
 
             res = sim.Receive();
 
-            Assert.AreEqual("451 Please try again later.\r\n", res);
+            Assert.That(res, Is.EqualTo("451 Please try again later.\r\n"));
          }
 
          sim.Disconnect();
@@ -1405,10 +1415,10 @@ namespace RegressionTests.SMTP
          var content = Pop3ClientSimulator.AssertGetFirstMessageText(senderAccount.Address, "test");
 
          // The bounce message should contain the MIME-version.
-         Assert.IsTrue(content.Contains("MIME-Version: 1.0"));
+         Assert.That(content.Contains("MIME-Version: 1.0"), Is.True);
 
          // Lines may not end with space if they are QP-encoded.
-         Assert.IsTrue(content.Contains("  Subject:=20"));
+         Assert.That(content.Contains("  Subject:=20"), Is.True);
       }
 
       [Test]
@@ -1420,7 +1430,7 @@ namespace RegressionTests.SMTP
          var ex = Assert.Throws<DeliveryFailedException>(() =>
             SmtpClientSimulator.StaticSend(senderAccount.Address, tooLongAddress, "", "foobar"));
 
-         StringAssert.Contains("550 A valid address is required.", ex.Message);
+         Assert.That(ex.Message, Does.Contain("550 A valid address is required."));
       }
 
       [Test]
@@ -1475,8 +1485,8 @@ namespace RegressionTests.SMTP
 
             server.WaitForCompletion();
 
-            Assert.IsTrue(server.MessageData.Contains("Test message"));
-            Assert.AreEqual(deliveryResults.Count, server.RcptTosReceived);
+            Assert.That(server.MessageData.Contains("Test message"), Is.True);
+            Assert.That(server.RcptTosReceived, Is.EqualTo(deliveryResults.Count));
          }
       }
    }

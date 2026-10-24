@@ -136,18 +136,18 @@ namespace RegressionTests.Security
          // Plain ConnectAndLogon leaves the POP3 connection - and its mailbox lock -
          // open. Any test that logs on again afterwards needs that lock released first.
          var pop3 = new Pop3ClientSimulator();
-         Assert.IsTrue(pop3.ConnectAndLogon(address, password));
+         Assert.That(pop3.ConnectAndLogon(address, password), Is.True);
          pop3.Disconnect();
       }
 
       private static void AssertLogonSucceedsOnAllProtocols(string address, string password)
       {
          var pop3 = new Pop3ClientSimulator();
-         Assert.IsTrue(pop3.ConnectAndLogon(address, password));
+         Assert.That(pop3.ConnectAndLogon(address, password), Is.True);
          pop3.Disconnect();
 
          var imap = new ImapClientSimulator();
-         Assert.IsTrue(imap.ConnectAndLogon(address, password));
+         Assert.That(imap.ConnectAndLogon(address, password), Is.True);
          imap.Disconnect();
 
          string errorMessage;
@@ -161,10 +161,10 @@ namespace RegressionTests.Security
          string errorMessage;
 
          var pop3 = new Pop3ClientSimulator();
-         Assert.IsFalse(pop3.ConnectAndLogon(address, password, out errorMessage));
+         Assert.That(pop3.ConnectAndLogon(address, password, out errorMessage), Is.False);
 
          var imap = new ImapClientSimulator();
-         Assert.IsFalse(imap.ConnectAndLogon(address, password, out errorMessage));
+         Assert.That(imap.ConnectAndLogon(address, password, out errorMessage), Is.False);
 
          var smtp = new SmtpClientSimulator();
          CustomAsserts.Throws<AuthenticationException>(() =>
@@ -177,19 +177,19 @@ namespace RegressionTests.Security
          // TestSetup configures PBKDF2-SHA256 with a low iteration count for every
          // test, so the suite runs fast - the actual database-seeded default is
          // Argon2id, exercised explicitly by the tests that need it.
-         Assert.AreEqual(AlgorithmPbkdf2Sha256, _settings.PasswordHashAlgorithm);
-         Assert.AreEqual(0, _settings.PasswordHashMemoryCost);
-         Assert.AreEqual(MinPbkdf2Iterations, _settings.PasswordHashIterations);
+         Assert.That(_settings.PasswordHashAlgorithm, Is.EqualTo(AlgorithmPbkdf2Sha256));
+         Assert.That(_settings.PasswordHashMemoryCost, Is.EqualTo(0));
+         Assert.That(_settings.PasswordHashIterations, Is.EqualTo(MinPbkdf2Iterations));
       }
 
       [Test]
       public void PasswordHashAutoUpgradeCanBeToggled()
       {
          _settings.PasswordHashAutoUpgradeEnabled = false;
-         Assert.IsFalse(_settings.PasswordHashAutoUpgradeEnabled);
+         Assert.That(_settings.PasswordHashAutoUpgradeEnabled, Is.False);
 
          _settings.PasswordHashAutoUpgradeEnabled = true;
-         Assert.IsTrue(_settings.PasswordHashAutoUpgradeEnabled);
+         Assert.That(_settings.PasswordHashAutoUpgradeEnabled, Is.True);
       }
 
       [Test]
@@ -207,7 +207,7 @@ namespace RegressionTests.Security
          AssertLogonSucceedsOnAllProtocols(Address, Password);
 
          ClearCache();
-         Assert.AreEqual(md5, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(md5));
       }
 
       [Test]
@@ -227,7 +227,7 @@ namespace RegressionTests.Security
          LogonAndDisconnect(Address, Password);
          ClearCache();
 
-         Assert.AreEqual(beforeChange, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(beforeChange));
       }
 
       [Test]
@@ -243,7 +243,7 @@ namespace RegressionTests.Security
 
          LogonAndDisconnect(Address, Password);
          ClearCache();
-         Assert.AreEqual(md5, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(md5));
 
          _settings.PasswordHashAutoUpgradeEnabled = true;
          ClearCache();
@@ -251,7 +251,7 @@ namespace RegressionTests.Security
          LogonAndDisconnect(Address, Password);
          ClearCache();
 
-         Assert.IsTrue(GetStoredPassword().StartsWith("$pbkdf2-sha256$"));
+         Assert.That(GetStoredPassword().StartsWith("$pbkdf2-sha256$"), Is.True);
       }
 
       [Test]
@@ -262,7 +262,7 @@ namespace RegressionTests.Security
 
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, Address, Password);
 
-         Assert.IsTrue(GetStoredPassword().StartsWith("$pbkdf2-sha256$"));
+         Assert.That(GetStoredPassword().StartsWith("$pbkdf2-sha256$"), Is.True);
       }
 
       [Test]
@@ -284,7 +284,8 @@ namespace RegressionTests.Security
             _settings.SetAdministratorPassword(AdministratorPassword);
 
             var beforeChange = ReadStoredAdministratorPassword();
-            Assert.IsTrue(beforeChange.StartsWith("$argon2id$"),
+            Assert.That(beforeChange.StartsWith("$argon2id$"),
+               Is.True,
                "Expected an Argon2id hash, but got: " + beforeChange);
 
             // Move the cost away from the one the stored hash was created with, so that
@@ -292,19 +293,20 @@ namespace RegressionTests.Security
             _settings.PasswordHashMemoryCost = 32768;
             _settings.PasswordHashAutoUpgradeEnabled = false;
 
-            Assert.IsNotNull(new Application().Authenticate("Administrator", AdministratorPassword));
+            Assert.That(new Application().Authenticate("Administrator", AdministratorPassword), Is.Not.Null);
 
-            Assert.AreEqual(beforeChange, ReadStoredAdministratorPassword(),
+            Assert.That(ReadStoredAdministratorPassword(),
+               Is.EqualTo(beforeChange),
                "The administrator password was rehashed even though the upgrade is switched off.");
 
             _settings.PasswordHashAutoUpgradeEnabled = true;
 
-            Assert.IsNotNull(new Application().Authenticate("Administrator", AdministratorPassword));
+            Assert.That(new Application().Authenticate("Administrator", AdministratorPassword), Is.Not.Null);
 
             var afterUpgrade = ReadStoredAdministratorPassword();
 
-            Assert.AreNotEqual(beforeChange, afterUpgrade);
-            StringAssert.Contains("m=32768", afterUpgrade);
+            Assert.That(afterUpgrade, Is.Not.EqualTo(beforeChange));
+            Assert.That(afterUpgrade, Does.Contain("m=32768"));
          }
          finally
          {
@@ -322,11 +324,12 @@ namespace RegressionTests.Security
 
          var stored = ReadStoredAdministratorPassword();
 
-         Assert.IsTrue(stored.StartsWith("$pbkdf2-sha256$"),
+         Assert.That(stored.StartsWith("$pbkdf2-sha256$"),
+            Is.True,
             "Expected a PBKDF2-SHA256 hash, but got: " + stored);
 
-         Assert.IsNotNull(new Application().Authenticate("Administrator", AdministratorPassword));
-         Assert.IsNull(new Application().Authenticate("Administrator", AdministratorPassword + "x"));
+         Assert.That(new Application().Authenticate("Administrator", AdministratorPassword), Is.Not.Null);
+         Assert.That(new Application().Authenticate("Administrator", AdministratorPassword + "x"), Is.Null);
       }
 
       [Test]
@@ -336,9 +339,9 @@ namespace RegressionTests.Security
          _settings.PasswordHashMemoryCost = 32768;
          _settings.PasswordHashIterations = 700000;
 
-         Assert.AreEqual(AlgorithmPbkdf2Sha256, _settings.PasswordHashAlgorithm);
-         Assert.AreEqual(32768, _settings.PasswordHashMemoryCost);
-         Assert.AreEqual(700000, _settings.PasswordHashIterations);
+         Assert.That(_settings.PasswordHashAlgorithm, Is.EqualTo(AlgorithmPbkdf2Sha256));
+         Assert.That(_settings.PasswordHashMemoryCost, Is.EqualTo(32768));
+         Assert.That(_settings.PasswordHashIterations, Is.EqualTo(700000));
       }
 
       [Test]
@@ -350,7 +353,8 @@ namespace RegressionTests.Security
 
          var storedPassword = GetStoredPassword();
 
-         Assert.IsTrue(storedPassword.StartsWith("$argon2id$"),
+         Assert.That(storedPassword.StartsWith("$argon2id$"),
+            Is.True,
             "Expected an Argon2id hash, but got: " + storedPassword);
       }
 
@@ -363,7 +367,8 @@ namespace RegressionTests.Security
 
          var storedPassword = GetStoredPassword();
 
-         Assert.IsTrue(storedPassword.StartsWith("$pbkdf2-sha256$"),
+         Assert.That(storedPassword.StartsWith("$pbkdf2-sha256$"),
+            Is.True,
             "Expected a PBKDF2-SHA256 hash, but got: " + storedPassword);
       }
 
@@ -421,7 +426,7 @@ namespace RegressionTests.Security
          var md5 = _application.Utilities.MD5(Password);
          OverwriteStoredPassword(account, md5, EncryptionMd5);
 
-         Assert.AreEqual(md5, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(md5));
 
          LogonAndDisconnect(Address, Password);
 
@@ -429,8 +434,9 @@ namespace RegressionTests.Security
 
          var storedPassword = GetStoredPassword();
 
-         Assert.AreNotEqual(md5, storedPassword);
-         Assert.IsTrue(storedPassword.StartsWith("$argon2id$"),
+         Assert.That(storedPassword, Is.Not.EqualTo(md5));
+         Assert.That(storedPassword.StartsWith("$argon2id$"),
+            Is.True,
             "Expected an Argon2id hash after the rehash, but got: " + storedPassword);
       }
 
@@ -448,11 +454,11 @@ namespace RegressionTests.Security
 
          LogonAndDisconnect(Address, Password);
          ClearCache();
-         Assert.AreEqual(afterFirstLogon, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(afterFirstLogon));
 
          LogonAndDisconnect(Address, Password);
          ClearCache();
-         Assert.AreEqual(afterFirstLogon, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(afterFirstLogon));
       }
 
       [Test]
@@ -463,7 +469,7 @@ namespace RegressionTests.Security
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, Address, Password);
 
          var beforeChange = GetStoredPassword();
-         Assert.IsTrue(beforeChange.Contains("m=19456"));
+         Assert.That(beforeChange.Contains("m=19456"), Is.True);
 
          _settings.PasswordHashMemoryCost = 32768;
          ClearCache();
@@ -473,8 +479,9 @@ namespace RegressionTests.Security
 
          var afterChange = GetStoredPassword();
 
-         Assert.AreNotEqual(beforeChange, afterChange);
-         Assert.IsTrue(afterChange.Contains("m=32768"),
+         Assert.That(afterChange, Is.Not.EqualTo(beforeChange));
+         Assert.That(afterChange.Contains("m=32768"),
+            Is.True,
             "Expected the new memory cost to be recorded in the hash, but got: " + afterChange);
 
          // And the account must still be usable afterwards.
@@ -490,7 +497,7 @@ namespace RegressionTests.Security
 
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, Address, Password);
 
-         Assert.IsTrue(GetStoredPassword().Contains("m=32768"));
+         Assert.That(GetStoredPassword().Contains("m=32768"), Is.True);
 
          _settings.PasswordHashMemoryCost = DefaultArgon2idMemoryCost;
          ClearCache();
@@ -500,7 +507,8 @@ namespace RegressionTests.Security
 
          var afterChange = GetStoredPassword();
 
-         Assert.IsTrue(afterChange.Contains("m=19456"),
+         Assert.That(afterChange.Contains("m=19456"),
+            Is.True,
             "Expected the lowered memory cost to be recorded in the hash, but got: " + afterChange);
 
          AssertLogonSucceedsOnAllProtocols(Address, Password);
@@ -513,7 +521,7 @@ namespace RegressionTests.Security
 
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, Address, Password);
 
-         Assert.IsTrue(GetStoredPassword().Contains("t=6"));
+         Assert.That(GetStoredPassword().Contains("t=6"), Is.True);
 
          _settings.PasswordHashIterations = DefaultArgon2idIterations;
          ClearCache();
@@ -523,7 +531,8 @@ namespace RegressionTests.Security
 
          var afterChange = GetStoredPassword();
 
-         Assert.IsTrue(afterChange.Contains("t=2"),
+         Assert.That(afterChange.Contains("t=2"),
+            Is.True,
             "Expected the lowered iteration count to be recorded in the hash, but got: " + afterChange);
 
          AssertLogonSucceedsOnAllProtocols(Address, Password);
@@ -536,7 +545,7 @@ namespace RegressionTests.Security
 
          SingletonProvider<TestSetup>.Instance.AddAccount(_domain, Address, Password);
 
-         Assert.IsTrue(GetStoredPassword().StartsWith("$argon2id$"));
+         Assert.That(GetStoredPassword().StartsWith("$argon2id$"), Is.True);
 
          SetPbkdf2Sha256Hashing(MinPbkdf2Iterations);
          ClearCache();
@@ -544,7 +553,7 @@ namespace RegressionTests.Security
          LogonAndDisconnect(Address, Password);
          ClearCache();
 
-         Assert.IsTrue(GetStoredPassword().StartsWith("$pbkdf2-sha256$"));
+         Assert.That(GetStoredPassword().StartsWith("$pbkdf2-sha256$"), Is.True);
 
          AssertLogonSucceedsOnAllProtocols(Address, Password);
       }
@@ -558,11 +567,11 @@ namespace RegressionTests.Security
          OverwriteStoredPassword(account, md5, EncryptionMd5);
 
          string errorMessage;
-         Assert.IsFalse(new Pop3ClientSimulator().ConnectAndLogon(Address, "WrongPassword", out errorMessage));
+         Assert.That(new Pop3ClientSimulator().ConnectAndLogon(Address, "WrongPassword", out errorMessage), Is.False);
 
          ClearCache();
 
-         Assert.AreEqual(md5, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(md5));
       }
 
       [Test]
@@ -593,7 +602,7 @@ namespace RegressionTests.Security
          AssertLogonSucceedsOnAllProtocols(Address, Password);
 
          ClearCache();
-         Assert.AreEqual(Password, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(Password));
       }
 
       [Test]
@@ -610,8 +619,9 @@ namespace RegressionTests.Security
          ClearCache();
 
          var storedPassword = GetStoredPassword();
-         Assert.AreNotEqual(Password, storedPassword);
-         Assert.IsTrue(storedPassword.StartsWith("$pbkdf2-sha256$"),
+         Assert.That(storedPassword, Is.Not.EqualTo(Password));
+         Assert.That(storedPassword.StartsWith("$pbkdf2-sha256$"),
+            Is.True,
             "Expected a PBKDF2-SHA256 hash after the rehash, but got: " + storedPassword);
       }
 
@@ -630,10 +640,10 @@ namespace RegressionTests.Security
          _settings.PasswordHashAutoUpgradeEnabled = true;
          ClearCache();
 
-         Assert.AreEqual(Password, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(Password));
 
          ClearCache();
-         Assert.AreEqual(Password, GetStoredPassword());
+         Assert.That(GetStoredPassword(), Is.EqualTo(Password));
       }
 
       [Test]
@@ -649,14 +659,14 @@ namespace RegressionTests.Security
          OverwriteStoredPassword(account, Password, EncryptionPlainText);
 
          var differentCasing = Password.ToUpperInvariant();
-         Assert.AreNotEqual(Password, differentCasing);
+         Assert.That(differentCasing, Is.Not.EqualTo(Password));
 
          // Allowed pre-migration because the plaintext comparison is case-insensitive.
          // This is also the login that triggers the rehash.
          LogonAndDisconnect(Address, differentCasing);
          ClearCache();
 
-         Assert.IsTrue(GetStoredPassword().StartsWith("$pbkdf2-sha256$"));
+         Assert.That(GetStoredPassword().StartsWith("$pbkdf2-sha256$"), Is.True);
 
          // The casing that was actually used to log on - not the originally stored
          // casing - must keep working after the rehash.
@@ -678,14 +688,14 @@ namespace RegressionTests.Security
          OverwriteStoredPassword(account, blowfish, EncryptionBlowfish);
 
          var differentCasing = Password.ToUpperInvariant();
-         Assert.AreNotEqual(Password, differentCasing);
+         Assert.That(differentCasing, Is.Not.EqualTo(Password));
 
          // Allowed pre-migration because the Blowfish comparison is case-insensitive.
          // This is also the login that triggers the rehash.
          LogonAndDisconnect(Address, differentCasing);
          ClearCache();
 
-         Assert.IsTrue(GetStoredPassword().StartsWith("$argon2id$"));
+         Assert.That(GetStoredPassword().StartsWith("$argon2id$"), Is.True);
 
          // The casing that was actually used to log on - not the originally stored
          // casing - must keep working after the rehash.
@@ -717,10 +727,10 @@ namespace RegressionTests.Security
 
          try
          {
-            Assert.IsTrue(ImapClientSimulator.ValidatePassword(Address, "WhateverTheClientSent"));
+            Assert.That(ImapClientSimulator.ValidatePassword(Address, "WhateverTheClientSent"), Is.True);
 
             ClearCache();
-            Assert.AreEqual(storedBeforeScript, GetStoredPassword());
+            Assert.That(GetStoredPassword(), Is.EqualTo(storedBeforeScript));
          }
          finally
          {
@@ -732,28 +742,28 @@ namespace RegressionTests.Security
       public void MemoryCostBelowTheMinimumIsRejected()
       {
          var ex = Assert.Throws<COMException>(() => _settings.PasswordHashMemoryCost = MinArgon2idMemoryCost - 1);
-         StringAssert.Contains("Invalid password hash memory cost", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Invalid password hash memory cost"));
       }
 
       [Test]
       public void MemoryCostAtTheMinimumIsAccepted()
       {
          _settings.PasswordHashMemoryCost = MinArgon2idMemoryCost;
-         Assert.AreEqual(MinArgon2idMemoryCost, _settings.PasswordHashMemoryCost);
+         Assert.That(_settings.PasswordHashMemoryCost, Is.EqualTo(MinArgon2idMemoryCost));
       }
 
       [Test]
       public void MemoryCostAboveTheMaximumIsRejected()
       {
          var ex = Assert.Throws<COMException>(() => _settings.PasswordHashMemoryCost = MaxArgon2idMemoryCost + 1);
-         StringAssert.Contains("Invalid password hash memory cost", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Invalid password hash memory cost"));
       }
 
       [Test]
       public void MemoryCostAtTheMaximumIsAccepted()
       {
          _settings.PasswordHashMemoryCost = MaxArgon2idMemoryCost;
-         Assert.AreEqual(MaxArgon2idMemoryCost, _settings.PasswordHashMemoryCost);
+         Assert.That(_settings.PasswordHashMemoryCost, Is.EqualTo(MaxArgon2idMemoryCost));
       }
 
       [Test]
@@ -761,7 +771,7 @@ namespace RegressionTests.Security
       {
          _settings.PasswordHashMemoryCost = 32768;
          _settings.PasswordHashMemoryCost = 0;
-         Assert.AreEqual(0, _settings.PasswordHashMemoryCost);
+         Assert.That(_settings.PasswordHashMemoryCost, Is.EqualTo(0));
       }
 
       [Test]
@@ -770,7 +780,7 @@ namespace RegressionTests.Security
          // 0 is the reserved sentinel for "use the recommended default", so with a
          // minimum of 1 there is no non-sentinel value below the minimum to test.
          var ex = Assert.Throws<COMException>(() => _settings.PasswordHashIterations = -1);
-         StringAssert.Contains("cannot be negative", ex.Message);
+         Assert.That(ex.Message, Does.Contain("cannot be negative"));
       }
 
       [Test]
@@ -781,7 +791,7 @@ namespace RegressionTests.Security
          _settings.PasswordHashAlgorithm = AlgorithmArgon2id;
 
          _settings.PasswordHashIterations = MinArgon2idIterations;
-         Assert.AreEqual(MinArgon2idIterations, _settings.PasswordHashIterations);
+         Assert.That(_settings.PasswordHashIterations, Is.EqualTo(MinArgon2idIterations));
       }
 
       [Test]
@@ -790,7 +800,7 @@ namespace RegressionTests.Security
          _settings.PasswordHashAlgorithm = AlgorithmArgon2id;
 
          var ex = Assert.Throws<COMException>(() => _settings.PasswordHashIterations = MaxArgon2idIterations + 1);
-         StringAssert.Contains("Invalid password hash iteration count", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Invalid password hash iteration count"));
       }
 
       [Test]
@@ -799,7 +809,7 @@ namespace RegressionTests.Security
          _settings.PasswordHashAlgorithm = AlgorithmArgon2id;
 
          _settings.PasswordHashIterations = MaxArgon2idIterations;
-         Assert.AreEqual(MaxArgon2idIterations, _settings.PasswordHashIterations);
+         Assert.That(_settings.PasswordHashIterations, Is.EqualTo(MaxArgon2idIterations));
       }
 
       [Test]
@@ -808,7 +818,7 @@ namespace RegressionTests.Security
          _settings.PasswordHashAlgorithm = AlgorithmPbkdf2Sha256;
 
          var ex = Assert.Throws<COMException>(() => _settings.PasswordHashIterations = MinPbkdf2Iterations - 1);
-         StringAssert.Contains("Invalid password hash iteration count", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Invalid password hash iteration count"));
       }
 
       [Test]
@@ -817,7 +827,7 @@ namespace RegressionTests.Security
          _settings.PasswordHashAlgorithm = AlgorithmPbkdf2Sha256;
 
          _settings.PasswordHashIterations = MinPbkdf2Iterations;
-         Assert.AreEqual(MinPbkdf2Iterations, _settings.PasswordHashIterations);
+         Assert.That(_settings.PasswordHashIterations, Is.EqualTo(MinPbkdf2Iterations));
       }
 
       [Test]
@@ -826,7 +836,7 @@ namespace RegressionTests.Security
          _settings.PasswordHashAlgorithm = AlgorithmPbkdf2Sha256;
 
          var ex = Assert.Throws<COMException>(() => _settings.PasswordHashIterations = MaxPbkdf2Iterations + 1);
-         StringAssert.Contains("Invalid password hash iteration count", ex.Message);
+         Assert.That(ex.Message, Does.Contain("Invalid password hash iteration count"));
       }
 
       [Test]
@@ -835,7 +845,7 @@ namespace RegressionTests.Security
          _settings.PasswordHashAlgorithm = AlgorithmPbkdf2Sha256;
 
          _settings.PasswordHashIterations = MaxPbkdf2Iterations;
-         Assert.AreEqual(MaxPbkdf2Iterations, _settings.PasswordHashIterations);
+         Assert.That(_settings.PasswordHashIterations, Is.EqualTo(MaxPbkdf2Iterations));
       }
 
       [Test]
@@ -844,12 +854,12 @@ namespace RegressionTests.Security
          _settings.PasswordHashAlgorithm = AlgorithmArgon2id;
          _settings.PasswordHashIterations = 6;
          _settings.PasswordHashIterations = 0;
-         Assert.AreEqual(0, _settings.PasswordHashIterations);
+         Assert.That(_settings.PasswordHashIterations, Is.EqualTo(0));
 
          _settings.PasswordHashAlgorithm = AlgorithmPbkdf2Sha256;
          _settings.PasswordHashIterations = 700000;
          _settings.PasswordHashIterations = 0;
-         Assert.AreEqual(0, _settings.PasswordHashIterations);
+         Assert.That(_settings.PasswordHashIterations, Is.EqualTo(0));
       }
    }
 }

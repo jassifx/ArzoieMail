@@ -58,7 +58,7 @@ namespace RegressionTests.Infrastructure
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(account2.Address, "test");
 
-         Assert.IsTrue(message.Contains("Delivered-To: mirror@example.test"));
+         Assert.That(message.Contains("Delivered-To: mirror@example.test"), Is.True);
       }
 
       [Test]
@@ -87,8 +87,9 @@ namespace RegressionTests.Infrastructure
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(mirrorAccount.Address, "test");
 
-         Assert.IsTrue(
-            message.Contains("Delivered-To: mirror1@example.test,mirror2@example.test,mirror3@example.test"));
+         Assert.That(
+            message.Contains("Delivered-To: mirror1@example.test,mirror2@example.test,mirror3@example.test"),
+            Is.True);
 
          CustomAsserts.AssertRecipientsInDeliveryQueue(0);
       }
@@ -121,9 +122,10 @@ namespace RegressionTests.Infrastructure
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(mirrorAccount.Address, "test");
 
-         Assert.IsTrue(
+         Assert.That(
             message.Contains(
-               "Delivered-To: mirror0@example.test,mirror1@example.test,mirror2@example.test,mirror3@example.test,mirror4@example.test,mirror5@example.test,mirror6@example.test,mirror7@example.test,mirror8@example.test,mirror9@example.test,mirror10@example.test,mirror11@example.test,m\r\n"));
+               "Delivered-To: mirror0@example.test,mirror1@example.test,mirror2@example.test,mirror3@example.test,mirror4@example.test,mirror5@example.test,mirror6@example.test,mirror7@example.test,mirror8@example.test,mirror9@example.test,mirror10@example.test,mirror11@example.test,m\r\n"),
+            Is.True);
 
          CustomAsserts.AssertRecipientsInDeliveryQueue(0);
       }
@@ -135,7 +137,7 @@ namespace RegressionTests.Infrastructure
 
          _application.GlobalObjects.DeliveryQueue.Clear();
 
-         Assert.IsTrue(LogHandler.DefaultLogContains("Delivery queue cleared."));
+         Assert.That(LogHandler.DefaultLogContains("Delivery queue cleared."), Is.True);
 
          var smtpClientSimulator = new SmtpClientSimulator();
          smtpClientSimulator.Send("test@example.test", "test@example.test", "INBOX", "Mirror test message");

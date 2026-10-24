@@ -49,9 +49,9 @@ namespace RegressionTests.AntiSpam
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(text.Contains("Authentication-Results: " + HostName + ";"), text);
-         Assert.IsTrue(text.Contains("dmarc=pass header.from=outlook.com"), text);
-         Assert.IsTrue(text.Contains("dkim=pass header.d=outlook.com"), text);
+         Assert.That(text.Contains("Authentication-Results: " + HostName + ";"), Is.True, text);
+         Assert.That(text.Contains("dmarc=pass header.from=outlook.com"), Is.True, text);
+         Assert.That(text.Contains("dkim=pass header.d=outlook.com"), Is.True, text);
       }
 
       [Test]
@@ -64,7 +64,7 @@ namespace RegressionTests.AntiSpam
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(text.Contains("dmarc=fail header.from=outlook.com"), text);
+         Assert.That(text.Contains("dmarc=fail header.from=outlook.com"), Is.True, text);
       }
 
       // The SPF results the Authentication-Results header reports, over real DNS.
@@ -137,7 +137,7 @@ namespace RegressionTests.AntiSpam
          var expected = "spf=" + result + @" \(sender IP is (127\.0\.0\.1|::1)\) " +
                         Regex.Escape(property + "=" + domain) + "(;|$)";
 
-         Assert.IsTrue(Regex.IsMatch(header, expected), header);
+         Assert.That(Regex.IsMatch(header, expected), Is.True, header);
       }
 
       [Test]
@@ -173,18 +173,19 @@ namespace RegressionTests.AntiSpam
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
          var connection = new TcpConnection();
-         Assert.IsTrue(connection.Connect(25));
-         Assert.IsTrue(connection.Receive().StartsWith("220"));
-         Assert.IsTrue(connection.SendAndReceive("HELO example.com\r\n").StartsWith("250"));
-         Assert.IsTrue(connection.SendAndReceive("MAIL FROM:<>\r\n").StartsWith("250"));
-         Assert.IsTrue(connection.SendAndReceive("RCPT TO:<" + account.Address + ">\r\n").StartsWith("250"));
-         Assert.IsTrue(connection.SendAndReceive("DATA\r\n").StartsWith("354"));
-         Assert.IsTrue(connection.SendAndReceive(
+         Assert.That(connection.Connect(25), Is.True);
+         Assert.That(connection.Receive().StartsWith("220"), Is.True);
+         Assert.That(connection.SendAndReceive("HELO example.com\r\n").StartsWith("250"), Is.True);
+         Assert.That(connection.SendAndReceive("MAIL FROM:<>\r\n").StartsWith("250"), Is.True);
+         Assert.That(connection.SendAndReceive("RCPT TO:<" + account.Address + ">\r\n").StartsWith("250"), Is.True);
+         Assert.That(connection.SendAndReceive("DATA\r\n").StartsWith("354"), Is.True);
+         Assert.That(connection.SendAndReceive(
             "From: postmaster@example.com\r\n" +
             "Subject: SPF bounce test\r\n" +
             "\r\n" +
             "Test body\r\n" +
-            ".\r\n").StartsWith("250"));
+            ".\r\n").StartsWith("250"),
+            Is.True);
          connection.SendAndReceive("QUIT\r\n");
          connection.Disconnect();
 
@@ -257,9 +258,9 @@ namespace RegressionTests.AntiSpam
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsFalse(text.Contains("header.from=spoofed.example"), text);
-         Assert.IsTrue(text.Contains("Authentication-Results: upstream.example; dkim=pass header.d=upstream.example"), text);
-         Assert.IsTrue(text.Contains("Authentication-Results: " + HostName + ";"), text);
+         Assert.That(text.Contains("header.from=spoofed.example"), Is.False, text);
+         Assert.That(text.Contains("Authentication-Results: upstream.example; dkim=pass header.d=upstream.example"), Is.True, text);
+         Assert.That(text.Contains("Authentication-Results: " + HostName + ";"), Is.True, text);
       }
 
       [Test]
@@ -285,8 +286,8 @@ namespace RegressionTests.AntiSpam
          var header = ExtractAuthenticationResults(text);
 
          // The domain must be quoted, so that it's parsed as a single value.
-         Assert.IsTrue(header.Contains("header.d=\"evil.example dmarc=pass header.from=bank.example\""), text);
-         Assert.IsFalse(header.Contains("header.d=evil.example"), text);
+         Assert.That(header.Contains("header.d=\"evil.example dmarc=pass header.from=bank.example\""), Is.True, text);
+         Assert.That(header.Contains("header.d=evil.example"), Is.False, text);
       }
 
       [Test]
@@ -307,9 +308,9 @@ namespace RegressionTests.AntiSpam
          int ourIndex = text.IndexOf("Authentication-Results: " + HostName + ";");
          int upstreamIndex = text.IndexOf("Authentication-Results: upstream.example;");
 
-         Assert.AreNotEqual(-1, ourIndex, text);
-         Assert.AreNotEqual(-1, upstreamIndex, text);
-         Assert.IsTrue(ourIndex < upstreamIndex, text);
+         Assert.That(ourIndex, Is.Not.EqualTo(-1), text);
+         Assert.That(upstreamIndex, Is.Not.EqualTo(-1), text);
+         Assert.That(ourIndex < upstreamIndex, Is.True, text);
       }
 
       private static string ExtractAuthenticationResults(string message)
@@ -318,7 +319,7 @@ namespace RegressionTests.AntiSpam
          var normalized = message.Replace("\r\n", "\n");
          var match = Regex.Match(normalized, @"(?m)^Authentication-Results:[ \t]*((?:[^\n]|\n[ \t])+)");
 
-         Assert.IsTrue(match.Success, message);
+         Assert.That(match.Success, Is.True, message);
 
          return match.Groups[1].Value.TrimEnd().Replace("\n", "");
       }
@@ -335,7 +336,7 @@ namespace RegressionTests.AntiSpam
 
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsFalse(text.Contains("Authentication-Results:"), text);
+         Assert.That(text.Contains("Authentication-Results:"), Is.False, text);
       }
    }
 }

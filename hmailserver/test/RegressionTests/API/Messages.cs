@@ -30,13 +30,13 @@ namespace RegressionTests.API
 
          messages.DeleteByDBID(secondId);
 
-         Assert.AreEqual(2, messages.Count);
-         Assert.AreEqual(firstId, messages[0].ID);
-         Assert.AreEqual(thirdId, messages[1].ID);
+         Assert.That(messages.Count, Is.EqualTo(2));
+         Assert.That(messages[0].ID, Is.EqualTo(firstId));
+         Assert.That(messages[1].ID, Is.EqualTo(thirdId));
 
          imapClientSimulator.ConnectAndLogon("test@example.test", "test");
          var imapMessageCount = imapClientSimulator.GetMessageCount("Inbox");
-         Assert.AreEqual(imapMessageCount, messages.Count);
+         Assert.That(messages.Count, Is.EqualTo(imapMessageCount));
       }
 
       [Test]
@@ -66,13 +66,13 @@ namespace RegressionTests.API
             messages.DeleteByDBID(messageToDelete);
 
          // Should be 6 remaining
-         Assert.AreEqual(6, messages.Count);
+         Assert.That(messages.Count, Is.EqualTo(6));
 
          // Validate that the 6 remaining are the expected ones
          foreach (var messageToSave in messagesToSave)
          {
             var message = messages.get_ItemByDBID(messageToSave);
-            Assert.IsNotNull(message);
+            Assert.That(message, Is.Not.Null);
          }
       }
    }

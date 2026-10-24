@@ -23,7 +23,7 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.LogonWithLiteral("check@example.test", "test");
          simulator.SendSingleCommandWithLiteral("A01 APPEND INBOX {TEST}", "ABCD");
-         Assert.AreEqual(0, simulator.GetMessageCount("INBOX"));
+         Assert.That(simulator.GetMessageCount("INBOX"), Is.EqualTo(0));
          simulator.Disconnect();
       }
 
@@ -37,9 +37,9 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("check@example.test", "test");
          simulator.SendSingleCommandWithLiteral("A01 APPEND INBOX (\\Deleted) {4}", "ABCD");
-         Assert.AreEqual(1, simulator.GetMessageCount("INBOX"));
+         Assert.That(simulator.GetMessageCount("INBOX"), Is.EqualTo(1));
 
-         Assert.AreEqual("1", simulator.Search("DELETED"));
+         Assert.That(simulator.Search("DELETED"), Is.EqualTo("1"));
 
          simulator.Disconnect();
       }
@@ -58,16 +58,16 @@ namespace RegressionTests.IMAP
          simulator.CreateFolder("MONK");
          simulator.SendRaw("A01 APPEND {4}\r\n");
          var result = simulator.Receive();
-         Assert.IsTrue(result.StartsWith("+ Ready for additional command text."));
+         Assert.That(result.StartsWith("+ Ready for additional command text."), Is.True);
 
          simulator.SendRaw("MONK (\\Seen) \"20-Jan-2009 12:59:50 +0100\" {5}\r\n");
          result = simulator.Receive();
-         Assert.IsTrue(result.StartsWith("+ Ready for literal data"));
+         Assert.That(result.StartsWith("+ Ready for literal data"), Is.True);
 
          simulator.SendRaw("WOOOT\r\n");
          result = simulator.Receive();
 
-         StringAssert.IsMatch(@"^A01 OK \[APPENDUID \d+ \d+\] APPEND completed\r\n$", result);
+         Assert.That(result, Does.Match(@"^A01 OK \[APPENDUID \d+ \d+\] APPEND completed\r\n$"));
       }
 
       [Test]
@@ -86,22 +86,22 @@ namespace RegressionTests.IMAP
          simulator.CreateFolder("MONK");
          simulator.SendRaw("A01 APPEND {4}\r\n");
          var result = simulator.Receive();
-         Assert.IsTrue(result.StartsWith("+ Ready for additional command text."));
+         Assert.That(result.StartsWith("+ Ready for additional command text."), Is.True);
 
          simulator.SendRaw("MONK  \"12-Jan-2009 12:12:12 +0100\" {5}\r\n");
          result = simulator.Receive();
-         Assert.IsTrue(result.StartsWith("+ Ready for literal data"));
+         Assert.That(result.StartsWith("+ Ready for literal data"), Is.True);
 
          simulator.SendRaw("WOOOT\r\n");
          result = simulator.Receive();
 
-         StringAssert.IsMatch(@"^A01 OK \[APPENDUID \d+ \d+\] APPEND completed\r\n$", result);
+         Assert.That(result, Does.Match(@"^A01 OK \[APPENDUID \d+ \d+\] APPEND completed\r\n$"));
 
          var date = Convert.ToDateTime(account.IMAPFolders.get_ItemByName("MONK").Messages[0].InternalDate);
 
-         Assert.AreEqual(2009, date.Year);
-         Assert.AreEqual(12, date.Day);
-         Assert.AreEqual(1, date.Month);
+         Assert.That(date.Year, Is.EqualTo(2009));
+         Assert.That(date.Day, Is.EqualTo(12));
+         Assert.That(date.Month, Is.EqualTo(1));
       }
 
       [Test]
@@ -120,16 +120,16 @@ namespace RegressionTests.IMAP
          simulator.CreateFolder("MONK");
          simulator.SendRaw("A01 APPEND {4}\r\n");
          var result = simulator.Receive();
-         Assert.IsTrue(result.StartsWith("+ Ready for additional command text."));
+         Assert.That(result.StartsWith("+ Ready for additional command text."), Is.True);
 
          simulator.SendRaw("MONK {5}\r\n");
          result = simulator.Receive();
-         Assert.IsTrue(result.StartsWith("+ Ready for literal data"));
+         Assert.That(result.StartsWith("+ Ready for literal data"), Is.True);
 
          simulator.SendRaw("WOOOT\r\n");
          result = simulator.Receive();
 
-         StringAssert.IsMatch(@"^A01 OK \[APPENDUID \d+ \d+\] APPEND completed\r\n$", result);
+         Assert.That(result, Does.Match(@"^A01 OK \[APPENDUID \d+ \d+\] APPEND completed\r\n$"));
       }
 
       [Test]
@@ -148,16 +148,16 @@ namespace RegressionTests.IMAP
          simulator.CreateFolder("MONK");
          simulator.SendRaw("A01 APPEND {4}\r\n");
          var result = simulator.Receive();
-         Assert.IsTrue(result.StartsWith("+ Ready for additional command text."));
+         Assert.That(result.StartsWith("+ Ready for additional command text."), Is.True);
 
          simulator.SendRaw("MONK (\\Seen \\Deleted) {5}\r\n");
          result = simulator.Receive();
-         Assert.IsTrue(result.StartsWith("+ Ready for literal data"));
+         Assert.That(result.StartsWith("+ Ready for literal data"), Is.True);
 
          simulator.SendRaw("WOOOT\r\n");
          result = simulator.Receive();
 
-         StringAssert.IsMatch(@"^A01 OK \[APPENDUID \d+ \d+\] APPEND completed\r\n$", result);
+         Assert.That(result, Does.Match(@"^A01 OK \[APPENDUID \d+ \d+\] APPEND completed\r\n$"));
       }
 
       [Test]
@@ -170,11 +170,11 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.LogonWithLiteral("check@example.test", "test");
-         Assert.IsTrue(simulator.SelectFolder("Inbox"));
+         Assert.That(simulator.SelectFolder("Inbox"), Is.True);
          var response1 = simulator.SendSingleCommandWithLiteral("A01 APPEND INBOX {4}", "ABCD");
-         Assert.IsTrue(response1.Contains("* 1 EXISTS"), response1);
-         Assert.IsTrue(response1.Contains("* 1 RECENT"), response1);
-         Assert.AreEqual(1, simulator.GetMessageCount("INBOX"));
+         Assert.That(response1.Contains("* 1 EXISTS"), Is.True, response1);
+         Assert.That(response1.Contains("* 1 RECENT"), Is.True, response1);
+         Assert.That(simulator.GetMessageCount("INBOX"), Is.EqualTo(1));
          simulator.Disconnect();
       }
 
@@ -187,7 +187,7 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          var result = simulator.SendSingleCommand("A01 AUTHENTICATE");
-         Assert.IsTrue(result.Contains("NO IMAP AUTHENTICATE is not enabled."));
+         Assert.That(result.Contains("NO IMAP AUTHENTICATE is not enabled."), Is.True);
          simulator.Disconnect();
       }
 
@@ -200,16 +200,16 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
 
-         Assert.IsTrue(simulator.ExamineFolder("NonexistantFolder").Contains("NO Authenticate first"));
-         Assert.IsFalse(simulator.SelectFolder("NonexistantFolder"));
-         Assert.IsFalse(simulator.Copy(1, "SomeFolder"));
-         Assert.IsFalse(simulator.CheckFolder("SomeFolder"));
-         Assert.IsTrue(simulator.Fetch("123 a").Contains("NO Authenticate first"));
-         Assert.IsTrue(simulator.List().Contains("NO Authenticate first"));
-         Assert.IsTrue(simulator.LSUB().Contains("NO Authenticate first"));
-         Assert.IsTrue(simulator.GetMyRights("APA").Contains("NO Authenticate first"));
-         Assert.IsFalse(simulator.RenameFolder("A", "B"));
-         Assert.IsFalse(simulator.Status("SomeFolder", "MESSAGES").Contains("A01 OK"));
+         Assert.That(simulator.ExamineFolder("NonexistantFolder").Contains("NO Authenticate first"), Is.True);
+         Assert.That(simulator.SelectFolder("NonexistantFolder"), Is.False);
+         Assert.That(simulator.Copy(1, "SomeFolder"), Is.False);
+         Assert.That(simulator.CheckFolder("SomeFolder"), Is.False);
+         Assert.That(simulator.Fetch("123 a").Contains("NO Authenticate first"), Is.True);
+         Assert.That(simulator.List().Contains("NO Authenticate first"), Is.True);
+         Assert.That(simulator.LSUB().Contains("NO Authenticate first"), Is.True);
+         Assert.That(simulator.GetMyRights("APA").Contains("NO Authenticate first"), Is.True);
+         Assert.That(simulator.RenameFolder("A", "B"), Is.False);
+         Assert.That(simulator.Status("SomeFolder", "MESSAGES").Contains("A01 OK"), Is.False);
       }
 
       [Test]
@@ -261,11 +261,11 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 BODYSTRUCTURE");
          simulator.Disconnect();
 
-         Assert.IsTrue(result.Contains("(\"NAME\" \"=?iso-8859-1?B?beT2LnppcA==?=\")"));
-         Assert.IsTrue(result.Contains("(\"FILENAME\" \"=?iso-8859-1?B?beT2LnppcA==?=\")"));
+         Assert.That(result.Contains("(\"NAME\" \"=?iso-8859-1?B?beT2LnppcA==?=\")"), Is.True);
+         Assert.That(result.Contains("(\"FILENAME\" \"=?iso-8859-1?B?beT2LnppcA==?=\")"), Is.True);
 
          var fileName = account.IMAPFolders.get_ItemByName("INBOX").Messages[0].Attachments[0].Filename;
-         Assert.AreEqual("mäö.zip", fileName);
+         Assert.That(fileName, Is.EqualTo("mäö.zip"));
       }
 
       [Test]
@@ -308,12 +308,14 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 BODYSTRUCTURE");
          simulator.Disconnect();
 
-         Assert.IsTrue(
+         Assert.That(
             result.Contains(
-               "\"FILENAME\" \"=?ISO-8859-1?Q?=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=31=20=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=32=20=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=33=2E=70=6E=67?=\""));
-         Assert.IsTrue(
+               "\"FILENAME\" \"=?ISO-8859-1?Q?=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=31=20=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=32=20=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=33=2E=70=6E=67?=\""),
+            Is.True);
+         Assert.That(
             result.Contains(
-               "\"NAME\" \"=?ISO-8859-1?Q?=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=31=20=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=32=20=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=33=2E=70=6E=67?=\""));
+               "\"NAME\" \"=?ISO-8859-1?Q?=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=31=20=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=32=20=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=20=33=2E=70=6E=67?=\""),
+            Is.True);
       }
 
       [Test]
@@ -370,9 +372,9 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 BODYSTRUCTURE");
          simulator.Disconnect();
 
-         Assert.IsFalse(result.Contains("''"), result);
-         Assert.IsTrue(result.Contains("\"FILENAME\" \"=?UTF-8?Q?m=C3=A4=C3=B6.zip?=\""), result);
-         Assert.IsTrue(result.Contains("\"NAME\" \"=?UTF-8?Q?m=C3=A4=C3=B6.zip?=\""), result);
+         Assert.That(result.Contains("''"), Is.False, result);
+         Assert.That(result.Contains("\"FILENAME\" \"=?UTF-8?Q?m=C3=A4=C3=B6.zip?=\""), Is.True, result);
+         Assert.That(result.Contains("\"NAME\" \"=?UTF-8?Q?m=C3=A4=C3=B6.zip?=\""), Is.True, result);
       }
 
       [Test]
@@ -420,8 +422,8 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 BODYSTRUCTURE");
          simulator.Disconnect();
 
-         Assert.IsTrue(result.Contains("(\"NAME\" \"=?iso-8859-2?Q?test.=B1=E6=EA=B3=F1=F3=B6=BC=BF.txt?=\")"));
-         Assert.IsTrue(result.Contains("(\"FILENAME\" \"=?iso-8859-2?Q?test.=B1=E6=EA=B3=F1=F3=B6=BC=BF.txt?=\")"));
+         Assert.That(result.Contains("(\"NAME\" \"=?iso-8859-2?Q?test.=B1=E6=EA=B3=F1=F3=B6=BC=BF.txt?=\")"), Is.True);
+         Assert.That(result.Contains("(\"FILENAME\" \"=?iso-8859-2?Q?test.=B1=E6=EA=B3=F1=F3=B6=BC=BF.txt?=\")"), Is.True);
       }
 
       [Test]
@@ -478,9 +480,9 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 BODYSTRUCTURE");
          simulator.Disconnect();
 
-         Assert.IsFalse(result.Contains("''"), result);
-         Assert.IsTrue(result.Contains("\"FILENAME\" \"=?UTF-8?Q?m=C3=A4=C3=B6 m=C3=A4=C3=B6.zip?=\""), result);
-         Assert.IsTrue(result.Contains("\"NAME\" \"=?UTF-8?Q?m=C3=A4=C3=B6 m=C3=A4=C3=B6.zip?=\""), result);
+         Assert.That(result.Contains("''"), Is.False, result);
+         Assert.That(result.Contains("\"FILENAME\" \"=?UTF-8?Q?m=C3=A4=C3=B6 m=C3=A4=C3=B6.zip?=\""), Is.True, result);
+         Assert.That(result.Contains("\"NAME\" \"=?UTF-8?Q?m=C3=A4=C3=B6 m=C3=A4=C3=B6.zip?=\""), Is.True, result);
       }
 
       [Test]
@@ -522,8 +524,8 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 BODYSTRUCTURE");
          simulator.Disconnect();
 
-         Assert.IsTrue(result.Contains("\"FILENAME\" \"=?ISO-8859-1?Q?=E9=2E=70=6E=67?=\""));
-         Assert.IsTrue(result.Contains("\"NAME\" \"=?ISO-8859-1?Q?=E9=2E=70=6E=67?=\""));
+         Assert.That(result.Contains("\"FILENAME\" \"=?ISO-8859-1?Q?=E9=2E=70=6E=67?=\""), Is.True);
+         Assert.That(result.Contains("\"NAME\" \"=?ISO-8859-1?Q?=E9=2E=70=6E=67?=\""), Is.True);
       }
 
       [Test]
@@ -565,10 +567,12 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 BODYSTRUCTURE");
          simulator.Disconnect();
 
-         Assert.IsTrue(
-            result.Contains("\"FILENAME\" \"=?ISO-8859-1?Q?=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=2E=70=6E=67?=\""));
-         Assert.IsTrue(
-            result.Contains("\"NAME\" \"=?ISO-8859-1?Q?=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=2E=70=6E=67?=\""));
+         Assert.That(
+            result.Contains("\"FILENAME\" \"=?ISO-8859-1?Q?=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=2E=70=6E=67?=\""),
+            Is.True);
+         Assert.That(
+            result.Contains("\"NAME\" \"=?ISO-8859-1?Q?=F6=50=C4=C9=CD=C1=D6=60=F6=F6=E4=27=2E=70=6E=67?=\""),
+            Is.True);
       }
 
       [Test]
@@ -585,7 +589,7 @@ namespace RegressionTests.IMAP
 
          var sCapabilities = simulator.GetCapabilities();
 
-         Assert.IsTrue(sCapabilities.Contains(" UIDPLUS"), sCapabilities);
+         Assert.That(sCapabilities.Contains(" UIDPLUS"), Is.True, sCapabilities);
 
          if (sCapabilities.IndexOf(" IDLE") == -1 ||
              sCapabilities.IndexOf(" QUOTA") == -1 ||
@@ -645,12 +649,12 @@ namespace RegressionTests.IMAP
          settings.IMAPACLEnabled = true;
 
          sCapabilities = simulator.GetCapabilities();
-         Assert.IsTrue(sCapabilities.Contains(" ACL"));
+         Assert.That(sCapabilities.Contains(" ACL"), Is.True);
 
          settings.IMAPACLEnabled = false;
 
          sCapabilities = simulator.GetCapabilities();
-         Assert.IsFalse(sCapabilities.Contains(" ACL"));
+         Assert.That(sCapabilities.Contains(" ACL"), Is.False);
       }
 
       [Test]
@@ -662,8 +666,8 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("check@example.test", "test");
-         Assert.IsTrue(simulator.CreateFolder("TestFolder"));
-         Assert.IsTrue(simulator.CheckFolder("TestFolder"));
+         Assert.That(simulator.CreateFolder("TestFolder"), Is.True);
+         Assert.That(simulator.CheckFolder("TestFolder"), Is.True);
          simulator.Disconnect();
       }
 
@@ -676,10 +680,10 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("close@example.test", "test");
-         Assert.IsFalse(simulator.Close());
-         Assert.IsTrue(simulator.CreateFolder("TestFolder.Sub1"));
-         Assert.IsTrue(simulator.SelectFolder("TestFolder.Sub1"));
-         Assert.IsTrue(simulator.Close());
+         Assert.That(simulator.Close(), Is.False);
+         Assert.That(simulator.CreateFolder("TestFolder.Sub1"), Is.True);
+         Assert.That(simulator.SelectFolder("TestFolder.Sub1"), Is.True);
+         Assert.That(simulator.Close(), Is.True);
          simulator.Disconnect();
       }
 
@@ -701,14 +705,14 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon(account.Address, "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
-         Assert.IsTrue(simulator.StartIdle());
-         Assert.IsTrue(simulator.EndIdle(true, out data));
-         Assert.IsTrue(simulator.Logout());
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
+         Assert.That(simulator.StartIdle(), Is.True);
+         Assert.That(simulator.EndIdle(true, out data), Is.True);
+         Assert.That(simulator.Logout(), Is.True);
 
          var logData = LogHandler.ReadCurrentDefaultLog();
 
-         Assert.IsTrue(LogHandler.DefaultLogContains("Ending session"));
+         Assert.That(LogHandler.DefaultLogContains("Ending session"), Is.True);
       }
 
       [Test]
@@ -720,12 +724,12 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("delete@example.test", "test");
-         Assert.IsFalse(simulator.DeleteFolder("DoesNotExist"));
-         Assert.IsTrue(simulator.CreateFolder("DoesExist"));
-         Assert.IsTrue(simulator.SelectFolder("DoesExist"));
+         Assert.That(simulator.DeleteFolder("DoesNotExist"), Is.False);
+         Assert.That(simulator.CreateFolder("DoesExist"), Is.True);
+         Assert.That(simulator.SelectFolder("DoesExist"), Is.True);
          simulator.Close();
-         Assert.IsTrue(simulator.DeleteFolder("DoesExist"));
-         Assert.IsFalse(simulator.SelectFolder("DoesExist"));
+         Assert.That(simulator.DeleteFolder("DoesExist"), Is.True);
+         Assert.That(simulator.SelectFolder("DoesExist"), Is.False);
       }
 
       [Test]
@@ -753,7 +757,7 @@ namespace RegressionTests.IMAP
 
          // confirm that the client is notified about this message even though another
          // folder has been dropped by another client.
-         Assert.IsTrue(noopResponse.Contains(@"* 1 EXISTS"), noopResponse);
+         Assert.That(noopResponse.Contains(@"* 1 EXISTS"), Is.True, noopResponse);
       }
 
 
@@ -768,7 +772,7 @@ namespace RegressionTests.IMAP
          simulator.Logon("delete@example.test", "test");
          var result = simulator.ExamineFolder("NonexistantFolder");
 
-         Assert.IsTrue(result.Contains("BAD Folder could not be found."));
+         Assert.That(result.Contains("BAD Folder could not be found."), Is.True);
       }
 
       [Test]
@@ -786,14 +790,14 @@ namespace RegressionTests.IMAP
          var result = simulator.ExamineFolder("Inbox");
          simulator.Disconnect();
 
-         Assert.IsTrue(result.Contains("* FLAGS"), result);
-         Assert.IsTrue(result.Contains("* 1 EXISTS"), result);
-         Assert.IsTrue(result.Contains("* 1 RECENT"), result);
-         Assert.IsTrue(result.Contains("* OK [UNSEEN 1]"), result);
-         Assert.IsTrue(result.Contains("* OK [PERMANENTFLAGS"), result);
-         Assert.IsTrue(result.Contains("* OK [UIDNEXT 2]"), result);
-         Assert.IsTrue(result.Contains("* OK [UIDVALIDITY"), result);
-         Assert.IsTrue(result.Contains("OK [READ-ONLY]"), result);
+         Assert.That(result.Contains("* FLAGS"), Is.True, result);
+         Assert.That(result.Contains("* 1 EXISTS"), Is.True, result);
+         Assert.That(result.Contains("* 1 RECENT"), Is.True, result);
+         Assert.That(result.Contains("* OK [UNSEEN 1]"), Is.True, result);
+         Assert.That(result.Contains("* OK [PERMANENTFLAGS"), Is.True, result);
+         Assert.That(result.Contains("* OK [UIDNEXT 2]"), Is.True, result);
+         Assert.That(result.Contains("* OK [UIDVALIDITY"), Is.True, result);
+         Assert.That(result.Contains("OK [READ-ONLY]"), Is.True, result);
       }
 
       [Test]
@@ -809,18 +813,18 @@ namespace RegressionTests.IMAP
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 3);
 
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(simulator.SelectFolder("Inbox"));
+         Assert.That(simulator.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(simulator.SelectFolder("Inbox"), Is.True);
 
-         Assert.IsTrue(simulator.SetFlagOnMessage(1, true, @"\Deleted"));
-         Assert.IsTrue(simulator.SetFlagOnMessage(3, true, @"\Deleted"));
+         Assert.That(simulator.SetFlagOnMessage(1, true, @"\Deleted"), Is.True);
+         Assert.That(simulator.SetFlagOnMessage(3, true, @"\Deleted"), Is.True);
 
          string result;
-         Assert.IsTrue(simulator.Expunge(out result));
+         Assert.That(simulator.Expunge(out result), Is.True);
 
          // Messages 1 and 2 should be deleted. 2, because when the first message
          // is deleted, the index of the message which was originally 3, is now 2.
-         Assert.IsTrue(result.Contains("* 1 EXPUNGE\r\n* 2 EXPUNGE"));
+         Assert.That(result.Contains("* 1 EXPUNGE\r\n* 2 EXPUNGE"), Is.True);
       }
 
       [Test]
@@ -844,22 +848,25 @@ namespace RegressionTests.IMAP
          imapClientSimulator.SelectFolder("Inbox");
          simulator2.SelectFolder("Inbox");
 
-         for (var i = 1; i <= 5; i++) Assert.IsTrue(imapClientSimulator.SetFlagOnMessage(i, true, @"\Deleted"));
+         for (var i = 1; i <= 5; i++) Assert.That(imapClientSimulator.SetFlagOnMessage(i, true, @"\Deleted"), Is.True);
 
          var noopResponse = simulator2.NOOP() + simulator2.NOOP();
 
-         Assert.IsTrue(noopResponse.Contains(@"* 1 FETCH (FLAGS (\Deleted)") &&
+         Assert.That(noopResponse.Contains(@"* 1 FETCH (FLAGS (\Deleted)") &&
                        noopResponse.Contains(@"* 1 FETCH (FLAGS (\Deleted)") &&
                        noopResponse.Contains(@"* 1 FETCH (FLAGS (\Deleted)") &&
                        noopResponse.Contains(@"* 1 FETCH (FLAGS (\Deleted)") &&
-                       noopResponse.Contains(@"* 1 FETCH (FLAGS (\Deleted)"), noopResponse);
+                       noopResponse.Contains(@"* 1 FETCH (FLAGS (\Deleted)"),
+                       Is.True,
+                       noopResponse);
 
          var result = imapClientSimulator.Expunge();
 
          var expungeResult = simulator2.NOOP() + simulator2.NOOP();
 
-         Assert.IsTrue(
+         Assert.That(
             expungeResult.Contains("* 1 EXPUNGE\r\n* 1 EXPUNGE\r\n* 1 EXPUNGE\r\n* 1 EXPUNGE\r\n* 1 EXPUNGE"),
+            Is.True,
             expungeResult);
       }
 
@@ -881,15 +888,15 @@ namespace RegressionTests.IMAP
          simulator2.SelectFolder("Inbox");
 
          var result = simulator2.NOOP();
-         Assert.IsFalse(result.Contains("Deleted"));
-         Assert.IsFalse(result.Contains("Seen"));
+         Assert.That(result.Contains("Deleted"), Is.False);
+         Assert.That(result.Contains("Seen"), Is.False);
 
          simulator1.SetDeletedFlag(1);
          simulator1.Expunge();
 
          // the result may (should) come after the first NOOP response stream so do noop twice.
          result = simulator2.NOOP() + simulator2.NOOP();
-         Assert.IsTrue(result.Contains("* 1 EXPUNGE"));
+         Assert.That(result.Contains("* 1 EXPUNGE"), Is.True);
 
          simulator1.Disconnect();
          simulator2.Disconnect();
@@ -908,7 +915,7 @@ namespace RegressionTests.IMAP
          simulator.Disconnect();
 
          var s = account.IMAPFolders[1].Name;
-         Assert.AreEqual("ÄÄÄÄÄÄÄÄÄÄÄÄÄ", s);
+         Assert.That(s, Is.EqualTo("ÄÄÄÄÄÄÄÄÄÄÄÄÄ"));
       }
 
       [Test]
@@ -931,15 +938,15 @@ namespace RegressionTests.IMAP
          simulator2.SelectFolder("Inbox");
 
          var result = simulator2.NOOP() + simulator2.NOOP();
-         Assert.IsFalse(result.Contains("Deleted"));
-         Assert.IsFalse(result.Contains("Seen"));
+         Assert.That(result.Contains("Deleted"), Is.False);
+         Assert.That(result.Contains("Seen"), Is.False);
 
          simulator1.SetDeletedFlag(1);
          simulator1.SetSeenFlag(1);
 
          result = simulator2.NOOP() + simulator2.NOOP();
-         Assert.IsTrue(result.Contains("Deleted"));
-         Assert.IsTrue(result.Contains("Seen"));
+         Assert.That(result.Contains("Deleted"), Is.True);
+         Assert.That(result.Contains("Seen"), Is.True);
 
          simulator1.Disconnect();
          simulator2.Disconnect();
@@ -955,7 +962,7 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("imapaccount@example.test", "test");
          var result = simulator.GetQuota("Inbox");
-         Assert.IsTrue(result.Contains("A09 OK"));
+         Assert.That(result.Contains("A09 OK"), Is.True);
          simulator.Disconnect();
       }
 
@@ -970,7 +977,7 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon(account.Address, "test");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          simulator.StartIdle();
 
@@ -982,7 +989,7 @@ namespace RegressionTests.IMAP
          smtpClientSimulator.Send(account.Address, account.Address, "IDLE Test", "This is a test of IDLE");
 
          string data;
-         Assert.IsTrue(simulator.EndIdle(false, out data));
+         Assert.That(simulator.EndIdle(false, out data), Is.True);
       }
 
       [Test]
@@ -995,7 +1002,7 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.LogonWithLiteral("list@example.test", "test");
          var result = simulator.List().Substring(0, 1);
-         Assert.AreEqual("*", result);
+         Assert.That(result, Is.EqualTo("*"));
       }
 
       [Test]
@@ -1008,7 +1015,7 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("list@example.test", "test");
          var result = simulator.Send("A01 LIST \"\" \"*\"\r\n").Substring(0, 1);
-         Assert.AreEqual("*", result);
+         Assert.That(result, Is.EqualTo("*"));
       }
 
       [Test]
@@ -1085,20 +1092,20 @@ namespace RegressionTests.IMAP
 
          var imapSimulator = new ImapClientSimulator();
          var sWelcomeMessage = imapSimulator.Connect();
-         Assert.IsTrue(imapSimulator.Logon("idleaccount@example.test", "test"));
-         Assert.IsTrue(imapSimulator.SelectFolder("INBOX"));
-         Assert.IsTrue(imapSimulator.StartIdle());
+         Assert.That(imapSimulator.Logon("idleaccount@example.test", "test"), Is.True);
+         Assert.That(imapSimulator.SelectFolder("INBOX"), Is.True);
+         Assert.That(imapSimulator.StartIdle(), Is.True);
 
          var sim = new Pop3ClientSimulator();
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(sim.DELE(1));
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(sim.DELE(1), Is.True);
          sim.QUIT();
 
          // After a delete, the following should be sent tot he IMAP client:
          //  - EXPUNGE
          //  - EXISTS
          //  - RECENT
-         Assert.IsTrue(imapSimulator.AssertPendingDataExists(), "No pending data exist");
+         Assert.That(imapSimulator.AssertPendingDataExists(), Is.True, "No pending data exist");
 
          var deadline = DateTime.Now.AddSeconds(10);
          var message = new StringBuilder();
@@ -1117,9 +1124,9 @@ namespace RegressionTests.IMAP
          }
 
          var receivedText = message.ToString();
-         Assert.IsTrue(receivedText.Contains("* 1 EXPUNGE"), receivedText);
-         Assert.IsTrue(receivedText.Contains("EXISTS"), receivedText);
-         Assert.IsTrue(receivedText.Contains("RECENT"), receivedText);
+         Assert.That(receivedText.Contains("* 1 EXPUNGE"), Is.True, receivedText);
+         Assert.That(receivedText.Contains("EXISTS"), Is.True, receivedText);
+         Assert.That(receivedText.Contains("RECENT"), Is.True, receivedText);
       }
 
 
@@ -1169,21 +1176,21 @@ namespace RegressionTests.IMAP
          simulator1.SelectFolder("Inbox");
          simulator2.SelectFolder("Inbox");
 
-         Assert.IsTrue(simulator1.Copy(1, "#Public.Share"));
+         Assert.That(simulator1.Copy(1, "#Public.Share"), Is.True);
 
          simulator1.SelectFolder("#Public.Share");
          simulator2.SelectFolder("#Public.Share");
 
          var result = simulator2.NOOP() + simulator2.NOOP();
-         Assert.IsFalse(result.Contains("Deleted"));
-         Assert.IsFalse(result.Contains("Seen"));
+         Assert.That(result.Contains("Deleted"), Is.False);
+         Assert.That(result.Contains("Seen"), Is.False);
 
          simulator1.SetDeletedFlag(1);
          simulator1.SetSeenFlag(1);
 
          result = simulator2.NOOP() + simulator2.NOOP();
-         Assert.IsTrue(result.Contains("Deleted"));
-         Assert.IsTrue(result.Contains("Seen"));
+         Assert.That(result.Contains("Deleted"), Is.True);
+         Assert.That(result.Contains("Seen"), Is.True);
 
          simulator1.Disconnect();
          simulator2.Disconnect();
@@ -1199,18 +1206,18 @@ namespace RegressionTests.IMAP
          ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
 
          var sim = new ImapClientSimulator();
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(sim.SelectFolder("Inbox"));
-         Assert.IsTrue(sim.CreateFolder("Dummy"));
-         Assert.IsTrue(sim.Copy(1, "Dummy"));
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(sim.SelectFolder("Inbox"), Is.True);
+         Assert.That(sim.CreateFolder("Dummy"), Is.True);
+         Assert.That(sim.Copy(1, "Dummy"), Is.True);
          var result = sim.SendSingleCommand("a01 select Dummy");
-         Assert.IsTrue(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), result);
-         Assert.IsTrue(sim.SelectFolder("Inbox"));
+         Assert.That(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), Is.True, result);
+         Assert.That(sim.SelectFolder("Inbox"), Is.True);
 
          // Make sure that when we switched back to the Inbox, the Recent flag was removed.
          result = sim.SendSingleCommand("a01 select Dummy");
-         Assert.IsFalse(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), result);
-         Assert.IsTrue(sim.Logout());
+         Assert.That(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), Is.False, result);
+         Assert.That(sim.Logout(), Is.True);
       }
 
       [Test]
@@ -1223,19 +1230,19 @@ namespace RegressionTests.IMAP
          ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
 
          var sim = new ImapClientSimulator();
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(sim.SelectFolder("Inbox"));
-         Assert.IsTrue(sim.CreateFolder("Dummy"));
-         Assert.IsTrue(sim.Copy(1, "Dummy"));
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(sim.SelectFolder("Inbox"), Is.True);
+         Assert.That(sim.CreateFolder("Dummy"), Is.True);
+         Assert.That(sim.Copy(1, "Dummy"), Is.True);
          var result = sim.SendSingleCommand("a01 select Dummy");
-         Assert.IsTrue(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), result);
-         Assert.IsTrue(sim.Logout());
+         Assert.That(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), Is.True, result);
+         Assert.That(sim.Logout(), Is.True);
 
          sim = new ImapClientSimulator();
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
          result = sim.SendSingleCommand("a01 select Dummy");
-         Assert.IsFalse(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), result);
-         Assert.IsTrue(sim.Logout());
+         Assert.That(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), Is.False, result);
+         Assert.That(sim.Logout(), Is.True);
       }
 
       [Test]
@@ -1249,19 +1256,19 @@ namespace RegressionTests.IMAP
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("folder@example.test", "test");
 
-         Assert.IsTrue(simulator.CreateFolder("Root1"));
-         Assert.IsTrue(simulator.CreateFolder("Root1.Sub1"));
-         Assert.IsTrue(simulator.CreateFolder("Root1.Sub2"));
-         Assert.IsTrue(simulator.CreateFolder("Root1.Sub3"));
-         Assert.IsTrue(simulator.SelectFolder("Root1"));
-         Assert.IsTrue(simulator.SelectFolder("Root1.Sub1"));
-         Assert.IsTrue(simulator.SelectFolder("Root1.Sub2"));
-         Assert.IsTrue(simulator.SelectFolder("Root1.Sub3"));
-         Assert.IsTrue(simulator.RenameFolder("Root1", "Root2"));
-         Assert.IsTrue(simulator.SelectFolder("Root2"));
-         Assert.IsTrue(simulator.SelectFolder("Root2.Sub1"));
-         Assert.IsTrue(simulator.SelectFolder("Root2.Sub2"));
-         Assert.IsTrue(simulator.SelectFolder("Root2.Sub3"));
+         Assert.That(simulator.CreateFolder("Root1"), Is.True);
+         Assert.That(simulator.CreateFolder("Root1.Sub1"), Is.True);
+         Assert.That(simulator.CreateFolder("Root1.Sub2"), Is.True);
+         Assert.That(simulator.CreateFolder("Root1.Sub3"), Is.True);
+         Assert.That(simulator.SelectFolder("Root1"), Is.True);
+         Assert.That(simulator.SelectFolder("Root1.Sub1"), Is.True);
+         Assert.That(simulator.SelectFolder("Root1.Sub2"), Is.True);
+         Assert.That(simulator.SelectFolder("Root1.Sub3"), Is.True);
+         Assert.That(simulator.RenameFolder("Root1", "Root2"), Is.True);
+         Assert.That(simulator.SelectFolder("Root2"), Is.True);
+         Assert.That(simulator.SelectFolder("Root2.Sub1"), Is.True);
+         Assert.That(simulator.SelectFolder("Root2.Sub2"), Is.True);
+         Assert.That(simulator.SelectFolder("Root2.Sub3"), Is.True);
          simulator.Disconnect();
       }
 
@@ -1274,13 +1281,13 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("folder@example.test", "test");
-         Assert.IsTrue(simulator.CreateFolder("Root1"));
-         Assert.IsTrue(simulator.CreateFolder("Root2"));
-         Assert.IsTrue(simulator.RenameFolder("Root2", "Root1.Root2"));
+         Assert.That(simulator.CreateFolder("Root1"), Is.True);
+         Assert.That(simulator.CreateFolder("Root2"), Is.True);
+         Assert.That(simulator.RenameFolder("Root2", "Root1.Root2"), Is.True);
 
          var result = simulator.List();
 
-         Assert.IsTrue(result.Contains("Root1.Root2"));
+         Assert.That(result.Contains("Root1.Root2"), Is.True);
 
          simulator.Disconnect();
       }
@@ -1304,9 +1311,9 @@ namespace RegressionTests.IMAP
 
          var result = simulator.List();
 
-         Assert.IsTrue(result.Contains("Root1\"\r\n"));
-         Assert.IsTrue(result.Contains("Root1.Root2\"\r\n"));
-         Assert.IsTrue(result.Contains("Root1.Root2.Root3\"\r\n"));
+         Assert.That(result.Contains("Root1\"\r\n"), Is.True);
+         Assert.That(result.Contains("Root1.Root2\"\r\n"), Is.True);
+         Assert.That(result.Contains("Root1.Root2.Root3\"\r\n"), Is.True);
 
          simulator.Disconnect();
       }
@@ -1330,9 +1337,9 @@ namespace RegressionTests.IMAP
 
          var result = simulator.List();
 
-         Assert.IsTrue(result.Contains("Root1\"\r\n"));
-         Assert.IsTrue(result.Contains("Root1.Root2\"\r\n"));
-         Assert.IsTrue(result.Contains("Test\"\r\n"));
+         Assert.That(result.Contains("Root1\"\r\n"), Is.True);
+         Assert.That(result.Contains("Root1.Root2\"\r\n"), Is.True);
+         Assert.That(result.Contains("Test\"\r\n"), Is.True);
 
          simulator.Disconnect();
       }
@@ -1353,8 +1360,8 @@ namespace RegressionTests.IMAP
 
          var result = simulator.List();
 
-         Assert.IsTrue(result.Contains("Root1\"\r\n"));
-         Assert.IsTrue(result.Contains("Root2.Root4\"\r\n"));
+         Assert.That(result.Contains("Root1\"\r\n"), Is.True);
+         Assert.That(result.Contains("Root2.Root4\"\r\n"), Is.True);
 
          simulator.Disconnect();
       }
@@ -1376,11 +1383,11 @@ namespace RegressionTests.IMAP
 
          var result = simulator.List();
 
-         Assert.IsFalse(result.Contains(" Root1\r\n"));
-         Assert.IsTrue(result.Contains("Root2.Root4.Root1\"\r\n"));
+         Assert.That(result.Contains(" Root1\r\n"), Is.False);
+         Assert.That(result.Contains("Root2.Root4.Root1\"\r\n"), Is.True);
 
-         Assert.IsFalse(simulator.SelectFolder("Root1"));
-         Assert.IsTrue(simulator.SelectFolder("Root2.Root4.Root1"));
+         Assert.That(simulator.SelectFolder("Root1"), Is.False);
+         Assert.That(simulator.SelectFolder("Root2.Root4.Root1"), Is.True);
 
          simulator.Disconnect();
       }
@@ -1410,7 +1417,7 @@ namespace RegressionTests.IMAP
 
          // confirm that the client is notified about this message even though another
          // folder has been dropped by another client.
-         Assert.IsTrue(noopResponse.Contains(@"* 1 EXISTS"), noopResponse);
+         Assert.That(noopResponse.Contains(@"* 1 EXISTS"), Is.True, noopResponse);
       }
 
       [Test]
@@ -1429,14 +1436,14 @@ namespace RegressionTests.IMAP
          simulator.SelectFolder("Inbox", out result);
          simulator.Disconnect();
 
-         Assert.IsTrue(result.Contains("* FLAGS"), result);
-         Assert.IsTrue(result.Contains("* 1 EXISTS"), result);
-         Assert.IsTrue(result.Contains("* 1 RECENT"), result);
-         Assert.IsTrue(result.Contains("* OK [UNSEEN 1]"), result);
-         Assert.IsTrue(result.Contains("* OK [PERMANENTFLAGS"), result);
-         Assert.IsTrue(result.Contains("* OK [UIDNEXT 2]"), result);
-         Assert.IsTrue(result.Contains("* OK [UIDVALIDITY"), result);
-         Assert.IsTrue(result.Contains("OK [READ-WRITE]"), result);
+         Assert.That(result.Contains("* FLAGS"), Is.True, result);
+         Assert.That(result.Contains("* 1 EXISTS"), Is.True, result);
+         Assert.That(result.Contains("* 1 RECENT"), Is.True, result);
+         Assert.That(result.Contains("* OK [UNSEEN 1]"), Is.True, result);
+         Assert.That(result.Contains("* OK [PERMANENTFLAGS"), Is.True, result);
+         Assert.That(result.Contains("* OK [UIDNEXT 2]"), Is.True, result);
+         Assert.That(result.Contains("* OK [UIDVALIDITY"), Is.True, result);
+         Assert.That(result.Contains("OK [READ-WRITE]"), Is.True, result);
       }
 
       [Test]
@@ -1448,7 +1455,7 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("imapaccount@example.test", "test");
-         Assert.IsTrue(simulator.Status("Inbox", "MESSAGES").Contains("A08 OK"));
+         Assert.That(simulator.Status("Inbox", "MESSAGES").Contains("A08 OK"), Is.True);
          simulator.Disconnect();
       }
 
@@ -1461,9 +1468,9 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("delete@example.test", "test");
-         Assert.IsTrue(simulator.CreateFolder("TestFolder1"));
-         Assert.IsTrue(simulator.CreateFolder("TestFolder2"));
-         Assert.IsTrue(simulator.CreateFolder("TestFolder3"));
+         Assert.That(simulator.CreateFolder("TestFolder1"), Is.True);
+         Assert.That(simulator.CreateFolder("TestFolder2"), Is.True);
+         Assert.That(simulator.CreateFolder("TestFolder3"), Is.True);
 
          if (simulator.Subscribe("Vaffe"))
             Assert.Fail("Subscribe on non-existent folder succeeded");
@@ -1488,31 +1495,31 @@ namespace RegressionTests.IMAP
          ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
 
          var sim = new ImapClientSimulator();
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(sim.SelectFolder("Inbox"));
-         Assert.IsTrue(sim.CreateFolder("Dummy"));
-         Assert.IsTrue(sim.Copy(1, "Dummy"));
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(sim.SelectFolder("Inbox"), Is.True);
+         Assert.That(sim.CreateFolder("Dummy"), Is.True);
+         Assert.That(sim.Copy(1, "Dummy"), Is.True);
 
          var result = sim.SendSingleCommand("a01 select Dummy");
-         Assert.IsTrue(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), result);
+         Assert.That(result.Contains("* 1 EXISTS\r\n* 1 RECENT"), Is.True, result);
 
          var searchResponse = sim.SendSingleCommand("srch1 SEARCH ALL UNSEEN");
 
          // We should have at least one message here.
-         Assert.IsTrue(searchResponse.Contains("* SEARCH 1\r\n"), searchResponse);
+         Assert.That(searchResponse.Contains("* SEARCH 1\r\n"), Is.True, searchResponse);
 
          // Now fetch the body.
          var bodyText = sim.Fetch("1 BODY[TEXT]");
 
          // Now the message is no longer unseen. Confirm this.
          searchResponse = sim.SendSingleCommand("srch1 SEARCH ALL UNSEEN");
-         Assert.IsTrue(searchResponse.Contains("* SEARCH\r\n"), searchResponse);
+         Assert.That(searchResponse.Contains("* SEARCH\r\n"), Is.True, searchResponse);
 
          // Close the messages to mark them as no longer recent.
-         Assert.IsTrue(sim.Close());
+         Assert.That(sim.Close(), Is.True);
 
          result = sim.SendSingleCommand("a01 select Dummy");
-         Assert.IsTrue(result.Contains("* 1 EXISTS\r\n* 0 RECENT"), result);
+         Assert.That(result.Contains("* 1 EXISTS\r\n* 0 RECENT"), Is.True, result);
       }
 
       [Test]
@@ -1524,8 +1531,8 @@ namespace RegressionTests.IMAP
 
          var sWelcomeMessage = simulator.Connect();
          simulator.Logon("delete@example.test", "test");
-         Assert.IsTrue(simulator.CreateFolder("TestFolder1"));
-         Assert.IsTrue(simulator.CreateFolder("TestFolder2"));
+         Assert.That(simulator.CreateFolder("TestFolder1"), Is.True);
+         Assert.That(simulator.CreateFolder("TestFolder2"), Is.True);
 
          if (!simulator.Subscribe("TestFolder1"))
             Assert.Fail("Subscribe on existent folder failed");

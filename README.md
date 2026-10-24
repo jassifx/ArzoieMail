@@ -280,7 +280,7 @@ test accounts are created. Do not run them where you need to keep the server's d
 3. Run the tests with the NUnit console runner from the restored packages, for example:
 
    ```
-   hmailserver\test\packages\NUnit.ConsoleRunner.<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll
+   hmailserver\test\packages\nunit.consolerunner\<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll
    ```
 
 You can also open `hmailserver\test\hMailServer Tests.sln` in Visual Studio and run tests from

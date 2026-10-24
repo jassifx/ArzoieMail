@@ -44,7 +44,7 @@ namespace RegressionTests.IMAP
          simulator.Disconnect();
 
          // utf-8 representation of 本本本.zip:
-         Assert.IsTrue(result.Contains("=?utf-8?B?5pys5pys5pys?=.zip"));
+         Assert.That(result.Contains("=?utf-8?B?5pys5pys5pys?=.zip"), Is.True);
       }
 
       // The message set rules are tested in IMAPCommandRangeActionTester. This checks that FETCH uses them.
@@ -56,24 +56,24 @@ namespace RegressionTests.IMAP
          var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
          var simulator = new ImapClientSimulator();
-         Assert.IsTrue(simulator.ConnectAndLogon(account.Address, "test"));
+         Assert.That(simulator.ConnectAndLogon(account.Address, "test"), Is.True);
 
          for (var i = 0; i < 3; i++)
          {
             var append = simulator.Append("INBOX", "Subject: " + i + "\r\n\r\nBody\r\n");
-            Assert.IsTrue(append.Contains("A40 OK"), append);
+            Assert.That(append.Contains("A40 OK"), Is.True, append);
          }
 
-         Assert.IsTrue(simulator.SelectFolder("INBOX"));
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True);
 
          var result = simulator.SendSingleCommand("A01 " + command);
-         Assert.IsTrue(result.Contains("A01 OK"), result);
+         Assert.That(result.Contains("A01 OK"), Is.True, result);
 
          var uids = Regex.Matches(result, @"^\* \d+ FETCH \(UID (\d+)\)", RegexOptions.Multiline)
             .Cast<Match>()
             .Select(match => match.Groups[1].Value);
 
-         Assert.AreEqual(expectedUids, string.Join(" ", uids), result);
+         Assert.That(string.Join(" ", uids), Is.EqualTo(expectedUids), result);
 
          simulator.Disconnect();
       }
@@ -97,11 +97,11 @@ namespace RegressionTests.IMAP
          sim.ConnectAndLogon(account.Address, "test");
          sim.SelectFolder("INBOX");
          var result = sim.Fetch("1 BODY[1]");
-         Assert.IsTrue(result.Contains("SampleBody1"), result);
+         Assert.That(result.Contains("SampleBody1"), Is.True, result);
          result = sim.Fetch("2 BODY[1]");
-         Assert.IsTrue(result.Contains("SampleBody2"), result);
+         Assert.That(result.Contains("SampleBody2"), Is.True, result);
          result = sim.Fetch("3 BODY[1]");
-         Assert.IsTrue(result.Contains("SampleBody3"), result);
+         Assert.That(result.Contains("SampleBody3"), Is.True, result);
       }
 
       [Test]
@@ -133,8 +133,8 @@ namespace RegressionTests.IMAP
          var bodyResponse = simulator.Fetch("1 BODY");
          simulator.Disconnect();
 
-         Assert.IsTrue(bodyStructureResponse.Contains("BOUNDARY"));
-         Assert.IsFalse(bodyResponse.Contains("BOUNDARY"));
+         Assert.That(bodyStructureResponse.Contains("BOUNDARY"), Is.True);
+         Assert.That(bodyResponse.Contains("BOUNDARY"), Is.False);
       }
 
       [Test]
@@ -162,7 +162,7 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 ENVELOPE");
          simulator.Disconnect();
 
-         Assert.IsTrue(result.Contains("Wed, 22 Apr 2009 11:05:09 GMT"));
+         Assert.That(result.Contains("Wed, 22 Apr 2009 11:05:09 GMT"), Is.True);
       }
 
       [Test]
@@ -189,7 +189,7 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 ENVELOPE");
          simulator.Disconnect();
 
-         Assert.IsFalse(result.Contains("ShouldBeEncodedDueToQuote"));
+         Assert.That(result.Contains("ShouldBeEncodedDueToQuote"), Is.False);
       }
 
 
@@ -219,11 +219,11 @@ namespace RegressionTests.IMAP
          simulator.Disconnect();
 
 
-         Assert.IsTrue(result.Contains("Subject: Something"));
-         Assert.IsTrue(result.Contains("From: Someone <someone@example.com>"));
+         Assert.That(result.Contains("Subject: Something"), Is.True);
+         Assert.That(result.Contains("From: Someone <someone@example.com>"), Is.True);
          // The feedback should end with an empty header line.
-         Assert.IsTrue(result.Contains("\r\n\r\n)"));
-         Assert.IsFalse(result.Contains("Received:"));
+         Assert.That(result.Contains("\r\n\r\n)"), Is.True);
+         Assert.That(result.Contains("Received:"), Is.False);
       }
 
       [Test]
@@ -250,7 +250,7 @@ namespace RegressionTests.IMAP
          var result = simulator.Fetch("1 BODY.PEEK[HEADER.FIELDS (Subject Subject)]");
          simulator.Disconnect();
 
-         Assert.AreEqual(1, StringExtensions.Occurrences(result, "SubjectText"));
+         Assert.That(StringExtensions.Occurrences(result, "SubjectText"), Is.EqualTo(1));
       }
 
 
@@ -280,11 +280,11 @@ namespace RegressionTests.IMAP
          simulator.Disconnect();
 
 
-         Assert.IsTrue(result.Contains("Received:"), result);
-         Assert.IsFalse(result.Contains("Subject:"), result);
-         Assert.IsFalse(result.Contains("From:"), result);
+         Assert.That(result.Contains("Received:"), Is.True, result);
+         Assert.That(result.Contains("Subject:"), Is.False, result);
+         Assert.That(result.Contains("From:"), Is.False, result);
          // The feedback should end with an empty header line.
-         Assert.IsTrue(result.Contains("\r\n\r\n)"), result);
+         Assert.That(result.Contains("\r\n\r\n)"), Is.True, result);
       }
 
       [Test]
@@ -302,11 +302,11 @@ namespace RegressionTests.IMAP
          sim.SelectFolder("INBOX");
          // 0 is not a valid sequence number (RFC 3501 9).
          var result = sim.Fetch("0 BODY[1]");
-         Assert.IsTrue(result.StartsWith("A17 BAD"), result);
+         Assert.That(result.StartsWith("A17 BAD"), Is.True, result);
          result = sim.Fetch("-1 BODY[1]");
-         Assert.IsTrue(result.StartsWith("A17 BAD"));
+         Assert.That(result.StartsWith("A17 BAD"), Is.True);
          result = sim.Fetch("-100 BODY[1]");
-         Assert.IsTrue(result.StartsWith("A17 BAD"));
+         Assert.That(result.StartsWith("A17 BAD"), Is.True);
       }
 
       [Test]
@@ -322,8 +322,8 @@ namespace RegressionTests.IMAP
          sim.SelectFolder("INBOX");
 
          var result = sim.Fetch("1 BODY[HEADER]<99999.10>");
-         Assert.IsTrue(result.Contains("BODY[HEADER]<99999>"), result);
-         Assert.IsTrue(result.Contains("\"\""), result);
+         Assert.That(result.Contains("BODY[HEADER]<99999>"), Is.True, result);
+         Assert.That(result.Contains("\"\""), Is.True, result);
 
          sim.Disconnect();
       }
@@ -341,8 +341,8 @@ namespace RegressionTests.IMAP
          sim.SelectFolder("INBOX");
 
          var result = sim.Fetch("1 BODY.PEEK[TEXT]<393216.393216>");
-         Assert.IsTrue(result.Contains("BODY[TEXT]<393216>"), result);
-         Assert.IsTrue(result.Contains("\"\""), result);
+         Assert.That(result.Contains("BODY[TEXT]<393216>"), Is.True, result);
+         Assert.That(result.Contains("\"\""), Is.True, result);
 
          sim.Disconnect();
       }
@@ -361,8 +361,8 @@ namespace RegressionTests.IMAP
 
          // Reproduces the exact Thunderbird chunked-fetch scenario from issue #524.
          var result = sim.Fetch("1 BODY.PEEK[1]<393216.393216>");
-         Assert.IsTrue(result.Contains("BODY[1]<393216>"), result);
-         Assert.IsTrue(result.Contains("\"\""), result);
+         Assert.That(result.Contains("BODY[1]<393216>"), Is.True, result);
+         Assert.That(result.Contains("\"\""), Is.True, result);
 
          sim.Disconnect();
       }
@@ -385,8 +385,8 @@ namespace RegressionTests.IMAP
          var fullSize = int.Parse(fullResult.Substring(lStart + 1, lEnd - lStart - 1));
 
          var partial = sim.Fetch("1 BODY[HEADER]<5.99999>");
-         Assert.IsTrue(partial.Contains("BODY[HEADER]<5>"), partial);
-         Assert.IsTrue(partial.Contains("{" + (fullSize - 5) + "}"), partial);
+         Assert.That(partial.Contains("BODY[HEADER]<5>"), Is.True, partial);
+         Assert.That(partial.Contains("{" + (fullSize - 5) + "}"), Is.True, partial);
 
          sim.Disconnect();
       }
@@ -405,7 +405,7 @@ namespace RegressionTests.IMAP
 
          sim.Fetch("1 BODY.PEEK[TEXT]");
          var flags = sim.GetFlags(1);
-         Assert.IsFalse(flags.Contains("\\Seen"), flags);
+         Assert.That(flags.Contains("\\Seen"), Is.False, flags);
 
          sim.Disconnect();
       }
@@ -424,7 +424,7 @@ namespace RegressionTests.IMAP
 
          sim.Fetch("1 BODY[TEXT]");
          var flags = sim.GetFlags(1);
-         Assert.IsTrue(flags.Contains("\\Seen"), flags);
+         Assert.That(flags.Contains("\\Seen"), Is.True, flags);
 
          sim.Disconnect();
       }
@@ -448,13 +448,13 @@ namespace RegressionTests.IMAP
          var contentStart = fullResult.IndexOf("\r\n", lEnd) + 2;
          var fullText = fullResult.Substring(contentStart, fullSize);
 
-         Assert.IsTrue(fullSize > 5, $"Body too short ({fullSize}) for a meaningful partial test");
+         Assert.That(fullSize > 5, Is.True, $"Body too short ({fullSize}) for a meaningful partial test");
 
          var partial = sim.Fetch("1 BODY.PEEK[TEXT]<0.5>");
-         Assert.IsTrue(partial.Contains("BODY[TEXT]<0>"), partial);
-         Assert.IsTrue(partial.Contains("{5}"), partial);
+         Assert.That(partial.Contains("BODY[TEXT]<0>"), Is.True, partial);
+         Assert.That(partial.Contains("{5}"), Is.True, partial);
          var partialStart = partial.IndexOf("{5}") + 5;
-         Assert.AreEqual(fullText.Substring(0, 5), partial.Substring(partialStart, 5));
+         Assert.That(partial.Substring(partialStart, 5), Is.EqualTo(fullText.Substring(0, 5)));
 
          sim.Disconnect();
       }
@@ -482,13 +482,13 @@ namespace RegressionTests.IMAP
          var contentStart = fullResult.IndexOf("\r\n", lEnd) + 2;
          var fullContent = fullResult.Substring(contentStart, fullSize);
 
-         Assert.IsTrue(fullSize > 5, $"HEADER.FIELDS response too short ({fullSize}) for a meaningful partial test");
+         Assert.That(fullSize > 5, Is.True, $"HEADER.FIELDS response too short ({fullSize}) for a meaningful partial test");
 
          var partial = sim.Fetch("1 BODY.PEEK[HEADER.FIELDS (Subject)]<0.5>");
-         Assert.IsTrue(partial.Contains("BODY[HEADER.FIELDS (SUBJECT)]<0>") || partial.Contains("BODY[HEADER.FIELDS (Subject)]<0>"), partial);
-         Assert.IsTrue(partial.Contains("{5}"), partial);
+         Assert.That(partial.Contains("BODY[HEADER.FIELDS (SUBJECT)]<0>") || partial.Contains("BODY[HEADER.FIELDS (Subject)]<0>"), Is.True, partial);
+         Assert.That(partial.Contains("{5}"), Is.True, partial);
          var partialStart = partial.IndexOf("{5}") + 5;
-         Assert.AreEqual(fullContent.Substring(0, 5), partial.Substring(partialStart, 5));
+         Assert.That(partial.Substring(partialStart, 5), Is.EqualTo(fullContent.Substring(0, 5)));
 
          sim.Disconnect();
       }
@@ -516,13 +516,13 @@ namespace RegressionTests.IMAP
          var contentStart = fullResult.IndexOf("\r\n", lEnd) + 2;
          var fullContent = fullResult.Substring(contentStart, fullSize);
 
-         Assert.IsTrue(fullSize > 5, $"HEADER.FIELDS.NOT response too short ({fullSize}) for a meaningful partial test");
+         Assert.That(fullSize > 5, Is.True, $"HEADER.FIELDS.NOT response too short ({fullSize}) for a meaningful partial test");
 
          var partial = sim.Fetch("1 BODY.PEEK[HEADER.FIELDS.NOT (Subject)]<0.5>");
-         Assert.IsTrue(partial.Contains("BODY[HEADER.FIELDS.NOT (SUBJECT)]<0>") || partial.Contains("BODY[HEADER.FIELDS.NOT (Subject)]<0>"), partial);
-         Assert.IsTrue(partial.Contains("{5}"), partial);
+         Assert.That(partial.Contains("BODY[HEADER.FIELDS.NOT (SUBJECT)]<0>") || partial.Contains("BODY[HEADER.FIELDS.NOT (Subject)]<0>"), Is.True, partial);
+         Assert.That(partial.Contains("{5}"), Is.True, partial);
          var partialStart = partial.IndexOf("{5}") + 5;
-         Assert.AreEqual(fullContent.Substring(0, 5), partial.Substring(partialStart, 5));
+         Assert.That(partial.Substring(partialStart, 5), Is.EqualTo(fullContent.Substring(0, 5)));
 
          sim.Disconnect();
       }
@@ -540,11 +540,11 @@ namespace RegressionTests.IMAP
          sim.SelectFolder("INBOX");
 
          var result = sim.Fetch("1 RFC822.SIZE");
-         Assert.IsTrue(result.Contains("RFC822.SIZE"), result);
+         Assert.That(result.Contains("RFC822.SIZE"), Is.True, result);
          var sizeStart = result.IndexOf("RFC822.SIZE ") + "RFC822.SIZE ".Length;
          var sizeEnd = result.IndexOfAny(new[] { ' ', ')' }, sizeStart);
          var size = int.Parse(result.Substring(sizeStart, sizeEnd - sizeStart));
-         Assert.IsTrue(size > 0, $"RFC822.SIZE should be positive, got {size}");
+         Assert.That(size > 0, Is.True, $"RFC822.SIZE should be positive, got {size}");
 
          sim.Disconnect();
       }
@@ -562,7 +562,7 @@ namespace RegressionTests.IMAP
          sim.SelectFolder("INBOX");
 
          var result = sim.Fetch("1 INTERNALDATE");
-         Assert.IsTrue(result.Contains("INTERNALDATE \""), result);
+         Assert.That(result.Contains("INTERNALDATE \""), Is.True, result);
 
          sim.Disconnect();
       }
@@ -580,11 +580,11 @@ namespace RegressionTests.IMAP
          sim.SelectFolder("INBOX");
 
          var result = sim.Fetch("1 UID");
-         Assert.IsTrue(result.Contains("UID "), result);
+         Assert.That(result.Contains("UID "), Is.True, result);
          var uidStart = result.IndexOf("UID ") + 4;
          var uidEnd = result.IndexOfAny(new[] { ' ', ')' }, uidStart);
          var uid = int.Parse(result.Substring(uidStart, uidEnd - uidStart));
-         Assert.IsTrue(uid > 0, $"UID should be positive, got {uid}");
+         Assert.That(uid > 0, Is.True, $"UID should be positive, got {uid}");
 
          sim.Disconnect();
       }
@@ -606,24 +606,24 @@ namespace RegressionTests.IMAP
          var literalStart = fullHeaderResult.IndexOf('{');
          var literalEnd = fullHeaderResult.IndexOf('}', literalStart);
          var fullSize = int.Parse(fullHeaderResult.Substring(literalStart + 1, literalEnd - literalStart - 1));
-         Assert.IsTrue(fullSize > 15, $"Header too short ({fullSize} bytes) for a meaningful partial test");
+         Assert.That(fullSize > 15, Is.True, $"Header too short ({fullSize} bytes) for a meaningful partial test");
 
          var contentStart = fullHeaderResult.IndexOf("\r\n", literalEnd) + 2;
          var fullHeader = fullHeaderResult.Substring(contentStart, fullSize);
 
          // <0.10>: 10 bytes starting at offset 0.
          var result0 = sim.Fetch("1 BODY[HEADER]<0.10>");
-         Assert.IsTrue(result0.Contains("BODY[HEADER]<0>"), result0);
-         Assert.IsTrue(result0.Contains("{10}"), result0);
+         Assert.That(result0.Contains("BODY[HEADER]<0>"), Is.True, result0);
+         Assert.That(result0.Contains("{10}"), Is.True, result0);
          var content0Start = result0.IndexOf("{10}") + 6;
-         Assert.AreEqual(fullHeader.Substring(0, 10), result0.Substring(content0Start, 10));
+         Assert.That(result0.Substring(content0Start, 10), Is.EqualTo(fullHeader.Substring(0, 10)));
 
          // <5.10>: 10 bytes starting at offset 5.
          var result5 = sim.Fetch("1 BODY[HEADER]<5.10>");
-         Assert.IsTrue(result5.Contains("BODY[HEADER]<5>"), result5);
-         Assert.IsTrue(result5.Contains("{10}"), result5);
+         Assert.That(result5.Contains("BODY[HEADER]<5>"), Is.True, result5);
+         Assert.That(result5.Contains("{10}"), Is.True, result5);
          var content5Start = result5.IndexOf("{10}") + 6;
-         Assert.AreEqual(fullHeader.Substring(5, 10), result5.Substring(content5Start, 10));
+         Assert.That(result5.Substring(content5Start, 10), Is.EqualTo(fullHeader.Substring(5, 10)));
 
          sim.Disconnect();
       }
@@ -673,24 +673,24 @@ namespace RegressionTests.IMAP
          // BODY[2.MIME] must return the MIME headers of part 2 (Content-Type: message/rfc822, etc.)
          // and must NOT return the inner message's RFC 822 headers (From, Subject, etc.)
          var mimeResult = sim.Fetch("1 BODY[2.MIME]");
-         Assert.IsTrue(mimeResult.Contains("message/rfc822"), "BODY[2.MIME] should contain 'message/rfc822': " + mimeResult);
-         Assert.IsFalse(mimeResult.Contains("Inner Subject"), "BODY[2.MIME] must not contain inner message Subject: " + mimeResult);
-         Assert.IsFalse(mimeResult.Contains("inner@example.test"), "BODY[2.MIME] must not contain inner message From: " + mimeResult);
+         Assert.That(mimeResult.Contains("message/rfc822"), Is.True, "BODY[2.MIME] should contain 'message/rfc822': " + mimeResult);
+         Assert.That(mimeResult.Contains("Inner Subject"), Is.False, "BODY[2.MIME] must not contain inner message Subject: " + mimeResult);
+         Assert.That(mimeResult.Contains("inner@example.test"), Is.False, "BODY[2.MIME] must not contain inner message From: " + mimeResult);
 
          // BODY[2.HEADER] must return the inner message's RFC 822 headers (From, Subject, etc.)
          var headerResult = sim.Fetch("1 BODY[2.HEADER]");
-         Assert.IsTrue(headerResult.Contains("Inner Subject"), "BODY[2.HEADER] should contain inner Subject: " + headerResult);
-         Assert.IsTrue(headerResult.Contains("inner@example.test"), "BODY[2.HEADER] should contain inner From: " + headerResult);
+         Assert.That(headerResult.Contains("Inner Subject"), Is.True, "BODY[2.HEADER] should contain inner Subject: " + headerResult);
+         Assert.That(headerResult.Contains("inner@example.test"), Is.True, "BODY[2.HEADER] should contain inner From: " + headerResult);
 
          // BODY[2.TEXT] must return the inner message's body text (without headers)
          var textResult = sim.Fetch("1 BODY[2.TEXT]");
-         Assert.IsTrue(textResult.Contains("Inner body"), "BODY[2.TEXT] should contain inner body text: " + textResult);
-         Assert.IsFalse(textResult.Contains("Inner Subject"), "BODY[2.TEXT] must not contain inner message headers: " + textResult);
+         Assert.That(textResult.Contains("Inner body"), Is.True, "BODY[2.TEXT] should contain inner body text: " + textResult);
+         Assert.That(textResult.Contains("Inner Subject"), Is.False, "BODY[2.TEXT] must not contain inner message headers: " + textResult);
 
          // BODY[2] must return the inner message including its headers and body
          var bodyResult = sim.Fetch("1 BODY[2]");
-         Assert.IsTrue(bodyResult.Contains("Inner Subject"), "BODY[2] should contain inner message headers: " + bodyResult);
-         Assert.IsTrue(bodyResult.Contains("Inner body"), "BODY[2] should contain inner message body: " + bodyResult);
+         Assert.That(bodyResult.Contains("Inner Subject"), Is.True, "BODY[2] should contain inner message headers: " + bodyResult);
+         Assert.That(bodyResult.Contains("Inner body"), Is.True, "BODY[2] should contain inner message body: " + bodyResult);
 
          sim.Disconnect();
       }
@@ -725,8 +725,8 @@ namespace RegressionTests.IMAP
          // For a plain text part, BODY[1.MIME] and BODY[1.HEADER] should return the same MIME headers
          var mimeResult = sim.Fetch("1 BODY[1.MIME]");
          var headerResult = sim.Fetch("1 BODY[1.HEADER]");
-         Assert.IsTrue(mimeResult.Contains("text/plain"), "BODY[1.MIME] should contain Content-Type: " + mimeResult);
-         Assert.IsTrue(headerResult.Contains("text/plain"), "BODY[1.HEADER] should contain Content-Type: " + headerResult);
+         Assert.That(mimeResult.Contains("text/plain"), Is.True, "BODY[1.MIME] should contain Content-Type: " + mimeResult);
+         Assert.That(headerResult.Contains("text/plain"), Is.True, "BODY[1.HEADER] should contain Content-Type: " + headerResult);
 
          sim.Disconnect();
       }
@@ -778,14 +778,14 @@ namespace RegressionTests.IMAP
          // A fix that skips loading for any single-component path would wrongly return the
          // outer MIME headers (Content-Type: message/rfc822) instead.
          var headerResult = sim.Fetch("1 BODY[2.HEADER]");
-         Assert.IsTrue(headerResult.Contains("Inner Subject"), "BODY[2.HEADER] should contain inner RFC2822 Subject: " + headerResult);
-         Assert.IsTrue(headerResult.Contains("inner@example.test"), "BODY[2.HEADER] should contain inner RFC2822 From: " + headerResult);
-         Assert.IsFalse(headerResult.Contains("message/rfc822"), "BODY[2.HEADER] must not contain outer MIME Content-Type: " + headerResult);
+         Assert.That(headerResult.Contains("Inner Subject"), Is.True, "BODY[2.HEADER] should contain inner RFC2822 Subject: " + headerResult);
+         Assert.That(headerResult.Contains("inner@example.test"), Is.True, "BODY[2.HEADER] should contain inner RFC2822 From: " + headerResult);
+         Assert.That(headerResult.Contains("message/rfc822"), Is.False, "BODY[2.HEADER] must not contain outer MIME Content-Type: " + headerResult);
 
          // BODY[2.MIME] must NOT load the encapsulated message and return the outer MIME headers.
          var mimeResult = sim.Fetch("1 BODY[2.MIME]");
-         Assert.IsTrue(mimeResult.Contains("message/rfc822"), "BODY[2.MIME] should contain outer MIME Content-Type: " + mimeResult);
-         Assert.IsFalse(mimeResult.Contains("Inner Subject"), "BODY[2.MIME] must not contain inner RFC2822 Subject: " + mimeResult);
+         Assert.That(mimeResult.Contains("message/rfc822"), Is.True, "BODY[2.MIME] should contain outer MIME Content-Type: " + mimeResult);
+         Assert.That(mimeResult.Contains("Inner Subject"), Is.False, "BODY[2.MIME] must not contain inner RFC2822 Subject: " + mimeResult);
 
          sim.Disconnect();
       }
@@ -841,11 +841,11 @@ namespace RegressionTests.IMAP
 
          // BODY[2.1] must return the plain text sub-part of the encapsulated message
          var part1Result = sim.Fetch("1 BODY[2.1]");
-         Assert.IsTrue(part1Result.Contains("Plain text part"), "BODY[2.1] should return plain text sub-part: " + part1Result);
+         Assert.That(part1Result.Contains("Plain text part"), Is.True, "BODY[2.1] should return plain text sub-part: " + part1Result);
 
          // BODY[2.2] must return the HTML sub-part of the encapsulated message
          var part2Result = sim.Fetch("1 BODY[2.2]");
-         Assert.IsTrue(part2Result.Contains("HTML part"), "BODY[2.2] should return HTML sub-part: " + part2Result);
+         Assert.That(part2Result.Contains("HTML part"), Is.True, "BODY[2.2] should return HTML sub-part: " + part2Result);
 
          sim.Disconnect();
       }
@@ -904,15 +904,15 @@ namespace RegressionTests.IMAP
          // MIME entity headers of sub-part 1 (final component — encapsulated message is NOT
          // loaded, so GetHeaderContents returns the sub-part's own headers, not inner content).
          var mime1Result = sim.Fetch("1 BODY[2.1.MIME]");
-         Assert.IsTrue(mime1Result.Contains("text/plain"), "BODY[2.1.MIME] should contain Content-Type text/plain: " + mime1Result);
-         Assert.IsTrue(mime1Result.Contains("US-ASCII"), "BODY[2.1.MIME] should contain charset from the sub-part header: " + mime1Result);
-         Assert.IsFalse(mime1Result.Contains("Plain text part"), "BODY[2.1.MIME] must not contain body content: " + mime1Result);
-         Assert.IsFalse(mime1Result.Contains("Inner Subject"), "BODY[2.1.MIME] must not contain inner RFC2822 headers: " + mime1Result);
+         Assert.That(mime1Result.Contains("text/plain"), Is.True, "BODY[2.1.MIME] should contain Content-Type text/plain: " + mime1Result);
+         Assert.That(mime1Result.Contains("US-ASCII"), Is.True, "BODY[2.1.MIME] should contain charset from the sub-part header: " + mime1Result);
+         Assert.That(mime1Result.Contains("Plain text part"), Is.False, "BODY[2.1.MIME] must not contain body content: " + mime1Result);
+         Assert.That(mime1Result.Contains("Inner Subject"), Is.False, "BODY[2.1.MIME] must not contain inner RFC2822 headers: " + mime1Result);
 
          // BODY[2.2.MIME] must return the MIME headers of sub-part 2 (text/html).
          var mime2Result = sim.Fetch("1 BODY[2.2.MIME]");
-         Assert.IsTrue(mime2Result.Contains("text/html"), "BODY[2.2.MIME] should contain Content-Type text/html: " + mime2Result);
-         Assert.IsFalse(mime2Result.Contains("HTML part"), "BODY[2.2.MIME] must not contain body content: " + mime2Result);
+         Assert.That(mime2Result.Contains("text/html"), Is.True, "BODY[2.2.MIME] should contain Content-Type text/html: " + mime2Result);
+         Assert.That(mime2Result.Contains("HTML part"), Is.False, "BODY[2.2.MIME] must not contain body content: " + mime2Result);
 
          sim.Disconnect();
       }
@@ -934,23 +934,23 @@ namespace RegressionTests.IMAP
          var literalStart = fullResult.IndexOf('{');
          var literalEnd = fullResult.IndexOf('}', literalStart);
          var fullSize = int.Parse(fullResult.Substring(literalStart + 1, literalEnd - literalStart - 1));
-         Assert.IsTrue(fullSize > 5, $"Body part too short ({fullSize} bytes) for a meaningful partial test");
+         Assert.That(fullSize > 5, Is.True, $"Body part too short ({fullSize} bytes) for a meaningful partial test");
          var contentStart = fullResult.IndexOf("\r\n", literalEnd) + 2;
          var fullContent = fullResult.Substring(contentStart, fullSize);
 
          // <0.5>: 5 bytes from the start.
          var result0 = sim.Fetch("1 BODY.PEEK[1]<0.5>");
-         Assert.IsTrue(result0.Contains("BODY[1]<0>"), result0);
-         Assert.IsTrue(result0.Contains("{5}"), result0);
+         Assert.That(result0.Contains("BODY[1]<0>"), Is.True, result0);
+         Assert.That(result0.Contains("{5}"), Is.True, result0);
          var partial0Start = result0.IndexOf("{5}") + 5;
-         Assert.AreEqual(fullContent.Substring(0, 5), result0.Substring(partial0Start, 5));
+         Assert.That(result0.Substring(partial0Start, 5), Is.EqualTo(fullContent.Substring(0, 5)));
 
          // <5.5>: 5 bytes starting at offset 5.
          var result5 = sim.Fetch("1 BODY.PEEK[1]<5.5>");
-         Assert.IsTrue(result5.Contains("BODY[1]<5>"), result5);
-         Assert.IsTrue(result5.Contains("{5}"), result5);
+         Assert.That(result5.Contains("BODY[1]<5>"), Is.True, result5);
+         Assert.That(result5.Contains("{5}"), Is.True, result5);
          var partial5Start = result5.IndexOf("{5}") + 5;
-         Assert.AreEqual(fullContent.Substring(5, 5), result5.Substring(partial5Start, 5));
+         Assert.That(result5.Substring(partial5Start, 5), Is.EqualTo(fullContent.Substring(5, 5)));
 
          sim.Disconnect();
       }

@@ -179,18 +179,18 @@ namespace RegressionTests.Infrastructure.Persistence
          _domain.Name = "test3.com";
          _domain.Save();
 
-         Assert.IsNotNull(_domain.Accounts.get_ItemByAddress("test1@test3.com"));
-         Assert.IsNotNull(_domain.Accounts.get_ItemByAddress("test2@test3.com"));
-         Assert.IsNotNull(_domain.Accounts.get_ItemByAddress("test3@test3.com"));
-         Assert.IsNotNull(_domain.Accounts.get_ItemByAddress("test2.com@test3.com"));
+         Assert.That(_domain.Accounts.get_ItemByAddress("test1@test3.com"), Is.Not.Null);
+         Assert.That(_domain.Accounts.get_ItemByAddress("test2@test3.com"), Is.Not.Null);
+         Assert.That(_domain.Accounts.get_ItemByAddress("test3@test3.com"), Is.Not.Null);
+         Assert.That(_domain.Accounts.get_ItemByAddress("test2.com@test3.com"), Is.Not.Null);
 
-         Assert.IsNotNull(_domain.Aliases.get_ItemByName("alias1@test3.com"));
-         Assert.IsNotNull(_domain.Aliases.get_ItemByName("alias2@test3.com"));
-         Assert.IsNotNull(_domain.Aliases.get_ItemByName("alias3@test3.com"));
+         Assert.That(_domain.Aliases.get_ItemByName("alias1@test3.com"), Is.Not.Null);
+         Assert.That(_domain.Aliases.get_ItemByName("alias2@test3.com"), Is.Not.Null);
+         Assert.That(_domain.Aliases.get_ItemByName("alias3@test3.com"), Is.Not.Null);
 
-         Assert.IsNotNull(_domain.DistributionLists.get_ItemByAddress("list1@test3.com"));
-         Assert.IsNotNull(_domain.DistributionLists.get_ItemByAddress("list2@test3.com"));
-         Assert.IsNotNull(_domain.DistributionLists.get_ItemByAddress("list3@test3.com"));
+         Assert.That(_domain.DistributionLists.get_ItemByAddress("list1@test3.com"), Is.Not.Null);
+         Assert.That(_domain.DistributionLists.get_ItemByAddress("list2@test3.com"), Is.Not.Null);
+         Assert.That(_domain.DistributionLists.get_ItemByAddress("list3@test3.com"), Is.Not.Null);
       }
 
 
@@ -209,7 +209,7 @@ namespace RegressionTests.Infrastructure.Persistence
          secondAccount.MaxSize = 1024 * 1024 * 2000;
          secondAccount.Save();
 
-         Assert.AreEqual(account.MaxSize + (long)secondAccount.MaxSize, domain.AllocatedSize);
+         Assert.That(domain.AllocatedSize, Is.EqualTo(account.MaxSize + (long)secondAccount.MaxSize));
       }
 
       [Test]
@@ -268,7 +268,7 @@ namespace RegressionTests.Infrastructure.Persistence
       public void TestIncomingRelays()
       {
          var incomingRelays = _application.Settings.IncomingRelays;
-         Assert.AreEqual(0, incomingRelays.Count);
+         Assert.That(incomingRelays.Count, Is.EqualTo(0));
 
          var incomingRelay = incomingRelays.Add();
          incomingRelay.Name = "TestRelay";
@@ -277,20 +277,20 @@ namespace RegressionTests.Infrastructure.Persistence
          incomingRelay.Save();
 
          // Check that it was saved.
-         Assert.AreNotEqual(0, incomingRelay.ID);
+         Assert.That(incomingRelay.ID, Is.Not.EqualTo(0));
 
          // Confirm that settings were saved properly.
          incomingRelays.Refresh();
          var incomingRelay2 = incomingRelays.get_ItemByDBID(incomingRelay.ID);
-         Assert.AreEqual(incomingRelay.ID, incomingRelay2.ID);
-         Assert.AreEqual(incomingRelay.Name, incomingRelay2.Name);
-         Assert.AreEqual(incomingRelay.LowerIP, incomingRelay2.LowerIP);
-         Assert.AreEqual(incomingRelay.UpperIP, incomingRelay2.UpperIP);
+         Assert.That(incomingRelay2.ID, Is.EqualTo(incomingRelay.ID));
+         Assert.That(incomingRelay2.Name, Is.EqualTo(incomingRelay.Name));
+         Assert.That(incomingRelay2.LowerIP, Is.EqualTo(incomingRelay.LowerIP));
+         Assert.That(incomingRelay2.UpperIP, Is.EqualTo(incomingRelay.UpperIP));
 
          // Delete it again.
          incomingRelays.Delete(0);
 
-         Assert.AreEqual(0, incomingRelays.Count);
+         Assert.That(incomingRelays.Count, Is.EqualTo(0));
       }
 
       [Test]
@@ -329,7 +329,7 @@ namespace RegressionTests.Infrastructure.Persistence
             thrown = true;
          }
 
-         Assert.IsTrue(thrown);
+         Assert.That(thrown, Is.True);
 
          // Saving account is OK, unless its address is changed.
          account.Address = "test@example.test";
@@ -348,7 +348,7 @@ namespace RegressionTests.Infrastructure.Persistence
             thrown = true;
          }
 
-         Assert.IsTrue(thrown);
+         Assert.That(thrown, Is.True);
 
          // Saving domain is OK, unless its address is changed.
          _domain.Name = "example.test";
@@ -370,7 +370,7 @@ namespace RegressionTests.Infrastructure.Persistence
          account.Save();
 
          var messageText = Pop3ClientSimulator.AssertGetFirstMessageText("account2@example.test", "test");
-         Assert.IsTrue(messageText.Contains(messageBody), messageText);
+         Assert.That(messageText.Contains(messageBody), Is.True, messageText);
       }
 
       [Test]
@@ -388,8 +388,8 @@ namespace RegressionTests.Infrastructure.Persistence
          _domain.Name = "example.foo";
          _domain.Save();
 
-         Assert.AreEqual("someone@example.foo", _domain.Accounts[0].ForwardAddress);
-         Assert.AreEqual("someone@external.com", _domain.Accounts[1].ForwardAddress);
+         Assert.That(_domain.Accounts[0].ForwardAddress, Is.EqualTo("someone@example.foo"));
+         Assert.That(_domain.Accounts[1].ForwardAddress, Is.EqualTo("someone@external.com"));
       }
 
       [Test]
@@ -414,14 +414,14 @@ namespace RegressionTests.Infrastructure.Persistence
          _domain.Name = "new1.example.com";
          _domain.Save();
 
-         Assert.AreEqual("alias1@new1.example.com", _domain.Aliases[0].Name);
-         Assert.AreEqual("alias2@new1.example.com", _domain.Aliases[0].Value);
+         Assert.That(_domain.Aliases[0].Name, Is.EqualTo("alias1@new1.example.com"));
+         Assert.That(_domain.Aliases[0].Value, Is.EqualTo("alias2@new1.example.com"));
 
-         Assert.AreEqual("alias2@new1.example.com", _domain.Aliases[1].Name);
-         Assert.AreEqual("account@new1.example.com", _domain.Aliases[1].Value);
+         Assert.That(_domain.Aliases[1].Name, Is.EqualTo("alias2@new1.example.com"));
+         Assert.That(_domain.Aliases[1].Value, Is.EqualTo("account@new1.example.com"));
 
-         Assert.AreEqual("alias3@new1.example.com", _domain.Aliases[2].Name);
-         Assert.AreEqual("external@external.com", _domain.Aliases[2].Value);
+         Assert.That(_domain.Aliases[2].Name, Is.EqualTo("alias3@new1.example.com"));
+         Assert.That(_domain.Aliases[2].Value, Is.EqualTo("external@external.com"));
       }
 
       [Test]
@@ -449,10 +449,10 @@ namespace RegressionTests.Infrastructure.Persistence
          _domain.Save();
 
          var list = _domain.DistributionLists[0];
-         Assert.AreEqual("list@new2.example.com", list.Address);
-         Assert.AreEqual("recipient1@new2.example.com", list.Recipients[0].RecipientAddress);
-         Assert.AreEqual("recipient2@new2.example.com", list.Recipients[1].RecipientAddress);
-         Assert.AreEqual("recipient3@otherdomain.example.test", list.Recipients[2].RecipientAddress);
+         Assert.That(list.Address, Is.EqualTo("list@new2.example.com"));
+         Assert.That(list.Recipients[0].RecipientAddress, Is.EqualTo("recipient1@new2.example.com"));
+         Assert.That(list.Recipients[1].RecipientAddress, Is.EqualTo("recipient2@new2.example.com"));
+         Assert.That(list.Recipients[2].RecipientAddress, Is.EqualTo("recipient3@otherdomain.example.test"));
       }
 
       [Test]
@@ -470,7 +470,7 @@ namespace RegressionTests.Infrastructure.Persistence
          _domain.Save();
 
          var messageText = Pop3ClientSimulator.AssertGetFirstMessageText("account1@new3.example.com", "test");
-         Assert.IsTrue(messageText.Contains(messageBody), messageText);
+         Assert.That(messageText.Contains(messageBody), Is.True, messageText);
       }
 
       [Test]

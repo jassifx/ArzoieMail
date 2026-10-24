@@ -27,7 +27,7 @@ namespace RegressionTests.Shared
       {
          _name = name;
          _simulator = new ImapClientSimulator();
-         Assert.IsTrue(_simulator.ConnectAndLogon(address, password), "Logon failed for " + name);
+         Assert.That(_simulator.ConnectAndLogon(address, password), Is.True, "Logon failed for " + name);
       }
 
       public ImapClientSimulator Simulator => _simulator;
@@ -40,10 +40,10 @@ namespace RegressionTests.Shared
       public string Select(string folder, bool examine = false)
       {
          var response = Command((examine ? "EXAMINE" : "SELECT") + " \"" + folder + "\"");
-         Assert.IsTrue(IsOk(response), response);
+         Assert.That(IsOk(response), Is.True, response);
 
          var match = ExistsLine.Match(response);
-         Assert.IsTrue(match.Success, response);
+         Assert.That(match.Success, Is.True, response);
          KnownCount = int.Parse(match.Groups[1].Value);
 
          return response;
@@ -89,7 +89,7 @@ namespace RegressionTests.Shared
 
       public void AssertNoViolations()
       {
-         Assert.IsEmpty(_violations, _name + ":" + Environment.NewLine + string.Join(Environment.NewLine, _violations));
+         Assert.That(_violations, Is.Empty, _name + ":" + Environment.NewLine + string.Join(Environment.NewLine, _violations));
       }
 
       // RFC 4315 4: nz-number UIDVALIDITY, uid-sets of nz-numbers without *, only in a tagged OK.
@@ -155,10 +155,10 @@ namespace RegressionTests.Shared
       public static long AssertAppendUid(string response, long expectedUidValidity = -1)
       {
          var match = ParseAppendUid(response);
-         Assert.IsTrue(match.Success, "No APPENDUID in response. " + response);
+         Assert.That(match.Success, Is.True, "No APPENDUID in response. " + response);
 
          if (expectedUidValidity >= 0)
-            Assert.AreEqual(expectedUidValidity, long.Parse(match.Groups[1].Value), response);
+            Assert.That(long.Parse(match.Groups[1].Value), Is.EqualTo(expectedUidValidity), response);
 
          return long.Parse(match.Groups[2].Value);
       }
@@ -210,14 +210,14 @@ namespace RegressionTests.Shared
       public static long GetResponseCodeValue(string response, string name)
       {
          var match = Regex.Match(response, @"\[" + name + @" (\d+)\]");
-         Assert.IsTrue(match.Success, name + " not found. " + response);
+         Assert.That(match.Success, Is.True, name + " not found. " + response);
          return long.Parse(match.Groups[1].Value);
       }
 
       public static long GetStatusValue(string response, string name)
       {
          var match = Regex.Match(response, name + @" (\d+)");
-         Assert.IsTrue(match.Success, name + " not found. " + response);
+         Assert.That(match.Success, Is.True, name + " not found. " + response);
          return long.Parse(match.Groups[1].Value);
       }
 
@@ -232,10 +232,10 @@ namespace RegressionTests.Shared
       public static List<long> UidSearchAll(TrackedImapSession session)
       {
          var response = session.Command("UID SEARCH ALL");
-         Assert.IsTrue(TrackedImapSession.IsOk(response), response);
+         Assert.That(TrackedImapSession.IsOk(response), Is.True, response);
 
          var match = Regex.Match(response, @"^\* SEARCH ?(.*)\r$", RegexOptions.Multiline);
-         Assert.IsTrue(match.Success, response);
+         Assert.That(match.Success, Is.True, response);
 
          return match.Groups[1].Value.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).Select(long.Parse).ToList();
       }
@@ -244,7 +244,7 @@ namespace RegressionTests.Shared
       public static Dictionary<long, string> FetchMessageIds(TrackedImapSession session, string uidSet)
       {
          var response = session.Command("UID FETCH " + uidSet + " (UID BODY.PEEK[HEADER.FIELDS (MESSAGE-ID)])");
-         Assert.IsTrue(TrackedImapSession.IsOk(response), response);
+         Assert.That(TrackedImapSession.IsOk(response), Is.True, response);
 
          var result = new Dictionary<long, string>();
 

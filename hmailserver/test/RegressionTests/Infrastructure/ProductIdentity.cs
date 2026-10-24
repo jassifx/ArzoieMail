@@ -19,7 +19,7 @@ namespace RegressionTests.Infrastructure
       {
          using (var service = new ServiceController("hMailServer"))
          {
-            Assert.AreEqual(ServiceControllerStatus.Running, service.Status);
+            Assert.That(service.Status, Is.EqualTo(ServiceControllerStatus.Running));
          }
       }
 
@@ -29,7 +29,7 @@ namespace RegressionTests.Infrastructure
       {
          using (var service = new ServiceController("hMailServer"))
          {
-            Assert.AreEqual("ArzoieMail", service.DisplayName);
+            Assert.That(service.DisplayName, Is.EqualTo("ArzoieMail"));
          }
       }
 
@@ -38,10 +38,10 @@ namespace RegressionTests.Infrastructure
       public void ExecutableProductNameShouldBeArzoieMail()
       {
          var processes = Process.GetProcessesByName("hmailserver");
-         Assert.AreEqual(1, processes.Length, "Expected exactly one running hMailServer.exe.");
+         Assert.That(processes.Length, Is.EqualTo(1), "Expected exactly one running hMailServer.exe.");
 
          var versionInfo = FileVersionInfo.GetVersionInfo(processes[0].MainModule.FileName);
-         Assert.AreEqual("ArzoieMail", versionInfo.ProductName);
+         Assert.That(versionInfo.ProductName, Is.EqualTo("ArzoieMail"));
       }
 
       [Test]
@@ -55,7 +55,7 @@ namespace RegressionTests.Infrastructure
             Assert.Inconclusive("This installation was upgraded from hMailServer and keeps ProgramData\\hMailServer.");
 
          var iniFile = Path.Combine(IniFileLocator.GetProgramDataDirectory(), "hMailServer.ini");
-         Assert.AreEqual(iniFile, IniFileLocator.GetIniFileName());
+         Assert.That(IniFileLocator.GetIniFileName(), Is.EqualTo(iniFile));
       }
    }
 }

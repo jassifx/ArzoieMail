@@ -6,10 +6,13 @@
 
   The tools are SDK-style .NET projects, which import this file before the SDK's own targets,
   so nothing here may depend on properties those targets set, such as IntermediateOutputPath.
+
+  The test projects import it too, and set HMailServerTypeLibrary first to the type library of the
+  installed server they test.
 -->
 <Project>
   <PropertyGroup>
-    <HMailServerTypeLibrary>$(MSBuildThisFileDirectory)..\Server\hMailServer\x64\$(Configuration)\hMailServer.tlb</HMailServerTypeLibrary>
+    <HMailServerTypeLibrary Condition="'$(HMailServerTypeLibrary)' == ''">$(MSBuildThisFileDirectory)..\Server\hMailServer\x64\$(Configuration)\hMailServer.tlb</HMailServerTypeLibrary>
     <HMailServerVersionHeader>$(MSBuildThisFileDirectory)..\Server\Common\Application\Version.h</HMailServerVersionHeader>
     <HMailServerInteropDirectory>$(MSBuildProjectDirectory)\$(BaseIntermediateOutputPath)interop\$(Configuration)\</HMailServerInteropDirectory>
     <HMailServerInterop>$(HMailServerInteropDirectory)Interop.hMailServer.dll</HMailServerInterop>

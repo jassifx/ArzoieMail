@@ -24,7 +24,7 @@ namespace RegressionTests.API
          var account =
             SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "test@example.test", "test");
 
-         Assert.AreEqual(account.Address, _links.get_Account(account.ID).Address);
+         Assert.That(_links.get_Account(account.ID).Address, Is.EqualTo(account.Address));
       }
 
       [Test]
@@ -33,7 +33,7 @@ namespace RegressionTests.API
          var alias =
             SingletonProvider<TestSetup>.Instance.AddAlias(_domain, "mytest@example.test", "test2");
 
-         Assert.AreEqual(alias.Value, _links.get_Alias(alias.ID).Value);
+         Assert.That(_links.get_Alias(alias.ID).Value, Is.EqualTo(alias.Value));
       }
 
       [Test]
@@ -47,13 +47,13 @@ namespace RegressionTests.API
          var list =
             SingletonProvider<TestSetup>.Instance.AddDistributionList(_domain, "mytest@example.test", recipients);
 
-         Assert.AreEqual(recipients.Count, _links.get_DistributionList(list.ID).Recipients.Count);
+         Assert.That(_links.get_DistributionList(list.ID).Recipients.Count, Is.EqualTo(recipients.Count));
       }
 
       [Test]
       public void TestDomainLink()
       {
-         Assert.AreEqual(_domain.Name, _links.get_Domain(_domain.ID).Name);
+         Assert.That(_links.get_Domain(_domain.ID).Name, Is.EqualTo(_domain.Name));
       }
    }
 }

@@ -49,7 +49,7 @@ namespace VolumeTests
          {
             string content = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
 
-            Assert.IsTrue(content.Contains("X-Spam-Status"), content);
+            Assert.That(content.Contains("X-Spam-Status"), Is.True, content);
          }
 
       }
@@ -82,7 +82,7 @@ namespace VolumeTests
          {
             string content = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
 
-            Assert.IsTrue(content.Contains("X-Spam-Status"), content);
+            Assert.That(content.Contains("X-Spam-Status"), Is.True, content);
          }
       }
 
@@ -101,8 +101,8 @@ namespace VolumeTests
             SmtpClientSimulator.StaticSendRaw("spamassassin@example.test", "spamassassin@example.test", message);
 
             var defaultLog = LogHandler.ReadCurrentDefaultLog();
-            
-            StringAssert.DoesNotContain("There was a communication error with SpamAssassin.", defaultLog);
+
+            Assert.That(defaultLog, Does.Not.Contain("There was a communication error with SpamAssassin."));
             
             LogHandler.DeleteCurrentDefaultLog();
 

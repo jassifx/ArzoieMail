@@ -98,7 +98,7 @@ namespace RegressionTests.Stress.IMAP
 
          CustomAsserts.AssertNoReportedError();
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures));
       }
 
       [Test]
@@ -140,7 +140,7 @@ namespace RegressionTests.Stress.IMAP
 
          CustomAsserts.AssertNoReportedError();
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures));
       }
 
       private static void RunAll(List<Thread> threads)
@@ -317,7 +317,7 @@ namespace RegressionTests.Stress.IMAP
          for (var i = 0; i < count; i++)
             simulator.SendSingleCommandWithLiteral(command, body);
 
-         Assert.AreEqual(count, simulator.GetMessageCount("INBOX"));
+         Assert.That(simulator.GetMessageCount("INBOX"), Is.EqualTo(count));
 
          simulator.Disconnect();
       }

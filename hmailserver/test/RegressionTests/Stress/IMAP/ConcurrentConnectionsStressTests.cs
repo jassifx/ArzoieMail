@@ -64,7 +64,7 @@ namespace RegressionTests.Stress.IMAP
          // The service survives the access violation, so the evidence is in the error log.
          CustomAsserts.AssertNoReportedError();
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures));
       }
 
       [Test]
@@ -98,7 +98,7 @@ namespace RegressionTests.Stress.IMAP
 
          CustomAsserts.AssertNoReportedError();
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures));
       }
 
       private const int RefreshRaceReaderCount = 4;
@@ -147,7 +147,7 @@ namespace RegressionTests.Stress.IMAP
          TestContext.WriteLine("Refresh flag race: {0} EXAMINEs, {1} APPENDs, {2} SELECTs over {3}, {4} preloaded messages.",
             state.Examines, state.Appends, state.Selects, RefreshRaceDuration, RefreshRacePreloadedMessageCount);
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures));
       }
 
       private static void RepeatedlyExamineAndCheckCount(string address, DateTime deadline, List<string> failures,
@@ -308,7 +308,7 @@ namespace RegressionTests.Stress.IMAP
          for (var i = 0; i < count; i++)
             simulator.SendSingleCommandWithLiteral("A01 APPEND INBOX {4}", "ABCD");
 
-         Assert.AreEqual(count, simulator.GetMessageCount("INBOX"));
+         Assert.That(simulator.GetMessageCount("INBOX"), Is.EqualTo(count));
 
          simulator.Disconnect();
       }
@@ -427,7 +427,7 @@ namespace RegressionTests.Stress.IMAP
 
          CustomAsserts.AssertNoReportedError();
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures));
       }
 
       private static List<string> CreateStableFolders(string address, int count)
@@ -442,7 +442,7 @@ namespace RegressionTests.Stress.IMAP
          {
             var name = string.Format("Stable{0:D3}", i);
 
-            Assert.IsTrue(simulator.CreateFolder(name), "Could not create " + name);
+            Assert.That(simulator.CreateFolder(name), Is.True, "Could not create " + name);
 
             folders.Add(name);
          }
@@ -450,7 +450,7 @@ namespace RegressionTests.Stress.IMAP
          var listing = simulator.List("*");
 
          foreach (var folder in folders)
-            Assert.IsTrue(ListingContainsFolder(listing, folder), "Setup did not list " + folder);
+            Assert.That(ListingContainsFolder(listing, folder), Is.True, "Setup did not list " + folder);
 
          simulator.Disconnect();
 
@@ -588,7 +588,7 @@ namespace RegressionTests.Stress.IMAP
          TestContext.WriteLine("Issue #458 numbering race: {0} FETCHes, {1} EXPUNGEs over {2}.",
             state.Fetches, state.Expunges, NumberingRaceDuration);
 
-         Assert.IsEmpty(failures, string.Join(Environment.NewLine, failures));
+         Assert.That(failures, Is.Empty, string.Join(Environment.NewLine, failures));
       }
 
       private static void RepeatedlyFetchAndVerifyNumbering(string address, DateTime deadline, List<string> failures,

@@ -118,7 +118,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage();
-         Assert.IsTrue(result.ToLower().Contains("a=rsa-sha1"), result);
+         Assert.That(result.ToLower().Contains("a=rsa-sha1"), Is.True, result);
       }
 
       [Test]
@@ -148,7 +148,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage();
-         Assert.IsTrue(result.ToLower().Contains("simple/simple"), result);
+         Assert.That(result.ToLower().Contains("simple/simple"), Is.True, result);
       }
 
       [Test]
@@ -161,7 +161,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage();
-         Assert.IsTrue(result.ToLower().Contains("a=rsa-sha256"), result);
+         Assert.That(result.ToLower().Contains("a=rsa-sha256"), Is.True, result);
       }
 
       [Test]
@@ -174,7 +174,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage();
-         Assert.IsTrue(result.ToLower().Contains("relaxed/relaxed"), result);
+         Assert.That(result.ToLower().Contains("relaxed/relaxed"), Is.True, result);
       }
 
       [Test]
@@ -187,8 +187,8 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage();
-         Assert.IsTrue(result.ToLower().Contains("dkim-signature"), result);
-         Assert.IsTrue(result.ToLower().Contains("d=" + _domain.Name.ToLower()), result);
+         Assert.That(result.ToLower().Contains("dkim-signature"), Is.True, result);
+         Assert.That(result.ToLower().Contains("d=" + _domain.Name.ToLower()), Is.True, result);
       }
 
       [Test]
@@ -203,8 +203,8 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage("Test Message", true);
-         Assert.IsTrue(result.ToLower().Contains("dkim-signature"), result);
-         Assert.IsTrue(result.ToLower().Contains("d=" + _domain.DomainAliases[0].AliasName.ToLower()), result);
+         Assert.That(result.ToLower().Contains("dkim-signature"), Is.True, result);
+         Assert.That(result.ToLower().Contains("d=" + _domain.DomainAliases[0].AliasName.ToLower()), Is.True, result);
       }
 
       [Test]
@@ -217,8 +217,8 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage();
-         Assert.IsTrue(result.ToLower().Contains("dkim-signature"), result);
-         Assert.IsTrue(result.Contains("s=MySelector"), result);
+         Assert.That(result.ToLower().Contains("dkim-signature"), Is.True, result);
+         Assert.That(result.Contains("s=MySelector"), Is.True, result);
       }
 
 
@@ -232,7 +232,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage("");
-         Assert.IsTrue(result.Contains("bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=;"), result);
+         Assert.That(result.Contains("bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=;"), Is.True, result);
       }
 
       [Test]
@@ -245,7 +245,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage("Whati\r\nwhati\r\n\r\nwhati\r\n\r\n");
-         Assert.IsTrue(result.Contains("bh=HfVBKUbHPvnfdY6y9RCu4IDyM+v+0HkekU0RPi3bgCk=;"), result);
+         Assert.That(result.Contains("bh=HfVBKUbHPvnfdY6y9RCu4IDyM+v+0HkekU0RPi3bgCk=;"), Is.True, result);
       }
 
       [Test]
@@ -258,7 +258,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage("Test");
-         Assert.IsTrue(result.Contains("bh=fdkeB/A0FkbVP2k4J4pNPoeWH6vqBm9+b0C3OY87Cw8=;"), result);
+         Assert.That(result.Contains("bh=fdkeB/A0FkbVP2k4J4pNPoeWH6vqBm9+b0C3OY87Cw8=;"), Is.True, result);
       }
 
       [Test]
@@ -266,7 +266,7 @@ namespace RegressionTests.AntiSpam.DKIM
       public void TestSigningDisabled()
       {
          var result = SendMessage();
-         Assert.IsFalse(result.ToLower().Contains("dkim-signature"), result);
+         Assert.That(result.ToLower().Contains("dkim-signature"), Is.False, result);
       }
 
       [Test]
@@ -279,7 +279,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage();
-         Assert.IsTrue(result.ToLower().Contains("dkim-signature"), result);
+         Assert.That(result.ToLower().Contains("dkim-signature"), Is.True, result);
       }
 
       [Test]
@@ -290,7 +290,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage();
-         Assert.IsFalse(result.ToLower().Contains("dkim-signature"), result);
+         Assert.That(result.ToLower().Contains("dkim-signature"), Is.False, result);
 
          CustomAsserts.AssertReportedError("Either the selector or private key file was not specified.");
       }
@@ -304,7 +304,7 @@ namespace RegressionTests.AntiSpam.DKIM
          _domain.Save();
 
          var result = SendMessage();
-         Assert.IsFalse(result.ToLower().Contains("dkim-signature"), result);
+         Assert.That(result.ToLower().Contains("dkim-signature"), Is.False, result);
 
          CustomAsserts.AssertReportedError("Either the selector or private key file was not specified.");
       }
@@ -358,9 +358,11 @@ namespace RegressionTests.AntiSpam.DKIM
 
                var messageData = smtpServer.MessageData;
 
-               Assert.IsTrue(messageData.ToLower().Contains("dkim-signature"),
+               Assert.That(messageData.ToLower().Contains("dkim-signature"),
+                  Is.True,
                   "Expected a DKIM-Signature header in the forwarded message but none was found.\r\n" + messageData);
-               Assert.IsTrue(messageData.ToLower().Contains("d=example.test"),
+               Assert.That(messageData.ToLower().Contains("d=example.test"),
+                  Is.True,
                   "Expected DKIM-Signature with d=example.test (original sender domain) but it was not found.\r\n" + messageData);
             }
             finally
@@ -435,15 +437,18 @@ namespace RegressionTests.AntiSpam.DKIM
                // signs on the first hop and the duplicate check prevents it from signing again
                // when the message revisits example.test on the second hop.
                int signatureCount = Regex.Matches(messageData, "DKIM-Signature", RegexOptions.IgnoreCase).Count;
-               Assert.AreEqual(1, signatureCount,
+               Assert.That(signatureCount,
+                  Is.EqualTo(1),
                   $"Expected exactly 1 DKIM-Signature header (for the From: domain) but found {signatureCount}.\r\n" + messageData);
 
                int exampleTestCount = Regex.Matches(messageData, @"d=example\.test", RegexOptions.IgnoreCase).Count;
-               Assert.AreEqual(1, exampleTestCount,
+               Assert.That(exampleTestCount,
+                  Is.EqualTo(1),
                   $"Expected d=example.test to appear exactly once but found {exampleTestCount}.\r\n" + messageData);
 
                int otherTestCount = Regex.Matches(messageData, @"d=other\.test", RegexOptions.IgnoreCase).Count;
-               Assert.AreEqual(0, otherTestCount,
+               Assert.That(otherTestCount,
+                  Is.EqualTo(0),
                   $"Expected d=other.test to not appear (other.test does not own the From: domain) but found {otherTestCount}.\r\n" + messageData);
             }
             finally
@@ -475,9 +480,11 @@ namespace RegressionTests.AntiSpam.DKIM
          imap.SelectFolder("Inbox");
          var messageData = imap.Fetch("1 RFC822");
 
-         Assert.IsTrue(messageData.ToLower().Contains("dkim-signature"),
+         Assert.That(messageData.ToLower().Contains("dkim-signature"),
+            Is.True,
             "Expected a DKIM-Signature header in the locally-delivered message but none was found.\r\n" + messageData);
-         Assert.IsTrue(messageData.ToLower().Contains("d=example.test"),
+         Assert.That(messageData.ToLower().Contains("d=example.test"),
+            Is.True,
             "Expected DKIM-Signature with d=example.test but it was not found.\r\n" + messageData);
       }
 
@@ -511,7 +518,8 @@ namespace RegressionTests.AntiSpam.DKIM
 
             // External copy should be signed (already passes before the refactor).
             var externalData = smtpServer.MessageData;
-            Assert.IsTrue(externalData.ToLower().Contains("dkim-signature"),
+            Assert.That(externalData.ToLower().Contains("dkim-signature"),
+               Is.True,
                "Expected a DKIM-Signature in the externally-delivered message.\r\n" + externalData);
 
             // Local copy must also be signed — currently fails because LocalDelivery does not sign.
@@ -522,7 +530,8 @@ namespace RegressionTests.AntiSpam.DKIM
             imap.SelectFolder("Inbox");
             var localData = imap.Fetch("1 RFC822");
 
-            Assert.IsTrue(localData.ToLower().Contains("dkim-signature"),
+            Assert.That(localData.ToLower().Contains("dkim-signature"),
+               Is.True,
                "Expected a DKIM-Signature header in the locally-delivered message but none was found.\r\n" + localData);
          }
       }

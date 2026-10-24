@@ -63,7 +63,7 @@ namespace RegressionTests.Infrastructure
 
       private bool WaitForBackupCompletion()
       {
-         Assert.IsNotNull(_application);
+         Assert.That(_application, Is.Not.Null);
 
          for (var i = 0; i < 40; i++)
          {
@@ -91,7 +91,7 @@ namespace RegressionTests.Infrastructure
 
       private void WaitForRestoreCompletion(string lastServerStartTime)
       {
-         Assert.IsNotNull(_application);
+         Assert.That(_application, Is.Not.Null);
 
          for (var i = 0; i < 600; i++)
          {
@@ -117,8 +117,8 @@ namespace RegressionTests.Infrastructure
       {
          // Set up the domain. It's already set-up...
          var domain = _application.Domains[0];
-         Assert.IsNotNull(domain);
-         Assert.AreEqual("example.test", domain.Name);
+         Assert.That(domain, Is.Not.Null);
+         Assert.That(domain.Name, Is.EqualTo("example.test"));
 
          SetupDomainObject(domain);
          SetupDomainObjects(domain);
@@ -350,38 +350,38 @@ namespace RegressionTests.Infrastructure
 
             var publicFolders = _application.Settings.PublicFolders;
 
-            Assert.IsNotNull(publicFolders.get_ItemByName("Test1"));
-            Assert.IsNotNull(publicFolders.get_ItemByName("Test2"));
-            Assert.IsNotNull(publicFolders.get_ItemByName("Test3"));
-            Assert.IsNotNull(publicFolders.get_ItemByName("ACL"));
+            Assert.That(publicFolders.get_ItemByName("Test1"), Is.Not.Null);
+            Assert.That(publicFolders.get_ItemByName("Test2"), Is.Not.Null);
+            Assert.That(publicFolders.get_ItemByName("Test3"), Is.Not.Null);
+            Assert.That(publicFolders.get_ItemByName("ACL"), Is.Not.Null);
 
             var permissions = publicFolders.get_ItemByName("ACL").Permissions;
-            Assert.AreEqual(1, permissions.Count);
+            Assert.That(permissions.Count, Is.EqualTo(1));
 
             var account1 = domain.Accounts.get_ItemByAddress("acltest-1@example.test");
 
             var permission = permissions[0];
 
-            Assert.AreEqual(eACLPermissionType.ePermissionTypeUser, permission.PermissionType);
-            Assert.AreEqual(account1.ID, permission.PermissionAccountID);
+            Assert.That(permission.PermissionType, Is.EqualTo(eACLPermissionType.ePermissionTypeUser));
+            Assert.That(permission.PermissionAccountID, Is.EqualTo(account1.ID));
 
-            Assert.IsTrue(permission.get_Permission(eACLPermission.ePermissionAdminister));
-            Assert.IsTrue(permission.get_Permission(eACLPermission.ePermissionInsert));
-            Assert.IsFalse(permission.get_Permission(eACLPermission.ePermissionRead));
-            Assert.IsFalse(permission.get_Permission(eACLPermission.ePermissionWriteSeen));
+            Assert.That(permission.get_Permission(eACLPermission.ePermissionAdminister), Is.True);
+            Assert.That(permission.get_Permission(eACLPermission.ePermissionInsert), Is.True);
+            Assert.That(permission.get_Permission(eACLPermission.ePermissionRead), Is.False);
+            Assert.That(permission.get_Permission(eACLPermission.ePermissionWriteSeen), Is.False);
 
             var group1 = _application.Settings.Groups.get_ItemByName("ACLTestGroup");
 
             permissions = publicFolders.get_ItemByName("ACL").SubFolders.get_ItemByName("MySubFolder").Permissions;
             permission = permissions[0];
 
-            Assert.AreEqual(eACLPermissionType.ePermissionTypeGroup, permission.PermissionType);
-            Assert.AreEqual(group1.ID, permission.PermissionGroupID);
+            Assert.That(permission.PermissionType, Is.EqualTo(eACLPermissionType.ePermissionTypeGroup));
+            Assert.That(permission.PermissionGroupID, Is.EqualTo(group1.ID));
 
-            Assert.IsTrue(permission.get_Permission(eACLPermission.ePermissionLookup));
-            Assert.IsTrue(permission.get_Permission(eACLPermission.ePermissionDeleteMailbox));
-            Assert.IsFalse(permission.get_Permission(eACLPermission.ePermissionRead));
-            Assert.IsFalse(permission.get_Permission(eACLPermission.ePermissionWriteSeen));
+            Assert.That(permission.get_Permission(eACLPermission.ePermissionLookup), Is.True);
+            Assert.That(permission.get_Permission(eACLPermission.ePermissionDeleteMailbox), Is.True);
+            Assert.That(permission.get_Permission(eACLPermission.ePermissionRead), Is.False);
+            Assert.That(permission.get_Permission(eACLPermission.ePermissionWriteSeen), Is.False);
          }
       }
 
@@ -447,10 +447,10 @@ namespace RegressionTests.Infrastructure
          Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 3);
 
          var sim = new ImapClientSimulator();
-         Assert.IsTrue(sim.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(sim.SelectFolder("Inbox"));
-         Assert.IsTrue(sim.SetDeletedFlag(2));
-         Assert.IsTrue(sim.Expunge());
+         Assert.That(sim.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(sim.SelectFolder("Inbox"), Is.True);
+         Assert.That(sim.SetDeletedFlag(2), Is.True);
+         Assert.That(sim.Expunge(), Is.True);
          sim.Disconnect();
 
          _folderCreationTime = account.IMAPFolders.get_ItemByName("INBOX").CreationTime;
@@ -636,59 +636,59 @@ namespace RegressionTests.Infrastructure
       private void ConfirmSSLCertificates()
       {
          var cert = _application.Settings.SSLCertificates[0];
-         Assert.AreEqual("file1.txt", cert.CertificateFile);
-         Assert.AreEqual("name1", cert.Name);
-         Assert.AreEqual("pk1", cert.PrivateKeyFile);
+         Assert.That(cert.CertificateFile, Is.EqualTo("file1.txt"));
+         Assert.That(cert.Name, Is.EqualTo("name1"));
+         Assert.That(cert.PrivateKeyFile, Is.EqualTo("pk1"));
 
          cert = _application.Settings.SSLCertificates[1];
-         Assert.AreEqual("file2.txt", cert.CertificateFile);
-         Assert.AreEqual("name2", cert.Name);
-         Assert.AreEqual("pk2", cert.PrivateKeyFile);
+         Assert.That(cert.CertificateFile, Is.EqualTo("file2.txt"));
+         Assert.That(cert.Name, Is.EqualTo("name2"));
+         Assert.That(cert.PrivateKeyFile, Is.EqualTo("pk2"));
       }
 
       private void ConfirmDNSBlackLists()
       {
          var black = _application.Settings.AntiSpam.DNSBlackLists.get_ItemByDNSHost("127.0.0.1");
-         Assert.IsTrue(black.Active);
-         Assert.AreEqual("127.5.2.1", black.ExpectedResult);
-         Assert.AreEqual("Test", black.RejectMessage);
-         Assert.AreEqual(4, black.Score);
+         Assert.That(black.Active, Is.True);
+         Assert.That(black.ExpectedResult, Is.EqualTo("127.5.2.1"));
+         Assert.That(black.RejectMessage, Is.EqualTo("Test"));
+         Assert.That(black.Score, Is.EqualTo(4));
 
          black = _application.Settings.AntiSpam.DNSBlackLists.get_ItemByDNSHost("127.0.0.2");
-         Assert.IsTrue(black.Active);
-         Assert.AreEqual("127.5.2.2", black.ExpectedResult);
-         Assert.AreEqual("Test2", black.RejectMessage);
-         Assert.AreEqual(5, black.Score);
+         Assert.That(black.Active, Is.True);
+         Assert.That(black.ExpectedResult, Is.EqualTo("127.5.2.2"));
+         Assert.That(black.RejectMessage, Is.EqualTo("Test2"));
+         Assert.That(black.Score, Is.EqualTo(5));
       }
 
       private void ConfirmIncomingRelay()
       {
          var relays = _application.Settings.IncomingRelays;
-         Assert.AreEqual(1, relays.Count);
+         Assert.That(relays.Count, Is.EqualTo(1));
 
          var relay = relays[0];
-         Assert.AreEqual("Test", relay.Name);
-         Assert.AreEqual("1.2.3.4", relay.LowerIP);
-         Assert.AreEqual("4.3.2.1", relay.UpperIP);
+         Assert.That(relay.Name, Is.EqualTo("Test"));
+         Assert.That(relay.LowerIP, Is.EqualTo("1.2.3.4"));
+         Assert.That(relay.UpperIP, Is.EqualTo("4.3.2.1"));
       }
 
       private void ConfirmSURBLServers()
       {
          var black = _application.Settings.AntiSpam.SURBLServers.get_ItemByDNSHost("127.0.0.1");
-         Assert.IsTrue(black.Active);
-         Assert.AreEqual("Test", black.RejectMessage);
-         Assert.AreEqual(4, black.Score);
+         Assert.That(black.Active, Is.True);
+         Assert.That(black.RejectMessage, Is.EqualTo("Test"));
+         Assert.That(black.Score, Is.EqualTo(4));
 
          black = _application.Settings.AntiSpam.SURBLServers.get_ItemByDNSHost("127.0.0.2");
-         Assert.IsTrue(black.Active);
-         Assert.AreEqual("Test2", black.RejectMessage);
-         Assert.AreEqual(5, black.Score);
+         Assert.That(black.Active, Is.True);
+         Assert.That(black.RejectMessage, Is.EqualTo("Test2"));
+         Assert.That(black.Score, Is.EqualTo(5));
       }
 
       private void ConfirmBlockedAttachments()
       {
          var attachments = _application.Settings.AntiVirus.BlockedAttachments;
-         Assert.Greater(attachments.Count, 0);
+         Assert.That(attachments.Count, Is.GreaterThan(0));
 
          for (var i = 0; i < attachments.Count; i++)
          {
@@ -705,81 +705,81 @@ namespace RegressionTests.Infrastructure
       {
          var routes = _application.Settings.Routes;
 
-         Assert.AreEqual(2, routes.Count);
+         Assert.That(routes.Count, Is.EqualTo(2));
 
          var route = routes[0];
-         Assert.AreEqual("test1.com", route.DomainName);
-         Assert.AreEqual("description", route.Description);
-         Assert.AreEqual(true, route.UseSSL);
-         Assert.AreEqual(true, route.TreatSenderAsLocalDomain);
-         Assert.AreEqual(false, route.TreatRecipientAsLocalDomain);
-         Assert.AreEqual(false, route.TreatSecurityAsLocalDomain);
+         Assert.That(route.DomainName, Is.EqualTo("test1.com"));
+         Assert.That(route.Description, Is.EqualTo("description"));
+         Assert.That(route.UseSSL, Is.EqualTo(true));
+         Assert.That(route.TreatSenderAsLocalDomain, Is.EqualTo(true));
+         Assert.That(route.TreatRecipientAsLocalDomain, Is.EqualTo(false));
+         Assert.That(route.TreatSecurityAsLocalDomain, Is.EqualTo(false));
 
          route = routes[1];
-         Assert.AreEqual("test2.com", route.DomainName);
-         Assert.AreEqual("description2", route.Description);
-         Assert.AreEqual(false, route.UseSSL);
-         Assert.AreEqual(false, route.TreatSenderAsLocalDomain);
-         Assert.AreEqual(true, route.TreatRecipientAsLocalDomain);
-         Assert.AreEqual(true, route.TreatSecurityAsLocalDomain);
+         Assert.That(route.DomainName, Is.EqualTo("test2.com"));
+         Assert.That(route.Description, Is.EqualTo("description2"));
+         Assert.That(route.UseSSL, Is.EqualTo(false));
+         Assert.That(route.TreatSenderAsLocalDomain, Is.EqualTo(false));
+         Assert.That(route.TreatRecipientAsLocalDomain, Is.EqualTo(true));
+         Assert.That(route.TreatSecurityAsLocalDomain, Is.EqualTo(true));
 
-         Assert.AreEqual(2, route.Addresses.Count);
+         Assert.That(route.Addresses.Count, Is.EqualTo(2));
 
          var addresses = new List<string>();
          addresses.Add(route.Addresses[0].Address);
          addresses.Add(route.Addresses[1].Address);
 
-         Assert.IsTrue(addresses.Contains("address1@test2.com"));
-         Assert.IsTrue(addresses.Contains("address2@test2.com"));
+         Assert.That(addresses.Contains("address1@test2.com"), Is.True);
+         Assert.That(addresses.Contains("address2@test2.com"), Is.True);
       }
 
       private void ConfirmGreyListingWhiteList()
       {
          var addresses = _application.Settings.AntiSpam.GreyListingWhiteAddresses;
 
-         Assert.AreEqual(2, addresses.Count);
+         Assert.That(addresses.Count, Is.EqualTo(2));
 
          var address = addresses[0];
-         Assert.AreEqual("helo1", address.Description);
-         Assert.AreEqual("1.1.1.1", address.IPAddress);
+         Assert.That(address.Description, Is.EqualTo("helo1"));
+         Assert.That(address.IPAddress, Is.EqualTo("1.1.1.1"));
 
          address = addresses[1];
-         Assert.AreEqual("helo2", address.Description);
-         Assert.AreEqual("2.2.2.2", address.IPAddress);
+         Assert.That(address.Description, Is.EqualTo("helo2"));
+         Assert.That(address.IPAddress, Is.EqualTo("2.2.2.2"));
       }
 
       private void ConfirmWhiteList()
       {
          var addresses = _application.Settings.AntiSpam.WhiteListAddresses;
 
-         Assert.AreEqual(2, addresses.Count);
+         Assert.That(addresses.Count, Is.EqualTo(2));
 
          var address = addresses[0];
-         Assert.AreEqual("Desc1", address.Description);
-         Assert.AreEqual("Email1", address.EmailAddress);
-         Assert.AreEqual("1.1.1.1", address.LowerIPAddress);
-         Assert.AreEqual("2.2.2.2", address.UpperIPAddress);
+         Assert.That(address.Description, Is.EqualTo("Desc1"));
+         Assert.That(address.EmailAddress, Is.EqualTo("Email1"));
+         Assert.That(address.LowerIPAddress, Is.EqualTo("1.1.1.1"));
+         Assert.That(address.UpperIPAddress, Is.EqualTo("2.2.2.2"));
 
          address = addresses[1];
-         Assert.AreEqual("Desc2", address.Description);
-         Assert.AreEqual("Email2", address.EmailAddress);
-         Assert.AreEqual("2.2.2.2", address.LowerIPAddress);
-         Assert.AreEqual("21.21.21.21", address.UpperIPAddress);
+         Assert.That(address.Description, Is.EqualTo("Desc2"));
+         Assert.That(address.EmailAddress, Is.EqualTo("Email2"));
+         Assert.That(address.LowerIPAddress, Is.EqualTo("2.2.2.2"));
+         Assert.That(address.UpperIPAddress, Is.EqualTo("21.21.21.21"));
       }
 
       private void ConfirmDomainObject(Domain domain)
       {
-         Assert.AreEqual("someone@example.test", domain.Postmaster);
-         Assert.IsTrue(domain.SignatureEnabled);
-         Assert.IsTrue(domain.AddSignaturesToLocalMail);
-         Assert.IsTrue(domain.AddSignaturesToReplies);
-         Assert.AreEqual("PLS", domain.SignaturePlainText);
-         Assert.AreEqual("HTML", domain.SignatureHTML);
+         Assert.That(domain.Postmaster, Is.EqualTo("someone@example.test"));
+         Assert.That(domain.SignatureEnabled, Is.True);
+         Assert.That(domain.AddSignaturesToLocalMail, Is.True);
+         Assert.That(domain.AddSignaturesToReplies, Is.True);
+         Assert.That(domain.SignaturePlainText, Is.EqualTo("PLS"));
+         Assert.That(domain.SignatureHTML, Is.EqualTo("HTML"));
 
-         Assert.AreEqual("example.test", _application.Domains[0].Name);
-         Assert.AreEqual(2, _application.Domains[0].DomainAliases.Count);
-         Assert.AreEqual("test1.com", _application.Domains[0].DomainAliases[0].AliasName);
-         Assert.AreEqual("test2.com", _application.Domains[0].DomainAliases[1].AliasName);
+         Assert.That(_application.Domains[0].Name, Is.EqualTo("example.test"));
+         Assert.That(_application.Domains[0].DomainAliases.Count, Is.EqualTo(2));
+         Assert.That(_application.Domains[0].DomainAliases[0].AliasName, Is.EqualTo("test1.com"));
+         Assert.That(_application.Domains[0].DomainAliases[1].AliasName, Is.EqualTo("test2.com"));
       }
 
       private void ConfirmDomainObjects()
@@ -792,18 +792,18 @@ namespace RegressionTests.Infrastructure
       private void ConfirmDistributionListObject()
       {
          var list = _application.Domains[0].DistributionLists[0];
-         Assert.AreEqual("list@example.test", list.Address);
-         Assert.AreEqual(3, list.Recipients.Count);
-         Assert.AreEqual("member1@example.test", list.Recipients[0].RecipientAddress);
-         Assert.AreEqual("member2@example.test", list.Recipients[1].RecipientAddress);
-         Assert.AreEqual("member3@example.test", list.Recipients[2].RecipientAddress);
+         Assert.That(list.Address, Is.EqualTo("list@example.test"));
+         Assert.That(list.Recipients.Count, Is.EqualTo(3));
+         Assert.That(list.Recipients[0].RecipientAddress, Is.EqualTo("member1@example.test"));
+         Assert.That(list.Recipients[1].RecipientAddress, Is.EqualTo("member2@example.test"));
+         Assert.That(list.Recipients[2].RecipientAddress, Is.EqualTo("member3@example.test"));
       }
 
       private void ConfirmAliasObject()
       {
          var alias = _application.Domains[0].Aliases[0];
-         Assert.AreEqual("alias@example.test", alias.Name);
-         Assert.AreEqual("someone@example.test", alias.Value);
+         Assert.That(alias.Name, Is.EqualTo("alias@example.test"));
+         Assert.That(alias.Value, Is.EqualTo("someone@example.test"));
       }
 
       private void ConfirmAccountObject()
@@ -811,64 +811,64 @@ namespace RegressionTests.Infrastructure
          var account = _application.Domains[0].Accounts.get_ItemByAddress("test@example.test");
 
 
-         Assert.IsTrue(account.Active);
-         Assert.AreEqual("AD", account.ADDomain);
-         Assert.AreEqual(eAdminLevel.hAdminLevelDomainAdmin, account.AdminLevel);
-         Assert.AreEqual("AU", account.ADUsername);
-         Assert.AreEqual("FA", account.ForwardAddress);
-         Assert.IsFalse(account.ForwardEnabled);
-         Assert.IsTrue(account.ForwardKeepOriginal);
-         Assert.IsFalse(account.IsAD);
-         Assert.AreEqual(1250, account.MaxSize);
-         Assert.AreEqual("First", account.PersonFirstName);
-         Assert.AreEqual("Last", account.PersonLastName);
-         Assert.IsTrue(account.SignatureEnabled);
-         Assert.AreEqual("HTML", account.SignatureHTML);
-         Assert.AreEqual("PLAIN", account.SignaturePlainText);
-         Assert.AreEqual("VAC", account.VacationMessage);
-         Assert.IsTrue(account.VacationMessageExpires);
-         Assert.AreEqual("2040-01-01", account.VacationMessageExpiresDate.Substring(0, 10));
-         Assert.IsTrue(account.VacationMessageIsOn);
-         Assert.AreEqual("SUBJ", account.VacationSubject);
+         Assert.That(account.Active, Is.True);
+         Assert.That(account.ADDomain, Is.EqualTo("AD"));
+         Assert.That(account.AdminLevel, Is.EqualTo(eAdminLevel.hAdminLevelDomainAdmin));
+         Assert.That(account.ADUsername, Is.EqualTo("AU"));
+         Assert.That(account.ForwardAddress, Is.EqualTo("FA"));
+         Assert.That(account.ForwardEnabled, Is.False);
+         Assert.That(account.ForwardKeepOriginal, Is.True);
+         Assert.That(account.IsAD, Is.False);
+         Assert.That(account.MaxSize, Is.EqualTo(1250));
+         Assert.That(account.PersonFirstName, Is.EqualTo("First"));
+         Assert.That(account.PersonLastName, Is.EqualTo("Last"));
+         Assert.That(account.SignatureEnabled, Is.True);
+         Assert.That(account.SignatureHTML, Is.EqualTo("HTML"));
+         Assert.That(account.SignaturePlainText, Is.EqualTo("PLAIN"));
+         Assert.That(account.VacationMessage, Is.EqualTo("VAC"));
+         Assert.That(account.VacationMessageExpires, Is.True);
+         Assert.That(account.VacationMessageExpiresDate.Substring(0, 10), Is.EqualTo("2040-01-01"));
+         Assert.That(account.VacationMessageIsOn, Is.True);
+         Assert.That(account.VacationSubject, Is.EqualTo("SUBJ"));
 
          // Confirm fetch account
          var fa = account.FetchAccounts.get_Item(0);
-         Assert.AreEqual(5, fa.DaysToKeepMessages);
-         Assert.IsTrue(fa.Enabled);
-         Assert.AreEqual(10, fa.MinutesBetweenFetch);
-         Assert.AreEqual("test", fa.Name);
-         Assert.AreEqual(_fetchAccountPort, fa.Port);
-         Assert.AreEqual(true, fa.ProcessMIMEDate);
-         Assert.IsTrue(fa.ProcessMIMERecipients);
-         Assert.AreEqual("test", fa.Username);
-         Assert.IsFalse(fa.UseSSL);
-         Assert.AreEqual("127.0.0.1", fa.ServerAddress);
-         Assert.IsTrue(fa.UseAntiSpam);
-         Assert.IsTrue(fa.UseAntiVirus);
+         Assert.That(fa.DaysToKeepMessages, Is.EqualTo(5));
+         Assert.That(fa.Enabled, Is.True);
+         Assert.That(fa.MinutesBetweenFetch, Is.EqualTo(10));
+         Assert.That(fa.Name, Is.EqualTo("test"));
+         Assert.That(fa.Port, Is.EqualTo(_fetchAccountPort));
+         Assert.That(fa.ProcessMIMEDate, Is.EqualTo(true));
+         Assert.That(fa.ProcessMIMERecipients, Is.True);
+         Assert.That(fa.Username, Is.EqualTo("test"));
+         Assert.That(fa.UseSSL, Is.False);
+         Assert.That(fa.ServerAddress, Is.EqualTo("127.0.0.1"));
+         Assert.That(fa.UseAntiSpam, Is.True);
+         Assert.That(fa.UseAntiVirus, Is.True);
 
          // Make sur no additional mail is downloaded. We have already downloaded it.
          DownloadFromExternalAccount(account, fa);
 
          var rule = account.Rules[0];
-         Assert.AreEqual("MyRule", rule.Name);
+         Assert.That(rule.Name, Is.EqualTo("MyRule"));
 
          var criteria = rule.Criterias[0];
-         Assert.AreEqual(eRuleMatchType.eMTGreaterThan, criteria.MatchType);
-         Assert.AreEqual(eRulePredefinedField.eFTMessageSize, criteria.PredefinedField);
-         Assert.AreEqual("0", criteria.MatchValue);
+         Assert.That(criteria.MatchType, Is.EqualTo(eRuleMatchType.eMTGreaterThan));
+         Assert.That(criteria.PredefinedField, Is.EqualTo(eRulePredefinedField.eFTMessageSize));
+         Assert.That(criteria.MatchValue, Is.EqualTo("0"));
 
          var action = rule.Actions[0];
-         Assert.AreEqual(eRuleActionType.eRAForwardEmail, action.Type);
-         Assert.AreEqual("someone@example.test", action.To);
-         Assert.AreEqual("Test", action.Body);
-         Assert.AreEqual("File", action.Filename);
-         Assert.AreEqual("T", action.FromAddress);
-         Assert.AreEqual("N", action.FromName);
-         Assert.AreEqual("H", action.HeaderName);
-         Assert.AreEqual("Folder", action.IMAPFolder);
-         Assert.AreEqual("Script", action.ScriptFunction);
-         Assert.AreEqual("Subj", action.Subject);
-         Assert.AreEqual("Value", action.Value);
+         Assert.That(action.Type, Is.EqualTo(eRuleActionType.eRAForwardEmail));
+         Assert.That(action.To, Is.EqualTo("someone@example.test"));
+         Assert.That(action.Body, Is.EqualTo("Test"));
+         Assert.That(action.Filename, Is.EqualTo("File"));
+         Assert.That(action.FromAddress, Is.EqualTo("T"));
+         Assert.That(action.FromName, Is.EqualTo("N"));
+         Assert.That(action.HeaderName, Is.EqualTo("H"));
+         Assert.That(action.IMAPFolder, Is.EqualTo("Folder"));
+         Assert.That(action.ScriptFunction, Is.EqualTo("Script"));
+         Assert.That(action.Subject, Is.EqualTo("Subj"));
+         Assert.That(action.Value, Is.EqualTo("Value"));
 
          var inbox = account.IMAPFolders.get_ItemByName("INBOX");
 
@@ -876,19 +876,19 @@ namespace RegressionTests.Infrastructure
 
          if (_backupMessages)
          {
-            Assert.AreEqual(6, inbox.CurrentUID);
-            Assert.AreEqual(_folderCreationTime, inbox.CreationTime);
+            Assert.That(inbox.CurrentUID, Is.EqualTo(6));
+            Assert.That(inbox.CreationTime, Is.EqualTo(_folderCreationTime));
 
-            Assert.AreEqual(5, messages.Count);
-            Assert.AreEqual("Message 1 Subject", messages[0].Subject);
-            Assert.IsTrue(messages[1].Body.Contains("Message 3 Body"));
+            Assert.That(messages.Count, Is.EqualTo(5));
+            Assert.That(messages[0].Subject, Is.EqualTo("Message 1 Subject"));
+            Assert.That(messages[1].Body.Contains("Message 3 Body"), Is.True);
 
-            Assert.AreEqual(1, messages[0].UID);
-            Assert.AreEqual(3, messages[1].UID);
+            Assert.That(messages[0].UID, Is.EqualTo(1));
+            Assert.That(messages[1].UID, Is.EqualTo(3));
          }
          else
          {
-            Assert.AreEqual(0, messages.Count);
+            Assert.That(messages.Count, Is.EqualTo(0));
          }
       }
 
@@ -896,26 +896,26 @@ namespace RegressionTests.Infrastructure
       {
          var group = _application.Settings.Groups.get_ItemByName("TestGroup");
 
-         Assert.AreEqual("TestGroup", group.Name);
-         Assert.AreEqual(3, group.Members.Count);
+         Assert.That(group.Name, Is.EqualTo("TestGroup"));
+         Assert.That(group.Members.Count, Is.EqualTo(3));
 
-         Assert.AreEqual("gm1@example.test", group.Members[0].Account.Address);
-         Assert.AreEqual("gm2@example.test", group.Members[1].Account.Address);
-         Assert.AreEqual("gm3@example.test", group.Members[2].Account.Address);
+         Assert.That(group.Members[0].Account.Address, Is.EqualTo("gm1@example.test"));
+         Assert.That(group.Members[1].Account.Address, Is.EqualTo("gm2@example.test"));
+         Assert.That(group.Members[2].Account.Address, Is.EqualTo("gm3@example.test"));
       }
 
       [Test]
       public void TestWithMessages()
       {
          _backupMessages = true;
-         Assert.IsTrue(Execute());
+         Assert.That(Execute(), Is.True);
       }
 
       [Test]
       public void TestWithoutMessages()
       {
          _backupMessages = false;
-         Assert.IsTrue(Execute());
+         Assert.That(Execute(), Is.True);
       }
 
       [Test]
@@ -961,7 +961,7 @@ namespace RegressionTests.Infrastructure
             var waitUntil = DateTime.Now.AddSeconds(30);
             while (!Directory.Exists(copiedDir) || Directory.GetFiles(copiedDir).Length == 0)
             {
-               Assert.Less(DateTime.Now, waitUntil, "The backup has not started copying files.");
+               Assert.That(DateTime.Now, Is.LessThan(waitUntil), "The backup has not started copying files.");
                Thread.Sleep(1);
             }
 
@@ -977,14 +977,15 @@ namespace RegressionTests.Infrastructure
                }
             }
 
-            Assert.IsTrue(WaitForBackupCompletion(),
+            Assert.That(WaitForBackupCompletion(),
+               Is.True,
                TestSetup.ReadExistingTextFile(backupSettings.LogFile));
 
             CustomAsserts.AssertNoReportedError();
 
             // The backup manager must be free for a new backup.
             CustomAsserts.AssertDeleteFile(backupSettings.LogFile);
-            Assert.IsTrue(BackupEnvironment());
+            Assert.That(BackupEnvironment(), Is.True);
          }
          finally
          {
@@ -1025,10 +1026,10 @@ namespace RegressionTests.Infrastructure
 
             _application.BackupManager.StartBackup();
 
-            Assert.IsFalse(WaitForBackupCompletion());
+            Assert.That(WaitForBackupCompletion(), Is.False);
 
             var backupLog = TestSetup.ReadExistingTextFile(backupSettings.LogFile);
-            Assert.IsTrue(backupLog.Contains("BACKUP ERROR:"), backupLog);
+            Assert.That(backupLog.Contains("BACKUP ERROR:"), Is.True, backupLog);
 
             LogHandler.DeleteErrorLog();
 
@@ -1037,7 +1038,7 @@ namespace RegressionTests.Infrastructure
 
             // The failed backup must not block the next one.
             CustomAsserts.AssertDeleteFile(backupSettings.LogFile);
-            Assert.IsTrue(BackupEnvironment(), TestSetup.ReadExistingTextFile(backupSettings.LogFile));
+            Assert.That(BackupEnvironment(), Is.True, TestSetup.ReadExistingTextFile(backupSettings.LogFile));
             CustomAsserts.AssertNoReportedError();
          }
          finally
@@ -1076,11 +1077,12 @@ namespace RegressionTests.Infrastructure
 
             _application.BackupManager.StartBackup();
 
-            Assert.IsTrue(WaitForBackupCompletion(),
+            Assert.That(WaitForBackupCompletion(),
+               Is.True,
                "Backup run " + run + ": " + TestSetup.ReadExistingTextFile(backupSettings.LogFile));
          }
 
-         Assert.IsTrue(Directory.Exists(Path.Combine(_backupDir, "DataBackup", "example.test")));
+         Assert.That(Directory.Exists(Path.Combine(_backupDir, "DataBackup", "example.test")), Is.True);
 
          CustomAsserts.AssertNoReportedError();
       }
@@ -1127,10 +1129,11 @@ namespace RegressionTests.Infrastructure
 
             _application.BackupManager.StartBackup();
 
-            Assert.IsFalse(WaitForBackupCompletion());
+            Assert.That(WaitForBackupCompletion(), Is.False);
 
             var backupLog = TestSetup.ReadExistingTextFile(backupSettings.LogFile);
-            Assert.IsTrue(backupLog.Contains("BACKUP ERROR: The specified backup directory is not accessible"),
+            Assert.That(backupLog.Contains("BACKUP ERROR: The specified backup directory is not accessible"),
+               Is.True,
                backupLog);
 
             CustomAsserts.AssertReportedError("HM5014", "The specified backup directory is not accessible");
@@ -1138,7 +1141,7 @@ namespace RegressionTests.Infrastructure
             // The failed backup must not leave the backup manager running, so a backup to a
             // directory the server can reach still works.
             CustomAsserts.AssertDeleteFile(backupSettings.LogFile);
-            Assert.IsTrue(BackupEnvironment());
+            Assert.That(BackupEnvironment(), Is.True);
          }
          finally
          {
@@ -1165,12 +1168,12 @@ namespace RegressionTests.Infrastructure
          CustomAsserts.AssertDeleteFile(backupSettings.LogFile);
 
          _application.BackupManager.StartBackup();
-         Assert.IsFalse(WaitForBackupCompletion());
+         Assert.That(WaitForBackupCompletion(), Is.False);
 
          CustomAsserts.AssertReportedError("HM5014", "The specified backup directory is not accessible");
 
          CustomAsserts.AssertDeleteFile(backupSettings.LogFile);
-         Assert.IsTrue(BackupEnvironment(), TestSetup.ReadExistingTextFile(backupSettings.LogFile));
+         Assert.That(BackupEnvironment(), Is.True, TestSetup.ReadExistingTextFile(backupSettings.LogFile));
       }
 
       /// <summary>

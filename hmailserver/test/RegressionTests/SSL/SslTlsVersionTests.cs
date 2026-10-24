@@ -77,7 +77,7 @@ namespace RegressionTests.SSL
             out errorMessage);
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-         Assert.IsTrue(message.Contains("version=TLSv1.2"), message);
+         Assert.That(message.Contains("version=TLSv1.2"), Is.True, message);
       }
 
       [Test]
@@ -91,7 +91,7 @@ namespace RegressionTests.SSL
             out errorMessage);
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(_account.Address, "test");
-         Assert.IsTrue(message.Contains("version=TLSv1.2"), message);
+         Assert.That(message.Contains("version=TLSv1.2"), Is.True, message);
       }
 
       [Test]

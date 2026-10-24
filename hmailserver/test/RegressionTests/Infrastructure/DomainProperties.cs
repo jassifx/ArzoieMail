@@ -17,7 +17,7 @@ namespace RegressionTests.Infrastructure
          var domain = SingletonProvider<TestSetup>.Instance.AddTestDomain();
          SingletonProvider<TestSetup>.Instance.AddAccount(domain, "test@example.test", "test");
 
-         Assert.AreEqual(0, domain.Size);
+         Assert.That(domain.Size, Is.EqualTo(0));
       }
 
       [Test]
@@ -45,7 +45,8 @@ namespace RegressionTests.Infrastructure
          // Each account holds ~1.4 MB, so the true domain total is ~2.8 MB (2 whole MB).
          // The bug (wrong column) matches at most one account, capping the result at 1 MB,
          // so require the full cross-account aggregate rather than merely > 0.
-         Assert.GreaterOrEqual(domain.Size, 2,
+         Assert.That(domain.Size,
+            Is.GreaterThanOrEqualTo(2),
             "Domain size must aggregate every account in the domain, not a single id-matched account.");
       }
    }

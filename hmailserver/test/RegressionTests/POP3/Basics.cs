@@ -77,7 +77,7 @@ namespace RegressionTests.POP3
                message.Attachments[0].SaveAs(message.Filename);
                var fileHashAfter = GetFileHash(message.Filename);
 
-               Assert.AreEqual(fileHash, fileHashAfter);
+               Assert.That(fileHashAfter, Is.EqualTo(fileHash));
             }
             finally
             {
@@ -114,10 +114,10 @@ namespace RegressionTests.POP3
 
          var sim = new Pop3ClientSimulator();
          sim.ConnectAndLogon(account.Address, "test");
-         Assert.IsFalse(sim.DELE(0));
-         Assert.IsFalse(sim.DELE(-1));
-         Assert.IsFalse(sim.DELE(1000));
-         Assert.IsTrue(sim.DELE(5));
+         Assert.That(sim.DELE(0), Is.False);
+         Assert.That(sim.DELE(-1), Is.False);
+         Assert.That(sim.DELE(1000), Is.False);
+         Assert.That(sim.DELE(5), Is.True);
       }
 
 
@@ -136,11 +136,11 @@ namespace RegressionTests.POP3
          sim.ConnectAndLogon(account.Address, "test");
          var result = sim.LIST();
 
-         Assert.IsTrue(result.Contains("3 messages"));
-         Assert.IsTrue(result.Contains("\r\n1"));
-         Assert.IsTrue(result.Contains("\r\n2"));
-         Assert.IsTrue(result.Contains("\r\n3"));
-         Assert.IsTrue(result.Contains("\r\n."));
+         Assert.That(result.Contains("3 messages"), Is.True);
+         Assert.That(result.Contains("\r\n1"), Is.True);
+         Assert.That(result.Contains("\r\n2"), Is.True);
+         Assert.That(result.Contains("\r\n3"), Is.True);
+         Assert.That(result.Contains("\r\n."), Is.True);
       }
 
       [Test]
@@ -156,11 +156,11 @@ namespace RegressionTests.POP3
          var sim = new Pop3ClientSimulator();
          sim.ConnectAndLogon(account.Address, "test");
          var result = sim.LIST(0);
-         Assert.IsTrue(result.Contains("No such message"));
+         Assert.That(result.Contains("No such message"), Is.True);
          result = sim.LIST(-1);
-         Assert.IsTrue(result.Contains("No such message"));
+         Assert.That(result.Contains("No such message"), Is.True);
          result = sim.LIST(100);
-         Assert.IsTrue(result.Contains("No such message"));
+         Assert.That(result.Contains("No such message"), Is.True);
       }
 
       [Test]
@@ -178,10 +178,10 @@ namespace RegressionTests.POP3
          sim.ConnectAndLogon(account.Address, "test");
          var result = sim.LIST(2);
 
-         Assert.IsTrue(result.Contains("OK 2"));
+         Assert.That(result.Contains("OK 2"), Is.True);
 
          result = sim.LIST(3);
-         Assert.IsTrue(result.Contains("OK 3"));
+         Assert.That(result.Contains("OK 3"), Is.True);
       }
 
       [Test]
@@ -200,11 +200,11 @@ namespace RegressionTests.POP3
          sim.DELE(4);
          var result = sim.LIST();
 
-         Assert.IsTrue(result.Contains("8 messages"));
-         Assert.IsTrue(result.Contains("\r\n1"));
-         Assert.IsTrue(result.Contains("\r\n3"));
-         Assert.IsTrue(result.Contains("\r\n5"));
-         Assert.IsTrue(result.Contains("\r\n."));
+         Assert.That(result.Contains("8 messages"), Is.True);
+         Assert.That(result.Contains("\r\n1"), Is.True);
+         Assert.That(result.Contains("\r\n3"), Is.True);
+         Assert.That(result.Contains("\r\n5"), Is.True);
+         Assert.That(result.Contains("\r\n."), Is.True);
       }
 
       [Test]
@@ -233,17 +233,17 @@ namespace RegressionTests.POP3
          var listResponse = pop3Client.LIST();
          var uidlResponse = pop3Client.UIDL();
 
-         Assert.IsTrue(listResponse.Contains("\r\n1"));
-         Assert.IsTrue(listResponse.Contains("\r\n2"));
-         Assert.IsTrue(listResponse.Contains("\r\n3"));
-         Assert.IsTrue(listResponse.Contains("\r\n.\r\n"));
-         Assert.IsTrue(listResponse.Contains("3 messages"));
+         Assert.That(listResponse.Contains("\r\n1"), Is.True);
+         Assert.That(listResponse.Contains("\r\n2"), Is.True);
+         Assert.That(listResponse.Contains("\r\n3"), Is.True);
+         Assert.That(listResponse.Contains("\r\n.\r\n"), Is.True);
+         Assert.That(listResponse.Contains("3 messages"), Is.True);
 
-         Assert.IsTrue(uidlResponse.Contains("\r\n1"));
-         Assert.IsTrue(uidlResponse.Contains("\r\n2"));
-         Assert.IsTrue(uidlResponse.Contains("\r\n3"));
-         Assert.IsTrue(uidlResponse.Contains("\r\n.\r\n"));
-         Assert.IsTrue(uidlResponse.Contains("3 messages"));
+         Assert.That(uidlResponse.Contains("\r\n1"), Is.True);
+         Assert.That(uidlResponse.Contains("\r\n2"), Is.True);
+         Assert.That(uidlResponse.Contains("\r\n3"), Is.True);
+         Assert.That(uidlResponse.Contains("\r\n.\r\n"), Is.True);
+         Assert.That(uidlResponse.Contains("3 messages"), Is.True);
       }
 
       [Test]
@@ -258,8 +258,8 @@ namespace RegressionTests.POP3
          string errorMessage;
 
          var sim = new Pop3ClientSimulator();
-         Assert.IsFalse(sim.ConnectAndLogon(account.Address, "test", out errorMessage));
-         Assert.IsTrue(errorMessage.StartsWith("-ERR"), errorMessage);
+         Assert.That(sim.ConnectAndLogon(account.Address, "test", out errorMessage), Is.False);
+         Assert.That(errorMessage.StartsWith("-ERR"), Is.True, errorMessage);
       }
 
       [Test]
@@ -275,11 +275,11 @@ namespace RegressionTests.POP3
 
          // Now delete the message using an IMAP client.
          var imapSimulator = new ImapClientSimulator();
-         Assert.IsTrue(imapSimulator.ConnectAndLogon(account.Address, "test"));
-         Assert.IsTrue(imapSimulator.SelectFolder("INBOX"));
-         Assert.IsTrue(imapSimulator.SetDeletedFlag(1));
-         Assert.IsTrue(imapSimulator.Expunge());
-         Assert.AreEqual(0, imapSimulator.GetMessageCount("Inbox"));
+         Assert.That(imapSimulator.ConnectAndLogon(account.Address, "test"), Is.True);
+         Assert.That(imapSimulator.SelectFolder("INBOX"), Is.True);
+         Assert.That(imapSimulator.SetDeletedFlag(1), Is.True);
+         Assert.That(imapSimulator.Expunge(), Is.True);
+         Assert.That(imapSimulator.GetMessageCount("Inbox"), Is.EqualTo(0));
 
          SmtpClientSimulator.StaticSend(account.Address, account.Address, "Test", "TestBody");
          ImapClientSimulator.AssertMessageCount(account.Address, "test", "Inbox", 1);
@@ -288,7 +288,7 @@ namespace RegressionTests.POP3
          sim.DELE(1);
          sim.QUIT();
 
-         Assert.AreEqual(1, imapSimulator.GetMessageCount("Inbox"));
+         Assert.That(imapSimulator.GetMessageCount("Inbox"), Is.EqualTo(1));
       }
 
       [Test]
@@ -308,13 +308,13 @@ namespace RegressionTests.POP3
          var sim = new Pop3ClientSimulator();
          sim.ConnectAndLogon(account.Address, "test");
          var result = sim.RETR(1);
-         Assert.IsTrue(result.Contains("TestBody1"), result);
+         Assert.That(result.Contains("TestBody1"), Is.True, result);
          result = sim.RETR(2);
-         Assert.IsTrue(result.Contains("TestBody2"), result);
+         Assert.That(result.Contains("TestBody2"), Is.True, result);
          result = sim.RETR(3);
-         Assert.IsTrue(result.Contains("TestBody3"), result);
+         Assert.That(result.Contains("TestBody3"), Is.True, result);
 
-         Assert.IsFalse(result.Contains(".\r\n."));
+         Assert.That(result.Contains(".\r\n."), Is.False);
       }
 
 
@@ -330,9 +330,9 @@ namespace RegressionTests.POP3
 
          var sim = new Pop3ClientSimulator();
          sim.ConnectAndLogon(account.Address, "test");
-         Assert.IsTrue(sim.TOP(-1, 0).Contains("No such message"));
-         Assert.IsTrue(sim.TOP(0, 0).Contains("No such message"));
-         Assert.IsTrue(sim.TOP(100, 0).Contains("No such message"));
+         Assert.That(sim.TOP(-1, 0).Contains("No such message"), Is.True);
+         Assert.That(sim.TOP(0, 0).Contains("No such message"), Is.True);
+         Assert.That(sim.TOP(100, 0).Contains("No such message"), Is.True);
       }
 
       [Test]
@@ -349,8 +349,8 @@ namespace RegressionTests.POP3
          sim.ConnectAndLogon(account.Address, "test");
          var result = sim.TOP(1, 0);
 
-         Assert.IsTrue(result.Contains("Received"));
-         Assert.IsTrue(result.Contains("Subject"));
+         Assert.That(result.Contains("Received"), Is.True);
+         Assert.That(result.Contains("Subject"), Is.True);
       }
 
       [Test]
@@ -368,11 +368,11 @@ namespace RegressionTests.POP3
          sim.ConnectAndLogon(account.Address, "test");
          var result = sim.TOP(4, 2);
 
-         Assert.IsTrue(result.Contains("Received"));
-         Assert.IsTrue(result.Contains("Line1"));
-         Assert.IsTrue(result.Contains("Line2"));
-         Assert.IsFalse(result.Contains("Line3"));
-         Assert.IsFalse(result.Contains("Line4"));
+         Assert.That(result.Contains("Received"), Is.True);
+         Assert.That(result.Contains("Line1"), Is.True);
+         Assert.That(result.Contains("Line2"), Is.True);
+         Assert.That(result.Contains("Line3"), Is.False);
+         Assert.That(result.Contains("Line4"), Is.False);
       }
 
       [Test]
@@ -389,7 +389,7 @@ namespace RegressionTests.POP3
          sim.ConnectAndLogon(account.Address, "test");
          var result = sim.TOP(1, 100);
 
-         Assert.IsTrue(result.Contains("Line1\r\nLine2\r\n..\r\nLine4\r\n..A\r\nB\r\nLine6\r\n"), result);
+         Assert.That(result.Contains("Line1\r\nLine2\r\n..\r\nLine4\r\n..A\r\nB\r\nLine6\r\n"), Is.True, result);
       }
 
       [Test]
@@ -405,11 +405,11 @@ namespace RegressionTests.POP3
          var sim = new Pop3ClientSimulator();
          sim.ConnectAndLogon(account.Address, "test");
          var result = sim.UIDL(0);
-         Assert.IsTrue(result.Contains("No such message"));
+         Assert.That(result.Contains("No such message"), Is.True);
          result = sim.UIDL(-1);
-         Assert.IsTrue(result.Contains("No such message"));
+         Assert.That(result.Contains("No such message"), Is.True);
          result = sim.UIDL(100);
-         Assert.IsTrue(result.Contains("No such message"));
+         Assert.That(result.Contains("No such message"), Is.True);
       }
 
       [Test]
@@ -427,10 +427,10 @@ namespace RegressionTests.POP3
          sim.ConnectAndLogon(account.Address, "test");
          var result = sim.UIDL(2);
 
-         Assert.IsTrue(result.Contains("OK 2"));
+         Assert.That(result.Contains("OK 2"), Is.True);
 
          result = sim.UIDL(3);
-         Assert.IsTrue(result.Contains("OK 3"));
+         Assert.That(result.Contains("OK 3"), Is.True);
       }
 
       [Test]
@@ -449,11 +449,11 @@ namespace RegressionTests.POP3
          sim.DELE(4);
          var result = sim.UIDL();
 
-         Assert.IsTrue(result.Contains("8 messages"));
-         Assert.IsTrue(result.Contains("\r\n1"));
-         Assert.IsTrue(result.Contains("\r\n3"));
-         Assert.IsTrue(result.Contains("\r\n5"));
-         Assert.IsTrue(result.Contains("\r\n."));
+         Assert.That(result.Contains("8 messages"), Is.True);
+         Assert.That(result.Contains("\r\n1"), Is.True);
+         Assert.That(result.Contains("\r\n3"), Is.True);
+         Assert.That(result.Contains("\r\n5"), Is.True);
+         Assert.That(result.Contains("\r\n."), Is.True);
       }
 
       [Test]
@@ -491,7 +491,7 @@ namespace RegressionTests.POP3
       public static string GetFileHash(string fileName)
       {
          var bytes = File.ReadAllBytes(fileName);
-         SHA1 sha = new SHA1CryptoServiceProvider();
+         SHA1 sha = SHA1.Create();
          var hash = new StringBuilder();
 
          var hashedData = sha.ComputeHash(bytes);

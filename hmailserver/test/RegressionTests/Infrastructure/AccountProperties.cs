@@ -65,7 +65,7 @@ namespace RegressionTests.Infrastructure
 
          var sizeAfter = account.Size;
 
-         Assert.Greater(sizeAfter, sizeBefore);
+         Assert.That(sizeAfter, Is.GreaterThan(sizeBefore));
       }
    }
 }

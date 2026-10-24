@@ -120,7 +120,7 @@ namespace VolumeTests
 
          socket.Send("\r\n.\r\n");
          string result = socket.Receive();
-         Assert.IsTrue(result.StartsWith("250"));
+         Assert.That(result.StartsWith("250"), Is.True);
 
          socket.Send("QUIT\r\n");
          result = socket.Receive();

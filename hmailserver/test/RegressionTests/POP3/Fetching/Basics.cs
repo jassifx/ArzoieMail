@@ -63,7 +63,7 @@ namespace RegressionTests.POP3.Fetching
             Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
             var message = account.IMAPFolders.get_ItemByName("INBOX").Messages[0];
-            Assert.IsFalse(message.get_Flag(eMessageFlag.eMFVirusScan));
+            Assert.That(message.get_Flag(eMessageFlag.eMFVirusScan), Is.False);
          }
       }
 
@@ -97,7 +97,7 @@ namespace RegressionTests.POP3.Fetching
             Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
             var message = account.IMAPFolders.get_ItemByName("INBOX").Messages[0];
-            Assert.IsTrue(message.get_Flag(eMessageFlag.eMFVirusScan));
+            Assert.That(message.get_Flag(eMessageFlag.eMFVirusScan), Is.True);
          }
       }
 
@@ -142,8 +142,8 @@ namespace RegressionTests.POP3.Fetching
 
             var downloadedMessage = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-            StringAssert.Contains("Subject: Test", downloadedMessage);
-            StringAssert.Contains("Hello!", downloadedMessage);
+            Assert.That(downloadedMessage, Does.Contain("Subject: Test"));
+            Assert.That(downloadedMessage, Does.Contain("Hello!"));
          }
       }
 
@@ -221,8 +221,8 @@ namespace RegressionTests.POP3.Fetching
 
             var downloadedMessage = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-            StringAssert.Contains("Hello!", downloadedMessage);
-            Assert.AreEqual(1, pop3Server.DeletedMessages.Count);
+            Assert.That(downloadedMessage, Does.Contain("Hello!"));
+            Assert.That(pop3Server.DeletedMessages.Count, Is.EqualTo(1));
          }
       }
 
@@ -270,7 +270,7 @@ namespace RegressionTests.POP3.Fetching
 
             Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 3);
 
-            Assert.AreEqual(3, pop3Server.DeletedMessages.Count);
+            Assert.That(pop3Server.DeletedMessages.Count, Is.EqualTo(3));
          }
       }
 
@@ -326,7 +326,7 @@ namespace RegressionTests.POP3.Fetching
 
             var downloadedMessage1 = Pop3ClientSimulator.AssertGetFirstMessageText(account2.Address, "test");
             Pop3ClientSimulator.AssertMessageCount(account1.Address, "test", 0);
-            StringAssert.Contains("Hello!", downloadedMessage1);
+            Assert.That(downloadedMessage1, Does.Contain("Hello!"));
 
             Pop3ClientSimulator.AssertMessageCount(account2.Address, "test", 0);
             Pop3ClientSimulator.AssertMessageCount(catchallAccount.Address, "test", 0);
@@ -398,12 +398,12 @@ namespace RegressionTests.POP3.Fetching
                var downloadedMessage1 = Pop3ClientSimulator.AssertGetFirstMessageText(account2.Address, "test");
                Pop3ClientSimulator.AssertMessageCount(account1.Address, "test", 0);
                Pop3ClientSimulator.AssertMessageCount(catchallAccount.Address, "test", 0);
-               StringAssert.Contains("Hello!", downloadedMessage1);
+               Assert.That(downloadedMessage1, Does.Contain("Hello!"));
 
                // Make sure the external list has received his copy.
                smtpServer.WaitForCompletion();
                var messageData = smtpServer.MessageData;
-               Assert.IsTrue(messageData.Contains(messageData), messageData);
+               Assert.That(messageData.Contains(messageData), Is.True, messageData);
 
                CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
             }
@@ -462,7 +462,7 @@ namespace RegressionTests.POP3.Fetching
             fa.Delete();
 
             var downloadedMessage1 = Pop3ClientSimulator.AssertGetFirstMessageText(recipientAccount1.Address, "test");
-            StringAssert.Contains("Hello!", downloadedMessage1);
+            Assert.That(downloadedMessage1, Does.Contain("Hello!"));
 
             CustomAsserts.AssertRecipientsInDeliveryQueue(0, false);
          }
@@ -521,8 +521,8 @@ namespace RegressionTests.POP3.Fetching
             Pop3ClientSimulator.AssertMessageCount(account1.Address, "test", 0);
             Pop3ClientSimulator.AssertMessageCount(catchallAccount.Address, "test", 0);
 
-            StringAssert.Contains("Hello!", downloadedMessage1);
-            StringAssert.Contains("Hello!", downloadedMessage2);
+            Assert.That(downloadedMessage1, Does.Contain("Hello!"));
+            Assert.That(downloadedMessage2, Does.Contain("Hello!"));
          }
       }
 
@@ -629,7 +629,7 @@ namespace RegressionTests.POP3.Fetching
 
             var downloadedMessage = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-            Assert.IsFalse(downloadedMessage.Contains("X-hMailServer-Spam: YES"));
+            Assert.That(downloadedMessage.Contains("X-hMailServer-Spam: YES"), Is.False);
          }
       }
 
@@ -751,7 +751,7 @@ namespace RegressionTests.POP3.Fetching
 
             var downloadedMessage = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-            Assert.IsTrue(downloadedMessage.Contains("X-hMailServer-Spam: YES"));
+            Assert.That(downloadedMessage.Contains("X-hMailServer-Spam: YES"), Is.True);
          }
       }
 
@@ -1087,7 +1087,7 @@ namespace RegressionTests.POP3.Fetching
             Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
             var log = LogHandler.ReadCurrentDefaultLog();
-            Assert.IsTrue(log.Contains("Delivering message from A@example.com to user@example.test."));
+            Assert.That(log.Contains("Delivering message from A@example.com to user@example.test."), Is.True);
          }
       }
 
@@ -1135,7 +1135,7 @@ namespace RegressionTests.POP3.Fetching
             Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
 
             var log = LogHandler.ReadCurrentDefaultLog();
-            Assert.IsTrue(log.Contains("Delivering message from <Empty> to user@example.test."));
+            Assert.That(log.Contains("Delivering message from <Empty> to user@example.test."), Is.True);
          }
       }
 
@@ -1218,8 +1218,8 @@ namespace RegressionTests.POP3.Fetching
 
          var log = FetchMessageAndReadLog(message);
 
-         Assert.IsTrue(log.Contains("DNS lookup: 99.113.0.203." + OriginatingIPBlackList), log);
-         Assert.IsFalse(log.Contains("DNS lookup: 7.100.51.198." + OriginatingIPBlackList), log);
+         Assert.That(log.Contains("DNS lookup: 99.113.0.203." + OriginatingIPBlackList), Is.True, log);
+         Assert.That(log.Contains("DNS lookup: 7.100.51.198." + OriginatingIPBlackList), Is.False, log);
       }
 
       [Test]
@@ -1240,7 +1240,7 @@ namespace RegressionTests.POP3.Fetching
 
          var log = FetchMessageAndReadLog(message);
 
-         Assert.IsTrue(log.Contains("DNS lookup: 99.113.0.203." + OriginatingIPBlackList), log);
+         Assert.That(log.Contains("DNS lookup: 99.113.0.203." + OriginatingIPBlackList), Is.True, log);
       }
 
       [Test]
@@ -1264,8 +1264,8 @@ namespace RegressionTests.POP3.Fetching
 
          var log = FetchMessageAndReadLog(message);
 
-         Assert.IsTrue(log.Contains("DNS lookup: 99.113.0.203." + OriginatingIPBlackList), log);
-         Assert.IsFalse(log.Contains("DNS lookup: 7.100.51.198." + OriginatingIPBlackList), log);
+         Assert.That(log.Contains("DNS lookup: 99.113.0.203." + OriginatingIPBlackList), Is.True, log);
+         Assert.That(log.Contains("DNS lookup: 7.100.51.198." + OriginatingIPBlackList), Is.False, log);
       }
 
       // The message below was received from 203.0.113.99, but the sender presented the address
@@ -1306,10 +1306,10 @@ namespace RegressionTests.POP3.Fetching
 
          var messageText = Pop3ClientSimulator.AssertGetFirstMessageText(account.Address, "test");
 
-         Assert.IsTrue(messageText.Contains("Subject: ThisIsSpam Test"), messageText);
-         Assert.IsTrue(messageText.Contains("X-hMailServer-Spam: YES"), messageText);
-         Assert.IsTrue(messageText.Contains("X-hMailServer-Reason-1:"), messageText);
-         Assert.IsTrue(messageText.Contains("The host name specified in HELO"), messageText);
+         Assert.That(messageText.Contains("Subject: ThisIsSpam Test"), Is.True, messageText);
+         Assert.That(messageText.Contains("X-hMailServer-Spam: YES"), Is.True, messageText);
+         Assert.That(messageText.Contains("X-hMailServer-Reason-1:"), Is.True, messageText);
+         Assert.That(messageText.Contains("The host name specified in HELO"), Is.True, messageText);
       }
 
       [Test]

@@ -42,7 +42,8 @@ namespace RegressionTests.Stress.Scripting
          // allocator noise, but far below what the leak produced.
          const long maxIncrease = 10 * 1024 * 1024;
 
-         Assert.Less(increase, maxIncrease,
+         Assert.That(increase,
+            Is.LessThan(maxIncrease),
             string.Format("Memory grew by {0} bytes over {1} script reloads.", increase, reloadCount));
       }
 

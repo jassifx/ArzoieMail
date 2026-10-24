@@ -37,9 +37,9 @@ namespace RegressionTests.Infrastructure
          // Wait for the auto-reply.
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account2.Address, "test");
 
-         Assert.IsFalse(text.Contains("Return-Path: <account2@example.test>"));
-         Assert.IsFalse(text.Contains("Return-Path: <account1@example.test>"));
-         Assert.IsTrue(text.Contains("Return-Path: <original-address@example.test>"));
+         Assert.That(text.Contains("Return-Path: <account2@example.test>"), Is.False);
+         Assert.That(text.Contains("Return-Path: <account1@example.test>"), Is.False);
+         Assert.That(text.Contains("Return-Path: <original-address@example.test>"), Is.True);
       }
 
       [Test]
@@ -104,9 +104,9 @@ namespace RegressionTests.Infrastructure
          // Wait for the auto-reply.
          var text = Pop3ClientSimulator.AssertGetFirstMessageText(account2.Address, "test");
 
-         Assert.IsFalse(text.Contains("Return-Path: <account-a@example.test>"));
-         Assert.IsFalse(text.Contains("Return-Path: <account2@example.test>"));
-         Assert.IsTrue(text.Contains("Return-Path: <external@example.test>"));
+         Assert.That(text.Contains("Return-Path: <account-a@example.test>"), Is.False);
+         Assert.That(text.Contains("Return-Path: <account2@example.test>"), Is.False);
+         Assert.That(text.Contains("Return-Path: <external@example.test>"), Is.True);
       }
 
       [Test]
@@ -166,11 +166,12 @@ namespace RegressionTests.Infrastructure
          var s = pop3ClientSimulator.GetFirstMessageText(account1.Address, "test");
          if (s.IndexOf("Out of office!") < 0)
             throw new Exception("ERROR - Auto reply subject not set properly.");
-         Assert.IsTrue(s.Contains("Return-Path: <>"),
+         Assert.That(s.Contains("Return-Path: <>"),
+            Is.True,
             "Vacation reply envelope sender must be empty (<>) to prevent mail loops per RFC 3834.");
-         Assert.IsTrue(s.Contains("Auto-Submitted: auto-replied"));
-         Assert.IsTrue(s.Contains("In-Reply-To: " + messageID));
-         Assert.IsTrue(s.Contains("References: " + previousReference + " " + messageID));
+         Assert.That(s.Contains("Auto-Submitted: auto-replied"), Is.True);
+         Assert.That(s.Contains("In-Reply-To: " + messageID), Is.True);
+         Assert.That(s.Contains("References: " + previousReference + " " + messageID), Is.True);
 
          account2.VacationMessageIsOn = false;
          account2.Save();
@@ -189,7 +190,7 @@ namespace RegressionTests.Infrastructure
          if (s.ToLower().IndexOf("re: test message") < 0)
             throw new Exception("ERROR - Auto reply subject not set properly.");
 
-         Assert.IsTrue(s.Contains("Auto-Submitted: auto-replied"));
+         Assert.That(s.Contains("Auto-Submitted: auto-replied"), Is.True);
 
          account2.VacationMessageIsOn = false;
          account2.Save();
@@ -237,7 +238,7 @@ namespace RegressionTests.Infrastructure
          Pop3ClientSimulator.AssertMessageCount(account1.Address, "test", 0);
 
          var defaultLogText = TestSetup.ReadExistingTextFile(LogHandler.GetDefaultLogFileName());
-         Assert.IsTrue(defaultLogText.Contains("LocalDelivery::SendAutoReplyMessage_ aborted, message marked as spam")); 
+         Assert.That(defaultLogText.Contains("LocalDelivery::SendAutoReplyMessage_ aborted, message marked as spam"), Is.True); 
          Pop3ClientSimulator.AssertMessageCount(account2.Address, "test", 1);
 
          account2.VacationMessageAbortSpamFlagged = false;
@@ -418,7 +419,7 @@ namespace RegressionTests.Infrastructure
          SingletonProvider<TestSetup>.Instance.GetApp().SubmitEMail();
 
          var defaultLogText = TestSetup.ReadExistingTextFile(LogHandler.GetDefaultLogFileName());
-         Assert.IsTrue(defaultLogText.Contains("SMTPForwarding::PerformForwarding aborted, message marked as spam"));
+         Assert.That(defaultLogText.Contains("SMTPForwarding::PerformForwarding aborted, message marked as spam"), Is.True);
          Pop3ClientSimulator.AssertMessageCount(account2.Address, "test", 0);
       }
 
@@ -448,7 +449,7 @@ namespace RegressionTests.Infrastructure
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(list.Address, "test");
 
 
-         Assert.IsTrue(message.Contains("Return-Path: <sender@example.test>"));
+         Assert.That(message.Contains("Return-Path: <sender@example.test>"), Is.True);
       }
 
       [Test]
@@ -474,7 +475,8 @@ namespace RegressionTests.Infrastructure
          CustomAsserts.AssertRecipientsInDeliveryQueue(0);
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(recipient.Address, "test");
-         Assert.IsTrue(message.Contains("Return-Path: <>"),
+         Assert.That(message.Contains("Return-Path: <>"),
+            Is.True,
             "Forwarding a bounce must preserve the null envelope-from to prevent bounce loops.");
       }
 
@@ -513,7 +515,8 @@ namespace RegressionTests.Infrastructure
          CustomAsserts.AssertRecipientsInDeliveryQueue(0);
 
          var message = Pop3ClientSimulator.AssertGetFirstMessageText(account2.Address, "test");
-         Assert.IsTrue(message.Contains("Return-Path: <>"),
+         Assert.That(message.Contains("Return-Path: <>"),
+            Is.True,
             "Rule-based forwarding of a bounce must preserve the null envelope-from to prevent bounce loops.");
       }
 
@@ -547,7 +550,7 @@ namespace RegressionTests.Infrastructure
          {
             var files = Directory.GetFiles(dir);
 
-            Assert.AreEqual(0, files.Length);
+            Assert.That(files.Length, Is.EqualTo(0));
          }
       }
 
@@ -660,7 +663,7 @@ namespace RegressionTests.Infrastructure
          Pop3ClientSimulator.AssertMessageCount(account2.Address, "test", 1);
          Pop3ClientSimulator.AssertMessageCount(account1.Address, "test", 1); // OOO received; account1 now in cache
          var februaryReply = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsTrue(februaryReply.Contains("Out of office - February"), "Expected OOO reply for second vacation period but cache was not cleared on expiry.");
+         Assert.That(februaryReply.Contains("Out of office - February"), Is.True, "Expected OOO reply for second vacation period but cache was not cleared on expiry.");
 
          // Simulate the vacation expiring: set the expiry date to the past.
          // The next delivery will detect the expiry, disable the vacation in the DB,
@@ -685,7 +688,7 @@ namespace RegressionTests.Infrastructure
          Pop3ClientSimulator.AssertMessageCount(account1.Address, "test", 1); // OOO must be received; fails without the fix
 
          var augustReply = Pop3ClientSimulator.AssertGetFirstMessageText(account1.Address, "test");
-         Assert.IsTrue(augustReply.Contains("Out of office - August"), "Expected OOO reply for second vacation period but cache was not cleared on expiry.");
+         Assert.That(augustReply.Contains("Out of office - August"), Is.True, "Expected OOO reply for second vacation period but cache was not cleared on expiry.");
 
          account2.VacationMessageIsOn = false;
          account2.Save();

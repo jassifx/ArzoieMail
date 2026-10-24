@@ -53,14 +53,14 @@ namespace RegressionTests.Stress
          var command = "A03 NOOP " + sb;
 
          var socket = new TcpConnection();
-         Assert.IsTrue(socket.Connect(143));
+         Assert.That(socket.Connect(143), Is.True);
          socket.Receive();
          socket.Send(command);
 
          try
          {
             var response = socket.Receive();
-            Assert.IsTrue(response.StartsWith("* BYE"));
+            Assert.That(response.StartsWith("* BYE"), Is.True);
          }
          catch (IOException ex)
          {
@@ -81,14 +81,14 @@ namespace RegressionTests.Stress
          var command = "HELP " + sb;
 
          var socket = new TcpConnection();
-         Assert.IsTrue(socket.Connect(110));
+         Assert.That(socket.Connect(110), Is.True);
          socket.Receive();
          socket.Send(command + "\r\n");
 
          try
          {
             var response = socket.Receive();
-            Assert.IsTrue(response.StartsWith("-ERR"));
+            Assert.That(response.StartsWith("-ERR"), Is.True);
 
             socket.Disconnect();
          }
@@ -110,12 +110,12 @@ namespace RegressionTests.Stress
          var command = "NOOP " + sb;
 
          var socket = new TcpConnection();
-         Assert.IsTrue(socket.Connect(110));
+         Assert.That(socket.Connect(110), Is.True);
          socket.Receive();
          socket.Send(command + "\r\n");
 
          var response = socket.Receive();
-         Assert.IsTrue(response.StartsWith("-ERR Line too long."));
+         Assert.That(response.StartsWith("-ERR Line too long."), Is.True);
 
          socket.Disconnect();
       }
@@ -131,14 +131,14 @@ namespace RegressionTests.Stress
          var command = "HELO " + sb;
 
          var socket = new TcpConnection();
-         Assert.IsTrue(socket.Connect(25));
+         Assert.That(socket.Connect(25), Is.True);
          socket.Receive();
          socket.Send(command + "\r\n");
 
          try
          {
             var response = socket.Receive();
-            Assert.IsTrue(response.StartsWith("421"));
+            Assert.That(response.StartsWith("421"), Is.True);
 
             socket.Disconnect();
          }
@@ -159,12 +159,12 @@ namespace RegressionTests.Stress
          var command = "HELO " + sb;
 
          var socket = new TcpConnection();
-         Assert.IsTrue(socket.Connect(25));
+         Assert.That(socket.Connect(25), Is.True);
          socket.Receive();
          socket.Send(command + "\r\n");
 
          var response = socket.Receive();
-         Assert.IsTrue(response.StartsWith("500"));
+         Assert.That(response.StartsWith("500"), Is.True);
 
          socket.Disconnect();
       }
@@ -253,17 +253,17 @@ namespace RegressionTests.Stress
 
          var sContents = Pop3ClientSimulator.AssertGetFirstMessageText("mimetest@example.test", "test");
 
-         Assert.IsTrue(sContents.IndexOf("SomeHeader: SomeValue") > 0);
-         Assert.IsTrue(sContents.IndexOf("------=_NextPart_000_000D_01C97C94.33D5E670.ALT--") > 0);
+         Assert.That(sContents.IndexOf("SomeHeader: SomeValue") > 0, Is.True);
+         Assert.That(sContents.IndexOf("------=_NextPart_000_000D_01C97C94.33D5E670.ALT--") > 0, Is.True);
       }
 
       private void AssertIsConnectionTerminatedException(IOException exception)
       {
          var inner = exception.InnerException as SocketException;
-         Assert.IsNotNull(inner);
+         Assert.That(inner, Is.Not.Null);
 
 
-         Assert.AreEqual(10054, inner.ErrorCode);
+         Assert.That(inner.ErrorCode, Is.EqualTo(10054));
       }
    }
 }

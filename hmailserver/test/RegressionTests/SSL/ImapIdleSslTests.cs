@@ -72,11 +72,11 @@ namespace RegressionTests.SSL
             simulator.Handshake();
          }
 
-         Assert.IsTrue(simulator.Logon(_account.Address, "test"), "Logon");
-         Assert.IsTrue(simulator.SelectFolder("INBOX"), "SelectFolder");
-         Assert.IsTrue(simulator.StartIdle(), "StartIdle");
+         Assert.That(simulator.Logon(_account.Address, "test"), Is.True, "Logon");
+         Assert.That(simulator.SelectFolder("INBOX"), Is.True, "SelectFolder");
+         Assert.That(simulator.StartIdle(), Is.True, "StartIdle");
 
-         Assert.IsFalse(simulator.GetPendingDataExists(), "Unexpected data before delivery.");
+         Assert.That(simulator.GetPendingDataExists(), Is.False, "Unexpected data before delivery.");
 
          new SmtpClientSimulator().Send(_account.Address, _account.Address, "IDLE Test",
             "This is a test of IDLE");
@@ -87,11 +87,12 @@ namespace RegressionTests.SSL
 
          var data = simulator.Receive();
 
-         Assert.IsTrue(data.Contains("EXISTS"),
+         Assert.That(data.Contains("EXISTS"),
+            Is.True,
             "Expected an EXISTS notification while idling, received: " + data);
 
          string output;
-         Assert.IsTrue(simulator.EndIdle(true, out output), "EndIdle");
+         Assert.That(simulator.EndIdle(true, out output), Is.True, "EndIdle");
 
          simulator.Disconnect();
       }

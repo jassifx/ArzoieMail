@@ -14,7 +14,7 @@ namespace RegressionTests.SMTP.SRS
          // behind, and the assertion would then hold without the server ever having
          // generated anything. TestSetup puts a generated secret back for every test, and
          // this is the shape of one - 32 random bytes in unpadded base64.
-         Assert.AreEqual(SrsAddress.GeneratedSecretLength, Secret.Length);
+         Assert.That(Secret.Length, Is.EqualTo(SrsAddress.GeneratedSecretLength));
       }
 
       [Test]
@@ -28,16 +28,16 @@ namespace RegressionTests.SMTP.SRS
             // Every address already handed out stops being reversible when the secret
             // changes, so clearing it is refused rather than quietly taken as a rotation.
             Assert.Throws<COMException>(() => _settings.SRSSecret = "");
-            Assert.AreEqual(originalSecret, Secret);
+            Assert.That(Secret, Is.EqualTo(originalSecret));
 
             _settings.RotateSRSSecret();
 
-            Assert.IsNotEmpty(Secret);
-            Assert.AreNotEqual(originalSecret, Secret);
+            Assert.That(Secret, Is.Not.Empty);
+            Assert.That(Secret, Is.Not.EqualTo(originalSecret));
 
             // A secret which is set is kept as it is.
             _settings.SRSSecret = "a secret of my own";
-            Assert.AreEqual("a secret of my own", Secret);
+            Assert.That(Secret, Is.EqualTo("a secret of my own"));
          }
          finally
          {
@@ -58,16 +58,16 @@ namespace RegressionTests.SMTP.SRS
             var longest = new string('a', SrsAddress.MaxSecretLength);
 
             _settings.SRSSecret = longest;
-            Assert.AreEqual(longest, Secret);
+            Assert.That(Secret, Is.EqualTo(longest));
 
             Assert.Throws<COMException>(() => _settings.SRSSecret = longest + "a");
-            Assert.AreEqual(longest, Secret);
+            Assert.That(Secret, Is.EqualTo(longest));
 
             // The secret is encrypted on its way into the database and decrypted on the
             // way back out, so one at the limit is checked against a reload rather than
             // only against the copy the server is holding.
             _application.Reinitialize();
-            Assert.AreEqual(longest, _application.Settings.SRSSecret);
+            Assert.That(_application.Settings.SRSSecret, Is.EqualTo(longest));
          }
          finally
          {
@@ -79,16 +79,16 @@ namespace RegressionTests.SMTP.SRS
       [Description("The settings are stored and read back.")]
       public void TheSettingsAreStoredAndReadBack()
       {
-         Assert.IsFalse(_settings.SRSEnabled);
+         Assert.That(_settings.SRSEnabled, Is.False);
 
          _settings.SRSEnabled = true;
-         Assert.IsTrue(_settings.SRSEnabled);
+         Assert.That(_settings.SRSEnabled, Is.True);
 
          _settings.SRSMaxAgeDays = 5;
-         Assert.AreEqual(5, _settings.SRSMaxAgeDays);
+         Assert.That(_settings.SRSMaxAgeDays, Is.EqualTo(5));
 
          _settings.SRSHashLength = 12;
-         Assert.AreEqual(12, _settings.SRSHashLength);
+         Assert.That(_settings.SRSHashLength, Is.EqualTo(12));
       }
 
       [Test]
@@ -96,10 +96,10 @@ namespace RegressionTests.SMTP.SRS
       public void ZeroSelectsTheDefaults()
       {
          _settings.SRSMaxAgeDays = 0;
-         Assert.AreEqual(SrsAddress.DefaultMaxAgeDays, _settings.SRSMaxAgeDays);
+         Assert.That(_settings.SRSMaxAgeDays, Is.EqualTo(SrsAddress.DefaultMaxAgeDays));
 
          _settings.SRSHashLength = 0;
-         Assert.AreEqual(SrsAddress.DefaultHashLength, _settings.SRSHashLength);
+         Assert.That(_settings.SRSHashLength, Is.EqualTo(SrsAddress.DefaultHashLength));
       }
 
       [Test]
@@ -107,13 +107,13 @@ namespace RegressionTests.SMTP.SRS
       public void OutOfRangeSettingsAreReportedAsTheyAreApplied()
       {
          _settings.SRSHashLength = 1;
-         Assert.AreEqual(SrsAddress.MinHashLength, _settings.SRSHashLength);
+         Assert.That(_settings.SRSHashLength, Is.EqualTo(SrsAddress.MinHashLength));
 
          _settings.SRSHashLength = 100;
-         Assert.AreEqual(SrsAddress.MaxHashLength, _settings.SRSHashLength);
+         Assert.That(_settings.SRSHashLength, Is.EqualTo(SrsAddress.MaxHashLength));
 
          _settings.SRSMaxAgeDays = 100000;
-         Assert.AreEqual(SrsAddress.MaxMaxAgeDays, _settings.SRSMaxAgeDays);
+         Assert.That(_settings.SRSMaxAgeDays, Is.EqualTo(SrsAddress.MaxMaxAgeDays));
       }
    }
 }

@@ -15,7 +15,7 @@ namespace RegressionTests.API
          var application = SingletonProvider<TestSetup>.Instance.GetApp();
 
          var threadId = application.Status.ThreadID;
-         Assert.AreNotEqual(0, threadId);
+         Assert.That(threadId, Is.Not.EqualTo(0));
       }
    }
 }

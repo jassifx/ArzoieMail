@@ -58,8 +58,8 @@ namespace RegressionTests.Infrastructure
 
          // Re-read from server to confirm the value round-tripped correctly.
          var saved = _ipRanges[_ipRanges.Count - 1];
-         Assert.AreEqual("::1", saved.LowerIP);
-         Assert.AreEqual("::1", saved.UpperIP);
+         Assert.That(saved.LowerIP, Is.EqualTo("::1"));
+         Assert.That(saved.UpperIP, Is.EqualTo("::1"));
 
          _ipRanges.Delete(_ipRanges.Count - 1);
       }

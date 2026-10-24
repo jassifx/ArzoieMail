@@ -42,10 +42,10 @@ namespace RegressionTests.Infrastructure
 
          // Before the 41 domain is placed in cache, 10% of the items should be removed,
          // so at this point we should have 40-10%+1 = 37 items in cache
-         Assert.AreEqual(37, _settings.Cache.DomainCacheSizeKb);
+         Assert.That(_settings.Cache.DomainCacheSizeKb, Is.EqualTo(37));
 
          // Account max size is set to 20 above, so 10% removal leaves 18, plus the one we just added.
-         Assert.AreEqual(19, _settings.Cache.AccountCacheSizeKb);
+         Assert.That(_settings.Cache.AccountCacheSizeKb, Is.EqualTo(19));
       }
    }
 }
