@@ -50,7 +50,6 @@ namespace HM
 
       virtual std::shared_ptr<DALRecordset> CreateRecordset();
 
-      virtual void EscapeString(String &sInput);
 
       virtual std::shared_ptr<IMacroExpander> CreateMacroExpander();
 

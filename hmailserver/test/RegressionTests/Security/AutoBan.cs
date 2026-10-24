@@ -186,5 +186,42 @@ namespace RegressionTests.Security
          var logText = LogHandler.ReadCurrentDefaultLog();
          Assert.That(logText.Contains("Blocked either by IP range or by connection limit."), Is.True, logText);
       }
+
+      [Test]
+      [Description("The name of an auto-ban range carries the user name of the failed logons, quotes and all. " +
+                   "A range of that name existing already, the ban takes the next free name.")]
+      public void TestIPRangeNameWithQuoteInUserName()
+      {
+         _settings.AutoBanOnLogonFailure = true;
+         _settings.MaxInvalidLogonAttempts = 3;
+         _settings.MaxInvalidLogonAttemptsWithin = 5;
+         _settings.AutoBanMinutes = 3;
+
+         var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "o'brien@example.test", "test");
+
+         // A range with the name the ban would take first, for an address no test connects from.
+         var taken = _settings.SecurityRanges.Add();
+         taken.Name = "Auto-ban: o'brien@example.test";
+         taken.LowerIP = "10.255.255.1";
+         taken.UpperIP = "10.255.255.1";
+         taken.Priority = 10;
+         taken.Save();
+
+         var sim = new Pop3ClientSimulator();
+         for (var i = 0; i < 3; i++)
+         {
+            Assert.That(sim.ConnectAndLogon(account.Address, "wrong", out _), Is.False);
+            sim.Disconnect();
+         }
+
+         Assert.That(sim.GetWelcomeMessage().Length == 0, Is.True);
+
+         var names = new System.Collections.Generic.List<string>();
+         for (var i = 0; i < _settings.SecurityRanges.Count; i++)
+            names.Add(_settings.SecurityRanges[i].Name);
+
+         Assert.That(names, Does.Contain("Auto-ban: o'brien@example.test"));
+         Assert.That(names, Does.Contain("Auto-ban: o'brien@example.test (1)"));
+      }
    }
 }
