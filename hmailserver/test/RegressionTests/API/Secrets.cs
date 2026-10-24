@@ -121,7 +121,8 @@ namespace RegressionTests.API
                    "a route still authenticates with its password.")]
       public void TestImportingAnotherKeyProtectsSecretsUnderIt()
       {
-         const string password = "Röute password ' \\";
+         // ASCII, as in the route tests above.
+         const string password = "Route password ' \\";
 
          var smtpServerPort = TestSetup.GetNextFreePort();
          using (var server = new SmtpServerSimulator(1, smtpServerPort))
