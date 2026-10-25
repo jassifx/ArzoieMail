@@ -4,6 +4,7 @@
 #include <stdafx.h>
 
 #include <limits.h>
+#include <mutex>
 #include <stdexcept>
 #include <string.h>
 
@@ -143,6 +144,34 @@ namespace HM
          return false;
 
       return CRYPTO_memcmp(&computed[0], &parameters.hash[0], computed.size()) == 0;
+   }
+
+   void
+   PasswordHasher::SpendVerificationTime(const AnsiString &password)
+   {
+      // Made once, and again when the administrator changes the algorithm or its cost, so that
+      // it always costs what verifying a real account's password costs.
+      static std::mutex mutex;
+      static AnsiString dummy;
+
+      AnsiString hash;
+      {
+         std::lock_guard<std::mutex> lock(mutex);
+
+         if (dummy.IsEmpty() || NeedsRehash(dummy))
+         {
+            unsigned char random[16];
+            if (RAND_bytes(random, sizeof(random)) != 1)
+               return;
+
+            dummy = Hash(AnsiString((const char *) random, sizeof(random)));
+         }
+
+         hash = dummy;
+      }
+
+      // Outside the lock: verifications of different logons run side by side, as real ones do.
+      Verify(password, hash);
    }
 
    bool
