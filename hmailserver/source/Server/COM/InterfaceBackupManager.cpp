@@ -9,6 +9,12 @@
 
 #include "COMError.h"
 
+// So that the messages of the errors it returns reach the caller.
+STDMETHODIMP InterfaceBackupManager::InterfaceSupportsErrorInfo(REFIID riid)
+{
+   return InlineIsEqualGUID(IID_IInterfaceBackupManager, riid) ? S_OK : S_FALSE;
+}
+
 bool 
 InterfaceBackupManager::LoadSettings()
 {
@@ -60,6 +66,34 @@ InterfaceBackupManager::LoadBackup(BSTR sXMLFile, IInterfaceBackup **pVal)
       pBackupInt->AddRef();
       *pVal = pBackupInt;
    
+      return S_OK;
+   }
+   catch (...)
+   {
+      return COMError::GenerateGenericMessage();
+   }
+}
+
+STDMETHODIMP
+InterfaceBackupManager::LoadEncryptedBackup(BSTR sFile, BSTR sPassphrase, IInterfaceBackup **pVal)
+{
+   try
+   {
+      if (!backup_manager_)
+         return GetAccessDenied();
+
+      std::shared_ptr<HM::Backup> pBackup = backup_manager_->LoadBackup(sFile, sPassphrase);
+
+      // Read only when the passphrase opened it.
+      if (!pBackup || pBackup->GetBackupFile().IsEmpty())
+         return COMError::GenerateError("The backup could not be read. Check the passphrase, and that the file is an ArzoieMail backup.");
+
+      CComObject<InterfaceBackup>* pBackupInt = new CComObject<InterfaceBackup>();
+      pBackupInt->SetAuthentication(authentication_);
+      pBackupInt->Attach(pBackup);
+      pBackupInt->AddRef();
+      *pVal = pBackupInt;
+
       return S_OK;
    }
    catch (...)

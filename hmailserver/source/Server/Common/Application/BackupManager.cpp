@@ -100,15 +100,22 @@ namespace HM
    std::shared_ptr<Backup>
    BackupManager::LoadBackup(const String &sZipFile) const
    {
+      return LoadBackup(sZipFile, String());
+   }
+
+   std::shared_ptr<Backup>
+   BackupManager::LoadBackup(const String &sZipFile, const String &passphrase) const
+   {
       LOG_DEBUG("BackupManager::LoadBackup");
 
       std::shared_ptr<Backup> pResult = std::shared_ptr<Backup>(new Backup);
+      pResult->SetPassphrase(passphrase);
 
       // First uncompress our specification file.
       String sTempDir = IniFileSettings::Instance()->GetTempDirectory();
       String sXMLFile = sTempDir + "\\hMailServerBackup.xml";
       FileUtilities::DeleteFile(sXMLFile);
-      Compression oComp;
+      Compression oComp(passphrase);
       oComp.Uncompress(sZipFile, sTempDir, "hMailServerBackup.xml");
 
       // Load the XML document

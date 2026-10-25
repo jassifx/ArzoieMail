@@ -32,6 +32,10 @@ namespace HM
       
       int GetRestoreOption(int iRestoreOption) const;
       void SetRestoreOption(int iOption, bool bSet);
+
+      // The passphrase the backup was encrypted under, to restore it; empty for none.
+      void SetPassphrase(const String &passphrase) { passphrase_ = passphrase; }
+      String GetPassphrase() const { return passphrase_; }
       
    private:
 
@@ -44,5 +48,7 @@ namespace HM
 
       String backup_file_;
       // The path to the XML backup file.
+
+      String passphrase_;
    };
 }

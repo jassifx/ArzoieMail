@@ -16,7 +16,8 @@ class ATL_NO_VTABLE InterfaceBackupSettings :
 	public CComObjectRootEx<CComSingleThreadModel>,
 	public CComCoClass<InterfaceBackupSettings, &CLSID_BackupSettings>,
 	public IDispatchImpl<IInterfaceBackupSettings, &IID_IInterfaceBackupSettings, &LIBID_hMailServer, /*wMajor =*/ 1, /*wMinor =*/ 0>,
-   public HM::COMAuthenticator
+   public HM::COMAuthenticator,
+   public ISupportErrorInfo
 {
 public:
    InterfaceBackupSettings();
@@ -30,6 +31,7 @@ DECLARE_REGISTRY_RESOURCEID(IDR_INTERFACEBACKUPSETTINGS)
 BEGIN_COM_MAP(InterfaceBackupSettings)
 	COM_INTERFACE_ENTRY(IInterfaceBackupSettings)
 	COM_INTERFACE_ENTRY(IDispatch)
+   COM_INTERFACE_ENTRY(ISupportErrorInfo)
 END_COM_MAP()
 
 
@@ -45,6 +47,8 @@ END_COM_MAP()
 	}
 
 public:
+   STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
+
    STDMETHOD(get_Destination)(/*[out, retval]*/ BSTR *pVal);
    STDMETHOD(put_Destination)(/*[in]*/ BSTR newVal);
 
@@ -57,6 +61,8 @@ public:
    STDMETHOD(get_BackupMessages)(/*[out, retval]*/ VARIANT_BOOL *pVal);
    STDMETHOD(put_BackupMessages)(/*[in]*/ VARIANT_BOOL newVal);
    STDMETHOD(get_CompressDestinationFiles)(/*[out, retval]*/ VARIANT_BOOL *pVal);
+   STDMETHOD(put_Passphrase)(/*[in]*/ BSTR newVal);
+   STDMETHOD(get_PassphraseIsSet)(/*[out, retval]*/ VARIANT_BOOL *pVal);
    STDMETHOD(put_CompressDestinationFiles)(/*[in]*/ VARIANT_BOOL newVal);
 
 private:

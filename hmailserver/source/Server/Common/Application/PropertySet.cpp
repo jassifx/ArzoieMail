@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "PropertySet.h"
+#include "BackupSecrets.h"
 #include "Property.h"
 #include "../Util/Crypt.h"
 
@@ -204,6 +205,10 @@ namespace HM
       if (sPropertyName == PROPERTY_SRS_SECRET)
          return true;
 
+      // The passphrase backups are encrypted under.
+      if (sPropertyName == PROPERTY_BACKUP_PASSPHRASE)
+         return true;
+
       return false;
    }
 
@@ -220,7 +225,13 @@ namespace HM
          XNode *pNode = pPropertiesNode->AppendChild(String(oProperty->GetName()));
 
          pNode->AppendAttr(_T("LongValue"), StringParser::IntToString(oProperty->GetLongValue()));
-         pNode->AppendAttr(_T("StringValue"), oProperty->GetStringValue());
+         // A secret is written as BackupSecrets says: plain in an encrypted archive, protected
+         // under the installation's key otherwise - never plain in an archive anyone can open.
+         String value = oProperty->GetStringValue();
+         if (IsCryptedProperty(oProperty->GetName()) && !value.IsEmpty())
+            value = BackupSecrets::Store(value);
+
+         pNode->AppendAttr(_T("StringValue"), value);
 
          iterProperty++;
       }      
@@ -240,6 +251,8 @@ namespace HM
          XNode *pPropertyNode = pPropertiesNode->GetChild(i);
          String sName = pPropertyNode->name;
          String sStringValue = pPropertyNode->GetAttrValue(_T("StringValue"));
+         if (IsCryptedProperty(sName) && !sStringValue.IsEmpty())
+            sStringValue = BackupSecrets::LoadSetting(sStringValue);
          int iLongValue = _ttoi(pPropertyNode->GetAttrValue(_T("LongValue")));
 
          std::shared_ptr<Property> pProperty = GetProperty_(sName);

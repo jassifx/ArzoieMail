@@ -35,6 +35,7 @@ namespace HM
       
       // Backup properties
       String destination_;
+      String passphrase_;
       String xmlfile_;
    };
 }

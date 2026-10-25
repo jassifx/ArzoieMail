@@ -453,6 +453,18 @@ namespace HM
       GetSettings()->SetString(PROPERTY_BACKUPDESTINATION, sNewPath);
    }
 
+   String
+   Configuration::GetBackupPassphrase() const
+   {
+      return GetSettings()->GetString(PROPERTY_BACKUP_PASSPHRASE);
+   }
+
+   void
+   Configuration::SetBackupPassphrase(const String &passphrase)
+   {
+      GetSettings()->SetString(PROPERTY_BACKUP_PASSPHRASE, passphrase);
+   }
+
    bool
    Configuration::GetBackupOption(Backup::BackupOptions iMode) const
    {

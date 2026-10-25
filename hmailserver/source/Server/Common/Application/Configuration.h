@@ -111,6 +111,10 @@ namespace HM
       String GetBackupDestination() const;
       void SetBackupDestination(const String &sNewPath);
 
+      // The passphrase backups are encrypted under; empty for none.
+      String GetBackupPassphrase() const;
+      void SetBackupPassphrase(const String &passphrase);
+
       bool GetBackupOption(Backup::BackupOptions iMode) const;
       int GetBackupOptions() const;
       void SetBackupOption(Backup::BackupOptions iMode, bool bSet);

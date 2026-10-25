@@ -2058,6 +2058,7 @@ interface IInterfaceBackupManager : IDispatch
 {
    [id(1), helpstring("Starts a backup.")] HRESULT StartBackup();
    [id(2), helpstring("Loads a backup from a file.")] HRESULT LoadBackup([in] BSTR sXMLFile, [out, retval] IInterfaceBackup ** pVal);
+   [id(3), helpstring("Loads a backup encrypted under a passphrase from a file. Fails when the passphrase is wrong.")] HRESULT LoadEncryptedBackup([in] BSTR sFile, [in] BSTR sPassphrase, [out, retval] IInterfaceBackup ** pVal);
 
 };
 [
@@ -2082,6 +2083,8 @@ interface IInterfaceBackupSettings : IDispatch{
 	[propput, id(5), helpstring("Compress destination files")] HRESULT CompressDestinationFiles([in] VARIANT_BOOL newVal);
 
 	[propget, id(7), helpstring("Backup log file")] HRESULT LogFile([out, retval] BSTR *pVal);
+	[propput, id(8), helpstring("The passphrase backups are encrypted under. Empty for none. It cannot be read back.")] HRESULT Passphrase([in] BSTR newVal);
+	[propget, id(9), helpstring("True when backups are encrypted under a passphrase.")] HRESULT PassphraseIsSet([out, retval] VARIANT_BOOL *pVal);
 
 };
 [

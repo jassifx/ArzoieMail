@@ -7,6 +7,7 @@
 #include "FetchAccountUIDs.h"
 #include "FetchAccountUID.h"
 #include "../Util/Crypt.h"
+#include "../Application/BackupSecrets.h"
 
 #ifdef _DEBUG
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
@@ -61,7 +62,8 @@ namespace HM
       pNode->AppendAttr(_T("ServerType"), StringParser::IntToString(server_type_));
       pNode->AppendAttr(_T("Port"), StringParser::IntToString(port_));
       pNode->AppendAttr(_T("Username"), username_);
-      pNode->AppendAttr(_T("Password"), Crypt::Instance()->EnCrypt(password_, Crypt::ETSecret));
+      // As BackupSecrets says - see PropertySet::XMLStore.
+      pNode->AppendAttr(_T("Password"), BackupSecrets::Store(password_));
       pNode->AppendAttr(_T("Minutes"), StringParser::IntToString(minutes_));
       pNode->AppendAttr(_T("DaysToKeep"), StringParser::IntToString(days_to_keep_));
       pNode->AppendAttr(_T("Active"), is_active_ ? _T("1") : _T("0"));
@@ -87,7 +89,7 @@ namespace HM
       server_type_ = (ServerType)_ttoi(pNode->GetAttrValue(_T("ServerType")));
       port_ =  _ttoi(pNode->GetAttrValue(_T("Port")));
       username_ = pNode->GetAttrValue(_T("Username"));
-      password_ = Crypt::Instance()->DeCrypt(pNode->GetAttrValue(_T("Password")), Crypt::ETSecret);
+      password_ = BackupSecrets::LoadPassword(pNode->GetAttrValue(_T("Password")));
       minutes_ = _ttoi(pNode->GetAttrValue(_T("Minutes")));
       days_to_keep_ = _ttoi(pNode->GetAttrValue(_T("DaysToKeep")));
       is_active_ = (pNode->GetAttrValue(_T("Active")) == _T("1"));

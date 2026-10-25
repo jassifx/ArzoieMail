@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "COMError.h"
+#include "../Common/Util/SecretProtector.h"
 #include "InterfaceBackupSettings.h"
 
 #include "../Common/Application/IniFileSettings.h"
@@ -12,6 +13,12 @@ InterfaceBackupSettings::InterfaceBackupSettings() :
    ini_file_settings_(nullptr)
 {
 
+}
+
+// So that the messages of the errors it returns reach the caller.
+STDMETHODIMP InterfaceBackupSettings::InterfaceSupportsErrorInfo(REFIID riid)
+{
+   return InlineIsEqualGUID(IID_IInterfaceBackupSettings, riid) ? S_OK : S_FALSE;
 }
 
 bool 
@@ -194,6 +201,46 @@ InterfaceBackupSettings::get_CompressDestinationFiles(VARIANT_BOOL *pVal)
          return GetAccessDenied();
 
       *pVal = config_->GetBackupOption(HM::Backup::BOCompression) ? VARIANT_TRUE : VARIANT_FALSE;
+      return S_OK;
+   }
+   catch (...)
+   {
+      return COMError::GenerateGenericMessage();
+   }
+}
+
+STDMETHODIMP
+InterfaceBackupSettings::put_Passphrase(BSTR newVal)
+{
+   try
+   {
+      if (!config_)
+         return GetAccessDenied();
+
+      HM::String passphrase(newVal);
+
+      // As long as the one for exporting the secret key: it is all that protects the backup.
+      if (!passphrase.IsEmpty() && passphrase.GetLength() < HM::SecretProtector::MinimumPassphraseLength)
+         return COMError::GenerateError(HM::Formatter::Format("The backup passphrase must have at least {0} characters.", (int) HM::SecretProtector::MinimumPassphraseLength));
+
+      config_->SetBackupPassphrase(passphrase);
+      return S_OK;
+   }
+   catch (...)
+   {
+      return COMError::GenerateGenericMessage();
+   }
+}
+
+STDMETHODIMP
+InterfaceBackupSettings::get_PassphraseIsSet(VARIANT_BOOL *pVal)
+{
+   try
+   {
+      if (!config_)
+         return GetAccessDenied();
+
+      *pVal = config_->GetBackupPassphrase().IsEmpty() ? VARIANT_FALSE : VARIANT_TRUE;
       return S_OK;
    }
    catch (...)
