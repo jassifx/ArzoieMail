@@ -6,6 +6,8 @@
 
 #include "../Common/BO/MessageRecipient.h"
 #include "../Common/Util/Utilities.h"
+#include "../Common/Util/Unicode.h"
+#include "../Common/Util/Encoding/Base64.h"
 #include "../Common/Util/File.h"
 #include "../Common/Util/ByteBuffer.h"
 #include "../Common/Util/TransparentTransmissionBuffer.h"
@@ -583,22 +585,34 @@ namespace HM
       current_state_ = eState;
    }
 
+   namespace
+   {
+      // AUTH LOGIN credentials, base64 of their UTF-8, as servers take them. StringParser's
+      // Base64Encode converts to the system code page first, which turned a password with an
+      // a-umlaut into one the server did not know, and dropped a character outside the page.
+      String EncodeCredential(const String &credential)
+      {
+         AnsiString utf8 = Unicode::ToUTF8(credential);
+         if (utf8.empty())
+            return String();
+
+         return String(Base64::Encode(utf8.data(), (int) utf8.size()));
+      }
+   }
+
    void
    SMTPClientConnection::ProtocolSendUsername_()
    {
-      String sOut;
-      StringParser::Base64Encode(username_, sOut);      
-      EnqueueWrite_(sOut);
-      
+      EnqueueWrite_(EncodeCredential(username_));
+
       SetState_(USERNAMESENT);
    }
 
    void
    SMTPClientConnection::ProtocolSendPassword_()
    {
-      String sOut;
-      StringParser::Base64Encode(password_, sOut);      
-      
+      String sOut = EncodeCredential(password_);
+
       SetState_(PASSWORDSENT);
       EnqueueWrite_(sOut);
    }

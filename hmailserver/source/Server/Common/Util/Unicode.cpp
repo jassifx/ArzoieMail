@@ -23,6 +23,19 @@ namespace HM
    }
 
    AnsiString 
+   Unicode::ToUTF8(const String &sInput)
+   {
+      AnsiString output;
+      if (!WideToMultiByte(sInput, output))
+         return AnsiString();
+
+      while (!output.empty() && output.back() == '\0')
+         output.pop_back();
+
+      return output;
+   }
+
+   AnsiString
    Unicode::ToANSI(const String &sString)
    {
       size_t i;

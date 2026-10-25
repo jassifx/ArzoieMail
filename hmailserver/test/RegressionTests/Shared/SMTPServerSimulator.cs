@@ -73,7 +73,9 @@ namespace RegressionTests.Shared
 
       public string MessageData { get; private set; } = "";
 
-      // The password of the last AUTH LOGIN, decoded. Null until a client has sent one.
+      // The user name and password of the last AUTH LOGIN, decoded as UTF-8. Null until a
+      // client has sent them.
+      public string AuthUsername { get; private set; }
       public string AuthPassword { get; private set; }
 
       // Text sent after the code in RCPT TO replies. When null, the address is echoed.
@@ -264,6 +266,15 @@ namespace RegressionTests.Shared
 
          if (_expectingUsername)
          {
+            try
+            {
+               AuthUsername = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(command.Trim()));
+            }
+            catch (FormatException)
+            {
+               AuthUsername = "";
+            }
+
             _expectingUsername = false;
             Send("334 UGFzc3dvcmQ6\r\n");
             _expectingPassword = true;
