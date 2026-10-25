@@ -89,10 +89,12 @@ namespace HM
       else
          sTemp = sValue;
 
-      SQLStatement statement(SQLStatement::STUpdate, "hm_settings");
-      statement.AddColumn("settingstring", sTemp);
-      statement.SetWhereClause(Formatter::Format("settingname = '{0}'", name_));
+      // The name is bound as well as the value: it is one of the server's own setting names,
+      // but nothing is written into the SQL unescaped.
+      SQLCommand command("update hm_settings set settingstring = @SETTINGSTRING where settingname = @SETTINGNAME");
+      command.AddParameter("@SETTINGSTRING", sTemp);
+      command.AddParameter("@SETTINGNAME", name_);
 
-      return Application::Instance()->GetDBManager()->Execute(statement);
+      return Application::Instance()->GetDBManager()->Execute(command);
    }
 }

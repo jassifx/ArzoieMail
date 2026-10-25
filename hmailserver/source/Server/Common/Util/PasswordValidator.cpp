@@ -50,24 +50,33 @@ namespace HM
       // Apply default domain
       sAccountAddress = DefaultDomain::ApplyDefaultDomain(sAccountAddress);
 
-      std::shared_ptr<const Account> pAccount = CacheContainer::Instance()->GetAccount(sAccountAddress);
-      
-      if (!pAccount)
+      // Refused before a password is checked: the time it takes to verify one is spent all the
+      // same, so that a logon to an account that does not exist, or is not active, fails as
+      // slowly as one with a wrong password, and its timing does not tell which accounts exist.
+      auto refuse = [&sPassword, &pEmpty]()
+      {
+         PasswordHasher::SpendVerificationTime(sPassword);
          return pEmpty;
+      };
+
+      std::shared_ptr<const Account> pAccount = CacheContainer::Instance()->GetAccount(sAccountAddress);
+
+      if (!pAccount)
+         return refuse();
 
       if (!pAccount->GetActive())
-         return pEmpty;
+         return refuse();
 
       // Check that the domain is active as well.
-      
+
       String sDomain = StringParser::ExtractDomain(sAccountAddress);
       std::shared_ptr<const Domain> pDomain = CacheContainer::Instance()->GetDomain(sDomain);
 
       if (!pDomain)
-         return pEmpty;
+         return refuse();
 
       if (!pDomain->GetIsActive())
-         return pEmpty;
+         return refuse();
 
       if (!ValidatePassword(pAccount, sPassword))
          return pEmpty;

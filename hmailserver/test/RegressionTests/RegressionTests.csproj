@@ -128,7 +128,9 @@
     <Compile Include="IMAP\Sort.cs" />
     <Compile Include="POP3\Fetching\Basics.cs" />
     <Compile Include="Shared\Pop3ServerSimulator.cs" />
+    <Compile Include="Security\AdministratorSavedPasswords.cs" />
     <Compile Include="Security\AutoBan.cs" />
+    <Compile Include="Security\LogonTiming.cs" />
     <Compile Include="Security\SMTPAuthentication.cs" />
     <Compile Include="SMTP\Signatures.cs" />
     <Compile Include="SMTP\SRS\Bounces.cs" />

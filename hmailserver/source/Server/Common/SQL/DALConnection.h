@@ -52,7 +52,6 @@ namespace HM
 
 	   virtual bool CheckServerVersion(String &errorMessage) = 0;
 
-      virtual void EscapeString(String &sInput) = 0;
 
       virtual std::shared_ptr<DALRecordset> CreateRecordset() = 0;
       virtual std::shared_ptr<IMacroExpander> CreateMacroExpander() = 0;

@@ -140,12 +140,9 @@ namespace HM
    bool 
    PersistentRuleAction::GetExistsFolderReferenceContainingCharacter(String theChar)
    {
-      theChar = SQLStatement::Escape(theChar);
-
-      String sql;
-      sql.Format(_T("select count(*) as c from hm_rule_actions where actionimapfolder like '%" + theChar + "%'"));
-
-      SQLCommand command(sql);
+      // As in PersistentIMAPFolder::GetExistsFolderContainingCharacter.
+      SQLCommand command(_T("select count(*) as c from hm_rule_actions where actionimapfolder like @PATTERN ESCAPE '/'"));
+      command.AddParameter("@PATTERN", _T("%") + SQLStatement::EscapeLike(theChar) + _T("%"));
 
       std::shared_ptr<DALRecordset> pRS = Application::Instance()->GetDBManager()->OpenRecordset(command);
       if (!pRS)
