@@ -15,6 +15,12 @@ InterfaceBackupSettings::InterfaceBackupSettings() :
 
 }
 
+// So that the messages of the errors it returns reach the caller.
+STDMETHODIMP InterfaceBackupSettings::InterfaceSupportsErrorInfo(REFIID riid)
+{
+   return InlineIsEqualGUID(IID_IInterfaceBackupSettings, riid) ? S_OK : S_FALSE;
+}
+
 bool 
 InterfaceBackupSettings::LoadSettings()
 {

@@ -9,6 +9,12 @@
 
 #include "COMError.h"
 
+// So that the messages of the errors it returns reach the caller.
+STDMETHODIMP InterfaceBackupManager::InterfaceSupportsErrorInfo(REFIID riid)
+{
+   return InlineIsEqualGUID(IID_IInterfaceBackupManager, riid) ? S_OK : S_FALSE;
+}
+
 bool 
 InterfaceBackupManager::LoadSettings()
 {

@@ -825,6 +825,7 @@ insert into hm_settings (settingname, settingstring, settinginteger) values ('ru
 insert into hm_settings (settingname, settingstring, settinginteger) values ('backupoptions', '', 0) 
 
 insert into hm_settings (settingname, settingstring, settinginteger) values ('backupdestination', '', 0) 
+
 insert into hm_settings (settingname, settingstring, settinginteger) values ('backuppassphrase', '', 0) 
 
 insert into hm_settings (settingname, settingstring, settinginteger) values ('defaultdomain', '', 0) 
