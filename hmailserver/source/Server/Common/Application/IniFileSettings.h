@@ -48,8 +48,10 @@ namespace HM
       String GetSecretKey();
       void SetSecretKey(const String &protectedKey);
 
-      // True when the database password in hMailServer.ini is still Blowfish-encrypted.
-      bool GetPasswordIsBlowfishEncrypted() const { return password_is_blowfish_; }
+      // True when the database password in hMailServer.ini is not protected under the
+      // installation's current key - Blowfish-encrypted, unencrypted, or under a key replaced
+      // by an import - while it could be read.
+      bool GetPasswordNeedsProtecting() const;
       String GetLogDirectory();
 
       String GetBinDirectory();
@@ -162,7 +164,8 @@ namespace HM
 
       bool greylisting_enabled_during_record_expiration_;
       bool is_internal_database_;
-      bool password_is_blowfish_;
+      String password_stored_;
+      int password_encryption_;   // a Crypt::EncryptionType
       int greylisting_expiration_interval_;
       
       // Retired: the value is only read so that we can warn about it being ignored.

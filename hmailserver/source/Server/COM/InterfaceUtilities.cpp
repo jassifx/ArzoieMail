@@ -7,6 +7,8 @@
 #include "../Common/TCPIP/HostNameAndIpAddress.h"
 #include "../Common/Util/ServiceManager.h"
 #include "../Common/Util/Crypt.h"
+#include "../Common/Util/SecretProtector.h"
+#include "../Common/Persistence/SecretMigration.h"
 #include "../Common/Util/MailImporter.h"
 #include "../Common/Util/EmailAllUsers.h"
 #include "../Common/Util/GUIDCreator.h"
@@ -432,3 +434,64 @@ STDMETHODIMP InterfaceUtilities::PerformMaintenance(eMaintenanceOperation operat
    }
 }
 
+STDMETHODIMP InterfaceUtilities::ExportSecretKey(BSTR Passphrase, BSTR *Exported)
+{
+   try
+   {
+      if (!authentication_->GetIsServerAdmin())
+         return authentication_->GetAccessDenied();
+
+      HM::String exported;
+      HM::String error;
+      if (!HM::SecretProtector::Instance()->ExportKey(HM::String(Passphrase), exported, error))
+         return COMError::GenerateError(error);
+
+      *Exported = exported.AllocSysString();
+      return S_OK;
+   }
+   catch (...)
+   {
+      return COMError::GenerateGenericMessage();
+   }
+}
+
+STDMETHODIMP InterfaceUtilities::ImportSecretKey(BSTR Exported, BSTR Passphrase)
+{
+   try
+   {
+      if (!authentication_->GetIsServerAdmin())
+         return authentication_->GetAccessDenied();
+
+      HM::String error;
+      if (!HM::SecretProtector::Instance()->ImportKey(HM::String(Exported), HM::String(Passphrase), error))
+         return COMError::GenerateError(error);
+
+      // Everything protected under the key it replaced is protected under the new one now. A
+      // server that is not connected to its database - one whose database password could not
+      // be read without this key - does it when it next starts.
+      if (HM::Application::Instance()->GetDBManager())
+         HM::SecretMigration::Run();
+
+      return S_OK;
+   }
+   catch (...)
+   {
+      return COMError::GenerateGenericMessage();
+   }
+}
+
+STDMETHODIMP InterfaceUtilities::get_SecretKeyId(BSTR *pVal)
+{
+   try
+   {
+      if (!authentication_->GetIsServerAdmin())
+         return authentication_->GetAccessDenied();
+
+      *pVal = HM::String(HM::SecretProtector::Instance()->GetKeyId()).AllocSysString();
+      return S_OK;
+   }
+   catch (...)
+   {
+      return COMError::GenerateGenericMessage();
+   }
+}

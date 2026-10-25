@@ -47,14 +47,36 @@ namespace HM
       // True for a value protected under this installation's key, which needs no migration.
       bool IsProtectedWithCurrentKey(const String &stored);
 
+      // True for a value protected under a key this server held before an import, which
+      // SecretMigration protects again under the current one.
+      bool IsProtectedWithPreviousKey(const String &stored);
+
       // True when the installation has a key it could keep: values are protected with AES.
       bool HasKey();
 
+      // The id of the installation's key, as it appears in its values; empty without a key.
+      // Two servers sharing a database need the same one.
+      AnsiString GetKeyId();
+
+      // The installation's key, encrypted with AES-256-GCM under a key derived from the
+      // passphrase (PBKDF2-HMAC-SHA256), for ImportKey on another computer. The passphrase
+      // must have at least MinimumPassphraseLength characters.
+      bool ExportKey(const String &passphrase, String &exported, String &error);
+
+      // Makes the exported key the installation's own, kept in hMailServer.ini under this
+      // computer's DPAPI. A different key it held before is kept for this run, so that
+      // SecretMigration, which the caller runs next, protects everything under the new key.
+      bool ImportKey(const String &exported, const String &passphrase, String &error);
+
       static bool IsBlowfishValue(const String &stored);
+
+      static const int MinimumPassphraseLength = 12;
 
    private:
 
       bool LoadOrCreateKey_();
+      bool StoreKey_(const std::vector<unsigned char> &key);
+      const std::vector<unsigned char> *KeyById_(const AnsiString &keyId);
       void ReportOnce_(const AnsiString &reason, const String &message);
 
       std::mutex mutex_;
@@ -62,6 +84,9 @@ namespace HM
       bool key_available_;
       std::vector<unsigned char> key_;
       AnsiString key_id_;
+
+      // Keys replaced by an import during this run, by id.
+      std::map<AnsiString, std::vector<unsigned char>> previous_keys_;
 
       std::set<AnsiString> reported_;
    };

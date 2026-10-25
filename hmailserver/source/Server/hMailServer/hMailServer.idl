@@ -1096,6 +1096,9 @@ interface IInterfaceUtilities : IDispatch{
    [id(18), helpstring("Returns true if the given IP-address is parseable")] HRESULT IsValidIPAddress([in] BSTR IPAddress, [out, retval] VARIANT_BOOL *bIsValid);
    [id(19), helpstring("Performs maintenance operations in the database.")] HRESULT PerformMaintenance([in] eMaintenanceOperation operation);
    [id(20), helpstring("Imports a message stored in the public folder on disk into a public IMAP folder. The folder name is given relative to the public folder, such as Share1.Sub1.")] HRESULT ImportMessageFromFileToPublicIMAPFolder([in] BSTR sFilename, [in] BSTR sIMAPFolder, [out, retval] VARIANT_BOOL *bIsSuccessful);
+   [id(21), helpstring("Exports the installation's secret key, encrypted under the passphrase (at least 12 characters), for ImportSecretKey on another computer.")] HRESULT ExportSecretKey([in] BSTR Passphrase, [out, retval] BSTR *Exported);
+   [id(22), helpstring("Makes a key exported by ExportSecretKey the installation's secret key, and protects every secret under it.")] HRESULT ImportSecretKey([in] BSTR Exported, [in] BSTR Passphrase);
+   [id(23), propget, helpstring("The id of the installation's secret key. Servers sharing a database need the same one.")] HRESULT SecretKeyId([out, retval] BSTR *pVal);
 };
 
 [
