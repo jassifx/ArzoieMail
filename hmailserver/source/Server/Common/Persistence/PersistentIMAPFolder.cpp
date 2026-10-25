@@ -227,9 +227,11 @@ namespace HM
    bool 
    PersistentIMAPFolder::GetExistsFolderContainingCharacter(String theChar)
    {
-      theChar = SQLStatement::Escape(theChar);
-
-      SQLCommand command(_T("select count(*) as c from hm_imapfolders where foldername like '%" + theChar + "%'"));
+      // A bound pattern with an explicit escape character, as every database reads it the same
+      // way: MySQL takes a backslash in a pattern as its default escape, so a backslash written
+      // into the SQL never matched itself there.
+      SQLCommand command(_T("select count(*) as c from hm_imapfolders where foldername like @PATTERN ESCAPE '/'"));
+      command.AddParameter("@PATTERN", _T("%") + SQLStatement::EscapeLike(theChar) + _T("%"));
 
       std::shared_ptr<DALRecordset> pRS = Application::Instance()->GetDBManager()->OpenRecordset(command);
       if (!pRS)

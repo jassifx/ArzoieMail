@@ -241,15 +241,12 @@ namespace HM
    bool
    PersistentSecurityRange::Exists(const String &name)
    {
-      String whereClause = "rangename = '" + SQLStatement::Escape(name) + "'";
+      // The name of an auto-ban range carries the user name of the failed logon, so it is
+      // bound like any other value.
+      SQLCommand command(_T("select count(*) as c from hm_securityranges where rangename = @NAME"));
+      command.AddParameter("@NAME", name);
 
-      SQLStatement oStatement;
-      oStatement.SetStatementType(SQLStatement::STSelect);
-      oStatement.SetTable("hm_securityranges");
-      oStatement.AddColumn("count(*) as c");
-      oStatement.SetWhereClause(whereClause);
-
-      std::shared_ptr<DALRecordset> pRS = Application::Instance()->GetDBManager()->OpenRecordset(oStatement);
+      std::shared_ptr<DALRecordset> pRS = Application::Instance()->GetDBManager()->OpenRecordset(command);
       if (!pRS)
          return false;
 

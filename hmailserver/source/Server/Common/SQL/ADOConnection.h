@@ -36,7 +36,6 @@ namespace HM
       static DALConnection::ExecutionResult GetErrorType(int iErrorCode);
       virtual bool CheckServerVersion(String &errorMessage);
       virtual std::shared_ptr<DALRecordset> CreateRecordset();
-      virtual void EscapeString(String &sInput);
       virtual std::shared_ptr<IMacroExpander> CreateMacroExpander();
 
       void InitializeCommandParameters(_CommandPtr &adoCommand, const SQLCommand &sqlCommand, String &queryString) const;
