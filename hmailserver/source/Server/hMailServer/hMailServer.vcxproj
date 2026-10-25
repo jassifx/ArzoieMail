@@ -219,6 +219,7 @@ EXIT 0
     <ClCompile Include="..\Common\Application\Backup.cpp" />
     <ClCompile Include="..\Common\Application\BackupExecuter.cpp" />
     <ClCompile Include="..\Common\Application\BackupManager.cpp" />
+    <ClCompile Include="..\Common\Application\BackupSecrets.cpp" />
     <ClCompile Include="..\Common\Application\BackupTask.cpp" />
     <ClCompile Include="..\Common\Application\Configuration.cpp" />
     <ClCompile Include="..\Common\Application\DefaultDomain.cpp" />
@@ -749,6 +750,7 @@ EXIT 0
     <ClInclude Include="..\Common\Application\Backup.h" />
     <ClInclude Include="..\Common\Application\BackupExecuter.h" />
     <ClInclude Include="..\Common\Application\BackupManager.h" />
+    <ClInclude Include="..\Common\Application\BackupSecrets.h" />
     <ClInclude Include="..\Common\Application\BackupTask.h" />
     <ClInclude Include="..\Common\Application\Configuration.h" />
     <ClInclude Include="..\Common\Application\Constants.h" />

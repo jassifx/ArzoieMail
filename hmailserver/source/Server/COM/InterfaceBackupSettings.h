@@ -57,6 +57,8 @@ public:
    STDMETHOD(get_BackupMessages)(/*[out, retval]*/ VARIANT_BOOL *pVal);
    STDMETHOD(put_BackupMessages)(/*[in]*/ VARIANT_BOOL newVal);
    STDMETHOD(get_CompressDestinationFiles)(/*[out, retval]*/ VARIANT_BOOL *pVal);
+   STDMETHOD(put_Passphrase)(/*[in]*/ BSTR newVal);
+   STDMETHOD(get_PassphraseIsSet)(/*[out, retval]*/ VARIANT_BOOL *pVal);
    STDMETHOD(put_CompressDestinationFiles)(/*[in]*/ VARIANT_BOOL newVal);
 
 private:

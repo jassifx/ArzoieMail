@@ -18,6 +18,10 @@ namespace HM
       // specified in the configuration.
 
       std::shared_ptr<Backup> LoadBackup(const String &sZipFile) const;
+
+      // A backup encrypted under the passphrase. Its backup file is empty when it could not be
+      // read: a wrong passphrase, or no backup at all.
+      std::shared_ptr<Backup> LoadBackup(const String &sZipFile, const String &passphrase) const;
       // Loads a backup from an XML stream and returns
       // an backup object that contains backup information.
 

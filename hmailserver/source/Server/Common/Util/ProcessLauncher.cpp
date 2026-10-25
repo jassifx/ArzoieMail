@@ -15,6 +15,7 @@ namespace HM
 {
    ProcessLauncher::ProcessLauncher(const String &commandLine, const String &workingDirectory) :
       command_line_(commandLine),
+      logged_command_line_(commandLine),
       working_directory_(workingDirectory),
       error_log_timeout_(0)
    {
@@ -22,6 +23,7 @@ namespace HM
 
    ProcessLauncher::ProcessLauncher(const String &commandLine) :
       command_line_(commandLine),
+      logged_command_line_(commandLine),
       error_log_timeout_(0)
    {
       working_directory_ = IniFileSettings::Instance()->GetTempDirectory();
@@ -29,6 +31,12 @@ namespace HM
 
    ProcessLauncher::~ProcessLauncher(void)
    {
+   }
+
+   void
+   ProcessLauncher::SetLoggedCommandLine(const String &commandLine)
+   {
+      logged_command_line_ = commandLine;
    }
 
    void
@@ -68,7 +76,7 @@ namespace HM
          &pi )                      // Pointer to PROCESS_INFORMATION structure.
          ) 
       {
-         String errorMessage = Formatter::Format("There was an error launching external process {0}. Process start failed. Windows error code: {1}", command_line_, (int) GetLastError());
+         String errorMessage = Formatter::Format("There was an error launching external process {0}. Process start failed. Windows error code: {1}", logged_command_line_, (int) GetLastError());
          ErrorManager::Instance()->ReportError(ErrorManager::Medium, 5401, "ProcessLauncher::Launch", errorMessage); 
          
          return false;
@@ -91,7 +99,7 @@ namespace HM
             break;
          case WAIT_TIMEOUT:
             {
-               String errorMessage = Formatter::Format("A launched process did not exit within an expected time. The command line is {0}. The timeout occurred after {1} milliseconds. hMailServer will continue to wait for process to finish.", command_line_, error_log_timeout_);
+               String errorMessage = Formatter::Format("A launched process did not exit within an expected time. The command line is {0}. The timeout occurred after {1} milliseconds. hMailServer will continue to wait for process to finish.", logged_command_line_, error_log_timeout_);
                ErrorManager::Instance()->ReportError(ErrorManager::Medium, 5400, "ProcessLauncher::Launch", errorMessage); 
                break;
             }
@@ -127,7 +135,7 @@ namespace HM
       ULONG rc;
       if (!GetExitCodeProcess(pi.hProcess, &rc))
       {
-         String errorMessage = Formatter::Format("There was an error determining the exit code of {0}. Windows error: {1}", command_line_, (int) GetLastError());
+         String errorMessage = Formatter::Format("There was an error determining the exit code of {0}. Windows error: {1}", logged_command_line_, (int) GetLastError());
          ErrorManager::Instance()->ReportError(ErrorManager::Medium, 5400, "ProcessLauncher::Launch", errorMessage); 
 
          rc = 0;

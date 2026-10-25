@@ -45,6 +45,7 @@ END_COM_MAP()
 public:
    STDMETHOD(StartBackup)();
    STDMETHOD(LoadBackup)(/*[in]*/ BSTR sXMLFile, /*[out, retval]*/ IInterfaceBackup **pVal);
+   STDMETHOD(LoadEncryptedBackup)(/*[in]*/ BSTR sFile, /*[in]*/ BSTR sPassphrase, /*[out, retval]*/ IInterfaceBackup **pVal);
 
 private:
    std::shared_ptr<HM::BackupManager> backup_manager_;

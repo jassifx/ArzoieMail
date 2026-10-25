@@ -58,6 +58,7 @@
 
 #define PROPERTY_BACKUPOPTIONS                  _T("backupoptions")
 #define PROPERTY_BACKUPDESTINATION              _T("backupdestination")
+#define PROPERTY_BACKUP_PASSPHRASE              _T("backuppassphrase")
 
 #define PROPERTY_DEFAULTDOMAIN                  _T("defaultdomain")
 #define PROPERTY_AV_MAXMSGSIZE                  _T("avmaxmsgsize")
@@ -153,4 +154,4 @@
 #define PROPERTY_SRS_MAXAGEDAYS                 _T("SRSMaxAgeDays")
 #define PROPERTY_SRS_HASHLENGTH                 _T("SRSHashLength")
 
-#define REQUIRED_DB_VERSION            5713
+#define REQUIRED_DB_VERSION            5714

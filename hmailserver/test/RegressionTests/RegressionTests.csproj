@@ -108,6 +108,7 @@
       <DependentUpon>TestResources.resx</DependentUpon>
     </Compile>
     <Compile Include="API\Unicode.cs" />
+    <Compile Include="Infrastructure\BackupPassphrase.cs" />
     <Compile Include="Infrastructure\BackupRestore.cs" />
     <Compile Include="Shared\TcpServer.cs" />
     <Compile Include="API\Message.cs" />

@@ -5,6 +5,7 @@
 
 #include "BackupExecuter.h"
 #include "Backup.h"
+#include "BackupSecrets.h"
 
 #include "../Util/Utilities.h"
 #include "../Util/Time.h"
@@ -51,6 +52,22 @@ namespace HM
          destination_ = destination_.Left(destination_.GetLength() - 1);
 
       backup_mode_ = Configuration::Instance()->GetBackupOptions();
+      passphrase_ = Configuration::Instance()->GetBackupPassphrase();
+
+      // An encrypted backup keeps the messages in the archive, under the passphrase, rather
+      // than as plain files beside it.
+      if (!passphrase_.IsEmpty())
+         backup_mode_ |= Backup::BOCompression;
+   }
+
+   namespace
+   {
+      // Sets how the secrets of the backup or restore are written or read, for as long as it runs.
+      struct BackupSecretsScope
+      {
+         explicit BackupSecretsScope(BackupSecrets::Mode mode) { BackupSecrets::SetMode(mode); }
+         ~BackupSecretsScope() { BackupSecrets::SetMode(BackupSecrets::ProtectedByInstallationKey); }
+      };
    }
 
    bool 
@@ -104,6 +121,11 @@ namespace HM
       // Store backup mode
       pBackupInfoNode->AppendAttr(_T("Mode"), StringParser::IntToString(backup_mode_));
       pBackupInfoNode->AppendAttr(_T("Version"), Application::Instance()->GetVersionNumber());
+
+      // How the secrets in it are held, which the restore needs to know.
+      BackupSecrets::Mode secretsMode = passphrase_.IsEmpty() ? BackupSecrets::ProtectedByInstallationKey : BackupSecrets::ProtectedByArchive;
+      BackupSecretsScope secretsScope(secretsMode);
+      pBackupInfoNode->AppendAttr(_T("Secrets"), BackupSecrets::ModeName(secretsMode));
 
       // Backup business objects
       if (backup_mode_ & Backup::BODomains)
@@ -163,7 +185,7 @@ namespace HM
       }
 
       // Compress the XML file
-      Compression oComp;
+      Compression oComp(passphrase_);
       oComp.AddFile(sZipFile, sXMLFile);
 
       // Delete the XML file
@@ -236,10 +258,10 @@ namespace HM
       String sXMLFile = sTempDir + "\\hMailServerBackup.xml";
       FileUtilities::DeleteFile(sXMLFile);
 
-      Compression oComp;
+      Compression oComp(pBackup->GetPassphrase());
       if (!oComp.Uncompress(sZipFile, sTempDir, "hMailServerBackup.xml"))
       {
-         String sErrorMessage = Formatter::Format("Unable to uncompress hMailServerBackup.xml from {0} to {1}. Please confirm that hMailServer has permissions to {0} and {1}.", sZipFile, sTempDir);
+         String sErrorMessage = Formatter::Format("Unable to uncompress hMailServerBackup.xml from {0} to {1}. If the backup is encrypted, check the passphrase. Otherwise, please confirm that hMailServer has permissions to {0} and {1}.", sZipFile, sTempDir);
          errorMessage = sErrorMessage;
          return false;
       }
@@ -267,6 +289,10 @@ namespace HM
       }
 
       int iRestoreOptions = pBackup->GetRestoreOptions();
+
+      // How the backup holds its secrets: one made by an earlier version says nothing.
+      XNode *pBackupInfo = pBackupNode->GetChild(_T("BackupInformation"));
+      BackupSecretsScope secretsScope(BackupSecrets::ModeFromName(pBackupInfo ? String(pBackupInfo->GetAttrValue(_T("Secrets"))) : String()));
 
     
       if (iRestoreOptions & Backup::BODomains)
@@ -351,7 +377,7 @@ namespace HM
          sExtractedFilesDirectory = Utilities::GetUniqueTempDirectory();
 
          // Extract the files to this directory.
-         Compression oComp;
+         Compression oComp(pBackup->GetPassphrase());
          oComp.Uncompress(sBackupFile, sExtractedFilesDirectory);
 
          // The data files in the zip file are stored in

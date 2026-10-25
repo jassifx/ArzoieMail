@@ -26,12 +26,59 @@ namespace HM
 
    }
 
+   Compression::Compression(const String &passphrase) :
+      passphrase_(passphrase)
+   {
+
+   }
+
+   String
+   Compression::GetPassphraseParameter_(bool writing) const
+   {
+      // Quoted as the C runtime reads a command line: a backslash only escapes when it is
+      // followed by a quote, so backslashes before a quote - and before the closing one - are
+      // doubled, and a quote is escaped. Any passphrase reaches 7za as it was given.
+      //
+      // Without a passphrase, reading still passes one: 7za would otherwise stop and ask for
+      // it on an encrypted archive, and nobody would answer. A wrong one fails the command.
+      String passphrase = passphrase_.IsEmpty() && !writing ? String(_T("no passphrase")) : passphrase_;
+      if (passphrase.IsEmpty())
+         return _T("");
+
+      String quoted = _T("\"-p");
+      int backslashes = 0;
+      for (int i = 0; i < passphrase.GetLength(); i++)
+      {
+         wchar_t c = passphrase.GetAt(i);
+         if (c == '\\')
+         {
+            backslashes++;
+            continue;
+         }
+
+         if (c == '"')
+            quoted += String(backslashes * 2 + 1, '\\') + _T("\"");
+         else
+            quoted += String(backslashes, '\\') + String(1, c);
+
+         backslashes = 0;
+      }
+
+      quoted += String(backslashes * 2, '\\') + _T("\"");
+
+      // -mhe: the file names are encrypted as well, so that nothing of the backup shows.
+      if (writing)
+         quoted += _T(" -mhe=on");
+
+      return quoted;
+   }
+
    bool
    Compression::AddDirectory(const String &zipFile, const String &directoryToAdd)
    {
       // -r = recurse -t = type 7z -mmt = number of threads -mx1 = lowest compression
       String commandLine = Formatter::Format("\"{0}\" a \"{1}\" \"{2}\" -r -t7z {3} -mx1  -w\"{4}\"",
-         GetExecutableFullPath_(), zipFile, directoryToAdd, GetMultithreadingParameter_(), IniFileSettings::Instance()->GetTempDirectory());
+         GetExecutableFullPath_(), zipFile, directoryToAdd, GetMultithreadingParameter_(), IniFileSettings::Instance()->GetTempDirectory()) + _T(" ") + GetPassphraseParameter_(true);
 
       return LaunchCommand_(commandLine);
    }
@@ -41,7 +88,7 @@ namespace HM
    {
       // -t = type 7z -mmt = number of threads -mx1 = lowest compression
       String commandLine = Formatter::Format("\"{0}\" a \"{1}\" \"{2}\" -t7z {3} -mx1 -w\"{4}\"",
-         GetExecutableFullPath_(), zipFile, fileToAdd, GetMultithreadingParameter_(), IniFileSettings::Instance()->GetTempDirectory());
+         GetExecutableFullPath_(), zipFile, fileToAdd, GetMultithreadingParameter_(), IniFileSettings::Instance()->GetTempDirectory()) + _T(" ") + GetPassphraseParameter_(true);
 
       return LaunchCommand_(commandLine);
    }
@@ -57,7 +104,7 @@ namespace HM
    {
       // -o = output directory -mmt = number of threads -y = assume yes on all queries
       String commandLine = Formatter::Format("\"{0}\" x \"{1}\" \"{2}\" -o\"{3}\" {4} -y", 
-         GetExecutableFullPath_(), zipFile, wildCard, targetDirectory, GetMultithreadingParameter_());
+         GetExecutableFullPath_(), zipFile, wildCard, targetDirectory, GetMultithreadingParameter_()) + _T(" ") + GetPassphraseParameter_(false);
 
       return LaunchCommand_(commandLine);
    }
@@ -67,6 +114,7 @@ namespace HM
    {
       unsigned int exitCode = 0;
       ProcessLauncher processLauncher(commandLine);
+      processLauncher.SetLoggedCommandLine(MaskPassphrase_(commandLine));
 
       if (!processLauncher.Launch(exitCode))
          return false;
@@ -75,6 +123,20 @@ namespace HM
          return false;
 
       return true;
+   }
+
+   String
+   Compression::MaskPassphrase_(const String &commandLine) const
+   {
+      // What the error log may show of a command line: the passphrase, if there is one, as ***.
+      String passphraseParameter = GetPassphraseParameter_(true);
+      if (passphrase_.IsEmpty() || passphraseParameter.IsEmpty())
+         return commandLine;
+
+      String masked = commandLine;
+      masked.Replace(passphraseParameter, _T("\"-p***\" -mhe=on"));
+      masked.Replace(GetPassphraseParameter_(false), _T("\"-p***\""));
+      return masked;
    }
 
    String

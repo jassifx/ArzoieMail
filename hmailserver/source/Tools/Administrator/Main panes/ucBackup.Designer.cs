@@ -34,6 +34,14 @@ namespace hMailServer.Administrator
          this.buttonShowLog = new System.Windows.Forms.Button();
          this.buttonStartBackup = new System.Windows.Forms.Button();
          this.checkCompressFiles = new hMailServer.Administrator.Controls.ucCheckbox();
+         this.checkEncrypt = new hMailServer.Administrator.Controls.ucCheckbox();
+         this.labelPassphrase = new System.Windows.Forms.Label();
+         this.textPassphrase = new hMailServer.Shared.ucText();
+         this.labelPassphraseConfirm = new System.Windows.Forms.Label();
+         this.textPassphraseConfirm = new hMailServer.Shared.ucText();
+         this.labelRestorePassphrase = new System.Windows.Forms.Label();
+         this.textRestorePassphrase = new hMailServer.Shared.ucText();
+         this.buttonOpenBackup = new System.Windows.Forms.Button();
          this.checkBackupMessages = new hMailServer.Administrator.Controls.ucCheckbox();
          this.checkBackupDomains = new hMailServer.Administrator.Controls.ucCheckbox();
          this.labelBackup = new System.Windows.Forms.Label();
@@ -77,6 +85,11 @@ namespace hMailServer.Administrator
          this.tabPage1.Controls.Add(this.buttonShowLog);
          this.tabPage1.Controls.Add(this.buttonStartBackup);
          this.tabPage1.Controls.Add(this.checkCompressFiles);
+         this.tabPage1.Controls.Add(this.checkEncrypt);
+         this.tabPage1.Controls.Add(this.labelPassphrase);
+         this.tabPage1.Controls.Add(this.textPassphrase);
+         this.tabPage1.Controls.Add(this.labelPassphraseConfirm);
+         this.tabPage1.Controls.Add(this.textPassphraseConfirm);
          this.tabPage1.Controls.Add(this.checkBackupMessages);
          this.tabPage1.Controls.Add(this.checkBackupDomains);
          this.tabPage1.Controls.Add(this.labelBackup);
@@ -94,7 +107,7 @@ namespace hMailServer.Administrator
          // 
          // labelAutomate
          // 
-         this.labelAutomate.Location = new System.Drawing.Point(8, 201);
+         this.labelAutomate.Location = new System.Drawing.Point(8, 268);
          this.labelAutomate.Name = "labelAutomate";
          this.labelAutomate.Size = new System.Drawing.Size(440, 28);
          this.labelAutomate.TabIndex = 30;
@@ -103,7 +116,7 @@ namespace hMailServer.Administrator
          // 
          // buttonShowLog
          // 
-         this.buttonShowLog.Location = new System.Drawing.Point(123, 243);
+         this.buttonShowLog.Location = new System.Drawing.Point(123, 310);
          this.buttonShowLog.Name = "buttonShowLog";
          this.buttonShowLog.Size = new System.Drawing.Size(100, 25);
          this.buttonShowLog.TabIndex = 28;
@@ -113,7 +126,7 @@ namespace hMailServer.Administrator
          // 
          // buttonStartBackup
          // 
-         this.buttonStartBackup.Location = new System.Drawing.Point(11, 243);
+         this.buttonStartBackup.Location = new System.Drawing.Point(11, 310);
          this.buttonStartBackup.Name = "buttonStartBackup";
          this.buttonStartBackup.Size = new System.Drawing.Size(100, 25);
          this.buttonStartBackup.TabIndex = 27;
@@ -130,7 +143,90 @@ namespace hMailServer.Administrator
          this.checkCompressFiles.TabIndex = 26;
          this.checkCompressFiles.Text = "Compress files";
          this.checkCompressFiles.UseVisualStyleBackColor = true;
-         // 
+         //
+         // checkEncrypt
+         //
+         this.checkEncrypt.AutoSize = true;
+         this.checkEncrypt.Location = new System.Drawing.Point(25, 182);
+         this.checkEncrypt.Name = "checkEncrypt";
+         this.checkEncrypt.Size = new System.Drawing.Size(150, 17);
+         this.checkEncrypt.TabIndex = 31;
+         this.checkEncrypt.Text = "Encrypt with a passphrase";
+         this.checkEncrypt.UseVisualStyleBackColor = true;
+         this.checkEncrypt.CheckedChanged += new System.EventHandler(this.checkEncrypt_CheckedChanged);
+         //
+         // labelPassphrase
+         //
+         this.labelPassphrase.AutoSize = true;
+         this.labelPassphrase.Location = new System.Drawing.Point(43, 205);
+         this.labelPassphrase.Name = "labelPassphrase";
+         this.labelPassphrase.Size = new System.Drawing.Size(62, 13);
+         this.labelPassphrase.TabIndex = 32;
+         this.labelPassphrase.Text = "Passphrase";
+         //
+         // textPassphrase
+         //
+         this.textPassphrase.Enabled = false;
+         this.textPassphrase.Location = new System.Drawing.Point(46, 221);
+         this.textPassphrase.Name = "textPassphrase";
+         this.textPassphrase.Number = 0;
+         this.textPassphrase.Number64 = ((long)(0));
+         this.textPassphrase.Numeric = false;
+         this.textPassphrase.PasswordChar = '*';
+         this.textPassphrase.Size = new System.Drawing.Size(190, 20);
+         this.textPassphrase.TabIndex = 33;
+         //
+         // labelPassphraseConfirm
+         //
+         this.labelPassphraseConfirm.AutoSize = true;
+         this.labelPassphraseConfirm.Location = new System.Drawing.Point(243, 205);
+         this.labelPassphraseConfirm.Name = "labelPassphraseConfirm";
+         this.labelPassphraseConfirm.Size = new System.Drawing.Size(42, 13);
+         this.labelPassphraseConfirm.TabIndex = 34;
+         this.labelPassphraseConfirm.Text = "Confirm";
+         //
+         // textPassphraseConfirm
+         //
+         this.textPassphraseConfirm.Enabled = false;
+         this.textPassphraseConfirm.Location = new System.Drawing.Point(246, 221);
+         this.textPassphraseConfirm.Name = "textPassphraseConfirm";
+         this.textPassphraseConfirm.Number = 0;
+         this.textPassphraseConfirm.Number64 = ((long)(0));
+         this.textPassphraseConfirm.Numeric = false;
+         this.textPassphraseConfirm.PasswordChar = '*';
+         this.textPassphraseConfirm.Size = new System.Drawing.Size(190, 20);
+         this.textPassphraseConfirm.TabIndex = 35;
+         //
+         // labelRestorePassphrase
+         //
+         this.labelRestorePassphrase.AutoSize = true;
+         this.labelRestorePassphrase.Location = new System.Drawing.Point(6, 52);
+         this.labelRestorePassphrase.Name = "labelRestorePassphrase";
+         this.labelRestorePassphrase.Size = new System.Drawing.Size(200, 13);
+         this.labelRestorePassphrase.TabIndex = 34;
+         this.labelRestorePassphrase.Text = "Passphrase (for an encrypted backup)";
+         //
+         // textRestorePassphrase
+         //
+         this.textRestorePassphrase.Location = new System.Drawing.Point(8, 69);
+         this.textRestorePassphrase.Name = "textRestorePassphrase";
+         this.textRestorePassphrase.Number = 0;
+         this.textRestorePassphrase.Number64 = ((long)(0));
+         this.textRestorePassphrase.Numeric = false;
+         this.textRestorePassphrase.PasswordChar = '*';
+         this.textRestorePassphrase.Size = new System.Drawing.Size(282, 20);
+         this.textRestorePassphrase.TabIndex = 35;
+         //
+         // buttonOpenBackup
+         //
+         this.buttonOpenBackup.Location = new System.Drawing.Point(296, 67);
+         this.buttonOpenBackup.Name = "buttonOpenBackup";
+         this.buttonOpenBackup.Size = new System.Drawing.Size(75, 23);
+         this.buttonOpenBackup.TabIndex = 36;
+         this.buttonOpenBackup.Text = "Open";
+         this.buttonOpenBackup.UseVisualStyleBackColor = true;
+         this.buttonOpenBackup.Click += new System.EventHandler(this.buttonOpenBackup_Click);
+         //
          // checkBackupMessages
          // 
          this.checkBackupMessages.AutoSize = true;
@@ -210,6 +306,9 @@ namespace hMailServer.Administrator
          this.tabPage2.Controls.Add(this.checkRestoreDomains);
          this.tabPage2.Controls.Add(this.checkRestoreSettings);
          this.tabPage2.Controls.Add(this.textRestoreFile);
+         this.tabPage2.Controls.Add(this.labelRestorePassphrase);
+         this.tabPage2.Controls.Add(this.textRestorePassphrase);
+         this.tabPage2.Controls.Add(this.buttonOpenBackup);
          this.tabPage2.Location = new System.Drawing.Point(4, 22);
          this.tabPage2.Name = "tabPage2";
          this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
@@ -220,7 +319,7 @@ namespace hMailServer.Administrator
          // 
          // buttonShowLog2
          // 
-         this.buttonShowLog2.Location = new System.Drawing.Point(120, 232);
+         this.buttonShowLog2.Location = new System.Drawing.Point(120, 277);
          this.buttonShowLog2.Name = "buttonShowLog2";
          this.buttonShowLog2.Size = new System.Drawing.Size(100, 25);
          this.buttonShowLog2.TabIndex = 33;
@@ -231,7 +330,7 @@ namespace hMailServer.Administrator
          // buttonStartRestore
          // 
          this.buttonStartRestore.Enabled = false;
-         this.buttonStartRestore.Location = new System.Drawing.Point(8, 232);
+         this.buttonStartRestore.Location = new System.Drawing.Point(8, 277);
          this.buttonStartRestore.Name = "buttonStartRestore";
          this.buttonStartRestore.Size = new System.Drawing.Size(100, 25);
          this.buttonStartRestore.TabIndex = 32;
@@ -242,7 +341,7 @@ namespace hMailServer.Administrator
          // labelRestore
          // 
          this.labelRestore.AutoSize = true;
-         this.labelRestore.Location = new System.Drawing.Point(8, 57);
+         this.labelRestore.Location = new System.Drawing.Point(8, 102);
          this.labelRestore.Name = "labelRestore";
          this.labelRestore.Size = new System.Drawing.Size(44, 13);
          this.labelRestore.TabIndex = 26;
@@ -271,7 +370,7 @@ namespace hMailServer.Administrator
          // 
          this.checkRestoreMessages.AutoSize = true;
          this.checkRestoreMessages.Enabled = false;
-         this.checkRestoreMessages.Location = new System.Drawing.Point(51, 130);
+         this.checkRestoreMessages.Location = new System.Drawing.Point(51, 175);
          this.checkRestoreMessages.Name = "checkRestoreMessages";
          this.checkRestoreMessages.Size = new System.Drawing.Size(74, 17);
          this.checkRestoreMessages.TabIndex = 29;
@@ -282,7 +381,7 @@ namespace hMailServer.Administrator
          // 
          this.checkRestoreDomains.AutoSize = true;
          this.checkRestoreDomains.Enabled = false;
-         this.checkRestoreDomains.Location = new System.Drawing.Point(30, 107);
+         this.checkRestoreDomains.Location = new System.Drawing.Point(30, 152);
          this.checkRestoreDomains.Name = "checkRestoreDomains";
          this.checkRestoreDomains.Size = new System.Drawing.Size(67, 17);
          this.checkRestoreDomains.TabIndex = 28;
@@ -293,7 +392,7 @@ namespace hMailServer.Administrator
          // 
          this.checkRestoreSettings.AutoSize = true;
          this.checkRestoreSettings.Enabled = false;
-         this.checkRestoreSettings.Location = new System.Drawing.Point(30, 84);
+         this.checkRestoreSettings.Location = new System.Drawing.Point(30, 129);
          this.checkRestoreSettings.Name = "checkRestoreSettings";
          this.checkRestoreSettings.Size = new System.Drawing.Size(64, 17);
          this.checkRestoreSettings.TabIndex = 27;
@@ -358,5 +457,13 @@ namespace hMailServer.Administrator
        private System.Windows.Forms.Button buttonStartRestore;
        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
        private System.Windows.Forms.Label labelAutomate;
+       private hMailServer.Administrator.Controls.ucCheckbox checkEncrypt;
+       private System.Windows.Forms.Label labelPassphrase;
+       private hMailServer.Shared.ucText textPassphrase;
+       private System.Windows.Forms.Label labelPassphraseConfirm;
+       private hMailServer.Shared.ucText textPassphraseConfirm;
+       private System.Windows.Forms.Label labelRestorePassphrase;
+       private hMailServer.Shared.ucText textRestorePassphrase;
+       private System.Windows.Forms.Button buttonOpenBackup;
     }
 }
