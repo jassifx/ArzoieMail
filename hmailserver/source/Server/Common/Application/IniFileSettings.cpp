@@ -7,6 +7,7 @@
 #include <shlobj.h>
 
 #include "../Util/Crypt.h"
+#include "../Util/SecretProtector.h"
 #include "../Util/FileUtilities.h"
 #include "../Util/Hashing/PasswordHasher.h"
 #include "../Util/Utilities.h"
@@ -22,6 +23,7 @@ namespace HM
   
    IniFileSettings::IniFileSettings() :
       is_internal_database_(false),
+      password_is_blowfish_(false),
       dbport_(0),
       no_of_dbconnections_(0),
       add_xauth_user_header_(false),
@@ -98,7 +100,9 @@ namespace HM
       
       Crypt::EncryptionType iPWDEncryptionType = (Crypt::EncryptionType) ReadIniSettingInteger_("Database", "Passwordencryption", 0);
 
-      // Decrypt password read from hmailserver.ini
+      // Decrypt password read from hmailserver.ini. Earlier versions Blowfish-encrypted it;
+      // SecretMigration protects it again once the server has connected.
+      password_is_blowfish_ = iPWDEncryptionType == Crypt::ETBlowFish && !password_.IsEmpty();
       password_ = Crypt::Instance()->DeCrypt(password_, iPWDEncryptionType);
 
       if (sDatabaseType.CompareNoCase(_T("MSSQL")) == 0)
@@ -243,9 +247,20 @@ namespace HM
    String 
    IniFileSettings::ReadIniSettingString_(const String &sSection, const String &sKey, const String &sDefault)
    {
-      TCHAR Value[255];
-      GetPrivateProfileString( sSection, sKey, sDefault, Value, 255, GetInitializationFile() );
-      return Value;
+      // GetPrivateProfileString cuts a value off at the buffer's size and returns size - 1 when
+      // it did. The secret key and a protected password are longer than the 255 characters this
+      // once allowed, so the buffer grows until the value fits.
+      std::vector<TCHAR> value(256);
+
+      for (;;)
+      {
+         DWORD length = GetPrivateProfileString(sSection, sKey, sDefault, value.data(), (DWORD) value.size(), GetInitializationFile());
+
+         if (length < value.size() - 1 || value.size() >= 65536)
+            return String(value.data());
+
+         value.resize(value.size() * 2);
+      }
    }
 
    int 
@@ -517,8 +532,24 @@ namespace HM
    {
       password_ = sNewVal;
 
-      WriteIniSetting_("Database", "Password", Crypt::Instance()->EnCrypt(password_, Crypt::ETBlowFish));
-      WriteIniSetting_("Database", "PasswordEncryption", Crypt::ETBlowFish);
+      // ETSecret: protected under the installation's key, or Blowfish-encrypted when it has none
+      // (see SecretProtector), which DeCrypt tells apart by the value itself.
+      String stored = Crypt::Instance()->EnCrypt(password_, Crypt::ETSecret);
+      WriteIniSetting_("Database", "Password", stored);
+      WriteIniSetting_("Database", "PasswordEncryption", Crypt::ETSecret);
+      password_is_blowfish_ = SecretProtector::IsBlowfishValue(stored);
+   }
+
+   String
+   IniFileSettings::GetSecretKey()
+   {
+      return ReadIniSettingString_("Security", "SecretKey", "");
+   }
+
+   void
+   IniFileSettings::SetSecretKey(const String &protectedKey)
+   {
+      WriteIniSetting_("Security", "SecretKey", protectedKey);
    }
 
    void 

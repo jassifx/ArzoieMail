@@ -388,6 +388,8 @@ EXIT 0
     <ClCompile Include="..\Common\Sql\MySQLConnection.cpp" />
     <ClCompile Include="..\Common\SQL\MySQLInterface.cpp" />
     <ClCompile Include="..\Common\Sql\MySQLRecordset.cpp" />
+    <ClCompile Include="..\Common\Persistence\SecretMigration.cpp" />
+    <ClCompile Include="..\Common\Util\SecretProtector.cpp" />
     <ClCompile Include="..\Common\SQL\MySQLStatement.cpp">
       <!-- MariaDB Connector/C's headers, for MYSQL_BIND and MYSQL_FIELD. Only this file includes
            them, so that none of their names reach the rest of the server; nothing links against
@@ -928,6 +930,8 @@ EXIT 0
     <ClInclude Include="..\Common\SQL\MySQLInterface.h" />
     <ClInclude Include="..\Common\Sql\MySQLRecordset.h" />
     <ClInclude Include="..\Common\SQL\MySQLStatement.h" />
+    <ClInclude Include="..\Common\Persistence\SecretMigration.h" />
+    <ClInclude Include="..\Common\Util\SecretProtector.h" />
     <ClInclude Include="..\Common\SQL\PGConnection.h" />
     <ClInclude Include="..\Common\SQL\PGRecordset.h" />
     <ClInclude Include="..\Common\SQL\Prerequisites\IPrerequisite.h" />

@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "Crypt.h"
 #include "BlowFish.h"
+#include "SecretProtector.h"
 #include "Hashing/HashCreator.h"
 #include "Hashing/PasswordHasher.h"
 
@@ -38,6 +39,8 @@ namespace HM
 
             return blow_fish_->EncryptToString(sInput);
          }
+      case ETSecret:
+         return SecretProtector::Instance()->Protect(sInput);
       case ETMD5:
          {
             HashCreator crypter(HashCreator::MD5);
@@ -123,6 +126,8 @@ namespace HM
                return blow_fish_->DecryptFromString(sInput);
             }
             break;
+         case ETSecret:
+            return SecretProtector::Instance()->Unprotect(sInput);
          default:
             assert(0);
       }

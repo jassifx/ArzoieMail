@@ -36,6 +36,8 @@
 #include "../Util/Encoding/ModifiedUTF7.h"
 #include "../Util/Hashing/HashCreator.h"
 #include "../Util/Hashing/PasswordHasher.h"
+#include "SecretProtector.h"
+#include "../Persistence/SecretMigration.h"
 #include "../SQL/SQLCommand.h"
 #include "../SQL/SQLStatement.h"
 #include "../Util/EventTester.h"
@@ -178,6 +180,12 @@ namespace HM
       tester.Test();
 
       OutputDebugString(_T("hMailServer: Testing PasswordHasher\n"));
+      SecretProtectorTester secretProtectorTester;
+      secretProtectorTester.Test();
+
+      SecretMigrationTester secretMigrationTester;
+      secretMigrationTester.Test();
+
       PasswordHasherTester passwordHasherTester;
       passwordHasherTester.Test();
 

@@ -19,11 +19,18 @@ namespace HM
          ETBlowFish = 1,
          ETMD5 = 2,
          ETSHA256 = 3,
-         ETPHC = 4
+         ETPHC = 4,
+         ETSecret = 5
       };
       // ETPHC means "the stored string describes itself" - see PasswordHasher.
       // Adding another key derivation function later does not require a new
       // value here, nor a database migration.
+      //
+      // ETSecret is a secret the server reads back, protected under the installation's key
+      // (see SecretProtector). Decrypting it also reads a Blowfish value, which every such
+      // secret was before. ETBlowFish itself is left for what still has to be Blowfish: the
+      // BlowfishEncrypt and BlowfishDecrypt of the COM API, and account passwords that very
+      // old versions stored Blowfish-encrypted, which PasswordValidator still accepts.
 
       EncryptionType GetHashType(const String &hash);
 

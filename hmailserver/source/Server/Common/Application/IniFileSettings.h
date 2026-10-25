@@ -41,6 +41,15 @@ namespace HM
 
       bool SetAdministratorPassword(const String &sNewPassword);
       String GetAdministratorPassword();
+
+      // The installation's secret key, DPAPI-protected and base64-encoded (see SecretProtector).
+      // Read from and written to hMailServer.ini directly, not with the other settings: it is
+      // needed while they are being loaded, to decrypt the database password.
+      String GetSecretKey();
+      void SetSecretKey(const String &protectedKey);
+
+      // True when the database password in hMailServer.ini is still Blowfish-encrypted.
+      bool GetPasswordIsBlowfishEncrypted() const { return password_is_blowfish_; }
       String GetLogDirectory();
 
       String GetBinDirectory();
@@ -153,6 +162,7 @@ namespace HM
 
       bool greylisting_enabled_during_record_expiration_;
       bool is_internal_database_;
+      bool password_is_blowfish_;
       int greylisting_expiration_interval_;
       
       // Retired: the value is only read so that we can warn about it being ignored.

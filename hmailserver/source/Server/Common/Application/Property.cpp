@@ -85,7 +85,7 @@ namespace HM
 
       String sTemp;
       if (save_crypted_)
-         sTemp = Crypt::Instance()->EnCrypt(sValue, Crypt::ETBlowFish);
+         sTemp = Crypt::Instance()->EnCrypt(sValue, Crypt::ETSecret);
       else
          sTemp = sValue;
 

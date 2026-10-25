@@ -61,7 +61,7 @@ namespace HM
       pNode->AppendAttr(_T("ToAllAddresses"), to_all_addresses_ ? _T("1") : _T("0"));
       pNode->AppendAttr(_T("RequiresAuthentication"), relayer_requires_authentication_ ? _T("1") : _T("0"));
       pNode->AppendAttr(_T("Username"), relayer_auth_username_);
-      pNode->AppendAttr(_T("Password"), Crypt::Instance()->EnCrypt(relayer_auth_password_, Crypt::ETBlowFish));
+      pNode->AppendAttr(_T("Password"), Crypt::Instance()->EnCrypt(relayer_auth_password_, Crypt::ETSecret));
       pNode->AppendAttr(_T("TreatRecipientAsLocalDomain"), treat_recipient_as_local_domain_ ? _T("1") : _T("0"));
       pNode->AppendAttr(_T("TreatSenderAsLocalDomain"), treat_sender_as_local_domain_ ? _T("1") : _T("0"));
       pNode->AppendAttr(_T("ConnectionSecurity"), StringParser::IntToString(connection_security_));
@@ -82,7 +82,7 @@ namespace HM
       to_all_addresses_ = pNode->GetAttrValue(_T("ToAllAddresses")) == _T("1");
       relayer_requires_authentication_ = pNode->GetAttrValue(_T("RequiresAuthentication")) == _T("1");
       relayer_auth_username_ = pNode->GetAttrValue(_T("Username"));
-      relayer_auth_password_ = Crypt::Instance()->DeCrypt(pNode->GetAttrValue(_T("Password")), Crypt::ETBlowFish);
+      relayer_auth_password_ = Crypt::Instance()->DeCrypt(pNode->GetAttrValue(_T("Password")), Crypt::ETSecret);
       treat_recipient_as_local_domain_ = pNode->GetAttrValue(_T("TreatRecipientAsLocalDomain")) == _T("1");
       treat_sender_as_local_domain_ = pNode->GetAttrValue(_T("TreatSenderAsLocalDomain")) == _T("1");
 

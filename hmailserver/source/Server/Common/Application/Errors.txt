@@ -129,3 +129,5 @@
 5700, Could not delete the directory %s.
 5701, Parsing HTML body with regular expression threw a runtime_error
 5702, A regex match was found, but there were <2 matches in the result
+5739, SecretProtector, A secret could not be protected or read: the secret key of the installation is missing, cannot be stored or unprotected, or belongs to another installation.
+5740, SecretMigration, Secrets written by an earlier version could not all be protected under the installation's secret key.

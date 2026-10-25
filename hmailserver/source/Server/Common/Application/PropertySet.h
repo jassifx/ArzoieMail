@@ -30,6 +30,10 @@ namespace HM
       // the database holds afterwards - which is another server's if it got there first,
       // and an empty string if the property could not be written or read.
 
+      // True for the settings stored as secrets (Crypt::ETSecret): the relay password and the
+      // SRS secret.
+      static bool IsCryptedProperty(const String &sPropertyName);
+
       bool XMLStore(XNode *pBackupNode);
       bool XMLLoad(XNode *pBackupNode);
 
@@ -39,7 +43,6 @@ namespace HM
 
       std::shared_ptr<Property> GetProperty_(const String &sPropertyName);
 
-      bool IsCryptedProperty_(const String &sPropertyName);
       std::map<String, std::shared_ptr<Property> > items_;
    };
 }
