@@ -92,8 +92,10 @@ namespace HM
       static String GetLeftFunction(const String &sParamName, int iLength);
       static String GetTopRows(const String &tableName, int rows);
 
-      static String Escape(const String &input);
-      
+      // Makes input match itself in a LIKE pattern with ESCAPE '/': the escape character and
+      // the % and _ wildcards are escaped. The pattern is bound as a parameter like any value.
+      static String EscapeLike(const String &input);
+
       static String ConvertWildcardToLike(String input);
       static String ConvertLikeToWildcard(String input);
 

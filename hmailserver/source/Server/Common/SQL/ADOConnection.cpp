@@ -427,12 +427,6 @@ namespace HM
       return recordset;
    }
 
-   void
-   ADOConnection::EscapeString(String &sInput)
-   {
-      sInput.Replace(_T("'"), _T("''"));
-   }
-
    std::shared_ptr<IMacroExpander> 
    ADOConnection::CreateMacroExpander()
    {

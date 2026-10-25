@@ -532,12 +532,6 @@ namespace HM
    }
 
    void
-   SQLCEConnection::EscapeString(String &sInput)
-   {
-      sInput.Replace(_T("'"), _T("''"));
-   }
-
-   void
    SQLCEConnection::InitializeCommandParameters(_CommandPtr &adoCommand, const SQLCommand &sqlCommand, String &queryString) const
    {
       for(const SQLParameter &parameter : sqlCommand.GetParameters())

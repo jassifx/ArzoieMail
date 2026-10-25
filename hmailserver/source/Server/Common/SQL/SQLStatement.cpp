@@ -206,7 +206,8 @@ namespace HM
                command.AddParameter(parameterName, c.sString);
                break;
             case ColTypeRaw:
-               sSQL.append(Escape(c.sString));
+               // SQL the server itself wrote, such as NULL or current_timestamp - never a value.
+               sSQL.append(c.sString);
                break;
             }
          }
@@ -251,7 +252,8 @@ namespace HM
                command.AddParameter(parameterName, c.sString);
                break;
             case ColTypeRaw:
-               sSQL.append(Escape(c.sString));
+               // SQL the server itself wrote, such as NULL or current_timestamp - never a value.
+               sSQL.append(c.sString);
                break;
             }
          }
@@ -350,7 +352,8 @@ namespace HM
             }
             else if (col.iType == ColTypeRaw)
             {
-               sSQL += col.sName + " = " + Escape(col.sString);
+               // As for a raw column: SQL the server itself wrote.
+               sSQL += col.sName + " = " + col.sString;
             }
          }
       }
@@ -541,19 +544,15 @@ namespace HM
       return sRetVal;
    }
 
-   String 
-   SQLStatement::Escape(const String &input)
+   String
+   SQLStatement::EscapeLike(const String &input)
    {
-      String sRetVal = input;
-
-      sRetVal.Replace(_T("'"), _T("''"));
-
-      HM::DatabaseSettings::SQLDBType iType = IniFileSettings::Instance()->GetDatabaseType();
-
-      if (iType == DatabaseSettings::TypeMYSQLServer || iType == DatabaseSettings::TypePGServer)
-         sRetVal.Replace(_T("\\"), _T("\\\\"));
-
-      return sRetVal;
+      // The escape character first, so that the ones added for the wildcards stay single.
+      String result = input;
+      result.Replace(_T("/"), _T("//"));
+      result.Replace(_T("%"), _T("/%"));
+      result.Replace(_T("_"), _T("/_"));
+      return result;
    }
 
    namespace
@@ -761,6 +760,14 @@ namespace HM
          command.AddParameter("@UNUSED", 3);
          AssertPositional(command, _T("select @@IDENTITY, 'a@b' from t where a = ? and b = ? and c = ? and d = @UNKNOWN"),
                           { "@A", "@B", "@A" }, SQLStatement::QuestionMarkPlaceholders);
+      }
+
+      // EscapeLike: the escape character and both wildcards are escaped, the escape character
+      // only once, and a backslash - MySQL's default escape - is an ordinary character.
+      {
+         String escaped = SQLStatement::EscapeLike(_T("a/b%c_d\\e"));
+         if (escaped != _T("a//b/%c/_d\\e"))
+            throw std::logic_error(("SQLStatement::EscapeLike: got [" + AnsiString(escaped) + "].").c_str());
       }
 
       // A parameter inside a literal is refused with question marks too.
