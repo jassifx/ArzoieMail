@@ -43,6 +43,7 @@ namespace HM
      virtual void OnExcessiveDataReceived();
 
       void EnqueueWrite_(const String &sData) ;
+      void EnqueueWriteUtf8_(const String &sData);   // USER and PASS, which carry what the user typed
    
    // This is temp function to log ETRN client commands to SMTP
       void EnqueueWrite_LogAsSMTP(const String &sData) ;

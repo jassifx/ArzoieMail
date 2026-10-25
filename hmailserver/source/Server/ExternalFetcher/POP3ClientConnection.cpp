@@ -17,6 +17,7 @@
 #include "../SMTP/RecipientParser.h"
 #include "../Common/Util/Parsing/AddresslistParser.h"
 #include "../Common/Util/Utilities.h"
+#include "../Common/Util/Unicode.h"
 #include "../Common/Util/ServerStatus.h"
 #include "../Common/Mime/Mime.h"
 #include "../Common/BO/FetchAccountUID.h"
@@ -262,7 +263,7 @@ namespace HM
       String sResponse;
       sResponse.Format(_T("USER %s"), account_->GetUsername().c_str());
 
-      EnqueueWrite_(sResponse);
+      EnqueueWriteUtf8_(sResponse);
 
       current_state_ = StateUsernameSent;
    }
@@ -330,7 +331,7 @@ namespace HM
 
          current_state_ = StatePasswordSent;
 
-         EnqueueWrite_(sResponse);
+         EnqueueWriteUtf8_(sResponse);
 
          return;
       }
@@ -618,6 +619,17 @@ namespace HM
       LogPOP3String_(sData, true);
 
       EnqueueWrite(sData + "\r\n");
+   }
+
+   void
+   POP3ClientConnection::EnqueueWriteUtf8_(const String &sData)
+   {
+      // As UTF-8, as POP3 servers take a user name and password today. EnqueueWrite_ converts
+      // to the system code page, which turned a password with an a-umlaut into one the server
+      // did not know, and dropped a character outside the page.
+      LogPOP3String_(sData, true);
+
+      EnqueueWrite(Unicode::ToUTF8(sData) + "\r\n");
    }
 
    bool 

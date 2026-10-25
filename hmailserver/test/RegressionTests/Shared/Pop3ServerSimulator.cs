@@ -45,6 +45,11 @@ namespace RegressionTests.Shared
 
       public bool DisconnectImmediate { get; set; }
 
+      // What the client sent with USER and PASS, as the connection decoded it. Plain
+      // connections decode as ASCII, so every byte above 127 reads as '?'.
+      public string ReceivedUsername { get; private set; }
+      public string ReceivedPassword { get; private set; }
+
       // UIDs returned by UIDL, one per message. When null, UIDs are generated.
       public List<string> Uids { get; set; }
 
@@ -68,6 +73,11 @@ namespace RegressionTests.Shared
          }
       }
 
+      private static string ArgumentOf(string command)
+      {
+         return command.Length > 5 ? command.Substring(5).TrimEnd('\r', '\n') : "";
+      }
+
       public bool ProcessCommand(string command)
       {
          if (command.ToLower().StartsWith("quit"))
@@ -82,6 +92,7 @@ namespace RegressionTests.Shared
 
          if (command.ToLower().StartsWith("user"))
          {
+            ReceivedUsername = ArgumentOf(command);
             Send("+OK\r\n");
             return true;
          }
@@ -108,6 +119,7 @@ namespace RegressionTests.Shared
 
          if (command.ToLower().StartsWith("pass"))
          {
+            ReceivedPassword = ArgumentOf(command);
             Send("+OK\r\n");
             return true;
          }
