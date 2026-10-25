@@ -77,6 +77,9 @@ namespace RegressionTests.Security
             pop3Server.WaitForCompletion();
             fa.Delete();
 
+            // Wait for delivery, so the next test's setup does not delete the account mid-delivery.
+            Pop3ClientSimulator.AssertMessageCount(account.Address, "test", 1);
+
             // The simulator reads a plain connection as ASCII, so each byte above 127 reads as '?':
             // the UTF-8 bytes leave as many as UTF-8 has - two for the u-umlaut, three for the check
             // mark - where the system code page left one, or none.
