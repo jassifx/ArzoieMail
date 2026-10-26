@@ -52,14 +52,17 @@ Jaspreet Singh in Delhi, India. The name honours Arzoie, the maintainer's daught
 
 **Tested on every change, on every database.** Each push builds the server, installs it on a
 clean runner and runs the full regression suite - more than 1,200 end-to-end tests over SMTP,
-IMAP, POP3 and the COM API - three times: on the built-in database, on PostgreSQL and on MySQL.
+IMAP, POP3 and the COM API - on four backends: SQL Server Compact, PostgreSQL, MySQL and SQL
+Server 2025 Express. Each database job also runs management API, security, DNS and browser checks.
+The [CI test inventory](docs/ci-test-inventory.md) lists the checks, fixture boundaries, verified
+test totals and coverage that still requires manual testing.
 Installers are also tested on clean Windows Server virtual machines, which is how a missing runtime DLL that only
 broke installations on machines without Visual C++ installed was found and fixed.
 
 **Secure by construction, not by convention.**
 
 - SQL values are bound as parameters instead of being pasted into the SQL, on the built-in
-  database, PostgreSQL and MySQL alike. Along the way, an SQL injection inherited from hMailServer
+  database, SQL Server, PostgreSQL and MySQL alike. Along the way, an SQL injection inherited from hMailServer
   (a crafted address could break out of its quotes) was found and fixed in public.
 - The server is compiled with the Windows hardening options: `/sdl`, Control Flow Guard,
   Spectre mitigations and CET shadow-stack compatibility, and tests check that the shipped

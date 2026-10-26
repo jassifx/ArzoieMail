@@ -52,11 +52,18 @@ MSBuild. Build the server first: the type library comes from it.
 | `Tests (PostgreSQL) / Regression tests` | The same on PostgreSQL | |
 | `Tests (MySQL) / Regression tests` | The same on MySQL (run as a service) | |
 | `Tests (SQL Server Express) / Regression tests` | SQL Server 2025 Express, OLE DB 19, verified TLS and the full suite | |
-| `Publish the installer` | Runs on `master` after the tests | |
+| `actionlint and zizmor` | Static workflow syntax/security checks when workflow files change, or manually | |
+| `Publish the installer` | Attests/uploads artifacts after the build and all four database jobs pass | |
 
 Required means required by the `protect-master` ruleset; the maintainer's account can bypass
-it. A full run takes 30–60 minutes. The NUnit totals are in each test job's log as the
+it. This is the last recorded ruleset; verify the live configuration before asserting current
+requirements. Publication dependencies are defined by workflow code. A full run takes
+30–60 minutes. The NUnit totals are in each test job's log as the
 `Test Count:` line; ROADMAP.md has the current baseline.
+
+The [CI inventory](../ci-test-inventory.md) records exact entry points and fixture boundaries:
+1,315 NUnit tests per backend at the PR #33 baseline, 100 additional management assertions
+per job, separate browser checks, and manual-only pipe-squatting/stress/volume coverage.
 
 The SQL Express job provisions an isolated instance and a VM-only certificate through
 `build/provision-mssql-test.ps1`, then checks negative TLS cases, authentication and schema

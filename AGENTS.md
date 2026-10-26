@@ -47,8 +47,9 @@ native/.NET API foundation is merged in #31; complete PHP retirement, guided cer
 management and optional high-pressure Defender scanning remain delivery requirements, not
 completed functionality. Read the [Phase 1b tracker](ROADMAP.md#phase-1b-delivery-tracker)
 and [Defender assessment](docs/defender-antivirus-feasibility.md) before planning those changes.
-SQL Server Express modernization is the current authorized slice; follow its OLE DB 19/TLS
-migration and VM/CI requirements in [the SQL guide](docs/sql-server.md).
+SQL Server Express modernization is merged in #33; follow its OLE DB 19/TLS migration and VM/CI
+requirements in [the SQL guide](docs/sql-server.md). The [CI inventory](docs/ci-test-inventory.md)
+lists four database jobs, their verified baseline and automated versus manual coverage.
 Honor the maintainer's PR review gate and VM/CI-only runtime-testing rule; check live PR/CI state.
 
 ---
