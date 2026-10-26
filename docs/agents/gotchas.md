@@ -84,6 +84,10 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 
 ## Agent sessions
 
+- **Inno's Ready-page handler precedes PrepareToInstall.** Keep service shutdown in
+  PrepareToInstall after prerequisite checks, rather than NextButtonClick(wpReady); otherwise
+  an upgrade can stop a working service and then refuse to install. The VM preflight regression
+  checks both executable hash and running service PID; a rejection alone is insufficient.
 - **ADO connection keywords differ from provider-native keywords.** OLE DB 19 through ADO
   needs `Trust Server Certificate=True/False` (not yes/no). Use `Data Source` for quoted endpoint
   values; an unknown `Server` alias can leave quotes in the provider string and fail with error 87.

@@ -282,7 +282,7 @@ The maintainer authorized continued Phase 1b work with SQL Server Express modern
 | Item | Status | Evidence or remaining acceptance |
 |---|---|---|
 | Native management boundary, REST/session security and modern panel foundation | ✅ Done | #31 merged; VM and CI checks passed. This is a foundation, not full administration parity. |
-| SQL Server Express modernization | 🔄 In progress | OLE DB 19, required TLS/certificate validation, explicit migration diagnostics and SQL Express VM/CI coverage; see [SQL Server guide](docs/sql-server.md). |
+| SQL Server Express modernization | 🔄 PR #33 open | OLE DB 19, required TLS/certificate validation, explicit migration diagnostics and SQL Express VM/CI coverage; see [SQL Server guide](docs/sql-server.md). |
 | Remaining domain/account and advanced administration | 🔜 Next proposed | Explicit native/API operations, complete panel workflows and permission regression tests; implementation waits for maintainer confirmation. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
