@@ -42,6 +42,13 @@ Agents picking up work: start with `docs/agents/README.md`, which gives the read
 newest session handoff. Before starting roadmap work, read `ROADMAP.md`: it records the settled decisions, the state of each
 phase, and lessons learned. A pull request that finishes or changes a roadmap item updates it.
 
+Current plan/status handoff: [2026-10-26](docs/agents/handoffs/2026-10-26.md). Phase 1b's
+native/.NET API foundation is merged in #31; complete PHP retirement, guided certificate
+management and optional high-pressure Defender scanning remain delivery requirements, not
+completed functionality. Read the [Phase 1b tracker](ROADMAP.md#phase-1b-delivery-tracker)
+and [Defender assessment](docs/defender-antivirus-feasibility.md) before planning those changes.
+Honor the maintainer's PR review gate and VM/CI-only runtime-testing rule; check live PR/CI state.
+
 ---
 
 ## `hmailserver/` — Top-Level Structure

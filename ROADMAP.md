@@ -60,7 +60,7 @@ These were decided deliberately; reopen them only with a new reason.
 | **Secrets use AES-256-GCM under a random per-installation key protected by machine-scope DPAPI**, with passphrase export and import of the key. | The old Blowfish key was the same in every installation and is in the public source. DPAPI ties the key to the machine; export moves it to a new one. |
 | **Backups get their own passphrase**, independent of the installation's key. | A backup must restore on a new computer, which does not have the old key. |
 | **Windows 10 / Server 2016 is the minimum**, x64 only. | Everything older is out of support. |
-| **The replacement web panel uses ASP.NET Core / .NET 10 with a native management channel, without COM.** | Revised by the maintainer on 2026-10-26. Keep COM separately for compatibility; retire PHP from the replacement panel (see Phase 1b and docs/management-api-architecture.md). |
+| **The replacement web panel uses ASP.NET Core / .NET 10 with a native management channel, without COM.** | Revised by the maintainer on 2026-10-26. Keep COM separately for compatibility; remove PHP completely from administration delivery after a tested migration (see Phase 1b and docs/management-api-architecture.md). |
 
 ---
 
@@ -72,7 +72,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern Bootstrap panel, REST API from first release, advanced administration, SpamAssassin/DNSBL controls, SPF/DKIM/DMARC guidance and validation, .NET 10, native management and security hardening | 🔄 | |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30, #31; #32 open (requirements/tracker) |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols** | SMTP, IMAP and authentication extensions; MTA-STS, DANE, DKIM Ed25519 | 📋 | |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -246,23 +246,62 @@ The maintainer has authorized implementation and revised the backend: ASP.NET Co
 with a restricted local native management channel and no COM dependency in the replacement
 panel/API. COM stays separate for compatibility. See
 [management architecture](docs/management-api-architecture.md). Implementation is in progress;
-engine bundling, remaining capability migration and installer provisioning are not complete.
+PR #31 merged the native/API/panel foundation with passing CI. Engine bundling, remaining
+administration capabilities, certificate lifecycle and installer provisioning are not complete.
 
-The following original PHP runtime goals are retained as history for legacy WebAdmin only;
-the replacement uses .NET 10. Bootstrap and application security goals still apply:
-- Current **Bootstrap** and a modern, responsive interface, replacing dtree and tabber.
-- **PHP 8.5.12 or later**: the web admin refuses to run when `PHP_VERSION_ID < 80512`. That
-  release (2026-10-21) fixed CVE-2026-109618 (out-of-memory corruption RCE) and CVE-2026-109619
-  (stale global state RCE), both CVSS 9.2, in FPM, mod_php and php-cgi (also fixed in 8.4.27,
-  8.3.36 and 8.2.35). CVE-2026-115560 (session upload progress, 2026-10-23) is mitigated by
-  configuration.
-- Code that runs on both 8.5 and 8.6 (8.6 is expected in November 2026).
-- The install guide sets, at server or pool level: `session.upload_progress.enabled=0`,
-  `fatal_error_backtraces=0` and a small `post_max_size`. `memory_limit=-1` is deliberately not
-  recommended.
-- A diagnostics page that warns about unsafe ini values.
-- CSRF tokens on every form, consistent output escaping, session hardening (cookie flags,
-  regeneration at logon), a Content Security Policy and login rate limiting.
+The maintainer confirmed full PHP retirement on **2026-10-26**. Complete the replacement and
+migration acceptance tests, then remove legacy WebAdmin source, packaging, PHP runtime checks
+and deployment requirements. Existing PHP administration remains temporary until that cutover;
+unrelated PHP installations are outside scope. The earlier PHP-version modernization goals
+are superseded. COM remains independently available for existing desktop tools and scripts.
+
+Certificate installation must be user-friendly from the replacement's first production release:
+a guided import or automatic issuance workflow, hostname/chain/key validation, SMTP/IMAP/POP3
+listener assignment, expiry and renewal status, automatic renewal, safe activation and rollback.
+IIS HTTPS bindings and mail TLS bindings are managed separately. Certificate automation is a
+remaining delivery item, not a capability delivered by #31. Detailed acceptance requirements
+are in [WebAdmin requirements](docs/webadmin-requirements.md#certificate-setup-and-lifecycle).
+
+The maintainer also requested optional **Microsoft Defender Antivirus** email scanning. Repository
+and Microsoft-documentation review supports feasibility through a dedicated native adapter using
+existing message/decoded-attachment scan hooks. Add guided setup, health/test results, explicit
+error/unscannable handling and VM acceptance; integration is not implemented. The maintainer
+requires high-pressure coverage across receive/send queues, server-saved drafts and intermediate
+states: durable scheduling, bounded workers, backpressure, verdict gates and measured capacity
+with at least 10,000 messages in flight/queued in acceptance testing. Do not claim Defender
+throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. See
+[Defender assessment](docs/defender-antivirus-feasibility.md).
+
+### Phase 1b delivery tracker
+
+Requirements documented in an open PR do not mean the functionality is implemented. PR #32
+records certificate, PHP-retirement and Defender requirements; it does not implement them.
+
+| Item | Status | Evidence or remaining acceptance |
+|---|---|---|
+| Native management boundary, REST/session security and modern panel foundation | ✅ Done | #31 merged; VM and CI checks passed. This is a foundation, not full administration parity. |
+| Remaining domain/account and advanced administration | 🔜 Next proposed | Explicit native/API operations, complete panel workflows and permission regression tests; implementation waits for maintainer confirmation. |
+| Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
+| SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
+| Guided TLS certificate installation and renewal | 📋 Planned | Import/issuance wizard, listener assignment, validation, renewal, safe activation and rollback. |
+| **Microsoft Defender Antivirus email scanning** | **📋 Planned — implementation not started** | Dedicated native adapter, lifecycle coverage, durable scheduling, mitigation and measured high-pressure acceptance; requirements/assessment in #32. |
+| Production hosting, installer and PHP retirement | 📋 Planned | Restricted identity, HTTPS/runtime provisioning, full parity, upgrade acceptance and removal of the legacy PHP endpoint/source/packaging. |
+
+### Microsoft Defender Antivirus delivery checklist
+
+| Deliverable | Status | Completion gate |
+|---|---|---|
+| Feasibility and requirements | 🔄 Documented; review pending | #32; confirm service permissions, result classification and supported engine behavior in the VM. |
+| Native scanner adapter and result handling | 📋 Planned | Distinct clean/infected/error/unscannable results; bounded execution and no destructive scans of live mail storage. |
+| Message lifecycle coverage | 📋 Planned | SMTP receipt/submission, queued sending, external fetching, server-saved drafts/IMAP APPEND, imports and changed content; valid verdict before release. |
+| High-pressure queue and workers | 📋 Planned | Durable state, bounded resources, fair scheduling, backpressure, restart recovery and no scheduler-induced duplicate release. |
+| Mitigation and recovery | 📋 Planned | Separate detection/error policies, bounded hold/retry, consistent quarantine/attachment handling, retention and audit controls. |
+| Modern panel and REST controls | 📋 Planned | Server-admin-only setup, enable/disable, test scan, engine/signature health, results and queue/latency/overload diagnostics. |
+| VM regression and capacity acceptance | 📋 Planned | At least 10,000 queued/in-flight messages, mixed receive/send/draft activity, bursts, outage/recovery and soak; publish hardware, message mix, throughput, p95/p99 latency and resource use. |
+
+Defender stays optional and is not claimed to meet a production load until the measured
+acceptance envelope passes. All executable validation remains VM/CI-only. Other scanner choices
+remain available if Defender cannot meet the agreed workload.
 
 ---
 
