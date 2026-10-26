@@ -245,6 +245,26 @@ jobs:
           "nunit3-console exit code: $exitCode"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "exit-code=$exitCode"
 
+      - name: Test the native management API
+        run: |
+          # Installed-server tests execute only on this disposable CI VM.
+          dotnet build hmailserver/source/Management/Tests/ArzoieMail.Management.Tests.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw "Management test build failed." }
+          & build/test-management.ps1
+          python -m pip install --disable-pip-version-check -r hmailserver/test/RegressionTests/Management/requirements-browser.txt
+          if ($LASTEXITCODE -ne 0) { throw "Browser dependencies failed to install." }
+          & build/test-management-browser.ps1
+          $application = New-Object -ComObject 'hMailServer.Application'
+          $source = Get-Content hmailserver/test/RegressionTests/Shared/TestSetup.cs -Raw
+          $password = [regex]::Match($source, 'Authenticate\("Administrator", "([^"]+)"\)').Groups[1].Value
+          if ($null -eq $application.Authenticate('Administrator', $password)) {
+              $password = ''
+              if ($null -eq $application.Authenticate('Administrator', $password)) { throw "Cannot authenticate test setup." }
+          }
+          [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($application)
+          $credential = [pscredential]::new('Administrator', (ConvertTo-SecureString $password -AsPlainText -Force))
+          & build/test-management-live.ps1 -AdministratorCredential $credential
+
       - name: Summarise the NUnit result
         if: always()
         env:

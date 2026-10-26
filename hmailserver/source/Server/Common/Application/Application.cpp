@@ -5,6 +5,7 @@
 #include "stdafx.h"
 
 #include "Application.h"
+#include "../Management/ManagementPipe.h"
 #include "../Persistence/SecretMigration.h"
 
 #include "BackupManager.h"
@@ -147,6 +148,15 @@ namespace HM
 
       LOG_DEBUG("Application::InitInstance - Configuration loaded.");
 
+      // Opt-in management transport. Start only after configuration and database are ready.
+      management_pipe_ = std::make_unique<ManagementPipe>();
+      if (!management_pipe_->Start())
+      {
+         sErrorMessage = "The native management endpoint could not start. Check its configured SID and pipe ownership.";
+         management_pipe_.reset();
+         return false;
+      }
+
       // Start an asynch workqueue which processes asynchronous tasks from clients.
       WorkQueueManager::Instance()->CreateWorkQueue(Configuration::Instance()->GetAsynchronousThreads(), 
                                                     asynchronous_tasks_queue_);
@@ -230,6 +240,9 @@ namespace HM
    // Do uninitialization.
    //---------------------------------------------------------------------------()
    {
+      // Stop management requests before tearing down configuration or the database.
+      management_pipe_.reset();
+
       // Close work queue
       WorkQueueManager::Instance()->RemoveQueue(maintenance_queue_);
 

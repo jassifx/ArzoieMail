@@ -60,7 +60,7 @@ These were decided deliberately; reopen them only with a new reason.
 | **Secrets use AES-256-GCM under a random per-installation key protected by machine-scope DPAPI**, with passphrase export and import of the key. | The old Blowfish key was the same in every installation and is in the public source. DPAPI ties the key to the machine; export moves it to a new one. |
 | **Backups get their own passphrase**, independent of the installation's key. | A backup must restore on a new computer, which does not have the old key. |
 | **Windows 10 / Server 2016 is the minimum**, x64 only. | Everything older is out of support. |
-| **The web admin requires PHP 8.5.12 or later.** | The 2026-10-21 PHP security release fixed two CVSS 9.2 remote code execution bugs (see Phase 1b). |
+| **The replacement web panel uses ASP.NET Core / .NET 10 with a native management channel, without COM.** | Revised by the maintainer on 2026-10-26. Keep COM separately for compatibility; retire PHP from the replacement panel (see Phase 1b and docs/management-api-architecture.md). |
 
 ---
 
@@ -72,7 +72,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern Bootstrap panel, REST API from first release, advanced administration, SpamAssassin/DNSBL controls, SPF/DKIM/DMARC guidance and validation, PHP/security hardening | 🔜 | |
+| **1b · Web admin** | Modern Bootstrap panel, REST API from first release, advanced administration, SpamAssassin/DNSBL controls, SPF/DKIM/DMARC guidance and validation, .NET 10, native management and security hardening | 🔄 | |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols** | SMTP, IMAP and authentication extensions; MTA-STS, DANE, DKIM Ed25519 | 📋 | |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -229,7 +229,7 @@ account mid-delivery, the server logs HM5165, and the *next* test fails in teard
 
 ---
 
-## 7. Next: Phase 1b · Web admin 🔜
+## 7. Phase 1b · Web admin and REST API 🔄
 
 `hmailserver/source/WebAdmin`: 89 PHP files with dtree.js, tabber and a custom `style.css`,
 talking to the server through `new COM("hMailServer.Application")`.
@@ -241,11 +241,15 @@ and validation, including complex SPF shared with other providers.
 
 The detailed requirements and open architecture decisions are in
 [WebAdmin requirements](docs/webadmin-requirements.md). REST moves here from Phase 6. Preserve
-COM compatibility; the new panel uses REST, whose implementation may use COM internally.
-Engine bundling, API hosting and authentication, testing and PR boundaries remain to be designed.
-These are planned requirements; implementation has not started.
+COM compatibility for existing tools; the replacement panel uses REST without a COM backend.
+The maintainer has authorized implementation and revised the backend: ASP.NET Core / .NET 10,
+with a restricted local native management channel and no COM dependency in the replacement
+panel/API. COM stays separate for compatibility. See
+[management architecture](docs/management-api-architecture.md). Implementation is in progress;
+engine bundling, remaining capability migration and installer provisioning are not complete.
 
-Existing runtime and security goals remain:
+The following original PHP runtime goals are retained as history for legacy WebAdmin only;
+the replacement uses .NET 10. Bootstrap and application security goals still apply:
 - Current **Bootstrap** and a modern, responsive interface, replacing dtree and tabber.
 - **PHP 8.5.12 or later**: the web admin refuses to run when `PHP_VERSION_ID < 80512`. That
   release (2026-10-21) fixed CVE-2026-109618 (out-of-memory corruption RCE) and CVE-2026-109619

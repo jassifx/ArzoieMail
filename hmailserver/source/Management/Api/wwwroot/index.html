@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ArzoieMail · Administration</title>
+  <link rel="stylesheet" href="assets/vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/panel.css">
+  <script src="assets/panel.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div id="login-view" class="login-layout" hidden>
+    <section class="login-brand"><span class="brand-mark">a</span><p class="eyebrow">YOUR MAIL. YOUR CONTROL.</p>
+      <h1>A clear view of<br>your mail server.</h1><p>Manage delivery, protect your domains, and tune the details.</p>
+      <span class="login-footnote">ArzoieMail administration · Windows</span>
+    </section>
+    <main class="login-main"><form id="login-form" class="login-card">
+      <p class="eyebrow">WELCOME BACK</p><h2>Sign in to your server</h2>
+      <p class="text-secondary">Use your server or domain administrator account.</p>
+      <label class="form-label" for="username">Username</label>
+      <input class="form-control" id="username" name="username" autocomplete="username" required maxlength="320">
+      <label class="form-label mt-3" for="password">Password</label>
+      <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024">
+      <button class="btn btn-primary w-100 mt-4" type="submit">Sign in</button>
+      <p id="login-error" class="text-danger mt-3" role="alert"></p>
+    </form></main>
+  </div>
+  <div id="panel-view" class="panel-layout" hidden>
+    <aside class="sidebar"><a class="brand" href="#overview"><span class="brand-mark">a</span>ArzoieMail</a>
+      <p class="nav-caption">WORKSPACE</p><nav aria-label="Administration">
+        <a href="#overview" data-page="overview">Overview <span>01</span></a>
+        <a href="#domains" data-page="domains">Domains &amp; DNS <span>02</span></a>
+        <a href="#antispam" data-page="antispam" data-server>Spam protection <span>03</span></a>
+        <a href="#dnsbl" data-page="dnsbl" data-server>DNS blocklists <span>04</span></a>
+        <a href="#diagnostics" data-page="diagnostics" data-server>Diagnostics <span>05</span></a>
+      </nav>
+      <div class="sidebar-bottom"><span class="status-dot"></span> Administration API v1
+        <p id="identity"></p><button id="sign-out" class="btn btn-outline-light btn-sm">Sign out</button>
+      </div>
+    </aside>
+    <main id="main" class="workspace" tabindex="-1">
+      <header class="topbar"><span>SERVER ADMINISTRATION</span><span class="badge rounded-pill text-bg-light">Phase 1b · Preview</span></header>
+      <div id="notice" class="alert" role="status" hidden></div>
+      <header class="page-header"><div><p class="eyebrow" id="page-kicker">YOUR WORKSPACE</p>
+        <h1 id="page-title">Overview</h1><p id="page-description" class="text-secondary"></p></div>
+        <button id="refresh" class="btn btn-outline-secondary">Refresh</button>
+      </header>
+      <section id="content" aria-live="polite" aria-busy="false"></section>
+      <footer>ArzoieMail · Open source mail infrastructure <span>REST API v1</span></footer>
+    </main>
+  </div>
+  <div id="startup" class="startup" role="status">Connecting to administration…</div>
+</body>
+</html>
