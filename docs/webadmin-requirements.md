@@ -1,7 +1,9 @@
 # Phase 1b: Web administration and REST API requirements
 
-Requirements agreed with the maintainer on 2026-10-26. This document defines planned
-behaviour, not implemented features. Recording these requirements does not start implementation.
+Requirements agreed with the maintainer on 2026-10-26 and subsequently revised to remove
+COM from the replacement panel/backend. Phase 1b implementation is now authorized and in progress;
+requirements below are not claims of completed features. See
+[management architecture](management-api-architecture.md) for the design and delivery status.
 
 ## Modern administration
 
@@ -18,9 +20,11 @@ behaviour, not implemented features. Recording these requirements does not start
 - The panel uses a documented, versioned REST API for management operations from its first
   release. REST is brought forward from Phase 6 into Phase 1b.
 - Enforce authentication, authorization and input validation in the API, not just the browser.
-- Preserve the existing COM API and its clients. The REST implementation may use COM internally.
-- Decide API hosting (PHP or a separate service), authentication, deployment and endpoint
-  coverage before implementation. These architecture choices are not yet settled.
+- The replacement panel and API must not use COM. Host them on ASP.NET Core / .NET 10 and
+  reach the native business layer through a restricted local management channel. Preserve COM
+  separately for existing desktop tools and scripts during migration.
+- Enforce authorization in the native management dispatcher as well as at the HTTP boundary.
+  Use the architecture and security requirements in management-api-architecture.md.
 
 ## SpamAssassin and DNSBL control
 
@@ -53,15 +57,18 @@ behaviour, not implemented features. Recording these requirements does not start
 
 ## Existing runtime and security requirements
 
-- Retain the PHP 8.5.12 minimum enforced through PHP_VERSION_ID and PHP 8.6 compatibility target
-  from ROADMAP.md section 7. Claim compatibility only after testing an available runtime.
+- The replacement panel uses ASP.NET Core / .NET 10, not PHP. The previous PHP 8.5.12/8.6
+  requirement is superseded for the replacement; legacy PHP deployment guidance applies only
+  while that application remains in use.
 - Retain CSRF tokens on every form, consistent output escaping, secure session cookies,
   session regeneration at login, a Content Security Policy and login rate limiting.
-- Include diagnostics for unsafe PHP settings. Installation guidance must cover
-  session.upload_progress.enabled=0, fatal_error_backtraces=0 and a small post_max_size;
-  do not recommend memory_limit=-1.
+- Include diagnostics for the new runtime, HTTPS, native management connectivity and deployment
+  configuration. Keep legacy PHP security guidance while documenting the migration.
 
 ## Validation and delivery
+
+- Run all runtime tests and browser previews only inside the disposable VM or CI. The maintainer's
+  development computer is for editing and compilation, not application or test execution.
 
 - Establish repeatable API and browser tests against an installed ArzoieMail in the disposable
   Hyper-V VM, plus CI coverage. Check authentication, permissions, sessions, CSRF, escaping,

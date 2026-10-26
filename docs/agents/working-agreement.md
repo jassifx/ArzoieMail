@@ -5,6 +5,12 @@ unless the maintainer says otherwise for a specific task.
 
 ## Pull requests
 
+- **After submitting each PR, wait for the maintainer's explicit confirmation before starting
+  the next task, phase or PR.** Keep monitoring the submitted PR and CI, and resolve issues
+  within that PR's scope without starting subsequent work. Submission and green CI do not
+  authorize merging; merging still requires the instruction below. Added by the maintainer
+  on 2026-10-26 to allow time for project review.
+
 - **One item, one pull request** to `master`. `master` is protected and only takes pull requests.
 - **Branch names decide whether CI runs.** Use `feature/…`, `bugfix/…`, `techdebt/…` or
   `claude/…` (version branches also run). Any other prefix, for example `security/…`, gets no CI
@@ -33,6 +39,10 @@ unless the maintainer says otherwise for a specific task.
 - Some names stay hMailServer on purpose (AGENTS.md lists them). Don't rename them.
 
 ## Tests
+
+- **Runtime tests and browser previews run only in the disposable VM or CI.** The development
+  host is for editing, static inspection and compilation, as directed by the maintainer on
+  2026-10-26. This includes otherwise isolated unit/security test executables.
 
 - **Every bug fix and every feature has a regression test** in `hmailserver/test/RegressionTests`,
   next to the tests of the same area. For a bug, write the test first and see it fail.

@@ -1,0 +1,95 @@
+// Copyright (c) 2010 Martin Knafve / hMailServer.com.
+// Authentication extracted from COMAuthentication for use by independent management adapters.
+#include "stdafx.h"
+#include "ManagementAuthentication.h"
+#include "../BO/Account.h"
+#include "../Util/PasswordValidator.h"
+#include "../Util/Crypt.h"
+#include "../Util/Hashing/PasswordHasher.h"
+
+namespace HM
+{
+   std::shared_ptr<const Account>
+   ManagementAuthentication::Authenticate(const String &sUsername, const String &sPassword, bool allowUnsetAdministrator)
+   {
+      std::shared_ptr<const Account> account_;
+
+      if (sUsername.CompareNoCase(_T("administrator")) == 0)
+      {
+         String sPasswordCorrect = HM::IniFileSettings::Instance()->GetAdministratorPassword();
+
+         bool passwordValid = false;
+         bool rehashRequired = false;
+         bool legacyHash = false;
+
+         if (sPasswordCorrect.IsEmpty())
+         {
+            // The administrators password has not been set yet. It's likely
+            // that we have just installed or upgraded hMailServer. The upgrade
+            // tool first tries to authenticate with an empty password.
+            //
+            // Nothing is written back here - an empty setting is what tells us
+            // that no password has been chosen yet.
+            passwordValid = allowUnsetAdministrator && sPassword.IsEmpty();
+         }
+         else
+         {
+            Crypt::EncryptionType type = HM::Crypt::Instance()->GetHashType(sPasswordCorrect);
+
+            if (type == Crypt::ETPHC)
+            {
+               passwordValid = PasswordHasher::Verify(sPassword, sPasswordCorrect);
+               rehashRequired = passwordValid && PasswordHasher::NeedsRehash(sPasswordCorrect);
+            }
+            else if (type == Crypt::ETMD5 || type == Crypt::ETSHA256)
+            {
+               // Kept for verification only, so that an administrator who upgrades
+               // is not locked out of the server.
+               passwordValid = HM::Crypt::Instance()->Validate(sPassword, sPasswordCorrect, type);
+               rehashRequired = passwordValid;
+               legacyHash = passwordValid;
+            }
+         }
+
+         if (passwordValid)
+         {
+            // Nothing is migrated while the settings are unavailable. DBUpdater
+            // authenticates before it upgrades the database, and at that point the
+            // configured algorithm and cost cannot be read - re-hashing would silently
+            // pick the built in defaults instead. A later logon migrates it properly.
+            if (rehashRequired && Configuration::Instance()->IsLoaded())
+            {
+               // A legacy hash is always replaced, whatever the auto-upgrade setting
+               // says. That setting exists to control the cost of migrating every
+               // account at once; there is only ever one administrator password, and
+               // the installer still writes it as an unsalted MD5 hash. Leaving that
+               // in hMailServer.ini until somebody happens to switch the setting on
+               // would defeat the point of hashing it at all.
+               //
+               // A hash that is already a PHC string, and only differs in cost, is a
+               // different matter - that one follows the setting, so an administrator
+               // who switched the upgrade off to control when the migration happens
+               // does not find this password migrated behind their back.
+               if (legacyHash || Configuration::Instance()->GetPasswordHashAutoUpgrade())
+                  HM::IniFileSettings::Instance()->SetAdministratorPassword(sPassword);
+            }
+
+            // Create a dummy account since the administrator
+            // does not have a real email account.
+
+            account_ = std::shared_ptr<Account>
+               (
+                  new Account("Administrator", Account::ServerAdmin)
+               );
+
+         }
+      }
+      else
+      {
+         account_ = HM::PasswordValidator::ValidatePassword(sUsername, sPassword);
+      }
+
+      return account_;
+   }
+
+}

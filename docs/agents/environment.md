@@ -20,6 +20,11 @@ instructions; this file covers what an agent needs to know on top of them.
 
 ## Building
 
+**Updated testing boundary (2026-10-26):** the maintainer requires all runtime tests, including
+unit/security executables and browser previews, to run only in the disposable VM or CI.
+Use this host for editing, static inspection and compilation. Do not start application previews
+or run test executables locally. This supersedes earlier local-testing suggestions.
+
 | What | Command | Time |
 |---|---|---|
 | Server | `build/build.ps1 -Configuration Release` (Debug is the default; CI builds Release) | ≈10 min |

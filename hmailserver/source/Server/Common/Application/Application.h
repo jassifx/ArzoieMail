@@ -18,6 +18,7 @@ namespace HM
    class ServerMessages;
    class NotificationServer;
    class FolderManager;
+   class ManagementPipe;
 
    class Application : public Singleton<Application>
    {
@@ -78,6 +79,8 @@ namespace HM
 
       void RegisterSessionTypes_();
       void CreateScheduledTasks_();
+
+      std::unique_ptr<ManagementPipe> management_pipe_;
 
       String version_;
       String start_time_;

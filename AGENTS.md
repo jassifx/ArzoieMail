@@ -65,6 +65,7 @@ source/
   Addons/             # Various scripts, for example, default event scripts
   DBScripts/          # SQL scripts: create DB schema, upgrade old DBs
   Migration/          # Unpublished tools for migrating from other mail servers
+  Management/         # .NET 10 REST API and replacement web panel (Phase 1b, in progress)
   Server/             # The ArzoieMail server (Windows service) — main C++ codebase
   Tools/              # C# .NET 10 Windows Forms tools (Administrator, DBSetup, etc.)
 ```
@@ -103,6 +104,7 @@ Shared infrastructure used by SMTP, IMAP, POP3, and the COM layer. Broken into f
 | `Cache/` | In-memory caches that wrap the BO layer to reduce database round-trips |
 | `Diagnostics/` | Diagnostic checks exposed through the Administrator GUI ("Run diagnostics") |
 | `Mime/` | MIME encoding and decoding for message parsing and construction |
+| `Management/` | Shared management authentication and the restricted native named-pipe dispatcher for the REST API |
 | `Persistence/` | ORM-like persistence layer — one class per business object, maps to DB columns |
 | `Scripting/` | Server-side event hooks that fire VBScript/JScript event handlers |
 | `SQL/` | Low-level database abstraction: connection management, parameterised queries; supports MySQL, MS SQL Server, PostgreSQL and SQL Server Compact |
@@ -225,7 +227,12 @@ Vendored third-party C++ libraries checked directly into the repository. Large e
 
 ## Key Architectural Patterns
 
-**COM API as the seam.** All configuration and management goes through the COM API in `Server/COM/`. The GUI, test suite, and external scripts all use this interface. New features should expose configuration through COM.
+**Management boundaries.** Existing desktop tools, regression tests and scripts use the COM API
+in `Server/COM/`, which remains a compatibility interface. The replacement panel uses the .NET 10
+REST API in `source/Management/Api`, communicating directly with the native business layer through
+`Server/Common/Management`; it must not use COM or direct SQL. Enforce permissions in the native
+dispatcher as well as HTTP handlers. See `docs/management-api-architecture.md` for the revised
+Phase 1b design and current delivery status.
 
 **Layered persistence.** Data flows: `BO/` (domain object) → `Persistence/` (SQL mapping) → `SQL/` (connection/query execution). The `Cache/` layer sits in front of `Persistence/` for frequently-read objects.
 
@@ -243,6 +250,7 @@ Vendored third-party C++ libraries checked directly into the repository. Large e
 |---|---|
 | `hMailServer.exe` (the service) | `source/Server/hMailServer/hMailServer.sln` |
 | Admin tools | `source/Tools/hMailServer Tools.sln` |
+| Replacement API/panel (in progress) | `source/Management/Api/ArzoieMail.Api.csproj` |
 | Installer | `installation/hMailServer64.iss` (InnoSetup) |
 
 **External dependencies** (not in repo): OpenSSL, Boost, PostgreSQL (libpq), MariaDB Connector/C (libmariadb). Set `%hMailServerLibs%` to the parent directory where these are built. See `BUILDING.md` for step-by-step build instructions.
@@ -251,6 +259,12 @@ Vendored third-party C++ libraries checked directly into the repository. Large e
 
 
 # Running builds and tests
+
+On the maintainer's development host, edit, inspect and compile only. Run all test executables,
+application previews and integration checks inside the disposable VM or CI, as required by the
+maintainer. Do not register a COM server or install/run the product on this host. The new management
+tests live under `hmailserver/test/RegressionTests/Management` and are built as a separate executable
+by `source/Management/Tests`; the scripts in `build/test-management*.ps1` enforce VM-only execution.
 
 The below scripts will automatically locate prerequisites. They must be run using `powershell.exe` (not bash/sh). Use the `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>` invocation from bash.
 

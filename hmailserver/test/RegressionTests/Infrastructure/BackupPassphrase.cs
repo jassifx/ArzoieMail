@@ -250,7 +250,11 @@ namespace RegressionTests.Infrastructure
 
       private void Restore(Backup backup)
       {
-         var startTime = _application.Status.StartTime;
+         var backupLogFile = _application.Settings.Backup.LogFile;
+         var serverLogFile = LogHandler.GetDefaultLogFileName();
+         // Isolate this operation from previous completion and startup messages.
+         CustomAsserts.AssertDeleteFile(backupLogFile);
+         LogHandler.DeleteCurrentDefaultLog();
 
          Assert.That(backup.ContainsSettings, Is.True);
          backup.RestoreSettings = true;
@@ -258,12 +262,26 @@ namespace RegressionTests.Infrastructure
          backup.RestoreMessages = false;
          backup.StartRestore();
 
-         // The server restarts once the restore is done.
+         // StartTime has one-second precision: a successful restore can restart the
+         // server within the same second. Wait for this restore and its asynchronous
+         // reinitialization to finish, rather than requiring a different timestamp.
          for (var i = 0; i < 600; i++)
          {
-            var newStartTime = _application.Status.StartTime;
-            if (newStartTime.Length > 0 && newStartTime != startTime)
-               return;
+            try
+            {
+               var contents = File.Exists(backupLogFile) ? TestSetup.ReadExistingTextFile(backupLogFile) : "";
+               if (contents.Contains("BACKUP ERROR:"))
+                  Assert.Fail(contents);
+
+               if (contents.Contains("Restore completed successfully.") &&
+                   File.Exists(serverLogFile) &&
+                   TestSetup.ReadExistingTextFile(serverLogFile).Contains("\"Servers started.\""))
+                  return;
+            }
+            catch (IOException)
+            {
+               // The server can still be creating or writing either log.
+            }
 
             Thread.Sleep(100);
          }
