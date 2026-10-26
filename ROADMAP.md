@@ -262,6 +262,12 @@ IIS HTTPS bindings and mail TLS bindings are managed separately. Certificate aut
 remaining delivery item, not a capability delivered by #31. Detailed acceptance requirements
 are in [WebAdmin requirements](docs/webadmin-requirements.md#certificate-setup-and-lifecycle).
 
+The maintainer also requested optional **Microsoft Defender Antivirus** email scanning. Repository
+and Microsoft-documentation review supports feasibility through a dedicated native adapter using
+existing message/decoded-attachment scan hooks. Add guided setup, health/test results, explicit
+error/unscannable handling and VM acceptance; integration is not implemented. See
+[Defender assessment](docs/defender-antivirus-feasibility.md).
+
 ---
 
 ## 8. Later phases 📋

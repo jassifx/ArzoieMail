@@ -38,6 +38,27 @@ requirements below are not claims of completed features. See
 - Present SpamAssassin and server DNSBL checks separately and explain how their scores interact
   so administrators can avoid unintended double scoring.
 
+## Microsoft Defender Antivirus option
+
+- Offer Microsoft Defender Antivirus as an optional email malware scanner alongside the existing
+  antivirus integrations. Keep it separate from SpamAssassin and DNSBL spam scoring.
+- Provide guided enable/disable, availability and signature-health checks, a test-scan action,
+  results and actionable errors through the modern panel and authorized native REST operations.
+  Scan messages and decoded attachments in the mail service, never in the IIS/web process.
+- Use a dedicated adapter with clean, infected, error and unscannable outcomes. Configure actions
+  for confirmed detections and unavailable/failed/skipped scans separately; default scan failures
+  to a bounded hold/retry policy rather than silently treating mail as clean. Show limits,
+  retry exhaustion and encrypted/unsupported content clearly to the administrator.
+- Avoid destructive scanning of live mail-store files. Use protected staging, detection-only
+  invocation, bounded execution/concurrency and safe cleanup, with the mail server controlling
+  the resulting message action. Test interference from independent real-time antivirus activity.
+- Do not disable Defender, tamper protection or organizational policy, add broad exclusions, or
+  grant the web process elevated scan access. Respect administrator-managed cloud/sample-submission
+  policy and explain the privacy implications before enabling integration.
+- This is feasible in principle, not implemented or VM-validated. Require VM-only clean/EICAR,
+  MIME attachment, archive, error, timeout, permission and throughput acceptance before delivery.
+  See [Defender feasibility and acceptance](defender-antivirus-feasibility.md).
+
 ## SPF, DKIM and DMARC guidance
 
 - Include per-domain recommendations and validators from the first release. Generate copyable
