@@ -55,6 +55,19 @@ requirements below are not claims of completed features. See
 - Do not disable Defender, tamper protection or organizational policy, add broad exclusions, or
   grant the web process elevated scan access. Respect administrator-managed cloud/sample-submission
   policy and explain the privacy implications before enabling integration.
+- Support high-pressure activity across SMTP receipt/submission, queued outbound delivery,
+  external fetching, server-saved IMAP drafts/APPEND and imports. Client-local drafts become
+  scannable only when uploaded. Re-scan changed content and enforce a valid verdict before
+  delivery or normal user retrieval; specify safe staging for each protocol entry point.
+- Use a durable work queue and bounded workers with fair scheduling, backpressure, crash recovery
+  and idempotent mitigation/delivery transitions. Expose queue age/depth, throughput, latency,
+  resource limits and overload alerts. A simple increase in concurrent scanner processes is
+  insufficient. Validate at least 10,000 in-flight/queued messages, mixed lifecycle activity,
+  bursts, outages, recovery and soak load in the VM before claiming high-volume support.
+- Publish measured capacity for specified hardware and message mix, with numeric throughput
+  and latency acceptance targets and headroom. Thousands concurrently queued is not a defined
+  per-second rate. Defender remains conditional on these results; retain an alternative scanner
+  path if it cannot sustain the required pressure without releasing unscanned mail.
 - This is feasible in principle, not implemented or VM-validated. Require VM-only clean/EICAR,
   MIME attachment, archive, error, timeout, permission and throughput acceptance before delivery.
   See [Defender feasibility and acceptance](defender-antivirus-feasibility.md).

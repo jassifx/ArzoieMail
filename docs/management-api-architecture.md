@@ -83,6 +83,15 @@ to the replacement panel or claim complete parity until endpoint, browser and up
 SpamAssassin integration, DNSBL control and complex SPF/DKIM/DMARC guidance remain required.
 Engine bundling and final service/installer provisioning remain explicit delivery work.
 
+## Antivirus lifecycle and high-load boundary
+
+Optional Microsoft Defender integration must meet the [Defender capacity and lifecycle requirements](defender-antivirus-feasibility.md#high-pressure-scanning-across-the-message-lifecycle).
+Scan scheduling and verdict state belong to the native mail pipeline, independent of the web
+host. Use durable work, bounded workers, backpressure and recovery across receiving, queued
+sending, server-saved drafts and content changes. No normal delivery/retrieval may bypass the
+required verdict. Validate protocol staging and per-message mitigation before enabling the feature;
+Defender throughput and the necessary scheduling changes are not implemented by the API foundation.
+
 ## Implementation sequence
 
 1. Establish the opt-in native management boundary, shared business authentication, ASP.NET Core

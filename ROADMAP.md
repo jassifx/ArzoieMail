@@ -265,7 +265,11 @@ are in [WebAdmin requirements](docs/webadmin-requirements.md#certificate-setup-a
 The maintainer also requested optional **Microsoft Defender Antivirus** email scanning. Repository
 and Microsoft-documentation review supports feasibility through a dedicated native adapter using
 existing message/decoded-attachment scan hooks. Add guided setup, health/test results, explicit
-error/unscannable handling and VM acceptance; integration is not implemented. See
+error/unscannable handling and VM acceptance; integration is not implemented. The maintainer
+requires high-pressure coverage across receive/send queues, server-saved drafts and intermediate
+states: durable scheduling, bounded workers, backpressure, verdict gates and measured capacity
+with at least 10,000 messages in flight/queued in acceptance testing. Do not claim Defender
+throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. See
 [Defender assessment](docs/defender-antivirus-feasibility.md).
 
 ---
