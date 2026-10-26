@@ -16,9 +16,13 @@ build/                # Scripts for building and running tests.
 BUILDING.md           # How to build, run, test and release
 LICENSE               # GNU AGPLv3
 README.md             # What the project is: roadmap, design decisions, getting started
+ROADMAP.md            # Engineering roadmap: decisions, what each phase changed, lessons, what is next
 ```
 
 Everything of substance lives under `hmailserver/`.
+
+Before starting roadmap work, read `ROADMAP.md`: it records the settled decisions, the state of each
+phase, and lessons learned. A pull request that finishes or changes a roadmap item updates it.
 
 ---
 

@@ -96,12 +96,14 @@ below has a reason, and each keeps existing installations working.
 ## Roadmap
 
 ArzoieMail is modernised phase by phase, each change as its own reviewed and tested pull request.
+[ROADMAP.md](ROADMAP.md) has the details: the decisions and why they were made, what each change did,
+and the plan for the phases ahead.
 
 | Phase | Scope | Status |
 |---|---|---|
 | **0 · Foundation** | Visual Studio 2026 and C++20, hardening flags, Windows 10 minimum, Inno Setup 6.7, .NET 10 tools and tests, NUnit 5 | ✅ Done |
-| **1 · Security** | Bound SQL parameters on every database, AES-GCM and DPAPI instead of Blowfish, DPAPI for the Administrator's saved passwords, retiring the `libmysql.dll` fallback | 🔄 In progress |
-| **1b · Web admin** | PHPWebAdmin rebuilt with current Bootstrap and a modern interface; requires PHP 8.5.12 or later; CSRF protection, output escaping, session hardening, a Content Security Policy and login rate limiting | Planned |
+| **1 · Security** | Bound SQL parameters on every database, AES-GCM and DPAPI instead of Blowfish, passphrase-protected backups, DPAPI for the Administrator's saved passwords, retiring the `libmysql.dll` fallback | ✅ Done |
+| **1b · Web admin** | PHPWebAdmin rebuilt with current Bootstrap and a modern interface; requires PHP 8.5.12 or later; CSRF protection, output escaping, session hardening, a Content Security Policy and login rate limiting | Next |
 | **2 · Scripting** | PowerShell event host replacing VBScript and JScript | Planned |
 | **3 · Protocols** | SMTP: PIPELINING, 8BITMIME, ENHANCEDSTATUSCODES, CHUNKING, DSN, SMTPUTF8. IMAP: ENABLE, MOVE, LITERAL+, CONDSTORE/QRESYNC, UTF8=ACCEPT. SCRAM-SHA-256, MTA-STS, DANE, DKIM with Ed25519 | Planned |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact, migrated automatically | Planned |
