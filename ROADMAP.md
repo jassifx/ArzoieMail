@@ -72,7 +72,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern Bootstrap panel, REST API from first release, advanced administration, SpamAssassin/DNSBL controls, SPF/DKIM/DMARC guidance and validation, .NET 10, native management and security hardening | 🔄 | |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30, #31; #32 open (requirements/tracker) |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols** | SMTP, IMAP and authentication extensions; MTA-STS, DANE, DKIM Ed25519 | 📋 | |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -271,6 +271,37 @@ states: durable scheduling, bounded workers, backpressure, verdict gates and mea
 with at least 10,000 messages in flight/queued in acceptance testing. Do not claim Defender
 throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. See
 [Defender assessment](docs/defender-antivirus-feasibility.md).
+
+### Phase 1b delivery tracker
+
+Requirements documented in an open PR do not mean the functionality is implemented. PR #32
+records certificate, PHP-retirement and Defender requirements; it does not implement them.
+
+| Item | Status | Evidence or remaining acceptance |
+|---|---|---|
+| Native management boundary, REST/session security and modern panel foundation | ✅ Done | #31 merged; VM and CI checks passed. This is a foundation, not full administration parity. |
+| Remaining domain/account and advanced administration | 🔜 Next proposed | Explicit native/API operations, complete panel workflows and permission regression tests; implementation waits for maintainer confirmation. |
+| Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
+| SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
+| Guided TLS certificate installation and renewal | 📋 Planned | Import/issuance wizard, listener assignment, validation, renewal, safe activation and rollback. |
+| **Microsoft Defender Antivirus email scanning** | **📋 Planned — implementation not started** | Dedicated native adapter, lifecycle coverage, durable scheduling, mitigation and measured high-pressure acceptance; requirements/assessment in #32. |
+| Production hosting, installer and PHP retirement | 📋 Planned | Restricted identity, HTTPS/runtime provisioning, full parity, upgrade acceptance and removal of the legacy PHP endpoint/source/packaging. |
+
+### Microsoft Defender Antivirus delivery checklist
+
+| Deliverable | Status | Completion gate |
+|---|---|---|
+| Feasibility and requirements | 🔄 Documented; review pending | #32; confirm service permissions, result classification and supported engine behavior in the VM. |
+| Native scanner adapter and result handling | 📋 Planned | Distinct clean/infected/error/unscannable results; bounded execution and no destructive scans of live mail storage. |
+| Message lifecycle coverage | 📋 Planned | SMTP receipt/submission, queued sending, external fetching, server-saved drafts/IMAP APPEND, imports and changed content; valid verdict before release. |
+| High-pressure queue and workers | 📋 Planned | Durable state, bounded resources, fair scheduling, backpressure, restart recovery and no scheduler-induced duplicate release. |
+| Mitigation and recovery | 📋 Planned | Separate detection/error policies, bounded hold/retry, consistent quarantine/attachment handling, retention and audit controls. |
+| Modern panel and REST controls | 📋 Planned | Server-admin-only setup, enable/disable, test scan, engine/signature health, results and queue/latency/overload diagnostics. |
+| VM regression and capacity acceptance | 📋 Planned | At least 10,000 queued/in-flight messages, mixed receive/send/draft activity, bursts, outage/recovery and soak; publish hardware, message mix, throughput, p95/p99 latency and resource use. |
+
+Defender stays optional and is not claimed to meet a production load until the measured
+acceptance envelope passes. All executable validation remains VM/CI-only. Other scanner choices
+remain available if Defender cannot meet the agreed workload.
 
 ---
 

@@ -124,6 +124,12 @@ and the plan for the phases ahead.
 The phases run in this order, each starting once the one before it is done; code quality (5) runs
 alongside all of them.
 
+**Microsoft Defender Antivirus scanning is planned within Phase 1b; implementation has not
+started.** Its [delivery checklist](ROADMAP.md#microsoft-defender-antivirus-delivery-checklist)
+tracks the native adapter, receive/send/draft coverage, durable queue, mitigation, panel/API
+controls and VM capacity acceptance with at least 10,000 queued/in-flight messages. Requirements
+and feasibility are documented in PR #32; production throughput remains unverified.
+
 ## Getting started
 
 1. Check the [system requirements](https://www.arzoie.in/docs/system_requirements): 64-bit
