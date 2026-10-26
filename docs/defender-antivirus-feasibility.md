@@ -103,7 +103,9 @@ Sustained rate, message sizes and latency budgets still require measured capacit
 - Schedule fairly across users/domains and message sizes so archive-heavy traffic, draft edits,
   bulk imports and background rescans cannot starve new mail. Prevent duplicate work for the same
   immutable version where safe; use leases and idempotent state transitions to prevent duplicate
-  delivery, conflicting verdicts or repeated mitigation after worker failure.
+  delivery scheduling, conflicting verdicts or repeated mitigation after worker failure. Document
+  ambiguous remote SMTP acceptance separately: retrying after a lost acknowledgement cannot
+  guarantee exactly-once delivery at a remote server.
 - Coordinate quarantine/attachment-removal actions with the message store and delivery pipeline.
   Preserve consistent database/file state; avoid destructive engine actions against live storage.
   Limit quarantine growth, restrict access and provide audited retention/recovery controls.
@@ -139,7 +141,7 @@ adding queue space does not solve sustained overload.
 Expose queue depth/bytes/age, health, effective limits, throughput, latency and overload/expiry
 alerts in the panel. Set numeric throughput and latency acceptance targets from the agreed load
 profile and benchmark evidence before production approval. Require bounded resources, zero lost
-accepted messages, no duplicate deliveries and no release without the required verdict under
+accepted messages, no scheduler-induced duplicate release and no release without the required verdict under
 fault injection. If Defender falls short, report the tested envelope and select a proven engine
 or revised deployment; do not advertise unmeasured "real-time" capacity.
 
