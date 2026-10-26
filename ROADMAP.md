@@ -72,12 +72,12 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Bootstrap UI, PHP 8.5.12+, CSRF, escaping, CSP, rate limiting | 🔜 | |
+| **1b · Web admin** | Modern Bootstrap panel, REST API from first release, advanced administration, SpamAssassin/DNSBL controls, SPF/DKIM/DMARC guidance and validation, PHP/security hardening | 🔜 | |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols** | SMTP, IMAP and authentication extensions; MTA-STS, DANE, DKIM Ed25519 | 📋 | |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
 | **5 · Code quality** | Ownership, `/W4`, smaller modules, more of the portable core, more fuzzing | 🔄 ongoing | |
-| **6 · Features** | Sieve, DMARC reports, ARC, REST API, webmail | 📋 | |
+| **6 · Features** | Sieve, DMARC aggregate reports, ARC, webmail | 📋 | |
 
 ---
 
@@ -234,7 +234,18 @@ account mid-delivery, the server logs HM5165, and the *next* test fails in teard
 `hmailserver/source/WebAdmin`: 89 PHP files with dtree.js, tabber and a custom `style.css`,
 talking to the server through `new COM("hMailServer.Application")`.
 
-Goals:
+The maintainer expanded this phase on **2026-10-26**: deliver a powerful, modern panel with
+advanced fine-tuning, a REST API from the first release, integrated SpamAssassin administration,
+multiple administrator-configurable DNSBL providers, and SPF/DKIM/DMARC DNS recommendations
+and validation, including complex SPF shared with other providers.
+
+The detailed requirements and open architecture decisions are in
+[WebAdmin requirements](docs/webadmin-requirements.md). REST moves here from Phase 6. Preserve
+COM compatibility; the new panel uses REST, whose implementation may use COM internally.
+Engine bundling, API hosting and authentication, testing and PR boundaries remain to be designed.
+These are planned requirements; implementation has not started.
+
+Existing runtime and security goals remain:
 - Current **Bootstrap** and a modern, responsive interface, replacing dtree and tabber.
 - **PHP 8.5.12 or later**: the web admin refuses to run when `PHP_VERSION_ID < 80512`. That
   release (2026-10-21) fixed CVE-2026-109618 (out-of-memory corruption RCE) and CVE-2026-109619
@@ -282,8 +293,8 @@ is to move more of the protocol parsing into the portable core (MIME, the SMTP a
 parsers, DKIM) and fuzz each part that reads bytes from the network.
 
 ### Phase 6 · Features
-Sieve filtering, DMARC aggregate reports, ARC, a REST API, webmail. The web admin rebuilt in Phase 1b
-keeps using the COM API; it can move to the REST API once there is one.
+Sieve filtering, DMARC aggregate reports, ARC and webmail. REST API delivery and domain DNS
+setup/validation have moved to Phase 1b; DMARC aggregate reporting remains here.
 
 ---
 
