@@ -52,6 +52,11 @@ unless the maintainer says otherwise for a specific task.
 
 ## Reporting
 
+- Treat repository documentation as shared project memory. When the maintainer changes scope
+  or asks to save context, update the latest handoff and relevant tracker/requirements, commit
+  through the current authorized PR, and distinguish merged work, planned features and unverified
+  feasibility/capacity. Never use an old handoff's CI snapshot as evidence for a new commit.
+
 - Report CI results plainly: which jobs passed, which failed and why. Separate a known flaky test
   (gotchas.md lists them) from a real failure, and never call a change done while a failure is
   unexplained.

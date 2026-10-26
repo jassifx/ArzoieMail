@@ -6,6 +6,10 @@ traps found along the way, and where the last session left off.
 
 ## Read in this order
 
+Current handoff: [2026-10-26](handoffs/2026-10-26.md). It records the merged #31 foundation,
+open #32 documentation/tracker work, PHP retirement, guided certificates and high-pressure
+Defender requirements. Verify live PR/CI state before continuing; planned features are not implemented.
+
 | # | Document | What it gives you |
 |---|---|---|
 | 1 | [`handoffs/`](handoffs/) — the newest file | Where the work stands, what is waiting on the maintainer, what to do next |
@@ -24,6 +28,9 @@ its REST API.
 - **Don't copy what is written elsewhere.** ROADMAP.md, AGENTS.md, BUILDING.md, commit messages
   and pull requests are the record; link to them.
 - **A finished roadmap item updates ROADMAP.md**, not these notes.
+- Keep the newest handoff current when the maintainer changes the plan or asks to save project
+  memory. Record authorization/review gates and link the authoritative requirements; remove or
+  clearly supersede stale status so the next agent cannot mistake old PHP plans for current work.
 - **At the end of a session, add a handoff** to [`handoffs/`](handoffs/) named `YYYY-MM-DD.md`
   (the `handoff` skill describes what goes in one). Older handoffs stay as history; only the
   newest describes the current state.
