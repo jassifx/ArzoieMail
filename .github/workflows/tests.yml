@@ -262,7 +262,12 @@ jobs:
               if ($null -eq $application.Authenticate('Administrator', $password)) { throw "Cannot authenticate test setup." }
           }
           [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($application)
-          $credential = [pscredential]::new('Administrator', (ConvertTo-SecureString $password -AsPlainText -Force))
+          $securePassword = if ($password.Length -eq 0) {
+              [Security.SecureString]::new()
+          } else {
+              ConvertTo-SecureString $password -AsPlainText -Force
+          }
+          $credential = [pscredential]::new('Administrator', $securePassword)
           & build/test-management-live.ps1 -AdministratorCredential $credential
 
       - name: Summarise the NUnit result
