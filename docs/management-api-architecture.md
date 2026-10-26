@@ -6,7 +6,9 @@ The maintainer requested that the new administration panel avoid a COM backend. 
 HTTP application on **ASP.NET Core / .NET 10**, alongside the existing .NET 10 tools. The new
 panel and REST API have **no COM dependency** and do not access the mail database directly.
 This supersedes the earlier PHP-hosted REST proposal and the PHP runtime requirement for the
-replacement panel. PHP remains relevant only to the existing legacy WebAdmin during migration.
+replacement panel. The agreed end state removes PHP completely from administration delivery.
+The existing legacy WebAdmin remains only until a tested migration retires its source, packaging
+and deployment requirements; do not remove unrelated PHP applications from administrators' machines.
 
 COM is not inherently insecure, and replacing it alone does not establish security. The goal
 is an explicit, testable management boundary with limited operations and least privilege.
@@ -70,7 +72,7 @@ unit/security test executables, browser previews and integration tests. The deve
 for source editing, static inspection and compilation only. Do not start a local API preview or
 run test executables there. This supersedes earlier local-testing notes and assumptions.
 
-Implementation is in progress on `feature/webadmin-rest-foundation`. The uncommitted PHP/COM
+The native/API/panel foundation was merged in PR #31. Phase 1b remains in progress. The PHP/COM
 prototype was withdrawn; reusable Bootstrap assets are retained under
 `hmailserver/source/Management/Api/wwwroot`. New backend code is under `Management/Api` and
 native management code belongs under `Server/Common/Management`.
@@ -85,7 +87,7 @@ Engine bundling and final service/installer provisioning remain explicit deliver
 
 1. Establish the opt-in native management boundary, shared business authentication, ASP.NET Core
    session/security foundation, initial spam/DNSBL/DNS workflows and repeatable tests. This is
-   the current foundation change; it does not switch existing installations to the new panel.
+   the foundation merged in PR #31; it does not switch existing installations to the new panel.
 2. Migrate the remaining domain/account, alias, distribution-list, delivery, rules, TLS and
    advanced administration capabilities to explicit native commands and REST endpoints, with
    server/domain/account permission tests for every operation.
@@ -93,7 +95,12 @@ Engine bundling and final service/installer provisioning remain explicit deliver
    and provider coexistence. Retain the distinction between DNS inspection and message-level
    authentication; do not replace the server's existing authentication evaluators with the wizard.
 4. Finalize SpamAssassin engine packaging/lifecycle, API hosting under a restricted identity,
-   HTTPS/certificate provisioning and offline installer/runtime delivery.
+   HTTPS/certificate provisioning and offline installer/runtime delivery. Deliver the guided
+   certificate import/issuance, listener assignment, renewal, validation and rollback requirements
+   in [WebAdmin requirements](webadmin-requirements.md#certificate-setup-and-lifecycle). Keep mail
+   listener certificates independent of IIS web bindings; automatic issuance is not yet implemented.
 5. Switch the installer and end-user documentation only after parity, upgrade, security and
    supported-database acceptance tests pass. Retire the legacy PHP panel through that migration;
-   keep COM compatibility independent until its consumers have a supported replacement.
+   remove PHP source, packaging and runtime requirements from administration delivery and verify
+   that upgrades disable the old endpoint. Keep COM compatibility independent until its consumers
+   have a supported replacement.

@@ -82,7 +82,8 @@ PostgreSQL 18's libpq, MariaDB Connector/C 3.4, and administration tools on .NET
 **A drop-in upgrade.** Run the installer over hMailServer 5.x and it upgrades the installation and
 its database in place. The names existing setups depend on are kept on purpose: the
 `hMailServer` Windows service, the `hMailServer.Application` COM API, `hMailServer.exe` and
-`hMailServer.ini`. Scripts, PHPWebAdmin and other tools keep working unchanged. (Back up first:
+`hMailServer.ini`. Existing scripts, legacy PHPWebAdmin and other tools retain compatibility during migration.
+The replacement web admin uses .NET 10; PHPWebAdmin will be retired after migration validation. (Back up first:
 the database upgrade cannot be undone.)
 
 ## Why things were replaced
@@ -113,7 +114,7 @@ and the plan for the phases ahead.
 |---|---|---|
 | **0 · Foundation** | Visual Studio 2026 and C++20, hardening flags, Windows 10 minimum, Inno Setup 6.7, .NET 10 tools and tests, NUnit 5 | ✅ Done |
 | **1 · Security** | Bound SQL parameters on every database, retiring the `libmysql.dll` fallback, AES-GCM and DPAPI instead of Blowfish with an exportable key, passphrase-protected backups, DPAPI for the Administrator's saved passwords, an Argon2id review (logon timing), UTF-8 client credentials | ✅ Done |
-| **1b · Web admin** | Modern Bootstrap panel with advanced administration and REST API from the first release; SpamAssassin management, configurable DNSBLs, SPF/DKIM/DMARC guidance and validation including shared-provider SPF; .NET 10 backend with native management access and no COM dependency | In progress |
+| **1b · Web admin** | Modern Bootstrap panel with advanced administration and REST API from the first release; SpamAssassin management, configurable DNSBLs, SPF/DKIM/DMARC guidance and validation including shared-provider SPF; .NET 10 backend with native management access and no COM dependency; guided TLS certificate setup/renewal and full PHP retirement after migration | In progress |
 | **2 · Scripting** | PowerShell event host replacing VBScript and JScript | Planned |
 | **3 · Protocols** | SMTP: PIPELINING, 8BITMIME, ENHANCEDSTATUSCODES, CHUNKING, DSN, SMTPUTF8. IMAP: ENABLE, MOVE, LITERAL+, CONDSTORE/QRESYNC, UTF8=ACCEPT. SCRAM-SHA-256, MTA-STS, DANE, DKIM with Ed25519 | Planned |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact, migrated automatically | Planned |

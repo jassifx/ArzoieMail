@@ -60,7 +60,7 @@ These were decided deliberately; reopen them only with a new reason.
 | **Secrets use AES-256-GCM under a random per-installation key protected by machine-scope DPAPI**, with passphrase export and import of the key. | The old Blowfish key was the same in every installation and is in the public source. DPAPI ties the key to the machine; export moves it to a new one. |
 | **Backups get their own passphrase**, independent of the installation's key. | A backup must restore on a new computer, which does not have the old key. |
 | **Windows 10 / Server 2016 is the minimum**, x64 only. | Everything older is out of support. |
-| **The replacement web panel uses ASP.NET Core / .NET 10 with a native management channel, without COM.** | Revised by the maintainer on 2026-10-26. Keep COM separately for compatibility; retire PHP from the replacement panel (see Phase 1b and docs/management-api-architecture.md). |
+| **The replacement web panel uses ASP.NET Core / .NET 10 with a native management channel, without COM.** | Revised by the maintainer on 2026-10-26. Keep COM separately for compatibility; remove PHP completely from administration delivery after a tested migration (see Phase 1b and docs/management-api-architecture.md). |
 
 ---
 
@@ -246,23 +246,21 @@ The maintainer has authorized implementation and revised the backend: ASP.NET Co
 with a restricted local native management channel and no COM dependency in the replacement
 panel/API. COM stays separate for compatibility. See
 [management architecture](docs/management-api-architecture.md). Implementation is in progress;
-engine bundling, remaining capability migration and installer provisioning are not complete.
+PR #31 merged the native/API/panel foundation with passing CI. Engine bundling, remaining
+administration capabilities, certificate lifecycle and installer provisioning are not complete.
 
-The following original PHP runtime goals are retained as history for legacy WebAdmin only;
-the replacement uses .NET 10. Bootstrap and application security goals still apply:
-- Current **Bootstrap** and a modern, responsive interface, replacing dtree and tabber.
-- **PHP 8.5.12 or later**: the web admin refuses to run when `PHP_VERSION_ID < 80512`. That
-  release (2026-10-21) fixed CVE-2026-109618 (out-of-memory corruption RCE) and CVE-2026-109619
-  (stale global state RCE), both CVSS 9.2, in FPM, mod_php and php-cgi (also fixed in 8.4.27,
-  8.3.36 and 8.2.35). CVE-2026-115560 (session upload progress, 2026-10-23) is mitigated by
-  configuration.
-- Code that runs on both 8.5 and 8.6 (8.6 is expected in November 2026).
-- The install guide sets, at server or pool level: `session.upload_progress.enabled=0`,
-  `fatal_error_backtraces=0` and a small `post_max_size`. `memory_limit=-1` is deliberately not
-  recommended.
-- A diagnostics page that warns about unsafe ini values.
-- CSRF tokens on every form, consistent output escaping, session hardening (cookie flags,
-  regeneration at logon), a Content Security Policy and login rate limiting.
+The maintainer confirmed full PHP retirement on **2026-10-26**. Complete the replacement and
+migration acceptance tests, then remove legacy WebAdmin source, packaging, PHP runtime checks
+and deployment requirements. Existing PHP administration remains temporary until that cutover;
+unrelated PHP installations are outside scope. The earlier PHP-version modernization goals
+are superseded. COM remains independently available for existing desktop tools and scripts.
+
+Certificate installation must be user-friendly from the replacement's first production release:
+a guided import or automatic issuance workflow, hostname/chain/key validation, SMTP/IMAP/POP3
+listener assignment, expiry and renewal status, automatic renewal, safe activation and rollback.
+IIS HTTPS bindings and mail TLS bindings are managed separately. Certificate automation is a
+remaining delivery item, not a capability delivered by #31. Detailed acceptance requirements
+are in [WebAdmin requirements](docs/webadmin-requirements.md#certificate-setup-and-lifecycle).
 
 ---
 
