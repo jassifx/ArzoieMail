@@ -1,18 +1,18 @@
 ---
 name: upgrade-7zip
 description: >-
-  Fetch the 7-Zip command line tool hMailServer ships for backup/restore and/or bump
+  Fetch the 7-Zip command line tool ArzoieMail ships for backup/restore and/or bump
   the pinned version (e.g. re-fetch 26.03, or upgrade 26.03 -> 26.04). Records the new
   release's SHA-256, downloads and unpacks it into %hMailServerLibs% via
   libraries\build-7zip.ps1, rewrites every pinned 7-Zip version reference in the repo,
   keeps the BUILDING.md build instructions current, and verifies backup and restore still
   work. Use when asked to fetch, re-fetch, bump, update, or upgrade 7-Zip / 7za.exe for
-  hMailServer.
+  ArzoieMail.
 ---
 
-# Fetch / upgrade 7-Zip for hMailServer
+# Fetch / upgrade 7-Zip for ArzoieMail
 
-hMailServer's backup and restore feature shells out to the 7-Zip command line tool: see
+ArzoieMail's backup and restore feature shells out to the 7-Zip command line tool: see
 `Compression::AddFile`, `AddDirectory` and `Uncompress` in
 `hmailserver/source/Server/Common/Util/Compression.cpp`, which resolve `7za.exe` from the
 configured `BinDirectory`. The binary is **not** vendored in the repo. It is downloaded into
@@ -32,7 +32,7 @@ Nothing is compiled. 7-Zip ships as a prebuilt binary from Igor Pavlov, so there
 toolchain, no OpenSSL dependency, and no build to wait on — the whole fetch takes seconds.
 
 In exchange, the download is **hash-pinned**: the bytes downloaded are the bytes installed on
-every hMailServer machine, so `build-7zip.ps1` refuses any version whose SHA-256 is not
+every ArzoieMail machine, so `build-7zip.ps1` refuses any version whose SHA-256 is not
 recorded in its `$ArchiveHashes` table. On a version bump you must add the entry *before* the
 script will run (step 2).
 
@@ -174,7 +174,7 @@ need `7za.dll`, which is deliberately not shipped):
 $e = Join-Path $env:hMailServerLibs '7zip-<target>\7za.exe'; (Get-Item $e).VersionInfo.FileVersion; & $e i | Select-Object -First 2
 ```
 
-Then build hMailServer and run its post-build step, which copies `7za.exe` into the output dir:
+Then build ArzoieMail and run its post-build step, which copies `7za.exe` into the output dir:
 
 ```
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\build.ps1
@@ -191,7 +191,7 @@ which drive a real backup and restore through the COM API and so exercise `7za.e
 hmailserver\test\packages\nunit.consolerunner\<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll --where "class =~ BackupRestore"
 ```
 
-They need an installed and running hMailServer. A version bump that breaks the command-line
+They need an installed and running ArzoieMail. A version bump that breaks the command-line
 syntax shows up here and nowhere else.
 
 If the installer is being built too, compiling `hmailserver\installation\hMailServer64.iss` with

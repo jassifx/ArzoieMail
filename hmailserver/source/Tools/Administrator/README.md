@@ -1,6 +1,6 @@
-# hMailServer Administrator — Codebase Guide
+# ArzoieMail Administrator — Codebase Guide
 
-hMailServer Administrator (`hMailAdmin.exe`) is the Windows desktop GUI used to configure a running hMailServer instance. It is written in C# / WinForms and lives entirely under `source/Tools/Administrator/`. It communicates with the server exclusively through the COM API (`Interop.hMailServer.dll`) — it does not touch the database or file system directly.
+ArzoieMail Administrator (`hMailAdmin.exe`) is the Windows desktop GUI used to configure a running ArzoieMail instance. It is written in C# / WinForms and lives entirely under `source/Tools/Administrator/`. It communicates with the server exclusively through the COM API (`Interop.hMailServer.dll`) — it does not touch the database or file system directly.
 
 The project is part of the Visual Studio solution `source/Tools/hMailServer Tools.sln`.
 
@@ -39,7 +39,7 @@ The entry point for the application UI. Responsibilities:
 
 - Builds the tree view hierarchy on startup by instantiating `INode` objects.
 - Handles `treeNodes_AfterSelect` — calls `ShowNodeRepresentation()` to swap the active pane.
-- Manages the connection to hMailServer (calls `formConnect` if not yet connected).
+- Manages the connection to ArzoieMail (calls `formConnect` if not yet connected).
 - Holds a reference to the `hMailServer.Application` COM object that is passed down to all panes.
 
 When adding a new top-level settings area, you must: add a new `INode` implementation in `Nodes/`, register it in the tree in `formMain`, and create a corresponding pane in `Main panes/`.
@@ -110,7 +110,7 @@ Small utility classes shared across panes and dialogs. Key pieces:
 
 ## `formConnect.cs` — Connection Dialog
 
-Shown at startup (and on reconnect). Lets the user enter the hMailServer host and username.
+Shown at startup (and on reconnect). Lets the user enter the ArzoieMail host and username.
 
 ---
 

@@ -1,17 +1,17 @@
 ---
 name: upgrade-openssl
 description: >-
-  Upgrade the OpenSSL version hMailServer builds against, for 3.5.x patch bumps
+  Upgrade the OpenSSL version ArzoieMail builds against, for 3.5.x patch bumps
   (e.g. 3.5.5 -> 3.5.7). Builds the new OpenSSL into %hMailServerLibs% via
   libraries\build-openssl.ps1, rewrites every pinned OpenSSL version reference in
-  the repo, keeps the BUILDING.md build instructions current, and verifies hMailServer
+  the repo, keeps the BUILDING.md build instructions current, and verifies ArzoieMail
   still compiles and links. Use when asked to bump, update, or upgrade OpenSSL for
-  hMailServer. Supports OpenSSL 3.5.x only.
+  ArzoieMail. Supports OpenSSL 3.5.x only.
 ---
 
-# Upgrade OpenSSL (3.5.x) for hMailServer
+# Upgrade OpenSSL (3.5.x) for ArzoieMail
 
-This skill upgrades the OpenSSL version hMailServer links against. OpenSSL is not
+This skill upgrades the OpenSSL version ArzoieMail links against. OpenSSL is not
 vendored in the repo; it is built locally into `%hMailServerLibs%\openssl-<version>\out64`,
 and its concrete version is pinned in a few build/config files. This skill builds the new
 version, rewrites those references, and verifies the build.
@@ -107,7 +107,7 @@ current pinned versions, which relink them against the newly built OpenSSL.
 
 ### 6. Verify
 
-Build hMailServer to confirm it compiles and links against the new OpenSSL:
+Build ArzoieMail to confirm it compiles and links against the new OpenSSL:
 
 ```
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\build.ps1

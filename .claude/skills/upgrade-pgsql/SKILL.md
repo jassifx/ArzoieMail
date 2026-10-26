@@ -1,22 +1,22 @@
 ---
 name: upgrade-pgsql
 description: >-
-  Build libpq for hMailServer and/or bump the pinned PostgreSQL version, for 17.x
+  Build libpq for ArzoieMail and/or bump the pinned PostgreSQL version, for 17.x
   and 18.x (e.g. rebuild 18.6 against a new OpenSSL, or upgrade 18.6 -> 18.7).
   Builds libpq into %hMailServerLibs% via libraries\build-pgsql.ps1 (linking it
-  against the OpenSSL hMailServer uses), rewrites every pinned PostgreSQL version
+  against the OpenSSL ArzoieMail uses), rewrites every pinned PostgreSQL version
   reference in the repo, keeps the BUILDING.md build instructions current, and verifies
-  hMailServer still compiles and links. Use when asked to build, rebuild, bump,
-  update, or upgrade PostgreSQL/libpq for hMailServer. Supports PostgreSQL 17.x/18.x
+  ArzoieMail still compiles and links. Use when asked to build, rebuild, bump,
+  update, or upgrade PostgreSQL/libpq for ArzoieMail. Supports PostgreSQL 17.x/18.x
   only.
 ---
 
-# Build / upgrade libpq (PostgreSQL 17.x/18.x) for hMailServer
+# Build / upgrade libpq (PostgreSQL 17.x/18.x) for ArzoieMail
 
-hMailServer talks to PostgreSQL through libpq. PostgreSQL is not vendored in the repo;
+ArzoieMail talks to PostgreSQL through libpq. PostgreSQL is not vendored in the repo;
 libpq is built locally into `%hMailServerLibs%\postgresql-<version>\Release\libpq`, and its
 concrete version is pinned in a few build/config files. This skill builds libpq (linking it
-against the OpenSSL hMailServer uses), rewrites those references when the version changes, and
+against the OpenSSL ArzoieMail uses), rewrites those references when the version changes, and
 verifies the build.
 
 There are two reasons to run it:
@@ -123,7 +123,7 @@ process (e.g. new or renamed Meson options, a different output path) update both
 
 ### 5. Verify
 
-Build hMailServer to confirm it compiles and links against the new libpq:
+Build ArzoieMail to confirm it compiles and links against the new libpq:
 
 ```
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\build.ps1
@@ -143,7 +143,7 @@ powershell.exe -NoProfile -Command "$d = Get-ChildItem 'C:\Program Files*\Micros
 ```
 
 Under `Image has the following dependencies:` both `libssl-3-x64.dll` and `libcrypto-3-x64.dll`
-must be listed (dynamic-linked OpenSSL, in lockstep with the rest of hMailServer). If instead
+must be listed (dynamic-linked OpenSSL, in lockstep with the rest of ArzoieMail). If instead
 you see no OpenSSL DLLs, libpq was built without SSL (missing/mismatched `openssl-<ver>\out64`
 at build time) — rebuild it (step 2) before shipping. The other entries (`Secur32`, `WS2_32`,
 `KERNEL32`, `VCRUNTIME140`, the `api-ms-win-crt-*` set) are the expected Windows/CRT

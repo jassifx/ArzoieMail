@@ -35,7 +35,7 @@ Environment set up
 **NOTE**
 
 Do not build ArzoieMail on a computer that runs a production mail server. Building stops the
-running hMailServer service and registers the newly built hMailServer.exe as the service and COM
+running ArzoieMail (or hMailServer) service and registers the newly built hMailServer.exe as the service and COM
 server on the machine, so a production installation stops running. If that happens, reinstall the
 production version.
 

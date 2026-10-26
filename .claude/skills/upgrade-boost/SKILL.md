@@ -1,18 +1,18 @@
 ---
 name: upgrade-boost
 description: >-
-  Build Boost for hMailServer and/or bump the pinned Boost version, for 1.x
+  Build Boost for ArzoieMail and/or bump the pinned Boost version, for 1.x
   (e.g. rebuild 1.90.0, or upgrade 1.89.0 -> 1.90.0). Builds the static x64
-  Boost libraries hMailServer links against into %hMailServerLibs% via
+  Boost libraries ArzoieMail links against into %hMailServerLibs% via
   libraries\build-boost.ps1, rewrites every pinned Boost version reference in the
-  repo, keeps the BUILDING.md build instructions current, and verifies hMailServer
+  repo, keeps the BUILDING.md build instructions current, and verifies ArzoieMail
   still compiles and links. Use when asked to build, rebuild, bump, update, or
-  upgrade Boost for hMailServer. Supports Boost 1.x only.
+  upgrade Boost for ArzoieMail. Supports Boost 1.x only.
 ---
 
-# Build / upgrade Boost (1.x) for hMailServer
+# Build / upgrade Boost (1.x) for ArzoieMail
 
-hMailServer links against a handful of compiled Boost libraries (thread, filesystem, regex,
+ArzoieMail links against a handful of compiled Boost libraries (thread, filesystem, regex,
 chrono, system, atomic) plus many header-only ones. Boost is not vendored in the repo; it is
 built locally into `%hMailServerLibs%\boost_<underscored-version>` (e.g. `boost_1_90_0`), and
 its concrete version is pinned in the project files and BUILDING.md. This skill builds Boost,
@@ -34,7 +34,7 @@ There are two reasons to run it:
   that is why Boost, unlike OpenSSL/libpq, has no touch points in `post-build.bat`,
   `section_files_64.iss`, or `hMailServer64.iss`.
 - The compiled libs are built with the **msvc-14.5** toolset (v145, the Visual Studio 2026
-  default compiler), matching the rest of hMailServer. Updating any CI/CD-built copy of Boost is out of scope, but BUILDING.md
+  default compiler), matching the rest of ArzoieMail. Updating any CI/CD-built copy of Boost is out of scope, but BUILDING.md
   build instructions must stay accurate.
 
 ## Steps
@@ -108,7 +108,7 @@ if Boost changed the build process (bootstrap/b2 flags, staged lib naming) updat
 
 ### 5. Verify
 
-Build hMailServer to confirm it compiles and links against the new Boost:
+Build ArzoieMail to confirm it compiles and links against the new Boost:
 
 ```
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\build.ps1

@@ -89,7 +89,7 @@ below has a reason, and each keeps existing installations working.
 | Oracle `libmysql.dll` | MariaDB Connector/C, built with OpenSSL | Maintained, open source, talks to both MySQL 8 and MariaDB, with authentication plugins built in |
 | SQL text assembled from values | Bound parameters | Values can never become SQL, whatever they contain |
 | Windows Vista / Server 2008 support | Windows 10 / Server 2016 and later | Required by PostgreSQL's current client library, and lets the server use what Windows 10 provides instead of workarounds for systems long out of support |
-| Blowfish with a fixed key | AES-256-GCM with a per-installation key protected by Windows DPAPI, exportable with a passphrase *(planned)* | The old key is published in the source code, so anyone with an `hMailServer.ini` or a backup could decrypt the passwords in it |
+| Blowfish with a fixed key | AES-256-GCM with a per-installation key protected by Windows DPAPI, exportable with a passphrase | The old key is published in the source code, so anyone with an `hMailServer.ini` or a backup could decrypt the passwords in it |
 | VBScript / JScript event scripts | A PowerShell event host, out of process *(planned)* | Microsoft has deprecated VBScript and is phasing it out of Windows, and a crashing script should never take the mail server down with it |
 | SQL Server Compact 4.0 | SQLite, with automatic migration *(planned)* | SQL Server Compact has been out of support since 2021 |
 

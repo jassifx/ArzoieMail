@@ -291,6 +291,9 @@ Sieve filtering, DMARC aggregate reports, ARC, a REST API with a new web admin, 
 - **Schema changes** follow the checklist in AGENTS.md: upgrade scripts for all four database
   types, the three `CreateTables*.sql`, `REQUIRED_DB_VERSION`, and DBUpdater. Remember the blank
   line between statements. The current schema version is **5714**.
+- **Naming**: the product is ArzoieMail, but some identifiers keep the hMailServer name on purpose
+  (`hMailServer.exe`, the service name, the `hMailServer.Application` COM API, ...). AGENTS.md lists them;
+  don't rename those.
 - **New COM API**: add it to `hMailServer.idl` with a new `id`, implement it in `Server/COM`, and
   make sure the class implements `ISupportErrorInfo` if it returns error messages.
 - **`Formatter::Format`** takes at most five arguments.
