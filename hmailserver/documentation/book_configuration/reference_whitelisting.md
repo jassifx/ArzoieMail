@@ -6,13 +6,16 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 # General
 
-hMailServer includes a number of anti-spam features. In some cases, you want certain senders to bypass all these. For example, a specific IP address may have been blacklisted by mistake, but you still want to be able to receive email originating from this IP address. Another example is that you may expect email from a specific sender, and you don't want to risk to loose this email if it's classified as spam.
+ArzoieMail includes a number of anti-spam features. In some cases, you want certain senders to bypass all these. For example, a specific IP address may have been blacklisted by mistake, but you still want to be able to receive email originating from this IP address. Another example is that you may expect email from a specific sender, and you don't want to risk to loose this email if it's classified as spam.
 
-To do this, you can add white-list records to the configuration. If hMailServer receives an email from a source matching one of these records, hMailServer will not try to determine whether the email is spam. To add a whitelist record, start hMailServer Administrator, and navigate to Settings, Spam protection, White listing. For every white list record, you can specify a description, an lower and upper IP address and an email address.
+To do this, you can add white-list records to the configuration. If ArzoieMail receives an email from a source matching one of these records, ArzoieMail will not try to determine whether the email is spam. To add a whitelist record, start ArzoieMail Administrator, and navigate to Settings, Spam protection, White listing. For every white list record, you can specify a description, an lower and upper IP address and an email address.
 
-Before performing spam protection, hMailServer determines the IP address of the sender. When this has been done, hMailServer goes through the list of white list records. If a record matching the IP address is found, hMailServer checks whether the email address specified in the white list record matches. If so, spam protection is bypassed for this email.
+Before performing spam protection, ArzoieMail determines the IP address of the sender. When this has been done, ArzoieMail goes through the list of white list records. If a record matching the IP address is found, ArzoieMail checks whether the email address specified in the white list record matches. If so, spam protection is bypassed for this email.
 
 ### Examples
 
@@ -53,7 +56,7 @@ Example 4: Whitelist all email sent from the local network (192.168.0.*)
 4. In the Upper IP field, specify 192.168.0.255.
 5. Click Save
 
-Now a record is added. Note that the E-mail address for the record has been set to *. This means that hMailServer will ignore spam protection for all email messages originating from the local network, regardless who the sender is.
+Now a record is added. Note that the E-mail address for the record has been set to *. This means that ArzoieMail will ignore spam protection for all email messages originating from the local network, regardless who the sender is.
 
 ### Notes
 
@@ -64,7 +67,7 @@ Now a record is added. Note that the E-mail address for the record has been set 
 
  In other words, you can use the * anywhere in the email address.
 - It's not possible to use wildcards in the IP address.
-- If you have selected "*Incoming relay*" in the IP range the sender is connecting from, hMailServer will use the *Received*-headers of the email to determine the originating email IP address.
+- If you have selected "*Incoming relay*" in the IP range the sender is connecting from, ArzoieMail will use the *Received*-headers of the email to determine the originating email IP address.
 
 ## Settings
 
@@ -78,8 +81,4 @@ The e-mail address which should be white-listed. It is possible to use wildcards
 
 ### Lower and Upper IP
 
-The IP range which the white list record should be applied on. If you leave these fields empty, hMailServer will assume that you mean 0.0.0.0-255.255.255.255 (the entire Internet).
-
- 
-
- 
+The IP range which the white list record should be applied on. If you leave these fields empty, ArzoieMail will assume that you mean 0.0.0.0-255.255.255.255 (the entire Internet).

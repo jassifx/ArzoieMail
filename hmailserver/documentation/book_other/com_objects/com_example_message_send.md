@@ -6,7 +6,10 @@ index: 0
 is_book: false
 ---
 
-This example shows how to send an email using the hMailServer COM API.
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
+This example shows how to send an email using the ArzoieMail COM API.
 
 # Sending a message
 

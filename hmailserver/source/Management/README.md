@@ -6,6 +6,10 @@ PHP application and COM API remain available as compatibility surfaces during mi
 
 Read [the requirements](../../../docs/webadmin-requirements.md) and
 [architecture/security boundaries](../../../docs/management-api-architecture.md).
+The foundation was merged in PR #31; SQL Express connectivity in PR #33 is a separate native
+database improvement. See the [Phase 1b tracker](../../../ROADMAP.md#phase-1b-delivery-tracker)
+and [documentation status](../../../docs/documentation-status.md) for remaining administration,
+certificate, Defender, hosting and PHP-retirement work. Do not present the preview as full parity.
 
 ## Build on the development host
 

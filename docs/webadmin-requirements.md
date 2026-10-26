@@ -5,6 +5,11 @@ COM from the replacement panel/backend. Phase 1b implementation is now authorize
 requirements below are not claims of completed features. See
 [management architecture](management-api-architecture.md) for the design and delivery status.
 
+The API/panel foundation is merged in PR #31 and SQL Express modernization in PR #33. Full
+administration parity, certificate lifecycle, Defender scanning and PHP retirement remain pending.
+Keep end-user guidance aligned with [documentation status](documentation-status.md); inherited
+manual naming updates do not imply that these requirements have been implemented.
+
 ## Modern administration
 
 - Deliver a modern, responsive Bootstrap interface from the first release, replacing dtree,

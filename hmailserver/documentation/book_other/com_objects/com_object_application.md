@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ### Description
 
-The application object is the root object in the hMailServer API. It's the first object you should create when you want to access the hMailServer API
+The application object is the root object in the ArzoieMail API. It's the first object you should create when you want to access the ArzoieMail API
 
 ### Methods
 
@@ -18,7 +21,7 @@ The application object is the root object in the hMailServer API. It's the first
 
 <div class="api_method_name">Connect()</div>
 
-<div class="api_description">Opens a connection to the hMailServer database.</div>
+<div class="api_description">Opens a connection to the ArzoieMail database.</div>
 
 <div class="api_method_name">Reinitialize()</div>
 
@@ -26,11 +29,11 @@ The application object is the root object in the hMailServer API. It's the first
 
 <div class="api_method_name">Start()</div>
 
-<div class="api_description">Starts an hMailServer server.</div>
+<div class="api_description">Starts an ArzoieMail server.</div>
 
 <div class="api_method_name">Stop()</div>
 
-<div class="api_description">Stops an hMailServer server.</div>
+<div class="api_description">Stops an ArzoieMail server.</div>
 
 <div class="api_method_name">SubmitEMail()</div>
 
@@ -88,8 +91,8 @@ The application object is the root object in the hMailServer API. It's the first
 
 <div class="api_method_name">string Version</div>
 
-<div class="api_description">Gets the current hMailServer version<br> <i>(read-only)</i></div>
+<div class="api_description">Gets the current ArzoieMail version<br> <i>(read-only)</i></div>
 
 <div class="api_method_name">string VersionArchitecture</div>
 
-<div class="api_description">Gets the current hMailServer architecture (x86/x64)<br> <i>(read-only)</i></div>
+<div class="api_description">Gets the current ArzoieMail architecture (x86/x64)<br> <i>(read-only)</i></div>

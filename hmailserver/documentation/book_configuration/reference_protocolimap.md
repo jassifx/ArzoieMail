@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 <h3><span class="Title">General</span></h3>
 
 #### Connections
@@ -26,8 +29,8 @@ is_book: false
 <p>Permissions are applied in the following manner:</p>
 <ul>
     <li>If a permission matching the specific user is found, that permission is used.</li>
-    <li>If not, hMailServer will check if the user is a member of a group. If that's the case, the first group is selected.</li>
-    <li>If not, hMailServer will check whether an "Anyone" permission has been set up.</li>
+    <li>If not, ArzoieMail will check if the user is a member of a group. If that's the case, the first group is selected.</li>
+    <li>If not, ArzoieMail will check whether an "Anyone" permission has been set up.</li>
 </ul>
 </div>
 
@@ -44,16 +47,12 @@ Use these settings to enable and disable IMAP extensions on the server.
 
 #### Create default special-use folders
 
-<div class="indented">When enabled, hMailServer automatically creates the well-known special-use folders - Drafts, Sent, Trash and Junk - for each new account, and marks them so that email clients recognize what each folder is for. This only applies to accounts created after the setting is enabled; existing accounts are not affected. This setting is enabled by default.</div>
+<div class="indented">When enabled, ArzoieMail automatically creates the well-known special-use folders - Drafts, Sent, Trash and Junk - for each new account, and marks them so that email clients recognize what each folder is for. This only applies to accounts created after the setting is enabled; existing accounts are not affected. This setting is enabled by default.</div>
 
 #### Hierarchy delimiter
 
-Select which hierarchy delimiter you want hMailServer to use. The delimiter is used in the communication between IMAP clients and hMailServer. For example, in the hierarchy Inbox\Test\Sub the delimiter is \.
+Select which hierarchy delimiter you want ArzoieMail to use. The delimiter is used in the communication between IMAP clients and hMailServer. For example, in the hierarchy Inbox\Test\Sub the delimiter is \.
 
 After a delimiter has been selected, this delimiter can not be used in folder names - since it is used to delimit folder levels.  It is not possible to change delimiter to a character which is only in use in a folder name on the server. Nor is it possible to change to a delimiter which is used in folder names in rule actions since this would create a conflict.
 
-When you change the hierarchy delimiter, hMailServer will automatically update all rule actions containing this hierarchy delimiter to the new one.
-
- 
-
- 
+When you change the hierarchy delimiter, ArzoieMail will automatically update all rule actions containing this hierarchy delimiter to the new one.

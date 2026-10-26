@@ -1,51 +1,30 @@
 ---
-title: "Connect to MSSQL"
+title: "SQL Server and Express connections"
 slug: howto_connect_to_mssql
 parent: howtos
 index: 0
 is_book: false
 ---
 
-This page describes how to connect to the hMailServer MSSQL database to execute statements.
+## Full SQL Server / Express
 
-## Step 1: Determine MSSQL password
+ArzoieMail's full SQL Server backend uses x64 Microsoft OLE DB 19, TCP and required TLS with
+certificate validation. SQL Server 2019+ is the engine baseline; SQL Server 2025 Express is the
+verified VM/CI target. The driver and its x86/x64 VC prerequisites are external prerequisites.
 
-If you are using an external version of MSSQL, you should already know your MSSQL password. If you are using the built-in MSSQL version that comes with hMailServer, you might not know your password. To determine it, follow these steps:
+Use Database Setup for the mail-service connection and a separately authorized database tool
+for administrator diagnostics. Windows authentication uses the mail service's actual identity;
+SQL authentication uses its protected configured credential. Do not give a web panel direct SQL
+access or assume the interactive administrator's rights apply to the service.
 
-<ol>
-    <li>Open up hMailserver.ini, located in your Windows directory.</li>
-    <li>If you can't find <i>passwordencryption=1</i> in the file, locate the password in the file and go to <i>Step 2: Connect to the server</i> below.</li>
-    <li>Run the script <span class="Code">\hMailServer\Addons\Utilities\DecryptBlowfish.vbs</span>.</li>
-    <li>Copy the password from hMailServer.ini to the DecryptBlowfish dialog.</li>
-    <li>Click OK in DecryptBlowfish to view your password. DecryptBlowfish will now show your password. Either keep the dialog open or memorize the password.</li>
-</ol>
+The [SQL Server deployment guide](https://github.com/jassifx/ArzoieMail/blob/master/docs/sql-server.md)
+contains endpoint/port settings, trusted certificate setup, Mandatory/Strict options and upgrade
+requirements. Test the selected version and workload before production use.
 
-## Step 2: Install required software
+## SQL Server Compact is different
 
-To be able to connect to the Microsoft SQL Server Compact database, you need Microsoft SQL Server 2008 Studio Express. The following software needs to be installed for Microsoft SQL Server 2008 Studio Express.
-
-- [Windows Installer 4.5 or later](http://www.microsoft.com/downloads/details.aspx?familyid=5A58B56F-60B6-4412-95B9-54D056D6F9F4&displaylang=en)
-- [.NET Framework 3.5 Service pack 1](http://www.microsoft.com/downloads/details.aspx?FamilyID=AB99342F-5D1A-413D-8319-81DA479AB0D7&displaylang=en)
-- [Windows Powershell](http://www.microsoft.com/windowsserver2003/technologies/management/powershell/download.mspx)
-
-After these tools have been installed, you can install [Microsoft SQL Server 2008 Studio Express](http://www.microsoft.com/downloads/details.aspx?familyid=08e52ac2-1d62-45f6-9a4a-4b76a8564a2b&displaylang=en). During the installation, make sure you select to install the Management Tools.
-
-## Step 3: Connect to the server
-
-1. Start SQL Server Management Studio found in the start menu.
-2. Select File -> Connect Object Explorer
-3. Select SQL Server Compact Edition from the Server type list.
-4. Select the hMailServer database file, typically C:\Program Files\hMailServer\Database\hMailServer.sdf
-5. Type in the password you retrieved in step 1
-6. Click Connect to connect to the database server
-
-Now you have connected to MSSQL
-
-## Step 3: Executing statements
-
-After you have connected to MSSQL, you can execute statements by following these steps:
-
-1. In the tree-menu to the left, right click on the hmailserver database.
-2. Select New Query from the context menu.
-
- 
+The built-in Compact database is a separate backend/file format; it is not SQL Server Express.
+The old instructions on this page used a Windows-directory INI and a Blowfish decryption script.
+They do not describe the current AES-GCM/DPAPI credential storage or modern Express connections.
+Use the configured database path and authorized tools appropriate to that backend. Keep backups
+and secret-key exports, and do not edit database rows or copy plaintext credentials into logs.

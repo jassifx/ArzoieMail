@@ -6,19 +6,22 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## TCP/IP Ports (listening only)
 
 ### Protocol
 
-Choose which protocol should be used for this specific port. When a client connects to the port, hMailServer will use this protocol to parse the incoming commands from the client.
+Choose which protocol should be used for this specific port. When a client connects to the port, ArzoieMail will use this protocol to parse the incoming commands from the client.
 
 ### TCP/IP address
 
-Specify the TCP/IP address hMailServer should listen on.  The address must match an internal network card address assigned to a network card in your server. The default value, 0.0.0.0, means that hMailServer will listen on all available IP addresses. For IPv6 the equivalent default value is ::
+Specify the TCP/IP address ArzoieMail should listen on.  The address must match an internal network card address assigned to a network card in your server. The default value, 0.0.0.0, means that ArzoieMail will listen on all available IP addresses. For IPv6 the equivalent default value is ::
 
 ### TCP/IP port
 
-The port number hMailServer should listen on, on the specified IP address.
+The port number ArzoieMail should listen on, on the specified IP address.
 
 ### Connection security
 

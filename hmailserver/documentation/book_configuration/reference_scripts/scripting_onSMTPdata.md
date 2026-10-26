@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
 OnSmtpData is called ONCE per message.  
@@ -30,15 +33,15 @@ OnSMTPData(oClient as hMailServer.Client, oMessage as hMailServer.Message)
 
 ## Result values
 
-- 0 - hMailServer accepts the message
-- 1 - hMailServer rejects the message with the error *542 Rejected*
-- 2 - hMailServer rejects the message with a script-defined error.
+- 0 - ArzoieMail accepts the message
+- 1 - ArzoieMail rejects the message with the error *542 Rejected*
+- 2 - ArzoieMail rejects the message with a script-defined error.
 
 ## Examples
 
 ### Require authentication for local senders
 
-The built-in SMTP authentication functionality checks only the sender address to determine whether SMTP authentication is required. Often, you want to check sender address as well. The following script makes hMailServer require authentication, if the senders address contains @example.com.
+The built-in SMTP authentication functionality checks only the sender address to determine whether SMTP authentication is required. Often, you want to check sender address as well. The following script makes ArzoieMail require authentication, if the senders address contains @example.com.
 
 VB-script:
 
@@ -54,5 +57,3 @@ Sub OnSMTPData(oClient, oMessage)
 
 End Sub
 ```
-
- 

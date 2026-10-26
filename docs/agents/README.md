@@ -10,6 +10,8 @@ Current handoff: [2026-10-27](handoffs/2026-10-27.md). It records merged SQL Exp
 its green four-backend baseline, the CI documentation refresh and remaining Phase 1b plan.
 The [CI inventory](../ci-test-inventory.md) separates automated checks from manual/planned
 coverage. Verify live PR/CI state before continuing; planned features are not implemented.
+The [documentation status](../documentation-status.md) records the manual rebrand, refreshed
+current guides and remaining inherited-content, screenshot and website-publication work.
 
 | # | Document | What it gives you |
 |---|---|---|

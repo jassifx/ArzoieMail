@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 Email sent between mail servers is always sent on port 25. This is not configurable and is the same for all mail servers. If you change the SMTP port to anything other than 25, other servers will not be able to send you email. Unless, you have set up some kind of portforwarding. 
 
 If your ISP has blocked port 25 for incoming traffic in their firewall, or you can't use port 25 for some reason, there are only two things you can do:
@@ -14,4 +17,4 @@ If your ISP has blocked port 25 for incoming traffic in their firewall, or you c
 
 or
 
-- Use routing services. There are companies that offer to accept email for your domains on port 25 and then forward them to your hMailServer on a non-standard SMTP-port that is not blocked by your ISP.
+- Use routing services. There are companies that offer to accept email for your domains on port 25 and then forward them to your ArzoieMail on a non-standard SMTP-port that is not blocked by your ISP.

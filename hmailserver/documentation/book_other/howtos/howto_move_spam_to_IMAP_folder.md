@@ -6,7 +6,10 @@ index: 0
 is_book: false
 ---
 
-These instructions assume you're using hMailServer version 4.0 or higher. They are applicable to mail marked as spam using ASSP, but should work equally well with any other spam filter. It is only necessary that the filter put a spam flag in the header, for example, simply by replacing steps 3 and 4 below with the appropriate Header and Value.
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
+These instructions assume you're using ArzoieMail version 4.0 or higher. They are applicable to mail marked as spam using ASSP, but should work equally well with any other spam filter. It is only necessary that the filter put a spam flag in the header, for example, simply by replacing steps 3 and 4 below with the appropriate Header and Value.
 
 1. Open hMailAdmin
 2. Select *Rules* (to create a rule that applies globally)

@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
-Every email account in hMailServer must belong to a domain. The domains specified in hMailServer can be local network domains or global internet domains such as hMailServer.com.
+Every email account in ArzoieMail must belong to a domain. The domains specified in ArzoieMail can be local network domains or global internet domains such as hMailServer.com.
 
 ## General
 
@@ -30,7 +33,7 @@ Every email account in hMailServer must belong to a domain. The domains specifie
 <p>If you set up a domain named example.com, and an alias named example.net, your server will accept email for both someone@example.com and someone@example.net. Your users will be able to log on as both someone@example.com and someone@example.net as well.</p>
 <h3>Creating a domain name alias</h3>
 <ol>
-    <li>Start hMailServer Administrator.</li>
+    <li>Start ArzoieMail Administrator.</li>
     <li>Expand the <em>Domains</em> node and select the domain (e.g. <code>mydomain.com</code>).</li>
     <li>Select the <em>Names</em> tab.</li>
     <li>Add the domain names to the list (e.g. <code>mydomain.org</code> and <code>mydomain.net</code>)</li>
@@ -42,29 +45,29 @@ Every email account in hMailServer must belong to a domain. The domains specifie
 </ul>
 <div class="indented">
 <h2>Signature</h2>
-<div class="indented">On the signature tab, you can configure hMailServer to add a signature to all email sent from this domain. It's possible to enter both a plain text version and a HTML version of the signature. If no HTML signature is specified, hMailServer will use the plain text signature as HTML signature as well.</div>
+<div class="indented">On the signature tab, you can configure ArzoieMail to add a signature to all email sent from this domain. It's possible to enter both a plain text version and a HTML version of the signature. If no HTML signature is specified, ArzoieMail will use the plain text signature as HTML signature as well.</div>
 <div class="indented"> </div>
 <div class="indented">Please note that the first two options, <em>Add signatures to replies</em> and <em>Add signatures to local email</em> applies both to domain signatures and account signatures. Even if you do not enable domain signatures, these two settings will have effect on account signatures.</div>
 <div>
 <ul>
     <li>Add signatures to replies<br>
-    If this option has been selected, hMailServer will add signature to replies. To determine whether a message is a reply, hMailServer checks for the In-Reply-To and the References header in the e-mail. This option is de-selected by default. Note that this option affects all email sent within the domain - not just domain signatures.<br>
+    If this option has been selected, ArzoieMail will add signature to replies. To determine whether a message is a reply, ArzoieMail checks for the In-Reply-To and the References header in the e-mail. This option is de-selected by default. Note that this option affects all email sent within the domain - not just domain signatures.<br>
      </li>
     <li>Add signatures to local email<br>
-    If you select this option, hMailServer will add signatures to local email. An email is considered local in this case if both the sender and all the recipients exist in the same domain. An email sent from one domain to another is not considered local, since the sender and recipient may not be aware of the fact that they both are hosted on the same server. Note that this option affects all email sent within the domain - not just domain signatures.<br>
+    If you select this option, ArzoieMail will add signatures to local email. An email is considered local in this case if both the sender and all the recipients exist in the same domain. An email sent from one domain to another is not considered local, since the sender and recipient may not be aware of the fact that they both are hosted on the same server. Note that this option affects all email sent within the domain - not just domain signatures.<br>
      </li>
     <li>Enable domain signature<br>
     If you select this option, the specified signature will be appended to email.<br>
     <br>
     <ul>
         <li>Use signature if none has been specified in the senders account.<br>
-        When selected, hMailServer will only use domain signature if an account signature has not been specified. <br>
+        When selected, ArzoieMail will only use domain signature if an account signature has not been specified. <br>
          </li>
         <li>Overwrite account signature<br>
-        If you select this option, hMailServer will not use the account signatures for this domain. Instead, the domain signature will be used for all email.<br>
+        If you select this option, ArzoieMail will not use the account signatures for this domain. Instead, the domain signature will be used for all email.<br>
          </li>
         <li>Append to account signature<br>
-        When selected, hMailServer will append the account signature with the domain signature. This can be use if you for example want to add disclaimers to all outgoing email.</li>
+        When selected, ArzoieMail will append the account signature with the domain signature. This can be use if you for example want to add disclaimers to all outgoing email.</li>
     </ul>
     </li>
     <li>
@@ -79,7 +82,7 @@ It is possible to use the macros %User.FirstName% and %User.LastName% in signa
 <h3>Maximum size (MB)</h3>
 <div class="indented">If this value has been specified (is not 0), the system administrator and the domain owner will be prevented from adding accounts so that the total size of all accounts exceeds this value. If you have specified 500MB, the total size of all messages in the domain will not exceed 500MB.</div>
 <h3>Maximum message size</h3>
-<div class="indented">If specified, hMailServer will reject messages larger than this size.</div>
+<div class="indented">If specified, ArzoieMail will reject messages larger than this size.</div>
 <div class="indented">If not specified, the server-wide Max message size defined in the <a href="?page=reference_protocolsmtp">SMTP settings</a> will be used.</div>
 <div class="indented">
 <h3>Maximum size of accounts (MB)</h3>
@@ -91,12 +94,12 @@ It is possible to use the macros %User.FirstName% and %User.LastName% in signa
 <div class="indented">
 <h2>DKIM signing </h2>
 <p>DKIM, Domain Keys Identified Mail, is a method to sign the content of messages. The recipient can verify that the message is sent from a server authenticated to send from the sender's domain, and that the message content has not been modified in transit.</p>
-<p>Before hMailServer delivers a message to another server, it will look at the sender address of the message. If the sender address matches a local domain, the DKIM signing options from that domain will be used. If DKIM signing has been enabled, the message will be signed.</p>
-<p>Whether or not the original sender has used SMTP authentication when delivering the message to hMailServer has no effect on the DKIM signing process.</p>
-<p>hMailServer signs a message with DKIM before deciding whether it will be delivered locally or to another server, so messages between two accounts on the same server are signed as well.</p>
-<p>hMailServer only signs messages smaller than an internally-defined limit. Currently that limit is set to 50MB in the program code. The limit is not runtime-configurable.</p>
+<p>Before ArzoieMail delivers a message to another server, it will look at the sender address of the message. If the sender address matches a local domain, the DKIM signing options from that domain will be used. If DKIM signing has been enabled, the message will be signed.</p>
+<p>Whether or not the original sender has used SMTP authentication when delivering the message to ArzoieMail has no effect on the DKIM signing process.</p>
+<p>ArzoieMail signs a message with DKIM before deciding whether it will be delivered locally or to another server, so messages between two accounts on the same server are signed as well.</p>
+<p>ArzoieMail only signs messages smaller than an internally-defined limit. Currently that limit is set to 50MB in the program code. The limit is not runtime-configurable.</p>
 <h3>Private key file</h3>
-<div class="indented">The private key to use when signing messages with DKIM. This must be a file existing on the local file system, readable by hMailServer, and the file must not have a password set.</div>
+<div class="indented">The private key to use when signing messages with DKIM. This must be a file existing on the local file system, readable by ArzoieMail, and the file must not have a password set.</div>
 <h3>Selector</h3>
 <div class="indented">This is the DKIM-selector to use for signing. To be able to use DKIM, you must specify a selector. The selector must be the same as the selector you are using for your DKIM record in your DNS server. For example, if your DNS record is named myselector._domainkey.example.net, you should enter "myselector" as selector (without quotes).</div>
 <div class="indented">
@@ -131,7 +134,7 @@ The solution is to specify an account - either a previously existing one, or one
 <ul>
     <li>The catch-all address can be any email address you like. It does not have to be strictly of the form <code>catchall@myDomain.com</code></li>
     <li>The catch-all address does not have to belong to an account on your domain or even on hMailServer. You can forward messages to external servers.</li>
-    <li>If you want hMailServer to reject any messages sent to non-existent addresses in your domain, you should not specify a catch-all address.</li>
+    <li>If you want ArzoieMail to reject any messages sent to non-existent addresses in your domain, you should not specify a catch-all address.</li>
 </ul>
 </div>
 </div>
@@ -145,5 +148,3 @@ The solution is to specify an account - either a previously existing one, or one
 </div>
 </div>
 </div>
-
- 

@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ### Description
 
-The utilities object contains misc. functions used by hMailServer Administrator.
+The utilities object contains misc. functions used by ArzoieMail Administrator.
 
 ### Methods
 
@@ -70,7 +73,7 @@ The utilities object contains misc. functions used by hMailServer Administrator.
 
 <div class="api_method_name">MakeDependent(string OtherService)</div>
 
-<div class="api_description">Makes the hMailServer service dependent on another service.</div>
+<div class="api_description">Makes the ArzoieMail service dependent on another service.</div>
 
 <div class="api_method_name">MD5(string Input)</div>
 

@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **Historical upstream reference.** This page describes older hMailServer releases or an inherited integration recipe. It is retained for migration history, not current ArzoieMail support guidance. Use [the documentation status guide](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) and current system requirements before following it.
+
+
 ## Background
 
 How to configure hMailserver and ASSP to filter SPAM (Jason Weir: jason.weir@comcast.net, April 14, 2004)  

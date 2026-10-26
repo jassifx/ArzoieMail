@@ -6,6 +6,9 @@ index: 50
 is_book: false
 ---
 
+> **Historical upstream reference.** This page describes older hMailServer releases or an inherited integration recipe. It is retained for migration history, not current ArzoieMail support guidance. Use [the documentation status guide](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) and current system requirements before following it.
+
+
 ## Overview
 
 This page describes how to upgrade from hMailServer version 5.2 to 5.3. If you follow these steps, the server downtime will only be a few minutes. Before upgrading, you should make sure that you have a backup of the entire hMailServer directory, hMailServer database and hMailServer.ini, in case something goes wrong. The steps below are the same regardless of the database server type that hMailServer is using. Please read through this entire page before you upgrade.
@@ -27,7 +30,3 @@ This page describes how to upgrade from hMailServer version 5.2 to 5.3. If you f
 8. Click Upgrade to upgrade the database to the latest structure.
 9. Click Exit to return to the setup wizard
 10. Click Finish to exit the setup and start hMailAdmin.
-
-
-
-

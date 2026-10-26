@@ -6,15 +6,18 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## General
 
 ### Default domain
 
-<div class="indented">This setting allows you to specify what domain hMailServer should default to if a user does not specify the domain name when logging on. For example, if you specify that the default domain is example.com, and a person tries to log on using the user name "bob", hMailServer will assume that it is "bob@example.com" which is trying to lo gon.</div>
+<div class="indented">This setting allows you to specify what domain ArzoieMail should default to if a user does not specify the domain name when logging on. For example, if you specify that the default domain is example.com, and a person tries to log on using the user name "bob", ArzoieMail will assume that it is "bob@example.com" which is trying to lo gon.</div>
 
 ### Administration password
 
-<div class="indented">This setting allows you to change the administrator password for your hMailServer installation. This password is required to log on hMailServer Administrator so it's important that you remember it.</div>
+<div class="indented">This setting allows you to change the administrator password for your ArzoieMail installation. This password is required to log on ArzoieMail Administrator so it's important that you remember it.</div>
 
 ## Password hashing
 

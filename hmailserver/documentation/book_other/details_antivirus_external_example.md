@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
 This page contains a list of virus command line examples which works with hMailServer.
@@ -44,5 +47,3 @@ Return value: 5</p>
 <p style="margin-left: 40px;">Use the test button in hMailsevrer&gt;&gt; AntiVirus &gt;&gt; External Virus Scanner, which will test using the EICAR simulated virus.</p>
 
 <p style="margin-left: 40px;">Or use one of the many web sites who will send the EICAR simulated virus, including <a href="http://www.aleph-tec.com/eicar/index.php">http://www.aleph-tec.com/eicar/index.php</a>. </p>
-
- 

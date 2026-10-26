@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Scenario:
 
 You have a single server you want to use as email server home. You Internet service provider (ISP) has given you a static IP address. The below tutorial assumes that the domain you want to host email for is named *mydomain.com*.
@@ -26,13 +29,13 @@ If you have access to a web interface that lets you modify DNS settings, you can
 
 ### Step 3: Changing firewall settings
 
-If you have a firewall (which you hopefully have) you need to modify its settings to allow hMailServer to receive email. Email is normally sent and received on TCP/IP port 25. This means that you must configure your firewall to allow incoming and outgoing traffic on TCP/IP port 25. If you're behind some kind of router, you need to configure the router to forward all traffic on port 25 to the computer where hMailServer is running.
+If you have a firewall (which you hopefully have) you need to modify its settings to allow ArzoieMail to receive email. Email is normally sent and received on TCP/IP port 25. This means that you must configure your firewall to allow incoming and outgoing traffic on TCP/IP port 25. If you're behind some kind of router, you need to configure the router to forward all traffic on port 25 to the computer where ArzoieMail is running.
 
 ### Step 4: Install hMailServer
 
-1. Download the latest hMailServer version
+1. Download the latest ArzoieMail version
 2. Run through the installation wizard.
-3. Start hMailServer Administrator.
+3. Start ArzoieMail Administrator.
 4. Click *Add Domain...*
 5. Enter the name of your domain and click Save.
 6. Click *Add account...* and add a new email account.
@@ -41,9 +44,9 @@ If you have a firewall (which you hopefully have) you need to modify its setting
 
 ### Step 5: Configuring outgoing email
 
-If your Internet service provider is blocking outgoing traffic on port 25, hMailServer will not be able to deliver email to other servers since all SMTP servers normally only receives email on port 25. If your ISP is blocking outgoing traffic on port 25, the easiest solution is normally to configure hMailServer to forward all outgoing email through your ISP's SMTP server. To do this, follow these steps:
+If your Internet service provider is blocking outgoing traffic on port 25, ArzoieMail will not be able to deliver email to other servers since all SMTP servers normally only receives email on port 25. If your ISP is blocking outgoing traffic on port 25, the easiest solution is normally to configure ArzoieMail to forward all outgoing email through your ISP's SMTP server. To do this, follow these steps:
 
-1. Start hMailServer Administrator
+1. Start ArzoieMail Administrator
 2. Go to the SMTP settings and choose Delivery of email.
 3. In the SMTP relayer setting, enter the name of your ISP's smtp server, for example *smtp.myisp.com*.
 4. If your ISP requires a username / password when sending email through their server, select Server requires authentication and enter the username and password.
@@ -52,6 +55,6 @@ If your Internet service provider is blocking outgoing traffic on port 25, hMail
 
 In your email client, add a new account. Enter the following information:
 
-- Hostname - The host name or IP address of the computer where hMailServer runs
-- Username - Your full email address. Same as the account address you added in hMailServer Administrator.
-- Password - The password you defined in hMailServer Administrator
+- Hostname - The host name or IP address of the computer where ArzoieMail runs
+- Username - Your full email address. Same as the account address you added in ArzoieMail Administrator.
+- Password - The password you defined in ArzoieMail Administrator

@@ -6,7 +6,7 @@ index: 40
 is_book: false
 ---
 
-The server technology and overall design of hMailServer is in the hands of Martin Knafve.
+ArzoieMail is maintained as a project of its own; see the repository README for current project information. The original hMailServer technology and design were created by Martin Knafve, whose authorship remains credited.
 
 The software uses a couple of third-party components and libraries.
 

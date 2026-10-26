@@ -6,40 +6,34 @@ index: 15
 is_book: false
 ---
 
-## Overview
+## Supported database paths
 
-hMailServer supports 4 different database engines
+ArzoieMail has four database backends: SQL Server Compact, full SQL Server (including Express),
+MySQL/MariaDB and PostgreSQL. These store server configuration and message metadata; message
+bodies remain in the mail data directory. Back up both components consistently.
 
-- [Microsoft SQL Server 2000 and later](http://www.microsoft.com/SQL/default.mspx)
-- [Microsoft SQL Server Compact Edition (CE)](http://www.microsoft.com/sql/editions/compact/default.mspx)
-- [MySQL 4 and later](http://www.mysql.com) (and [MariaDB](https://mariadb.org/))
-- [PostgreSQL](http://www.postgresql.org/)
+- **SQL Server Compact 4.0** is the current built-in database. It is distinct from Express and
+  remains covered by CI. SQLite replacement and automatic migration are planned, not implemented.
+- **SQL Server** uses Microsoft OLE DB 19 over TCP with required TLS and certificate validation.
+  The engine baseline is SQL Server 2019+. SQL Server 2025 Express has passed the current full CI
+  suite; that does not validate every other SQL version or high-load deployment.
+- **MySQL/MariaDB** use the bundled MariaDB Connector/C (`libmariadb.dll`). MySQL CI covers the
+  native driver's persistence path. Version-specific upgrades still need their own validation.
+- **PostgreSQL** uses the bundled libpq driver and has its own installed-server CI job.
 
-The database client libraries are installed together with hMailServer, so any of these engines can be selected during setup without installing anything else. MySQL and MariaDB are both reached through the bundled MariaDB Connector/C (libmariadb.dll).
+The external SQL Server driver and its prerequisites must be installed separately. See
+[SQL Server / Express deployment](https://github.com/jassifx/ArzoieMail/blob/master/docs/sql-server.md)
+for endpoint/authentication settings, trusted certificates, driver migration and offline preparation.
+The legacy description that every database option works without any extra prerequisites is obsolete.
 
-## Choosing database
+## Selection and operations
 
-If you are going to be running a commercial hosting service, you should choose one of the following servers:
+Choose a backend based on the required capacity, administration skills, backup/recovery plan and
+measured workload. Express has edition/version limits; a successful functional suite is not a
+capacity guarantee. Check the relevant vendor's current limits and terms for the exact version.
+The original manual's blanket commercial-use claims about Compact are not a substitute for those terms.
 
-- Microsoft SQL Server 2000 or later
-- MySQL
-- PostgreSQL
-
-Microsoft SQL Server Compact Edition **may not** be used with commercial hosting services.
-
-The biggest benefit with SQL Server Compact Edition is the small memory and disk footprint and the fact that it does not require any external software to run on the computer. The database engine runs inside of hMailServer which means that hMailServer has no dependencies on external database engines.  Previous versions of hMailServer (4 and older) included MySQL but this was changed to MSSQL CE in version 5. There are downsides with the default database though:
-
-It may only be used for personal installations; not in commercial environments. The Microsoft SQL Server Compact Edition installation which comes with hMailServer is limited to 4GB . If you expect that your installation will become large (hundreds of thousands of e-mail messages or many accounts) it's recommended that you choose either Microsoft SQL Server or MySQL. A MSSQL CE database of 4GB can hold references to about 10 million email messages. Performance-wise, MSSQL CE is slower than the other supported database engine. Also, there are few tools available if the SQL CE database becomes corrupt, for example due to hardware failure or a system crash.
-
-## Recommendations
-
-Microsoft SQL Server or MySQL is recommended if...
-
-- ... sending or receiving of email is critical to you and you cannot risk any loss of data  
-
-  
-- ... you plan to do an integration which involves the hMailServer database. There are more client tools available for Microsoft SQL Server and MySQL compared to PostgreSQL.
-
-PostgreSQL is recommended if you have used it before and feel comfortable with it.
-
- 
+Use Database Setup to create/select the database. The service must have access under its actual
+Windows or SQL identity; the web panel must not receive database credentials. Preserve protected
+credentials, the installation's exportable secret key and a tested restore path when moving hosts.
+See [backup and restore](?page=backup_restore) and the current CI inventory.

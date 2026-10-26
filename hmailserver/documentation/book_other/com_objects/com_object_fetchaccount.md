@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ### Description
 
-The fetch account object represents one external account which hMailServer downloads email messages from.
+The fetch account object represents one external account which ArzoieMail downloads email messages from.
 
 ### Methods
 
@@ -44,7 +47,7 @@ The fetch account object represents one external account which hMailServer downl
 
 <div class="api_method_name">bool EnableRouteRecipients</div>
 
-<div class="api_description">Gets or sets whether hMailServer should deliver to recipients in routes.<br></div>
+<div class="api_description">Gets or sets whether ArzoieMail should deliver to recipients in routes.<br></div>
 
 <div class="api_method_name">long ID</div>
 
@@ -76,7 +79,7 @@ The fetch account object represents one external account which hMailServer downl
 
 <div class="api_method_name">long Port</div>
 
-<div class="api_description">The TCP/IP port hMailServer should connect to.<br></div>
+<div class="api_description">The TCP/IP port ArzoieMail should connect to.<br></div>
 
 <div class="api_method_name">bool ProcessMIMEDate</div>
 
@@ -88,7 +91,7 @@ The fetch account object represents one external account which hMailServer downl
 
 <div class="api_method_name">string ServerAddress</div>
 
-<div class="api_description">The POP3 server address hMailServer should connect to.<br></div>
+<div class="api_description">The POP3 server address ArzoieMail should connect to.<br></div>
 
 <div class="api_method_name">long ServerType</div>
 

@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Signature
 
 OnClientConnect(oClient as hMailServer.Client)
@@ -16,8 +19,8 @@ This event is fired directly after a TCP/IP connection has been opened towards 
 
 ### Result values
 
-- 0 - hMailServer accepts the connection
-- 1 - hMailServer rejects the connection
+- 0 - ArzoieMail accepts the connection
+- 1 - ArzoieMail rejects the connection
 
 ### Examples
 

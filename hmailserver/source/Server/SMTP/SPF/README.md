@@ -1,5 +1,8 @@
 # SPF
 
+The test/debug entry points below execute only inside the disposable VM or CI. Compile and
+inspect source on the development host; do not run the server or test executables there.
+
 An implementation of RFC 7208. `SPF::Test` is the entry point; everything else is
 reachable only from there and from the tests.
 

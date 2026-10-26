@@ -6,13 +6,16 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Background
 
-It's a quite common problem that spammers use other peoples servers to deliver spam messages. hMailServer does not allow this by default, but if you have configured hMailServer incorrectly or used weak passwords for your e-mail accounts, it's rather easy for them to do this.
+It's a quite common problem that spammers use other peoples servers to deliver spam messages. ArzoieMail does not allow this by default, but if you have configured ArzoieMail incorrectly or used weak passwords for your e-mail accounts, it's rather easy for them to do this.
 
 ## How do I know for sure?
 
-- First check the hMailServer delivery queue. If the queue contains a lot of messages from external to other external addresses, it's pretty safe to say that someone is abusing your server to send spam. So if you do not recgonize either the senders address or the recipients address, it's probably spam.
+- First check the ArzoieMail delivery queue. If the queue contains a lot of messages from external to other external addresses, it's pretty safe to say that someone is abusing your server to send spam. So if you do not recgonize either the senders address or the recipients address, it's probably spam.
 
 - Another method is to telnet relay-test.mail-abuse.org from the computer running hMailServer. The remote server will automatically connect back to the mail server running on your computer and execute some tests to check whether your computer can be used for spamming.
 
@@ -24,14 +27,14 @@ It's a quite common problem that spammers use other peoples servers to deliver s
 
 First of all:
 
-- Check your IP range settings and make sure that you require authentication. Typically, in the Internet IP range, hMailServer should be configured to require SMTP authentication for deliveries to external accounts.
+- Check your IP range settings and make sure that you require authentication. Typically, in the Internet IP range, ArzoieMail should be configured to require SMTP authentication for deliveries to external accounts.
 - Never allow delivery from external to external accounts. Check all your IP ranges.
 
 If you are sure that external to external is not permitted in any of your IP ranges, and you have ensured that you require authentication for deliveries to external accounts, it likely means that the spammer is using one of the accounts on the server to send spam. In most cases when this happens, the user has selected a weak password such as "test" or "secret". So you need to determine which accounts send you the email messages:
 
 1. Enable Application and SMTP logging. Only enable these two. Enabling more will make it harder to analyze the logs
 2. Wait a few minutes so that the spammer sends another email through your server. Monitor the queue of "Undelivered messages" and note the sender and recipient address of one of the spam messages.
-3. Search for the senders address in the hMailServer log.
+3. Search for the senders address in the ArzoieMail log.
 
 The log will now contain info on who is trying to send the spam message. You will see a section which looks like this: (the first columns are left out to make text easier to read)
 

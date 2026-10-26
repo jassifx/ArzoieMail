@@ -1,10 +1,13 @@
 ---
-title: "hMailServer folder structure"
+title: "ArzoieMail folder structure"
 slug: folderstructure
 parent: book_other
 index: 0
 is_book: false
 ---
+
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
 
 <table width="100%" border="0">
     <tbody>
@@ -15,11 +18,11 @@ is_book: false
         </tr>
         <tr>
             <td valign="top">/Bin</td>
-            <td valign="top">hMailServer binaries. The actual server and hMailAdmin</td>
+            <td valign="top">ArzoieMail binaries. The actual server and hMailAdmin</td>
         </tr>
         <tr>
             <td valign="top">/Data</td>
-            <td valign="top">E-mail messages. The files in the Data root are messages 			that have not been delivered yet. Sub folders contain 			delivered messages. E-mail messages have the extension .hma or .eml, depending on in which hMailServer version they were created.<br></td>
+            <td valign="top">E-mail messages. The files in the Data root are messages 			that have not been delivered yet. Sub folders contain 			delivered messages. E-mail messages have the extension .hma or .eml, depending on in which ArzoieMail version they were created.<br></td>
         </tr>
         <tr>
             <td valign="top">/DBScripts</td>
@@ -31,7 +34,7 @@ is_book: false
         </tr>
         <tr>
             <td valign="top">/Languages</td>
-            <td valign="top">Translations of the hMailServer user interface.</td>
+            <td valign="top">Translations of the ArzoieMail user interface.</td>
         </tr>
         <tr>
             <td valign="top">/Logs</td>
@@ -47,7 +50,7 @@ is_book: false
         </tr>
         <tr>
             <td valign="top">/Temp</td>
-            <td valign="top">Temporary directory used by hMailServer. For example used 			when hMailServer extracts attachments that needs to be virus 			scanned. When hMailServer extracts an attachment for virus scanning, it is given the extension .tmp.<br></td>
+            <td valign="top">Temporary directory used by hMailServer. For example used 			when ArzoieMail extracts attachments that needs to be virus 			scanned. When ArzoieMail extracts an attachment for virus scanning, it is given the extension .tmp.<br></td>
         </tr>
     </tbody>
 </table>

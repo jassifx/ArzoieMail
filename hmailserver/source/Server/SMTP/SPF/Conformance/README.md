@@ -1,5 +1,9 @@
 # The RFC 7208 conformance suite
 
+Run the conformance suite and native debugging only in the disposable VM or CI. The development
+host is for source editing, static inspection and compilation; the commands below do not waive
+that execution boundary.
+
 This directory holds the openspf.org test suite for RFC 7208, and what is needed
 to run ArzoieMail's SPF evaluator against it.
 

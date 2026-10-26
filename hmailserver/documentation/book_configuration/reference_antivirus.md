@@ -1,95 +1,43 @@
 ---
-title: "Anti virus"
+title: "Antivirus integrations and Defender plan"
 slug: reference_antivirus
 parent: book_configuration
 index: 0
 is_book: false
 ---
 
-## Overview
+## Implemented integrations
 
-hMailServer has built-in support for the open source antivirus software, [ClamWin](http://www.clamwin.org/). To use a different virus scanner, use the the External virus scanner feature. It enables you to run any anti virus scanner that supports command line scanning. In the Scanner executable field, you specify the command line that should be used when scanning. In the Return value field, you specify the value that the virus scanner will return when a virus is found. This value varies depending on the virus scanner. See the bottom of this page for a list of virus scanners and their command lines. If you use the macro %FILE% in the command line, hMailServer will replace %FILE% with the full path to the file that needs to be scanned.
+ArzoieMail retains ClamAV, ClamWin and external command-line scanner integrations. Configure and
+validate the selected engine independently; its presence on Windows does not prove that the
+mail pipeline is using it. Native scanning reads the message file and decoded attachments.
 
-Note: ClamWIN should NOT be used on a busy server as it is NOT Multithreading. Use ClamAV instead.
+The desktop settings expose engine configuration/testing, maximum scan size, detection actions
+and attachment blocking. A size limit can cause a message to be skipped; it is not a clean verdict.
+Review the engine's actual result/error behavior and the existing adapter's supported return-code
+mapping before relying on a custom command. Do not assume arbitrary command-line products are
+interchangeable or suitable for high concurrency. Old AVG/Norton command examples are historical.
 
-## Settings
+## Microsoft Defender Antivirus - planned
 
-### When a virus is found
+Optional local Defender scanning and mitigation are accepted requirements, not an implemented
+feature. A dedicated native adapter must distinguish clean, infected, error and unscannable
+results. It must cover receive/send queues, external fetch, server-saved drafts/IMAP APPEND,
+imports and changed content; client-local drafts are invisible until upload.
 
-<div class="indented">Choose <em>Delete e-mail</em> if you want messages containing a virus to be deleted immediately. Chose <em>Delete attachments</em> if you want messages containing viruses to be delivered, but that attachments should be removed. When deleting the email, you can chose to notify the sender and/or recipient of the email that a virus was found in the email.</div>
+Required work includes durable bounded scheduling, verdict gates before normal release,
+backpressure, fair workers, safe mitigation/recovery, admin-only panel/API controls and measured
+capacity acceptance with at least 10,000 queued/in-flight messages. That test has not been run
+and no supported Defender throughput has been established.
 
-<div class="indented">
-<h3>Maximum message size to virus scan (KB)</h3>
-<div class="indented">Most email message which contains viruses are relatively small. Using this setting, you can configure hMailServer to skip virus scanning if a message is larger than a specified size. </div>
-</div>
+See [Defender feasibility](https://github.com/jassifx/ArzoieMail/blob/master/docs/defender-antivirus-feasibility.md)
+and [requirements](https://github.com/jassifx/ArzoieMail/blob/master/docs/webadmin-requirements.md).
 
-## ClamAV
+## Operating boundaries
 
-<div class="indented">hMailServer can be set to use an external ClamAV installation. Specify the Host Name or Static LAN IP address and the port for your ClamAV installation. Standard port is 3310.<br>
-<h3>Test</h3>
-The test button will generate a EICAR test virus and send it to your ClamAV, and detail the response provided by your ClamAV installation.</div>
-
-## ClamWin
-
-### Autodetect
-
-<div class="indented">hMailServer can be automatically configured to use ClamWin. To automatically configure hMailServer to use ClamWin, click <em>Autodetect</em>. hMailServer will read ClamWin settings from the Windows registry. After the settings have been autodetected, you should make sure that they are correct.<br>
-<br>
-Please note that ClamWin must be installed prior to doing this. ClamWIN should NOT be used on a busy server as it is NOT Multithreading. Use ClamAV instead.</div>
-
-## External Virus Scanner
-
-### Scanner executable
-
-<div class="indented">The path to the anti virus scanner executable that should be run. This should be a command line scanner that does not have a user interface. See below for further detail and examples on how to configure an external virus scanner.</div>
-
-### Return value
-
-<div class="indented">The value that the virus scanner will return if a virus is found.</div>
-
-<div class="indented">
-<h2>Block attachments</h2>
-These settings allows you to block attachments based on the attachment extension. If you enable this feature, hMailServer will remove the attachment and then add a new attachment with the name <span class="Code">&lt;original name&gt;.txt</span> which contains a short message that the attachment has been removed.</div>
-
-<h3 style="color: Red;"> </h3>
-
-<h3 style="color: Red;">Configuring hMailServer to use an external virus scanner</h3>
-
-This example shows how to set up hMailServer to use AVG Free 16. It assumes you have AVG Free installed in
-
-64 bit Windows -C:\Program Files\AVG   
-
-32 bit Windows - C:\Program Files (x86)\AVG
-
-<ol>
-    <li>Start hMailServer Administrator</li>
-    <li>Navigate to <em>Settings -&gt; Protocols -&gt; SMTP -&gt; AntiVirus</em></li>
-    <li>Select the <em>External virus scanner</em> page.</li>
-    <li>Select <em>Use external scanner</em></li>
-    <li>Specify <code>the following command line. </code>The quotation marks (") must be included<code>:<br>
-    For 32 bit Windows = </code><span style="color: rgb(153, 51, 0);"><span class="Code"><code>"C:\Program Files (x86)\AVG\Av\avgscanx.exe" /Scan="%FILE%" /EXT=* /ARC /PRIORITY=HIGH</code></span></span>, or for <code>64 bit Windows = </code><span style="color: rgb(153, 51, 0);"><code>"C:\Program Files</code><span class="Code"><code>\AVG\Av\avgscana.exe" /Scan="%FILE%" /EXT=* /ARC /PRIORITY=HIGH</code></span></span></li>
-    <li>Enter <code>5</code> as the return value. (<code>avgscanx.exe/avgscana.exe</code> will return a value of 5 if a virus is found.)</li>
-</ol>
-
-Note: avgscana.exe is a 64-bit component where avgscanx.exe is a 32 bit component, but will also work on 64 bit systems.
-
-### Scanner command lines
-
-For more examples on virus scanner comma lines, see the [example list](?page=details_antivirus_external_example)
-
-### Testing it
-
-Since testing with real viruses is risky, you can use the EICAR anti-virus test file. It is treated as a virus by anti-virus scanners, but is safe to use since it is not a real virus. These sites enable you to send out email containing the EICAR anti-virus test file:
-
-- [Alpha-tec](http://www.aleph-tec.com/eicar/index.php).
-- [Webmail.us](http://www.webmail.us/testvirus?co=&emailAddr=jack%40sharepointmatrix%2Ecom&cset=27&auth=0).
-
-### More information
-
-- [How to determine the return value of a virus scanner](?page=howto_determine_antivirus_external_returnvalue)
-
-### Notes
-
-- The %FILE%-macro functionality only applies to hMailServer 4.0 build 85 and later.
-
- 
+Avoid engine remediation that deletes or locks live mail-store/database files outside coordinated
+message handling. Do not add blanket exclusions or disable organizational security controls as
+an automatic setup action. Keep detection and scanner-failure policies distinct. Test clean data
+and the standard EICAR test artifact only inside the disposable VM/CI; do not run scanner probes
+or test executables on the development host. Existing antivirus CI tests do not establish future
+Defender support or high-pressure performance.

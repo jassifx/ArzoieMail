@@ -6,9 +6,12 @@ index: 20
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
-SMTP, POP3 and IMAP are TCP/IP protocols used for mail delivery. If you plan to set up an email server such as hMailServer, you must know
+SMTP, POP3 and IMAP are TCP/IP protocols used for mail delivery. If you plan to set up an email server such as ArzoieMail, you must know
 what they are used for. Each protocol is just a specific set of communication rules between computers.
 
 ## SMTP
@@ -22,7 +25,7 @@ SMTP uses two different ports, for two different purposes:
 * Port 25 is used when one email server delivers email to another. This is the port other mail servers on the internet connect to when they have mail for your domain.
 * Port 587, the *submission* port, is used when an email client delivers email to your server. Clients authenticate on this port, so that only your own users can send mail through your server.
 
-hMailServer listens on both ports after installation. A third port, 465, is also commonly used for submission from email clients; it does the same thing as port 587, but the connection is encrypted from the start. hMailServer does not set up port 465 by default, but you can add it yourself.
+ArzoieMail listens on both ports after installation. A third port, 465, is also commonly used for submission from email clients; it does the same thing as port 587, but the connection is encrypted from the start. ArzoieMail does not set up port 465 by default, but you can add it yourself.
 
 ## POP3
 
@@ -46,13 +49,13 @@ All three protocols were originally designed to send data, including passwords, 
 * STARTTLS, where the client connects to the normal port (25, 587, 110 or 143) and then asks the server to switch the connection over to an encrypted one.
 * Implicit TLS, where the connection is encrypted from the start. This is what ports 465, 995 and 993 are used for.
 
-hMailServer supports both variants. Which one a port uses is decided by the *Connection security* setting of the port, under Settings -> Advanced -> TCP/IP ports; see [SSL/TLS](?page=reference_ssltls) for a description of the alternatives. Encryption requires an SSL/TLS certificate, so you need one before your users can connect securely. The [installation guide](?page=howto_install) lists the recommended setting for each port.
+ArzoieMail supports both variants. Which one a port uses is decided by the *Connection security* setting of the port, under Settings -> Advanced -> TCP/IP ports; see [SSL/TLS](?page=reference_ssltls) for a description of the alternatives. Encryption requires an SSL/TLS certificate, so you need one before your users can connect securely. The [installation guide](?page=howto_install) lists the recommended setting for each port.
 
 ## Examples
 
-Suppose you use hMailServer as your email server to send an email to john@example.com.
+Suppose you use ArzoieMail as your email server to send an email to john@example.com.
 
 1. You click *Send* in your email client, say, Thunderbird.
-2. Thunderbird delivers the email to hMailServer using the SMTP protocol, on port 587.
-3. hMailServer looks up the mail server responsible for example.com and delivers the email to it using SMTP, on port 25.
+2. Thunderbird delivers the email to ArzoieMail using the SMTP protocol, on port 587.
+3. ArzoieMail looks up the mail server responsible for example.com and delivers the email to it using SMTP, on port 25.
 4. John's email client downloads the email from his mail server to his laptop using the IMAP protocol (or POP3).

@@ -354,9 +354,14 @@ setup/validation have moved to Phase 1b; DMARC aggregate reporting remains here.
 
 ## 9. Open follow-ups ⏳
 
-- Make the PostgreSQL and MySQL test jobs required checks in the `master` protection rule.
+- Make the PostgreSQL, MySQL and SQL Server Express test jobs required checks in the `master`
+  protection rule; workflow publication already waits for all four database jobs.
 - Commit the Hyper-V VM setup scripts (switch with NAT, VM creation) to the repository.
-- The documentation, the web admin and the logos still say hMailServer.
+- Documentation product prose is rebranded in PR #34, with current installation/security/database
+  guidance and explicit historical/reference boundaries. Complete the remaining technical review,
+  screenshots, route/rendering checks and website publication in
+  [documentation status](docs/documentation-status.md). Application/UI/logo renames remain a
+  separate gradual task; compatibility identifiers stay unchanged.
 - Upgrading from old MySQL server versions with the MariaDB client is untested in a VM.
 
 ---
@@ -369,8 +374,10 @@ setup/validation have moved to Phase 1b; DMARC aggregate reporting remains here.
 - **Naming**: the product is ArzoieMail, but some identifiers keep the hMailServer name on purpose
   (`hMailServer.exe`, the service name, the `hMailServer.Application` COM API, ...). AGENTS.md lists them;
   don't rename those.
-- **New COM API**: add it to `hMailServer.idl` with a new `id`, implement it in `Server/COM`, and
+- **Legacy COM compatibility changes only**: add an interface change to `hMailServer.idl` with
+  a new `id`, implement it in `Server/COM`, and
   make sure the class implements `ISupportErrorInfo` if it returns error messages.
+  New replacement-panel operations instead use explicit native commands and versioned REST.
 - **`Formatter::Format`** takes at most five arguments.
 - **Secrets** are never logged and never written plain: use `Crypt::ETSecret`
   (`SecretProtector`), and route anything that goes into a backup through `BackupSecrets`.
