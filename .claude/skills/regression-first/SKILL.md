@@ -47,7 +47,7 @@ hmailserver\test\packages\nunit.consolerunner\<version>\tools\nunit3-console.exe
   --where "class == RegressionTests.<Area>.<Fixture>"
 ```
 
-The tests drive a live installed hMailServer over COM, so they test whatever is
+The tests drive a live installed ArzoieMail over COM, so they test whatever is
 currently registered - not your working tree. Before trusting a result after a server
 change, run `build/build.ps1` and then `build/post-build.ps1`.
 

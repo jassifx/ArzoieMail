@@ -1,4 +1,4 @@
-hmailserver-dependencies-v1
-===========================
+ArzoieMail build dependencies
+=============================
 
-This repository contains hMailServer external dependencies. These dependencies are required to compile hMailServer.
+This folder contains ArzoieMail's external dependencies and the scripts that build them. These dependencies are required to compile ArzoieMail.

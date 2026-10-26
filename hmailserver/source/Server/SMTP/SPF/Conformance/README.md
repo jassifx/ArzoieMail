@@ -1,7 +1,7 @@
 # The RFC 7208 conformance suite
 
 This directory holds the openspf.org test suite for RFC 7208, and what is needed
-to run hMailServer's SPF evaluator against it.
+to run ArzoieMail's SPF evaluator against it.
 
 ## The vendored suite
 
@@ -28,7 +28,7 @@ would quietly stop this from being the suite everyone else runs.
 
 ## The generated table
 
-Nothing in hMailServer reads YAML, and adding a parser to the server build in
+Nothing in ArzoieMail reads YAML, and adding a parser to the server build in
 order to read a test fixture would be the wrong trade. So the suite is
 transcribed into a C++ table instead:
 

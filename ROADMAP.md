@@ -33,9 +33,9 @@ The regression suite on `master`, after Phase 1, on each of the three databases:
 
 | Total | Passed | Failed | Inconclusive | Skipped |
 |---:|---:|---:|---:|---:|
-| ≈1311 | ≈1200 | 0 | 34 | 75 |
+| 1313 | 1204 | 0 | 34 | 75 |
 
-The 34 inconclusive and 75 skipped tests are expected: they are explicit detail tests and
+Measured on `master` after #26. The 34 inconclusive and 75 skipped tests are expected: they are explicit detail tests and
 environment-dependent tests. A pull request should keep *Failed* at 0 and move *Passed* only up.
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
@@ -56,7 +56,7 @@ These were decided deliberately; reopen them only with a new reason.
 | **Admin tools and tests run on .NET 10 LTS** (supported until 2028-11-14), not .NET Framework 4.8.1. | A current runtime, SDK-style projects and current libraries. |
 | **The installer bundles the .NET 10 Desktop Runtime** and installs it silently when missing, rather than downloading it on demand. | Installs work offline; setup grows by about 60 MB. |
 | **SQLite replaces SQL Server Compact** as the built-in database, with automatic migration. | SQL Server Compact is out of support. |
-| **The SQL injection in string-built SQL was fixed publicly**, with no private report upstream first. | It is fixed in ArzoieMail's code; upstream hMailServer is no longer maintained. |
+| **The SQL injection in string-built SQL was fixed publicly**, with no private report upstream first. | The fix is ArzoieMail's own, made in the open like the rest of the project. |
 | **Secrets use AES-256-GCM under a random per-installation key protected by machine-scope DPAPI**, with passphrase export and import of the key. | The old Blowfish key was the same in every installation and is in the public source. DPAPI ties the key to the machine; export moves it to a new one. |
 | **Backups get their own passphrase**, independent of the installation's key. | A backup must restore on a new computer, which does not have the old key. |
 | **Windows 10 / Server 2016 is the minimum**, x64 only. | Everything older is out of support. |
@@ -68,15 +68,16 @@ These were decided deliberately; reopen them only with a new reason.
 
 | Phase | Scope | Status | Pull requests |
 |---|---|---|---|
+| Base | hMailServer's code after 5.7.2, up to upstream `master` of 2026-10-11 | ✅ | |
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
-| **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#15, #17, #19–#26 |
+| **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
 | **1b · Web admin** | Bootstrap UI, PHP 8.5.12+, CSRF, escaping, CSP, rate limiting | 🔜 | |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols** | SMTP, IMAP and authentication extensions; MTA-STS, DANE, DKIM Ed25519 | 📋 | |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
-| **5 · Code quality** | Ownership, `/W4`, smaller modules, portable tests, fuzzing | 📋 ongoing | |
-| **6 · Features** | Sieve, DMARC reports, ARC, REST API, new web admin, webmail | 📋 | |
+| **5 · Code quality** | Ownership, `/W4`, smaller modules, more of the portable core, more fuzzing | 🔄 ongoing | |
+| **6 · Features** | Sieve, DMARC reports, ARC, REST API, webmail | 📋 | |
 
 ---
 
@@ -207,8 +208,9 @@ account mid-delivery, the server logs HM5165, and the *next* test fails in teard
 
 ## 6. Test environments
 
-- **GitHub Actions** (`windows-2025` with VS 2026): the release build, gcc and clang checks, and
-  the regression suite on the three databases. The runner has the full VC++ redistributable,
+- **GitHub Actions**: on `windows-2025` with VS 2026, the release build, the installer and the
+  regression suite on the three databases; on Linux, the portable core with gcc and clang
+  (`portable-core.yml`). The runner has the full VC++ redistributable,
   which hides missing-DLL problems in the installer.
 - **Hyper-V virtual machines** through `test/VMTestRunner.Console` (`TestEnvironments.json`),
   which install a real installer on a clean Windows and run the suite there. The current VM is
@@ -268,12 +270,20 @@ server.
 SQLite replaces SQL Server Compact as the built-in database. Existing installations migrate
 automatically. SQL Server Compact keeps its upgrade scripts until then.
 
-### Phase 5 · Code quality (continuous)
+### Phase 5 · Code quality (continuous) 🔄
 Replace `catch (...)` that hides errors, move to `std::unique_ptr` / clear ownership, compile at
-`/W4`, split `Common/Util`, make the tests portable, and add fuzzing of the protocol parsers.
+`/W4`, and split `Common/Util`. So far it has come along with other work: the `@@IDENTITY` BSTR leak
+(#6) and the Debug build (#10).
+
+There is a base to build on, from upstream: a **portable core** (`Server/Portable`) that builds with
+gcc and clang on Linux and runs `PortableCoreTests` - the *gcc* and *clang* CI checks - and
+**libFuzzer fuzzers** for the SPF record parser and macro expander (`Server/Portable/Fuzz`). The plan
+is to move more of the protocol parsing into the portable core (MIME, the SMTP and IMAP command
+parsers, DKIM) and fuzz each part that reads bytes from the network.
 
 ### Phase 6 · Features
-Sieve filtering, DMARC aggregate reports, ARC, a REST API with a new web admin, webmail.
+Sieve filtering, DMARC aggregate reports, ARC, a REST API, webmail. The web admin rebuilt in Phase 1b
+keeps using the COM API; it can move to the REST API once there is one.
 
 ---
 
@@ -291,6 +301,9 @@ Sieve filtering, DMARC aggregate reports, ARC, a REST API with a new web admin, 
 - **Schema changes** follow the checklist in AGENTS.md: upgrade scripts for all four database
   types, the three `CreateTables*.sql`, `REQUIRED_DB_VERSION`, and DBUpdater. Remember the blank
   line between statements. The current schema version is **5714**.
+- **Naming**: the product is ArzoieMail, but some identifiers keep the hMailServer name on purpose
+  (`hMailServer.exe`, the service name, the `hMailServer.Application` COM API, ...). AGENTS.md lists them;
+  don't rename those.
 - **New COM API**: add it to `hMailServer.idl` with a new `id`, implement it in `Server/COM`, and
   make sure the class implements `ISupportErrorInfo` if it returns error messages.
 - **`Formatter::Format`** takes at most five arguments.

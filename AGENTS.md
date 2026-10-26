@@ -1,6 +1,22 @@
-# hMailServer — Codebase Guide for Agents
+# ArzoieMail — Codebase Guide for Agents
 
-hMailServer is a free, open-source email server for Microsoft Windows, licensed under AGPLv3. It implements SMTP, IMAP, and POP3, and runs as a Windows service. The codebase is written primarily in C++ (server core) and C# (admin tools), targeting C++20 with the Visual Studio 2026 v145 toolset, with 64-bit Windows builds.
+ArzoieMail is a free, open-source email server for Microsoft Windows, licensed under AGPLv3. It carries on hMailServer 5.7.2 as a project of its own. It implements SMTP, IMAP, and POP3, and runs as a Windows service. The codebase is written primarily in C++ (server core) and C# (admin tools), targeting C++20 with the Visual Studio 2026 v145 toolset, with 64-bit Windows builds.
+
+**Names that stay hMailServer.** The product is ArzoieMail in everything users read. Some identifiers keep the
+hMailServer name on purpose, because existing installations, scripts and the web admin depend on them, or so that
+the installer upgrades an hMailServer installation in place. Don't rename them without a decision to do so:
+
+- the `hmailserver/` source folder and the project files (`hMailServer.sln`, `hMailServer.vcxproj`, `hMailServer.idl`,
+  `hMailServer Tools.sln`, `hMailServer Tests.sln`, `hMailServer64.iss`), and the `%hMailServerLibs%` variable;
+- `hMailServer.exe`, `hMailServer.ini`, `hMailAdmin.exe`, the Windows service name `hMailServer` (its display name is ArzoieMail) and
+  `NT SERVICE\hMailServer`;
+- the `hMailServer.Application` COM API, its type library and the registry keys;
+- the installer's AppId, the `X-hMailServer-*` message headers, the `hm_` database tables, and `hMailServerBackup.xml`
+  inside backups.
+
+Fresh installations go to `Program Files\ArzoieMail` and `ProgramData\ArzoieMail`; the server and the installer still
+find `ProgramData\hMailServer` in an upgraded installation. The source code and its comments still say hMailServer in
+many places; that is renamed gradually, never in the identifiers above.
 
 ## Repository Layout
 
@@ -47,7 +63,7 @@ source/
   Addons/             # Various scripts, for example, default event scripts
   DBScripts/          # SQL scripts: create DB schema, upgrade old DBs
   Migration/          # Unpublished tools for migrating from other mail servers
-  Server/             # The hMailServer service — main C++ codebase
+  Server/             # The ArzoieMail server (Windows service) — main C++ codebase
   Tools/              # C# .NET 10 Windows Forms tools (Administrator, DBSetup, etc.)
 ```
 
@@ -59,7 +75,7 @@ This is where almost all feature work happens. The entry point is the Visual Stu
 
 ```
 Server/
-  COM/                # COM/API layer (hMailServer public API)
+  COM/                # COM/API layer (the public API, hMailServer.Application)
   common/             # Shared C++ infrastructure used by all server components
   ExternalFetcher/    # POP3 download from remote servers (fetch-from-external)
   hMailServer/        # Service entry point (WinMain, Windows service wiring)
@@ -70,7 +86,7 @@ Server/
 
 ### `Server/COM/`
 
-Defines and implements the COM interfaces that make up the hMailServer public API (the `.idl` file lives here). The hMailServer Administrator GUI, DBSetup, and any external scripts all talk to the server through this COM API. When adding a new configurable feature, the COM interface typically needs a new property or method.
+Defines and implements the COM interfaces that make up the public API, `hMailServer.Application` (the `.idl` file lives here). The ArzoieMail Administrator GUI, DBSetup, and any external scripts all talk to the server through this COM API. When adding a new configurable feature, the COM interface typically needs a new property or method.
 
 ### `Server/Common/`
 
@@ -109,7 +125,7 @@ POP3 server implementation. Simpler than IMAP; messages are read from the same s
 
 ### `Server/ExternalFetcher/`
 
-Implements the "fetch mail from external POP3 accounts" feature, where hMailServer connects as a POP3 *client* to external servers and downloads messages on behalf of local accounts.
+Implements the "fetch mail from external POP3 accounts" feature, where ArzoieMail connects as a POP3 *client* to external servers and downloads messages on behalf of local accounts.
 
 ### `Server/hMailServer/`
 
@@ -165,7 +181,7 @@ test/
   VMTestRunner.Console/ # Runs the regression tests in Hyper-V virtual machines
 ```
 
-`RegressionTests/` is the primary test suite — it executes against a real hMailServer instance and exercises it end-to-end over SMTP, IMAP, and POP3. The full suite covers 500+ scenarios.
+`RegressionTests/` is the primary test suite — it executes against a real ArzoieMail instance and exercises it end-to-end over SMTP, IMAP, and POP3. The full suite covers 500+ scenarios.
 
 `RegressionTests/Stress/` holds stress tests: concurrency and malformed input. They are part of
 `RegressionTests.dll` and run when the test runner is asked to include stress tests.
@@ -236,12 +252,12 @@ Vendored third-party C++ libraries checked directly into the repository. Large e
 
 The below scripts will automatically locate prerequisites. They must be run using `powershell.exe` (not bash/sh). Use the `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>` invocation from bash.
 
-* Use `build/build.ps1` to build hMailServer server.
+* Use `build/build.ps1` to build the ArzoieMail server.
 * Use `build/post-build.ps1` to copy DLLs and register the COM server after a successful build. It stops the
   service, copies the dependencies, registers the COM server if that is needed, and starts the service again.
   Only the registration needs elevation, and it is skipped when the build output is already registered and the
   type library is unchanged, so an ordinary rebuild does not prompt. Pass `-ForceRegister` to register anyway.
-* Run `build/grant-service-control.ps1` once, elevated, to let your account start and stop the hMailServer
-  service without a UAC prompt. Re-run it if the service is ever deleted and recreated.
+* Run `build/grant-service-control.ps1` once, elevated, to let your account start and stop the ArzoieMail
+  service (service name `hMailServer`) without a UAC prompt. Re-run it if the service is ever deleted and recreated.
 * Use `build/build-tests.ps1` to build the regression test solution.
 * Run the regression tests with the NUnit console runner from the restored packages, for example `hmailserver\test\packages\nunit.consolerunner\<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll`. They need an installed and running hMailServer, since they drive it through its COM API. The test projects target .NET 10 and NUnit 5; the package versions are pinned in `hmailserver\test\Directory.Packages.props`.

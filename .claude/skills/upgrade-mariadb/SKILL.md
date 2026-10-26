@@ -1,24 +1,24 @@
 ---
 name: upgrade-mariadb
 description: >-
-  Build MariaDB Connector/C for hMailServer and/or bump the pinned version, for
+  Build MariaDB Connector/C for ArzoieMail and/or bump the pinned version, for
   3.4.x (e.g. rebuild 3.4.11 against a new OpenSSL, or upgrade 3.4.11 -> 3.4.12).
   Builds libmariadb.dll into %hMailServerLibs% via libraries\build-mariadb.ps1
-  (linking it against the OpenSSL hMailServer uses), rewrites every pinned MariaDB
+  (linking it against the OpenSSL ArzoieMail uses), rewrites every pinned MariaDB
   Connector/C version reference in the repo, keeps the BUILDING.md build instructions
-  current, and verifies hMailServer still builds and ships the DLL. Use when asked to
+  current, and verifies ArzoieMail still builds and ships the DLL. Use when asked to
   build, rebuild, bump, update, or upgrade the MySQL/MariaDB client library for
-  hMailServer. Supports MariaDB Connector/C 3.4.x only.
+  ArzoieMail. Supports MariaDB Connector/C 3.4.x only.
 ---
 
-# Build / upgrade MariaDB Connector/C (3.4.x) for hMailServer
+# Build / upgrade MariaDB Connector/C (3.4.x) for ArzoieMail
 
-hMailServer connects to MySQL and MariaDB through MariaDB Connector/C. The connector is not
+ArzoieMail connects to MySQL and MariaDB through MariaDB Connector/C. The connector is not
 vendored in the repo; `libmariadb.dll` is built locally into
 `%hMailServerLibs%\libmariadb-<version>\build64\libmariadb\RelWithDebInfo`, copied into the
 build output by `post-build.bat`, and shipped in `Bin` by the installer. Its concrete version
 is pinned in a few build/config files. This skill builds the connector (linking it against the
-OpenSSL hMailServer uses), rewrites those references when the version changes, and verifies the
+OpenSSL ArzoieMail uses), rewrites those references when the version changes, and verifies the
 result.
 
 There are two reasons to run it:
@@ -111,7 +111,7 @@ version.
 **Do not** change the `libmariadb.dll` file name — it appears in `section_files_64.iss`, in
 `MySQLInterface::GetLibraryFileName_` and its 5094 error message
 (`Common/SQL/MySQLInterface.cpp`), and in the VM test runner's `TestEnvironments.json`. None of
-those are version-bearing. hMailServer resolves every entry point with `GetProcAddress`, so
+those are version-bearing. ArzoieMail resolves every entry point with `GetProcAddress`, so
 there is no import lib to update. The connector's headers are used by one file only,
 `Common/SQL/MySQLStatement.cpp`, for the `MYSQL_BIND` and `MYSQL_FIELD` layouts of its
 prepared statements; its include directories are the `hMailServer.vcxproj` entries above. If a
@@ -127,7 +127,7 @@ and BUILDING.md accordingly. State whether a change was needed.
 
 ### 5. Verify
 
-Build hMailServer and run its post-build step, which copies the new DLL into the output dir:
+Build ArzoieMail and run its post-build step, which copies the new DLL into the output dir:
 
 ```
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\build.ps1
