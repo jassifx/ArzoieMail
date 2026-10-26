@@ -26,6 +26,7 @@ The repository root contains two top-level directories plus a handful of config 
 hmailserver/          # All source code, tools, tests, installation scripts
 libraries/            # Vendored third-party libraries checked into the repo
 build/                # Scripts for building and running tests.
+docs/agents/          # Notes for agents: working agreement, environment, gotchas, session handoffs
 .editorconfig
 .gitattributes
 .gitignore
@@ -37,7 +38,8 @@ ROADMAP.md            # Engineering roadmap: decisions, what each phase changed,
 
 Everything of substance lives under `hmailserver/`.
 
-Before starting roadmap work, read `ROADMAP.md`: it records the settled decisions, the state of each
+Agents picking up work: start with `docs/agents/README.md`, which gives the reading order and links the
+newest session handoff. Before starting roadmap work, read `ROADMAP.md`: it records the settled decisions, the state of each
 phase, and lessons learned. A pull request that finishes or changes a roadmap item updates it.
 
 ---
