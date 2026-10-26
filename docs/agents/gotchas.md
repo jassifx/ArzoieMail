@@ -43,6 +43,10 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 
 ## Tests
 
+- **`Status.StartTime` has only one-second precision.** A restore can finish and restart the
+  server within the same second, so a changed timestamp is not a reliable completion signal.
+  Backup passphrase tests wait for fresh restore-completion and server-started log messages.
+
 - **Check the disposable VM's database version before deploying a development executable.**
   The VM baseline was at schema 5713 while the current server required 5714. The service appeared
   Running, but initialization stopped before creating the management pipe. Check the startup
