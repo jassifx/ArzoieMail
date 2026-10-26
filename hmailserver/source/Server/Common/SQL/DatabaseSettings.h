@@ -20,9 +20,13 @@ namespace HM
       };
 
 	   DatabaseSettings(const String &sDatabaseProvider, const String &sDatabaseServer, const String &sDatabaseName, const String &sUsername, const String &sPassword,
-			const String &sDatabaseDirectory, const String &sDatabaseServerFailoverPartner, HM::DatabaseSettings::SQLDBType dbType, long lDBPort);
+			const String &sDatabaseDirectory, const String &sDatabaseServerFailoverPartner, HM::DatabaseSettings::SQLDBType dbType, long lDBPort,
+         const String &encryption = _T("Mandatory"), const String &trustCertificate = _T("0"), const String &certificateHost = _T(""));
 	   virtual ~DatabaseSettings();
 
+      String GetMSSQLEncryption() const { return mssql_encryption_; }
+      String GetMSSQLTrustCertificate() const { return mssql_trust_certificate_; }
+      String GetMSSQLCertificateHost() const { return mssql_certificate_host_; }
       String GetProvider() { return database_provider_; }
       String GetServer() {return database_server_; }
       String GetDatabaseName() {return database_name_;}
@@ -39,6 +43,9 @@ namespace HM
 
    private:
 
+      String mssql_encryption_;
+      String mssql_trust_certificate_;
+      String mssql_certificate_host_;
       String database_provider_;
       String database_server_;
       String database_name_;

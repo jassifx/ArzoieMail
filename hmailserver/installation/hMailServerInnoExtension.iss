@@ -586,6 +586,37 @@ begin
 end;
 
 
+// Block an SQL Server upgrade before replacing binaries if its required driver or
+// provider migration is missing. SQL Server Compact uses its own provider.
+function CheckSQLServerPrerequisites(): String;
+var
+  ProviderCLSID: String;
+  ProviderName: String;
+begin
+  Result := '';
+  if GetCurrentDatabaseType() <> 'mssql' then
+    Exit;
+  if not RegQueryStringValue(HKLM64, 'SOFTWARE\Classes\MSOLEDBSQL19\CLSID', '', ProviderCLSID) then
+  begin
+    Result := 'This SQL Server installation requires Microsoft OLE DB Driver 19 for SQL Server (x64). Install its x86 and x64 Visual C++ prerequisites and the driver, then restart setup. No application files have been replaced.';
+    Exit;
+  end;
+  ProviderName := GetIniString('Database', 'Provider', '', GetInifile());
+  if (ProviderName <> '') and (CompareText(ProviderName, 'MSOLEDBSQL19') <> 0) then
+    Result := 'The SQL Server Provider override in hMailServer.ini must be removed or changed to MSOLEDBSQL19 before upgrading. SQL Server 2019 or newer and a trusted TLS certificate are required. See the SQL Server upgrade guide.';
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := CheckSQLServerPrerequisites();
+  if Result <> '' then
+    Exit;
+  // NextButtonClick(wpReady) runs before PrepareToInstall. Stop here instead,
+  // after prerequisites pass, so a rejected upgrade leaves the service running.
+  if not StopServiceAndWait('hMailServer') then
+    Result := 'The ArzoieMail service could not be stopped. Stop it manually and try again.';
+end;
+
 function InitializeSetup(): Boolean;
 	var
 		sMessage : AnsiString;
@@ -1006,20 +1037,7 @@ begin
 		begin
 			Result := false;
 		end;
-	end
-	else if CurPage = wpReady then
-	begin
-		// Stop hMailServer, if it's running, so that its files aren't locked.
-		if StopServiceAndWait('hMailServer') = false then
-		begin
-			ReportServiceStopFailure('The ArzoieMail service could not be stopped. Stop it manually and try again.');
-			Result := false;
-
-			// The user can't retry a silent installation, so fail it.
-			if (WizardSilent() = true) then
-				g_iExitCode := 4;
-		end;
-    end;
+	end;
 	
     hWnd := StrToInt(ExpandConstant('{wizardhwnd}'));
 

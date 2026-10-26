@@ -22,6 +22,9 @@ namespace HM
 
       bool GetDatabaseSettingsExists();
 
+      String GetMSSQLEncryption() const { return mssql_encryption_; }
+      String GetMSSQLTrustCertificate() const { return mssql_trust_certificate_; }
+      String GetMSSQLCertificateHost() const { return mssql_certificate_host_; }
       String GetDatabaseProvider() const { return database_provider_; }
       String GetDatabaseServer() const { return database_server_; }
       String GetDatabaseName() const { return database_name_; }
@@ -210,6 +213,9 @@ namespace HM
       bool rewrite_envelope_from_when_forwarding_;
       bool use_dns_cache_;
       String dns_server_;
+      String mssql_encryption_;
+      String mssql_trust_certificate_;
+      String mssql_certificate_host_;
       String database_provider_;
 
       String m_sDisableAUTHList;

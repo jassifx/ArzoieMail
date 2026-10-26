@@ -6,9 +6,9 @@ traps found along the way, and where the last session left off.
 
 ## Read in this order
 
-Current handoff: [2026-10-26](handoffs/2026-10-26.md). It records the merged #31 foundation,
-open #32 documentation/tracker work, PHP retirement, guided certificates and high-pressure
-Defender requirements. Verify live PR/CI state before continuing; planned features are not implemented.
+Current handoff: [2026-10-27](handoffs/2026-10-27.md). It records the authorized SQL Server
+Express modernization slice, VM evidence, new fourth CI backend, review gate and remaining
+Phase 1b plan. Verify live PR/CI state before continuing; planned features are not implemented.
 
 | # | Document | What it gives you |
 |---|---|---|

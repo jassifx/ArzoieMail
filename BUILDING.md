@@ -298,3 +298,10 @@ Then create the release from the GitHub Actions build of the commit being releas
 Release workflow (`.github/workflows/release.yml`) with its build number. It attaches the
 installer and the symbols to a draft GitHub release, which is reviewed, given release notes and
 published by hand.
+
+## SQL Server / Express validation
+
+See [SQL Server deployment and migration](docs/sql-server.md) for OLE DB 19 prerequisites,
+required encryption, certificate validation, endpoint/authentication settings and the disposable
+SQL Server 2025 Express fixture. SQL Server Compact is a separate backend. Compile on the
+development host; run all connection probes and regressions only inside the VM or CI.

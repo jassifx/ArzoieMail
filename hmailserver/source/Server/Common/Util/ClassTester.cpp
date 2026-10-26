@@ -40,6 +40,7 @@
 #include "../Persistence/SecretMigration.h"
 #include "../SQL/SQLCommand.h"
 #include "../SQL/SQLStatement.h"
+#include "../SQL/ADOConnection.h"
 #include "../Util/EventTester.h"
 #include "../Scripting/ScriptServer.h"
 #include <boost/pool/object_pool.hpp>
@@ -192,6 +193,9 @@ namespace HM
       OutputDebugString(_T("hMailServer: Testing SQLStatement\n"));
       SQLStatementTester sqlStatementTester;
       sqlStatementTester.Test();
+
+      ADOConnectionTester adoConnectionTester;
+      adoConnectionTester.Test();
 
       OutputDebugString(_T("hMailServer: Testing RegularExpressionTester\n"));
       RegularExpressionTester *pRegExTest = new RegularExpressionTester();

@@ -32,9 +32,8 @@ on:
       database:
         description: 'Database the installed server runs on: internal (SQL Server Compact, what
           a silent install sets up), postgresql (the PostgreSQL server of the runner image) or
-          mysql (the MySQL server of the runner image, on a data directory of its own).
-          The MySQL and PostgreSQL connections write their command parameters into the SQL
-          themselves rather than binding them, so they need runs of their own.'
+          mysql (the MySQL server of the runner image), or mssql (SQL Server 2025 Express
+          with OLE DB 19 and verified TLS). All backends exercise bound SQL parameters.'
         required: false
         type: string
         default: internal
@@ -71,7 +70,7 @@ jobs:
         run: |
           # A workflow_call input is whatever the caller passes; an unknown database would
           # otherwise quietly run the tests on the internal one.
-          if ($env:DATABASE -notin @('internal', 'postgresql', 'mysql')) { throw "The database must be internal, postgresql or mysql, was '$env:DATABASE'." }
+          if ($env:DATABASE -notin @('internal', 'postgresql', 'mysql', 'mssql')) { throw "The database must be internal, postgresql, mysql or mssql, was '$env:DATABASE'." }
 
           $setup = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'installer\*.exe') | Select-Object -First 1
           if (-not $setup) { throw "The '$env:INSTALLER_ARTIFACT' artifact contains no executable." }
@@ -202,6 +201,15 @@ jobs:
           $database = $application.Database
           if ($database.DatabaseType -ne $hDBTypeMySQL) { throw "The server runs on database type $($database.DatabaseType), not MySQL." }
           "hMailServer now runs on MySQL ($($database.ServerName), database $($database.DatabaseName), version $($database.CurrentVersion))"
+
+      - name: Provision and verify SQL Server Express
+        if: inputs.database == 'mssql'
+        run: |
+          $fixture = Join-Path $env:RUNNER_TEMP 'ArzoieMSSQLTest'
+          & build/provision-mssql-test.ps1 -DisposableEnvironment -WorkDirectory $fixture
+          $credential = [pscredential]::new('Administrator', [Security.SecureString]::new())
+          $setup = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'installer\*.exe') | Select-Object -First 1
+          & build/test-mssql-connection.ps1 -AdministratorCredential $credential -FixtureDirectory $fixture -Installer $setup.FullName
 
       - name: Build the test solution
         env:

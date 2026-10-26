@@ -84,6 +84,22 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 
 ## Agent sessions
 
+- **Inno's Ready-page handler precedes PrepareToInstall.** Keep service shutdown in
+  PrepareToInstall after prerequisite checks, rather than NextButtonClick(wpReady); otherwise
+  an upgrade can stop a working service and then refuse to install. The VM preflight regression
+  checks both executable hash and running service PID; a rejection alone is insufficient.
+- **ADO connection keywords differ from provider-native keywords.** OLE DB 19 through ADO
+  needs `Trust Server Certificate=True/False` (not yes/no). Use `Data Source` for quoted endpoint
+  values; an unknown `Server` alias can leave quotes in the provider string and fail with error 87.
+  Test actual connections and reject false-positive negative tests caused by unrelated parse errors.
+- **Certificate key wrappers vary between .NET versions.** A legacy CSP key can be returned as
+  RSACng. Resolve its verified unique key filename and check it is a file before granting service
+  access; a missing key name must never turn a key-file ACL operation into a directory grant.
+- **VM database scripts must match the test binary.** The original VM carries schema-5713
+  creation scripts. Copy the current CreateTablesMSSQL.sql when testing a new binary manually;
+  otherwise successful SQL creation produces an old schema and initialization fails. CI installs
+  the current scripts from its freshly built installer.
+
 - Background commands started with a trailing `&` are not tracked; use the tool's own background
   mode so the session is told when they finish.
 - The session's scratch folder can be cleared between sessions. Keep anything that must last —

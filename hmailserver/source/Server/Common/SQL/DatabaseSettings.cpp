@@ -13,7 +13,11 @@
 namespace HM
 {
    DatabaseSettings::DatabaseSettings(const String &sDatabaseProvider, const String &sDatabaseServer, const String &sDatabaseName, const String &sUsername, const String &sPassword,
-                                      const String &sDatabaseDirectory, const String &sDatabaseServerFailoverPartner, HM::DatabaseSettings::SQLDBType dbType, long lDBPort) :
+                                      const String &sDatabaseDirectory, const String &sDatabaseServerFailoverPartner, HM::DatabaseSettings::SQLDBType dbType, long lDBPort,
+                                      const String &encryption, const String &trustCertificate, const String &certificateHost) :
+      mssql_encryption_(encryption),
+      mssql_trust_certificate_(trustCertificate),
+      mssql_certificate_host_(certificateHost),
       database_server_(sDatabaseServer),
       database_name_(sDatabaseName),
       username_(sUsername),
