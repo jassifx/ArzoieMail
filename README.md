@@ -35,8 +35,8 @@ and **no telemetry, ever**.
 ## Where ArzoieMail comes from
 
 ArzoieMail carries on [hMailServer](https://github.com/hmailserver/hmailserver), the Windows mail
-server Martin Knafve started in 2002 and that many organisations still run. It continues from the
-hMailServer 5.7.2 code.
+server Martin Knafve started in 2002 and that many organisations still run. It continues from
+hMailServer's code after the 5.7.2 release, as of October 2026.
 
 hMailServer earned that trust over two decades, but the platform under it aged: a compiler and
 libraries from years ago, a database engine Microsoft stopped supporting in 2021, a scripting
@@ -51,9 +51,9 @@ Jaspreet Singh in Delhi, India. The name honours Arzoie, the maintainer's daught
 ## What is different
 
 **Tested on every change, on every database.** Each push builds the server, installs it on a
-clean runner and runs the full regression suite - 1,294 end-to-end tests over SMTP, IMAP, POP3
-and the COM API - three times: on the built-in database, on PostgreSQL and on MySQL. Releases are
-also tested on clean Windows Server virtual machines, which is how a missing runtime DLL that only
+clean runner and runs the full regression suite - more than 1,200 end-to-end tests over SMTP,
+IMAP, POP3 and the COM API - three times: on the built-in database, on PostgreSQL and on MySQL.
+Installers are also tested on clean Windows Server virtual machines, which is how a missing runtime DLL that only
 broke installations on machines without Visual C++ installed was found and fixed.
 
 **Secure by construction, not by convention.**
@@ -64,7 +64,15 @@ broke installations on machines without Visual C++ installed was found and fixed
 - The server is compiled with the Windows hardening options: `/sdl`, Control Flow Guard,
   Spectre mitigations and CET shadow-stack compatibility, and tests check that the shipped
   binaries carry them.
-- Passwords are hashed with Argon2id, and older hashes are upgraded when users log on.
+- Passwords are hashed with Argon2id, and older hashes are upgraded when users log on. A logon
+  to an account that does not exist takes as long as one to an account that does, so the time it
+  takes does not tell which accounts exist.
+- Stored secrets - route and external account passwords, the relay and database passwords - are
+  encrypted with AES-256-GCM under a key of the installation's own, protected by Windows DPAPI.
+  The key can be exported under a passphrase to move to a new server.
+- Backups can be encrypted under a passphrase, file names included; a backup without one keeps
+  its secrets encrypted as in the database. The Administrator protects the passwords it saves
+  with DPAPI.
 - Third-party downloads in the build are pinned by version and checked against their SHA-256 or
   SHA-512 hashes.
 
@@ -90,6 +98,8 @@ below has a reason, and each keeps existing installations working.
 | SQL text assembled from values | Bound parameters | Values can never become SQL, whatever they contain |
 | Windows Vista / Server 2008 support | Windows 10 / Server 2016 and later | Required by PostgreSQL's current client library, and lets the server use what Windows 10 provides instead of workarounds for systems long out of support |
 | Blowfish with a fixed key | AES-256-GCM with a per-installation key protected by Windows DPAPI, exportable with a passphrase | The old key is published in the source code, so anyone with an `hMailServer.ini` or a backup could decrypt the passwords in it |
+| A hard-coded key for the Administrator's saved passwords | Windows DPAPI for the current user | A key in the source code protects nothing |
+| Secrets written into backups as they were stored | An encrypted archive under the backup's own passphrase, or secrets protected under the installation's key | A backup is a copy of every secret on the server, and is often kept somewhere less protected |
 | VBScript / JScript event scripts | A PowerShell event host, out of process *(planned)* | Microsoft has deprecated VBScript and is phasing it out of Windows, and a crashing script should never take the mail server down with it |
 | SQL Server Compact 4.0 | SQLite, with automatic migration *(planned)* | SQL Server Compact has been out of support since 2021 |
 
@@ -102,13 +112,16 @@ and the plan for the phases ahead.
 | Phase | Scope | Status |
 |---|---|---|
 | **0 · Foundation** | Visual Studio 2026 and C++20, hardening flags, Windows 10 minimum, Inno Setup 6.7, .NET 10 tools and tests, NUnit 5 | ✅ Done |
-| **1 · Security** | Bound SQL parameters on every database, AES-GCM and DPAPI instead of Blowfish, passphrase-protected backups, DPAPI for the Administrator's saved passwords, retiring the `libmysql.dll` fallback | ✅ Done |
+| **1 · Security** | Bound SQL parameters on every database, retiring the `libmysql.dll` fallback, AES-GCM and DPAPI instead of Blowfish with an exportable key, passphrase-protected backups, DPAPI for the Administrator's saved passwords, an Argon2id review (logon timing), UTF-8 client credentials | ✅ Done |
 | **1b · Web admin** | PHPWebAdmin rebuilt with current Bootstrap and a modern interface; requires PHP 8.5.12 or later; CSRF protection, output escaping, session hardening, a Content Security Policy and login rate limiting | Next |
 | **2 · Scripting** | PowerShell event host replacing VBScript and JScript | Planned |
 | **3 · Protocols** | SMTP: PIPELINING, 8BITMIME, ENHANCEDSTATUSCODES, CHUNKING, DSN, SMTPUTF8. IMAP: ENABLE, MOVE, LITERAL+, CONDSTORE/QRESYNC, UTF8=ACCEPT. SCRAM-SHA-256, MTA-STS, DANE, DKIM with Ed25519 | Planned |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact, migrated automatically | Planned |
-| **5 · Code quality** | Modern ownership (smart pointers), compiling at warning level 4, smaller modules, portable tests and fuzzing - continuously, alongside the other phases | Ongoing |
+| **5 · Code quality** | Modern ownership (smart pointers), compiling at warning level 4, smaller modules, more of the server in the portable core with its tests and fuzzers - continuously, alongside the other phases | Ongoing |
 | **6 · Features** | Sieve filtering, DMARC reports, ARC, a REST API, webmail | Planned |
+
+The phases run in this order, each starting once the one before it is done; code quality (5) runs
+alongside all of them.
 
 ## Getting started
 
