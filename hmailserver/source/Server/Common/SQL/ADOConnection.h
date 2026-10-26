@@ -12,7 +12,7 @@ namespace HM
    public:
       enum ServerInfo
       {
-         RequiredVersion = 8
+         RequiredVersion = 15
       };
 
 	   ADOConnection(std::shared_ptr<DatabaseSettings> pSettings);
@@ -44,10 +44,16 @@ namespace HM
 
       __int64 GetIdentityFromRS_(_RecordsetPtr pRS) const;
 
-      bool IsMSOLEDBSQL18OrLaterInstalled_() const;
+      friend class ADOConnectionTester;
+      static String BuildConnectionString_(std::shared_ptr<DatabaseSettings> settings);
 
       _ConnectionPtr cADOConnection;  
       bool bConnected;
       
+   };
+   class ADOConnectionTester
+   {
+   public:
+      void Test();
    };
 }

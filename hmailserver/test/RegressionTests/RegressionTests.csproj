@@ -167,6 +167,7 @@
     <Compile Include="API\Secrets.cs" />
     <Compile Include="API\Security.cs" />
     <Compile Include="API\SqlValues.cs" />
+    <Compile Include="API\SqlServer.cs" />
     <Compile Include="API\Utilities.cs" />
     <Compile Include="API\Permissions.cs" />
     <Compile Include="IMAP\Append.cs" />

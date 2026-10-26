@@ -96,7 +96,8 @@ namespace HM
       HM::DatabaseSettings::SQLDBType dbType = IniFileSettings::Instance()->GetDatabaseType();
 
       std::shared_ptr<DatabaseSettings> pSettings = std::shared_ptr<DatabaseSettings> 
-         (new DatabaseSettings(sProvider, sServer, sDatabase, sUsername, sPassword, sDatabaseDirectory, sDatabaseServerFailoverPartner, dbType, lDBPort));
+         (new DatabaseSettings(sProvider, sServer, sDatabase, sUsername, sPassword, sDatabaseDirectory, sDatabaseServerFailoverPartner, dbType, lDBPort,
+            pIniFileSettings->GetMSSQLEncryption(), pIniFileSettings->GetMSSQLTrustCertificate(), pIniFileSettings->GetMSSQLCertificateHost()));
 
       for (int i = 0; i < iNoOfConnections; i++)
       {

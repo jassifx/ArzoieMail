@@ -47,8 +47,8 @@ unless the maintainer says otherwise for a specific task.
 - **Every bug fix and every feature has a regression test** in `hmailserver/test/RegressionTests`,
   next to the tests of the same area. For a bug, write the test first and see it fail.
 - The regression tests need an installed server, which the development machine doesn't have:
-  **CI runs them**, on the built-in database, PostgreSQL and MySQL. A change is ready when all
-  three are green. The Hyper-V VM (see environment.md) runs them against a real installer.
+  **CI runs them**, on the built-in database, PostgreSQL, MySQL and SQL Server Express. A change
+  is ready when all four are green. The Hyper-V VM runs them against a real installer.
 
 ## Reporting
 

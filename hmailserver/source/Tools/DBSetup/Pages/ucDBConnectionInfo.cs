@@ -67,7 +67,8 @@ namespace DBSetup.Pages
                break;
             case hMailServer.eDBtype.hDBTypeMSSQL:
                radioUseWindowsAuthentication.Enabled = true;
-               textServerPort.Text = "";
+               if (!_state.ContainsKey("ServerPort") || textServerPort.Number == 3306 || textServerPort.Number == 5432)
+                  textServerPort.Number = 0;
                break;
          }
 
@@ -106,6 +107,8 @@ namespace DBSetup.Pages
             }
          }
 
+         // A named SQL Server instance can use its discovered port (0), or the admin can
+         // choose a fixed TCP port. The native driver rejects ambiguous duplicate ports.
          _state["ServerAddress"] = textServerAddress.Text;
          _state["ServerPort"] = textServerPort.Text;
          _state["DatabaseName"] = textDatabaseName.Text;
@@ -127,7 +130,10 @@ namespace DBSetup.Pages
          textPassword.Enabled = radioUseServerAuthentication.Checked;
 
          hMailServer.eDBtype dbType = Globals.GetDatabaseType(_state["ServerType"]);
-         textServerPort.Enabled = dbType != hMailServer.eDBtype.hDBTypeMSSQL;
+         textServerPort.Enabled = true;
+         labelPort.Text = dbType == hMailServer.eDBtype.hDBTypeMSSQL ? "Port (0 = instance/default)" : "Port";
+         labelDatabaseServerAddress.Text = dbType == hMailServer.eDBtype.hDBTypeMSSQL
+            ? "SQL Server host or host\\instance" : "Database server address";
       }
 
       private void radioUseServerAuthentication_CheckedChanged(object sender, EventArgs e)

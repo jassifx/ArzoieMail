@@ -586,6 +586,26 @@ begin
 end;
 
 
+// Block an SQL Server upgrade before replacing binaries if its required driver or
+// provider migration is missing. SQL Server Compact uses its own provider.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ProviderCLSID: String;
+  ProviderName: String;
+begin
+  Result := '';
+  if GetCurrentDatabaseType() <> 'mssql' then
+    Exit;
+  if not RegQueryStringValue(HKLM64, 'SOFTWARE\Classes\MSOLEDBSQL19\CLSID', '', ProviderCLSID) then
+  begin
+    Result := 'This SQL Server installation requires Microsoft OLE DB Driver 19 for SQL Server (x64). Install its x86 and x64 Visual C++ prerequisites and the driver, then restart setup. No application files have been replaced.';
+    Exit;
+  end;
+  ProviderName := GetIniString('Database', 'Provider', '', GetInifile());
+  if (ProviderName <> '') and (CompareText(ProviderName, 'MSOLEDBSQL19') <> 0) then
+    Result := 'The SQL Server Provider override in hMailServer.ini must be removed or changed to MSOLEDBSQL19 before upgrading. SQL Server 2019 or newer and a trusted TLS certificate are required. See the SQL Server upgrade guide.';
+end;
+
 function InitializeSetup(): Boolean;
 	var
 		sMessage : AnsiString;

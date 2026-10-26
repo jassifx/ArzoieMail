@@ -7,9 +7,9 @@ using RegressionTests.Shared;
 
 namespace RegressionTests.API
 {
-   // Values go to the database as bound parameters, on SQL Server Compact, PostgreSQL and MySQL
+   // Values go to the database as bound parameters on SQL Server Compact, SQL Server, PostgreSQL and MySQL
    // alike, never written into the SQL. They must come back exactly as they went in, and never
-   // become part of the SQL. CI runs these on all three databases.
+   // become part of the SQL. CI runs these on all four database backends.
    [TestFixture]
    public class SqlValues : TestFixtureBase
    {

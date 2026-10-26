@@ -566,13 +566,16 @@ STDMETHODIMP InterfaceDatabase::CreateExternalDatabase(eDBtype ServerType, BSTR 
    
       // Create a settings object for the connection ...
       std::shared_ptr<HM::DatabaseSettings> pSettings = std::shared_ptr<HM::DatabaseSettings>(
-         new HM::DatabaseSettings(sProvider, sServerName, sEmpty, sUsername, sPassword, sEmpty, sEmpty, (HM::DatabaseSettings::SQLDBType) ServerType, lPort));
+         new HM::DatabaseSettings(sProvider, sServerName, sEmpty, sUsername, sPassword, sEmpty, sEmpty, (HM::DatabaseSettings::SQLDBType) ServerType, lPort,
+            ini_file_settings_->GetMSSQLEncryption(), ini_file_settings_->GetMSSQLTrustCertificate(), ini_file_settings_->GetMSSQLCertificateHost()));
    
       // Connect to the database serve   
       std::shared_ptr<HM::DALConnection> pConn = HM::DALConnectionFactory::CreateConnection(pSettings);
    
       HM::String sErrorMessage;
       if (pConn->Connect(sErrorMessage) != HM::DALConnection::Connected)
+         return COMError::GenerateError(sErrorMessage);
+      if (ServerType == hDBTypeMSSQL && !pConn->CheckServerVersion(sErrorMessage))
          return COMError::GenerateError(sErrorMessage);
    
       // Create the database
@@ -586,11 +589,14 @@ STDMETHODIMP InterfaceDatabase::CreateExternalDatabase(eDBtype ServerType, BSTR 
    
       // Create a new settings object where we specify the database name as well.
       pSettings = std::shared_ptr<HM::DatabaseSettings>(
-         new HM::DatabaseSettings(sProvider, sServerName, sDatabaseName, sUsername, sPassword, sEmpty, sEmpty, (HM::DatabaseSettings::SQLDBType) ServerType, lPort));
+         new HM::DatabaseSettings(sProvider, sServerName, sDatabaseName, sUsername, sPassword, sEmpty, sEmpty, (HM::DatabaseSettings::SQLDBType) ServerType, lPort,
+            ini_file_settings_->GetMSSQLEncryption(), ini_file_settings_->GetMSSQLTrustCertificate(), ini_file_settings_->GetMSSQLCertificateHost()));
    
       // Reconnect to the new database.
       pConn = HM::DALConnectionFactory::CreateConnection(pSettings);
       if (pConn->Connect(sErrorMessage) != HM::DALConnection::Connected)
+         return COMError::GenerateError(sErrorMessage);
+      if (ServerType == hDBTypeMSSQL && !pConn->CheckServerVersion(sErrorMessage))
          return COMError::GenerateError(sErrorMessage);
    
       // Run the scripts
@@ -635,13 +641,16 @@ STDMETHODIMP InterfaceDatabase::SetDefaultDatabase(eDBtype ServerType, BSTR Serv
       HM::String sProvider = ini_file_settings_->GetDatabaseProvider();
 
       std::shared_ptr<HM::DatabaseSettings> pSettings = std::shared_ptr<HM::DatabaseSettings>(
-         new HM::DatabaseSettings(sProvider, sServerName, sEmpty, sUsername, sPassword, sEmpty, sEmpty, (HM::DatabaseSettings::SQLDBType) ServerType, lPort));
+         new HM::DatabaseSettings(sProvider, sServerName, sEmpty, sUsername, sPassword, sEmpty, sEmpty, (HM::DatabaseSettings::SQLDBType) ServerType, lPort,
+            ini_file_settings_->GetMSSQLEncryption(), ini_file_settings_->GetMSSQLTrustCertificate(), ini_file_settings_->GetMSSQLCertificateHost()));
    
       // Connect to the database server.
       std::shared_ptr<HM::DALConnection> pConn = HM::DALConnectionFactory::CreateConnection(pSettings);
    
       HM::String sErrorMessage;
       if (pConn->Connect(sErrorMessage) != HM::DALConnection::Connected)
+         return COMError::GenerateError(sErrorMessage);
+      if (ServerType == hDBTypeMSSQL && !pConn->CheckServerVersion(sErrorMessage))
          return COMError::GenerateError(sErrorMessage);
    
       // Disconnect again.

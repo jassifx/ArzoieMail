@@ -95,6 +95,9 @@ namespace HM
       is_internal_database_ = ReadIniSettingInteger_("Database", "Internal", 0) == 1;
       database_server_FailoverPartner = ReadIniSettingString_("Database", "ServerFailoverPartner", "");
       database_provider_ = ReadIniSettingString_("Database", "Provider", "");
+      mssql_encryption_ = ReadIniSettingString_("Database", "MSSQLEncryption", "Mandatory");
+      mssql_trust_certificate_ = ReadIniSettingString_("Database", "MSSQLTrustServerCertificate", "0");
+      mssql_certificate_host_ = ReadIniSettingString_("Database", "MSSQLHostNameInCertificate", "");
 
       String sDatabaseType = ReadIniSettingString_("Database", "Type", "");
       
