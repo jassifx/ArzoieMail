@@ -750,10 +750,9 @@ jobs:
       installer-artifact: installer-untested
       runner-image: ${{ needs.build.outputs.runner-image }}
 
-  # The same suite against the PostgreSQL server of the runner image. The MySQL and
-  # PostgreSQL connections write their command parameters into the SQL rather than bind
-  # them, which the internal database never exercises. Not yet something the publish job
-  # waits for: this run establishes the PostgreSQL baseline first.
+  # The same installed-server suite against PostgreSQL. Every backend binds SQL parameters;
+  # these jobs exercise their separate drivers, persistence paths and management operations.
+  # Publication waits for all four database jobs below.
   test-postgresql:
     name: Tests (PostgreSQL)
     needs: build
@@ -763,8 +762,7 @@ jobs:
       runner-image: ${{ needs.build.outputs.runner-image }}
       database: postgresql
 
-  # And against the MySQL server of the runner image, for the same reason, and like the
-  # PostgreSQL run not yet one the publish job waits for.
+  # The MySQL run uses an isolated database service on the runner.
   test-mysql:
     name: Tests (MySQL)
     needs: build

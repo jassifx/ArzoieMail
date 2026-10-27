@@ -6,17 +6,20 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
-hMailServer enable you to write your own scripts to extend the server's functionality. Support for Microsoft VBScript and Microsoft JScript currently exists in the server. You will find at hMailServer.com useful sample scripts written in VBScript. For general script syntax, you should consult the [Microsoft MSDN](http://msdn.microsoft.com/en-us/library/d1wf56tt%28VS.85%29.aspx) library.   
+ArzoieMail enable you to write your own scripts to extend the server's functionality. Support for Microsoft VBScript and Microsoft JScript currently exists in the server. You will find at hMailServer.com useful sample scripts written in VBScript. For general script syntax, you should consult the [Microsoft MSDN](http://msdn.microsoft.com/en-us/library/d1wf56tt%28VS.85%29.aspx) library. <br>
 
   
 
-All hMailServer scripts should be placed in a file called EventHandlers.vbs. The file is found in the hMailServer Events directory, normally C:\Program Files\hMailServer\Events.   
+All ArzoieMail scripts should be placed in a file called EventHandlers.vbs. The file is found in the ArzoieMail Events directory, normally C:\Program Files\hMailServer\Events. <br>
 
   
 
-hMailServer offers the following pre-defined events:
+ArzoieMail offers the following pre-defined events:
 
 <table width="100%" cellspacing="10">
     <tbody>
@@ -129,11 +132,11 @@ The events are executed in the following order:
 Follow these steps to enable scripting:
 
 <ul>
-    <li>Start hMailServer Administrator</li>
+    <li>Start ArzoieMail Administrator</li>
     <li>Navigate to <em>Settings-&gt;Advanced-&gt;Scripts</em></li>
     <li>Select <span style="font-style: italic;">Enabled</span></li>
     <li>Click on <em>Save</em> to save your changes</li>
-    Whenever you modify the script file you have to click on <em>Reload script</em> for hMailServer to refresh, recording the changes. hMailServer keeps a copy of the entire script in memory, which improves performance.</ul>
+    Whenever you modify the script file you have to click on <em>Reload script</em> for ArzoieMail to refresh, recording the changes. ArzoieMail keeps a copy of the entire script in memory, which improves performance.</ul>
 
 ## Objects
 

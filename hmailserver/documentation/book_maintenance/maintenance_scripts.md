@@ -6,13 +6,16 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Maintenance scripts
 
 Before running maintenance scripts, it is very important that you back up the database. The scripts may make large moditfications to the database.
 
 <p>To run a script, copy the content, place it in a file with the extension <span class="Code">.vbs</span>. After this, double click on the file in the Windows Explorer to run the script.</p>
 
-The scripts will automatically stop hMailServer before the maintenance operation and start it again afterwards.
+The scripts will automatically stop ArzoieMail before the maintenance operation and start it again afterwards.
 
 ### Reset folder UIDs
 

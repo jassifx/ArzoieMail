@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ### Script examples
 
-The below examples are written in VBA. To use them, copy them to a text file, save the file with the extension .vbs and then double-click on the file in the Windows Explorer to run it. Before doing this, make sure that you fully understand the purpose of the script and what effect it may have on your hMailServer installation. We strongly recommend that you run scripts in an test environment before running them on a hMailServer installation used in production.
+The below examples are written in VBA. To use them, copy them to a text file, save the file with the extension .vbs and then double-click on the file in the Windows Explorer to run it. Before doing this, make sure that you fully understand the purpose of the script and what effect it may have on your ArzoieMail installation. We strongly recommend that you run scripts in an test environment before running them on a ArzoieMail installation used in production.
 
 - [Changing password for an account](?page=com_example_account_change_password)
 - [Copying a message from one IMAP folder to another](?page=com_example_copy_message_to_imap_folder)
@@ -22,5 +25,5 @@ The below examples are written in VBA. To use them, copy them to a text file, sa
 
 Triggers are used to perform certain actions when an event occur in hMailServer. For instance, you can automatically execute a script when a message is delivered or when a backup is performed. The below scripts are examples of such.
 
-- [Print Hello World to the hMailServer event log](?page=com_example_trigger_helloworld)
+- [Print Hello World to the ArzoieMail event log](?page=com_example_trigger_helloworld)
 - [Remove all Received headers from messages](?page=com_example_trigger_remove_headers)

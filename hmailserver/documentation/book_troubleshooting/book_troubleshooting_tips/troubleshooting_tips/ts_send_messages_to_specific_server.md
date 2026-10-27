@@ -1,14 +1,17 @@
 ---
-title: "hMailServer fails to deliver messages to certain servers"
+title: "ArzoieMail fails to deliver messages to certain servers"
 slug: ts_send_messages_to_specific_server
 parent: troubleshooting_tips
 index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
-This document covers the problem when hMailServer fails to deliver email to a specific server, for example Yahoo, Google or Hotmail. If you have tried to send messages to several different servers, but none works, you should [read this instead](?page=ts_send_messages_outside).
+This document covers the problem when ArzoieMail fails to deliver email to a specific server, for example Yahoo, Google or Hotmail. If you have tried to send messages to several different servers, but none works, you should [read this instead](?page=ts_send_messages_outside).
 
 ### Missing MX-records
 
@@ -24,11 +27,11 @@ If SPF records are set up in the DNS for your domain, you need to ensure that yo
 
 ### Incorrect host name in HELO
 
-In the hMailServer SMTP settings, you need to specify the host name of the computer where you run hMailServer. This should be a host name which has an A-record in the DNS which points at the IP address of your computer. If you enter some other host name, such as *localhost*, *mycomputername*, many servers will reject email from your server.
+In the ArzoieMail SMTP settings, you need to specify the host name of the computer where you run hMailServer. This should be a host name which has an A-record in the DNS which points at the IP address of your computer. If you enter some other host name, such as *localhost*, *mycomputername*, many servers will reject email from your server.
 
 ### Not allowing empty sender address
 
-In the hMailServer SMTP settings, you can choose not to allow email with empty sender addresses. By default, this is allowed, and many email servers will reject email from your server if you disallow this.
+In the ArzoieMail SMTP settings, you can choose not to allow email with empty sender addresses. By default, this is allowed, and many email servers will reject email from your server if you disallow this.
 
 ### Your  IP address is blacklisted.
 

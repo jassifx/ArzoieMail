@@ -6,6 +6,9 @@ index: 100
 is_book: false
 ---
 
+> **Historical upstream reference.** This page describes older hMailServer releases or an inherited integration recipe. It is retained for migration history, not current ArzoieMail support guidance. Use [the documentation status guide](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) and current system requirements before following it.
+
+
 ## Overview
 
 There is no functionality in hMailServer which can be used to perform downgrades. When you upgrade from one version to the next, changes are made to the database structure. The old version of hMailServer will not be able to run towards a database using the new database structure, and vice versa. The hMailServer installation package includes database scripts that perform these database changes, but the database scripts are one-way, The scripts can upgrade the database but not downgrade. There are manual ways to downgrade a hMailServer installation, but in many cases these will not work.

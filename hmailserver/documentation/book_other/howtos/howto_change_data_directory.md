@@ -6,13 +6,16 @@ index: 20
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Background
 
-By default, all emails are stored in the hMailServer data directory, under C:\Program Files\hMailServer\Data. In some cases, you might want to change this to a different path. For example, if you have more disk space on another drive. 
+By default, all emails are stored in the ArzoieMail data directory, under C:\Program Files\hMailServer\Data. In some cases, you might want to change this to a different path. For example, if you have more disk space on another drive. 
 
 ## Steps
 
-1. Stop the hMailServer service
+1. Stop the ArzoieMail service
 2. Open up hMailServer.ini
 3. Locate *DataFolder* under the *Directories*-section
 4. Specify the new path

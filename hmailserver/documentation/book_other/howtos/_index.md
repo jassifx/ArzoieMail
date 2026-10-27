@@ -6,21 +6,24 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 **How do I...**
 
 ### Installation
 
 - [configure DCOM permissions for IIS](?page=howto_dcom_permissions)
-- [install hMailServer client tools](?page=howto_install_client)
+- [install ArzoieMail client tools](?page=howto_install_client)
 - [install WebAdmin](?page=howto_install_phpwebadmin)
-- [remotely manage hMailServer](?page=howto_remote_management)
-- [use ASSP with hMailServer?](?page=howto_use_assp)[](?page=howto_setup_ipranges_for_home_network)
+- [remotely manage ArzoieMail](?page=howto_remote_management)
+- [use ASSP with ArzoieMail?](?page=howto_use_assp)[](?page=howto_setup_ipranges_for_home_network)
 
 ### Configuration
 
 - [move spam to a specific IMAP folder?](?page=howto_move_spam_to_IMAP_folder)
-- [configure hMailServer to act as a backup server?](?page=howto_act_as_mx_backup)[](?page=howto_move_spam_to_IMAP_folder)
-- [configure hMailServer to act as a local, stand-alone server?](?page=howto_set_up_local)
+- [configure ArzoieMail to act as a backup server?](?page=howto_act_as_mx_backup)[](?page=howto_move_spam_to_IMAP_folder)
+- [configure ArzoieMail to act as a local, stand-alone server?](?page=howto_set_up_local)
 - [route all email through my ISP's server?](?page=howto_route_through_isp)
 - [setup IP ranges for my home network?](?page=howto_setup_ipranges_for_home_network)
 
@@ -33,13 +36,9 @@ is_book: false
 - [enable SMTP authentication in my email client?](?page=howto_enable_smtp_authentication_in_client)
 - [repair a corrupt MySQL table?](?page=howto_repair_mysql)
 - [re-insert messages into the database when the database entries have been lost?](?page=howto_recreate_message_list)
-- [change hMailServer Administrator password?](?page=howto_change_administrator_password)
+- [change ArzoieMail Administrator password?](?page=howto_change_administrator_password)
 - [enable SMTP authentication in my email client?](?page=howto_enable_smtp_authentication_in_client)
 
 ### Other
 
-- [obtain the hMailServer source code?](?page=howto_build)
-
- 
-
- 
+- [obtain the ArzoieMail source code?](?page=howto_build)

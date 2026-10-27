@@ -1,5 +1,9 @@
 # Fuzzing the SPF parser and macro expander
 
+Execute fuzzers, corpus replay and sanitizer tests only in a disposable VM or CI, including
+Linux runs. The development host is for editing, static inspection and compilation. These
+examples describe test-environment commands, not permission to run them on that host.
+
 Both of these read bytes chosen by whichever domain a message claims to be from:
 the parser reads a TXT record, and the macro expander reads a term's target and,
 for an `exp` modifier, a second TXT record that nothing has parsed before it.

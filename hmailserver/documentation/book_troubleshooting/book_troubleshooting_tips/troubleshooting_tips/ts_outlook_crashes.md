@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 The Outlook 2003 IMAP implementation behaves a bit differently from the IMAP implementation in other email clients. There are problems encountered with Outlook, that are not specific to hMailServer. They will occur regardless of which IMAP server you are using. 
 
 Outlook 2003 sometimes crashes if it can't connect to the IMAP server. This is an Outlook bug and has nothing to do with hMailServer. 

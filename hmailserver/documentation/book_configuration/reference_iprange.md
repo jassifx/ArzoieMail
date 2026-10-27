@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## General
 
 ### Name
@@ -14,7 +17,7 @@ is_book: false
 
 ### Priority
 
-<div class="indented">The priority of the IP range. You can specify a value between 0 and 1000. A higher value means higher priority. If hMailServer matches two IP ranges, the IP range with the highest priority will be used. For example, if a client is matching one IP range with priority 5, and one IP range with priority 10, hMailServer will use the IP range with priority 10. If a client is matching two IP ranges with the same priority, the choice hMailServer will make is undefined.</div>
+<div class="indented">The priority of the IP range. You can specify a value between 0 and 1000. A higher value means higher priority. If ArzoieMail matches two IP ranges, the IP range with the highest priority will be used. For example, if a client is matching one IP range with priority 5, and one IP range with priority 10, ArzoieMail will use the IP range with priority 10. If a client is matching two IP ranges with the same priority, the choice ArzoieMail will make is undefined.</div>
 
 ### Lower IP & Upper IP
 
@@ -30,11 +33,11 @@ This functionality is used by the auto-ban functionality in hMailServer. If an I
 
 ### Allow connections
 
-<div class="indented">These settings lets you define which protocols hMailServer will allow, from TCP/IP connections originating from this IP range.</div>
+<div class="indented">These settings lets you define which protocols ArzoieMail will allow, from TCP/IP connections originating from this IP range.</div>
 
 ### Allow deliveries
 
-<div class="indented">These settings allow you to define whether hMailServer should allow SMTP deliveries for this IP range.</div>
+<div class="indented">These settings allow you to define whether ArzoieMail should allow SMTP deliveries for this IP range.</div>
 
 <div class="indented"> </div>
 
@@ -58,14 +61,14 @@ If you select "*External to external*", people will be able to send email via th
 
 ### Anti-spam
 
-<div class="indented">If this option is enabled, hMailServer will run spam protection (such as SPF, DNS blacklists and MX check) for SMTP deliveries originating from this IP range. You may want to disable this option for your local network.</div>
+<div class="indented">If this option is enabled, ArzoieMail will run spam protection (such as SPF, DNS blacklists and MX check) for SMTP deliveries originating from this IP range. You may want to disable this option for your local network.</div>
 
 <div class="indented">
 <h3>Anti-virus</h3>
-<div class="indented">If this option is enabled, hMailServer will run virus protection on deliveries originating from this IP range. You may want to disable this option for your local network.</div>
+<div class="indented">If this option is enabled, ArzoieMail will run virus protection on deliveries originating from this IP range. You may want to disable this option for your local network.</div>
 <div class="indented">
 <h3>Require SSL/TLS for authentication</h3>
-<div class="indented">If this option is enabled, it will not be possible to log on hMailServer (via SMTP/POP3/IMAP) without using an encrypted channel. You can select this option if you want to force all your users to use SSL or TLS.</div>
+<div class="indented">If this option is enabled, it will not be possible to log on ArzoieMail (via SMTP/POP3/IMAP) without using an encrypted channel. You can select this option if you want to force all your users to use SSL or TLS.</div>
 <div class="indented"><br>
 This option does not affect unauthenticated connections, such as normal delivery of inbound email messages from other servers. </div>
 </div>
@@ -76,5 +79,3 @@ This option does not affect unauthenticated connections, such as normal delivery
 ### Run open relay tests
 
 After you've changed or added an IP range, you should run at least one [open relay test](?page=open_relay_tests) to ensure that no-one can use your server to send spam.
-
- 

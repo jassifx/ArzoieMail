@@ -83,6 +83,11 @@ to the replacement panel or claim complete parity until endpoint, browser and up
 SpamAssassin integration, DNSBL control and complex SPF/DKIM/DMARC guidance remain required.
 Engine bundling and final service/installer provisioning remain explicit delivery work.
 
+SQL Server Express modernization was merged separately in PR #33, with the full four-backend CI
+matrix passing. It changes native database connectivity, not the panel's no-SQL/no-COM boundary.
+The [documentation status](documentation-status.md) and ROADMAP track remaining feature guides,
+manual technical review and publication; a prose rebrand does not complete panel migration.
+
 ## Antivirus lifecycle and high-load boundary
 
 Optional Microsoft Defender integration must meet the [Defender capacity and lifecycle requirements](defender-antivirus-feasibility.md#high-pressure-scanning-across-the-message-lifecycle).

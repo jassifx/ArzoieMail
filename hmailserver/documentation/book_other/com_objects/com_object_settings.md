@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ### Description
 
-The Settings object is the root-object for all hMailServer settings which are not related to a specific domain.
+The Settings object is the root-object for all ArzoieMail settings which are not related to a specific domain.
 
 ### Methods
 
@@ -18,7 +21,7 @@ The Settings object is the root-object for all hMailServer settings which are no
 
 <div class="api_method_name">SetAdministratorPassword(string newVal)</div>
 
-<div class="api_description">Set main hMailServer Administration password</div>
+<div class="api_description">Set main ArzoieMail Administration password</div>
 
 <div class="api_method_name">SetSMTPRelayerPassword(string newVal)</div>
 
@@ -80,7 +83,7 @@ The Settings object is the root-object for all hMailServer settings which are no
 
 <div class="api_method_name"><a href="?page=com_object_directories">Directories</a> Directories</div>
 
-<div class="api_description">Gets an object containing hMailServer directory settings.<br> <i>(read-only)</i></div>
+<div class="api_description">Gets an object containing ArzoieMail directory settings.<br> <i>(read-only)</i></div>
 
 <div class="api_method_name">bool DisconnectInvalidClients</div>
 
@@ -92,7 +95,7 @@ The Settings object is the root-object for all hMailServer settings which are no
 
 <div class="api_method_name">string HostName</div>
 
-<div class="api_description">Gets or sets the host name hMailServer identifies itself with.<br></div>
+<div class="api_description">Gets or sets the host name ArzoieMail identifies itself with.<br></div>
 
 <div class="api_method_name">bool IMAPACLEnabled</div>
 
@@ -172,7 +175,7 @@ The Settings object is the root-object for all hMailServer settings which are no
 
 <div class="api_method_name">long MaxNumberOfMXHosts</div>
 
-<div class="api_description">Gets or sets the maximum number of hosts hMailServer should perform SMTP-delivery to.<br></div>
+<div class="api_description">Gets or sets the maximum number of hosts ArzoieMail should perform SMTP-delivery to.<br></div>
 
 <div class="api_method_name">long MaxPOP3Connections</div>
 

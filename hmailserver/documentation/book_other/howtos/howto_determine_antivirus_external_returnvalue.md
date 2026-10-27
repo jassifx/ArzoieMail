@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
-If you intend to use an external antivirus scanner in hMailServer, you must configure the return value in hMailAdmin. There are two ways to determine what value to enter. Either read the documentation for your antivirus scanner or test it yourself. There now follows a description of how to test it yourself. Note that you should never perform the test on an hMailServer system that is in production, since there's a risk that even email without viruses would be deleted during the testing.   
+If you intend to use an external antivirus scanner in ArzoieMail, you must configure the return value in hMailAdmin. There are two ways to determine what value to enter. Either read the documentation for your antivirus scanner or test it yourself. There now follows a description of how to test it yourself. Note that you should never perform the test on an ArzoieMail system that is in production, since there's a risk that even email without viruses would be deleted during the testing. <br>
 
   
 

@@ -29,14 +29,21 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-The regression suite on `master`, after Phase 1, on each of the three databases:
+Verified after merged PR #33, using its tested head
+`0bbc486c704f4f446c304fa1ad20e735a8a685a6` on 2026-10-27 (Asia/Colombo):
 
-| Total | Passed | Failed | Inconclusive | Skipped |
-|---:|---:|---:|---:|---:|
-| 1313 | 1204 | 0 | 34 | 75 |
+| Backend | Total | Passed | Failed | Inconclusive | Skipped |
+|---|---:|---:|---:|---:|---:|
+| SQL Server Compact | 1315 | 1205 | 0 | 34 | 76 |
+| PostgreSQL | 1315 | 1205 | 0 | 34 | 76 |
+| MySQL | 1315 | 1205 | 0 | 34 | 76 |
+| SQL Server 2025 Express | 1315 | 1206 | 0 | 34 | 75 |
 
-Measured on `master` after #26. The 34 inconclusive and 75 skipped tests are expected: they are explicit detail tests and
-environment-dependent tests. A pull request should keep *Failed* at 0 and move *Passed* only up.
+Warnings were zero on all four jobs. The extra non-MSSQL skip is the SQL-session encryption
+test. Explicit/environment-dependent outcomes remain expected; investigate unexplained changes.
+The [CI inventory](docs/ci-test-inventory.md) distinguishes these NUnit totals from the separate
+100 management assertions per job, browser checks and manual-only coverage. The earlier Phase 1
+baseline was 1313 tests, 1204 passed, zero failed, 34 inconclusive and 75 skipped on three backends.
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
 the failed job is re-run:
@@ -72,7 +79,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#32 merged; SQL Express modernization in progress |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#33 merged; SQL Express modernization delivered; administration parity remains |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols** | SMTP, IMAP and authentication extensions; MTA-STS, DANE, DKIM Ed25519 | 📋 | |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -277,12 +284,13 @@ throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. Se
 Requirements documented in an open PR do not mean the functionality is implemented. Merged PR #32
 records certificate, PHP-retirement and Defender requirements; it does not implement them.
 The maintainer authorized continued Phase 1b work with SQL Server Express modernization on
-2026-10-27. Deliver this database slice as the next PR and pause for review before further work.
+2026-10-27. The database slice was merged as #33 with all four database jobs green. The
+maintainer then requested the CI inventory/documentation refresh before domain/account code.
 
 | Item | Status | Evidence or remaining acceptance |
 |---|---|---|
 | Native management boundary, REST/session security and modern panel foundation | ✅ Done | #31 merged; VM and CI checks passed. This is a foundation, not full administration parity. |
-| SQL Server Express modernization | 🔄 PR #33 open | OLE DB 19, required TLS/certificate validation, explicit migration diagnostics and SQL Express VM/CI coverage; see [SQL Server guide](docs/sql-server.md). |
+| SQL Server Express modernization | ✅ Done | #33 merged; OLE DB 19, required TLS/certificate validation, migration diagnostics and SQL Server 2025 Express VM/CI coverage passed. Other engine versions and workload capacity still need separate validation; see [SQL Server guide](docs/sql-server.md). |
 | Remaining domain/account and advanced administration | 🔜 Next proposed | Explicit native/API operations, complete panel workflows and permission regression tests; implementation waits for maintainer confirmation. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
@@ -346,9 +354,14 @@ setup/validation have moved to Phase 1b; DMARC aggregate reporting remains here.
 
 ## 9. Open follow-ups ⏳
 
-- Make the PostgreSQL and MySQL test jobs required checks in the `master` protection rule.
+- Make the PostgreSQL, MySQL and SQL Server Express test jobs required checks in the `master`
+  protection rule; workflow publication already waits for all four database jobs.
 - Commit the Hyper-V VM setup scripts (switch with NAT, VM creation) to the repository.
-- The documentation, the web admin and the logos still say hMailServer.
+- Documentation product prose is rebranded in PR #34, with current installation/security/database
+  guidance and explicit historical/reference boundaries. Complete the remaining technical review,
+  screenshots, route/rendering checks and website publication in
+  [documentation status](docs/documentation-status.md). Application/UI/logo renames remain a
+  separate gradual task; compatibility identifiers stay unchanged.
 - Upgrading from old MySQL server versions with the MariaDB client is untested in a VM.
 
 ---
@@ -361,8 +374,10 @@ setup/validation have moved to Phase 1b; DMARC aggregate reporting remains here.
 - **Naming**: the product is ArzoieMail, but some identifiers keep the hMailServer name on purpose
   (`hMailServer.exe`, the service name, the `hMailServer.Application` COM API, ...). AGENTS.md lists them;
   don't rename those.
-- **New COM API**: add it to `hMailServer.idl` with a new `id`, implement it in `Server/COM`, and
+- **Legacy COM compatibility changes only**: add an interface change to `hMailServer.idl` with
+  a new `id`, implement it in `Server/COM`, and
   make sure the class implements `ISupportErrorInfo` if it returns error messages.
+  New replacement-panel operations instead use explicit native commands and versioned REST.
 - **`Formatter::Format`** takes at most five arguments.
 - **Secrets** are never logged and never written plain: use `Crypt::ETSecret`
   (`SecretProtector`), and route anything that goes into a backup through `BackupSecrets`.

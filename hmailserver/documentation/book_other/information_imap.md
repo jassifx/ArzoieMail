@@ -6,15 +6,18 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 IMAP stands for Internet Message Access Protocol. It is a protocol that an email client can use to download email from an email server. IMAP includes many more features than POP3. The IMAP protocol is designed to let users keep their email on the server. The IMAP protocol requires more disk space and CPU resources on the server than the POP3 protocol, since all email messages remain stored on the server after the email client downloads them. IMAP normally uses port 143.
 
 ## IMAP folders
 
-When a new account is created, hMailServer creates the folders Drafts, Sent, Trash and Junk, marked with the standard special-use flags that tell clients what each folder is for. This is controlled by *Create default special-use folders* under Settings -> Protocols -> IMAP -> Advanced, and is enabled by default. It only affects accounts created while the setting is enabled.
+When a new account is created, ArzoieMail creates the folders Drafts, Sent, Trash and Junk, marked with the standard special-use flags that tell clients what each folder is for. This is controlled by *Create default special-use folders* under Settings -> Protocols -> IMAP -> Advanced, and is enabled by default. It only affects accounts created while the setting is enabled.
 
-The client still decides which folders it actually uses for sent items, drafts, deleted items and junk, and what they are named. A client that understands special-use flags normally picks the folders hMailServer created; other clients simply create the folders they want and put messages in them. hMailServer does not guess a folder's purpose from its name. If you want to rename a folder your client uses, do so in the client, so that it keeps pointing at the right folder.
+The client still decides which folders it actually uses for sent items, drafts, deleted items and junk, and what they are named. A client that understands special-use flags normally picks the folders ArzoieMail created; other clients simply create the folders they want and put messages in them. ArzoieMail does not guess a folder's purpose from its name. If you want to rename a folder your client uses, do so in the client, so that it keeps pointing at the right folder.
 
-Clients can also set the special-use flags themselves when they create a folder. hMailServer remembers the flags and reports them to other clients, so they can recognize, for example, which folder holds sent mail.
+Clients can also set the special-use flags themselves when they create a folder. ArzoieMail remembers the flags and reports them to other clients, so they can recognize, for example, which folder holds sent mail.
 
 ## Refreshing IMAP folder list
 
@@ -26,12 +29,12 @@ The IMAP protocol has an extension called IMAP IDLE. The IMAP IDLE extension let
 
 ## Sorting of message lists
 
-hMailServer supports the IMAP SORT extension. This extension can dramatically improve performance when working with large IMAP folders. Read [more here](?page=details_imap_sort).
+ArzoieMail supports the IMAP SORT extension. This extension can dramatically improve performance when working with large IMAP folders. Read [more here](?page=details_imap_sort).
 
 ## Saving and replacing messages
 
-hMailServer supports the IMAP UIDPLUS extension. When a client saves or copies a message, hMailServer tells the client which ID the new message got. The client can then delete exactly the messages it means to, such as an old version of a draft, without removing other messages that are marked as deleted. The extension is always enabled. If the user may add messages to a folder but not read it, the ID is not reported.
+ArzoieMail supports the IMAP UIDPLUS extension. When a client saves or copies a message, ArzoieMail tells the client which ID the new message got. The client can then delete exactly the messages it means to, such as an old version of a draft, without removing other messages that are marked as deleted. The extension is always enabled. If the user may add messages to a folder but not read it, the ID is not reported.
 
 ## Folder separators
 
-By default, hMailServer uses . (dot) as the folder separator. This can be changed to a different character under Settings -> Protocols -> IMAP -> Advanced. Whichever character is selected as the separator cannot also be used in an IMAP folder name.
+By default, ArzoieMail uses . (dot) as the folder separator. This can be changed to a different character under Settings -> Protocols -> IMAP -> Advanced. Whichever character is selected as the separator cannot also be used in an IMAP folder name.

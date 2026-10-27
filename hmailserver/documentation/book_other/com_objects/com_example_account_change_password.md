@@ -6,7 +6,10 @@ index: 0
 is_book: false
 ---
 
-This example shows how to change the password for an account in your hMailServer installation. The script is written in VBA. To use it, follow these steps:
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
+This example shows how to change the password for an account in your ArzoieMail installation. The script is written in VBA. To use it, follow these steps:
 
 1. Copy the script to a text editor
 2. Save it as a file with the extension .vbs, for example Example.vbs

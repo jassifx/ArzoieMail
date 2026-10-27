@@ -4,6 +4,10 @@ ArzoieMail Administrator (`hMailAdmin.exe`) is the Windows desktop GUI used to c
 
 The project is part of the Visual Studio solution `source/Tools/hMailServer Tools.sln`.
 
+This describes the existing ArzoieMail desktop tool. The replacement web panel uses a separate
+REST/native backend without COM; see [Management](../../Management/README.md) and the root
+Phase 1b tracker. Desktop compatibility behavior here does not imply web administration parity.
+
 ---
 
 ## How the UI Is Structured

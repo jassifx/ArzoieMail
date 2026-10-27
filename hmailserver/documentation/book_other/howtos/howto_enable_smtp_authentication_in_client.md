@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 # Overview
 
-This page describes how to enable SMTP authentication in your email client. By default, hMailServer requires SMTP authentication to be enabled in the email client.
+This page describes how to enable SMTP authentication in your email client. By default, ArzoieMail requires SMTP authentication to be enabled in the email client.
 
 ## Outlook Express 6
 

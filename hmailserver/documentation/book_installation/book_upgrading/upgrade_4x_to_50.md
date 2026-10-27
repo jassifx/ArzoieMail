@@ -6,6 +6,9 @@ index: 20
 is_book: false
 ---
 
+> **Historical upstream reference.** This page describes older hMailServer releases or an inherited integration recipe. It is retained for migration history, not current ArzoieMail support guidance. Use [the documentation status guide](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) and current system requirements before following it.
+
+
 ## Overview
 
 This page describes how to upgrade from hMailServer version 4.x to hMailServer 5. If you follow these steps, the server downtime will only be a few minutes. Before upgrading, you should make sure that you have a backup of the entire hMailServer directory, hMailServer database and hMailServer.ini, in case something goes wrong. The steps below are the same regardless of the database server type that hMailServer is using. Please read through this entire page before you upgrade.
@@ -62,5 +65,3 @@ hMailServer 5 includes a lot of changes. Some of these changes modify the behavi
 
 
  In version 4, hMailServer stored account passwords as MD5 hashes in the database. MD5 is no longer considered to be sure so in hMailServer 5 an algorithm named SHA256 is used instead. If you have custom-built software which accesses the hMailServer database and assumes that account passwords are MD5 hashes, you either need to update this software, or you need to [configure hMailServer to continue using MD5](?page=reference_inifilesettings) using the *PreferredHashAlgorithm* setting.
-
-

@@ -1,33 +1,34 @@
 ---
-title: "Upgrading: 5.x to Latest Version"
+title: "Upgrading to ArzoieMail"
 slug: Upgrade_ToLatest
 parent: book_upgrading
 index: 0
 is_book: false
 ---
 
-## Overview
+## Upgrade to ArzoieMail
 
-This page describes how to upgrade to hMailServer latest version. If you follow these steps, the server downtime will only be a few minutes. Before upgrading, you should make sure that you have a backup of the entire hMailServer directory, hMailServer database and hMailServer.ini, in case something goes wrong. The steps below are the same regardless of the database server type that hMailServer is using. Please read through this entire page before you upgrade.
+ArzoieMail preserves compatibility identifiers so an existing hMailServer installation can be
+upgraded in place. This does not guarantee that an arbitrary historical release can skip every
+intermediate migration. Use the supported source/target schema path and test the upgrade in an
+isolated VM before changing production.
 
-### Before installation
+1. Back up the database, mail files, configuration, certificates and scripts; export the
+   installation secret key with a passphrase. Verify restoration on a separate machine/VM.
+2. Review the current system requirements and release notes. Close administration tools.
+3. For full SQL Server, prepare SQL Server 2019+, x64 OLE DB 19, its x86/x64 VC prerequisites,
+   TCP and trusted certificate configuration before installing the new mail-service binary.
+   Remove legacy provider overrides as described in the SQL Server guide. Compact is separate.
+4. Run the ArzoieMail installer and complete database setup/updating. Existing paths and database
+   settings are retained where supported. If a required SQL prerequisite is missing, setup must
+   refuse before stopping the running service or replacing files.
+5. Verify startup, schema version, credentials, queued delivery, client protocols, TLS and
+   backups. Preserve the pre-upgrade backup until the migration has been accepted.
 
-- If you are using the internal MySQL database, and are upgrading from 4.2 or earlier, you should install the latest 4.4-build prior to upgrading to version 5. If you do not do this, the database upgrade will fail.
-- If you are using other software which communicates with hMailServer, make sure that that software is compatible with the hMailServer version you are upgrading to. This may be the case for example if you're using 3'rd party web interfaces for the server.
+The executable, service identifier, COM ProgID, database table prefix and backup XML filename
+retain their compatibility names. Do not rename these files or keys by hand during upgrade.
+A schema upgrade is not undone by replacing only the executable; restore the complete compatible
+backup for a rollback. Older version-specific pages in this section are historical references.
 
-### Install the new version
-
-1. IMPORTANT: Back up your hMailServer database, your data directory and the hMailServer.ini file.
-2. Read the Backwards compatibility section below. If something is unclear, it's recommended that you install hMailServer latest version on a test server first to learn about the new functionality.
-3. Download latest hMailServer from the hMailServer website.
-4. Launch the setup executable by double-clicking it. You should not stop or uninstall the current version before installing the new version.
-5. Run through the setup dialogs and click Install in the Ready to install dialog.
-6. The setup software now makes a copy of the files.
-7. After the files have been copied, the setup software will automatically start hMailServer database upgrade. If you see the text "*Creating the hMailServer database*" in the installation wizard for more than 15 seconds, and no "*Database upgrade*"-dialog is shown, it's likely that the upgrade dialog is located "behind" the wizard. So if the upgrade dialog is not shown, try moving the installation wizard window.
-8. Click Upgrade to upgrade the database to the latest structure.
-9. Click Exit to return to the setup wizard
-10. Click Finish to exit the setup and start hMailAdmin.
-
-### Upgrading without user interaction
-
-If you upgrade using a script, see [unattended installation](?page=howto_install_unattended). You must supply the administrator password using `/ADMINPASSWORD`, otherwise the database can't be upgraded.
+See [SQL Server deployment](https://github.com/jassifx/ArzoieMail/blob/master/docs/sql-server.md),
+[security](?page=security), [backup/restore](?page=backup_restore) and ROADMAP.md for current status.

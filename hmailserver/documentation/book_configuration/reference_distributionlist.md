@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## General
 
 ### Address
@@ -24,7 +27,7 @@ is_book: false
 
 ### Require SMTP Authentication
 
-<div class="indented">If this checkbox is selected, hMailServer will require SMTP authentication for deliveries made to the list. If you select this option, only users with accounts on the server will be able to send email to the distribution list.</div>
+<div class="indented">If this checkbox is selected, ArzoieMail will require SMTP authentication for deliveries made to the list. If you select this option, only users with accounts on the server will be able to send email to the distribution list.</div>
 
 ## Members
 
@@ -36,7 +39,7 @@ is_book: false
 
 ### Select
 
-Click *Select* to add an address that is hosted on this hMailserver to the distribution list.
+Click *Select* to add an address that is hosted on this ArzoieMail to the distribution list.
 
 ### Import
 

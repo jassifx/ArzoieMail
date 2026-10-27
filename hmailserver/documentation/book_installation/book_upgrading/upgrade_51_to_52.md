@@ -6,6 +6,9 @@ index: 40
 is_book: false
 ---
 
+> **Historical upstream reference.** This page describes older hMailServer releases or an inherited integration recipe. It is retained for migration history, not current ArzoieMail support guidance. Use [the documentation status guide](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) and current system requirements before following it.
+
+
 ## Overview
 
 This page describes how to upgrade from hMailServer version 5.1 to 5.2. If you follow these steps, the server downtime will only be a few minutes. Before upgrading, you should make sure that you have a backup of the entire hMailServer directory, hMailServer database and hMailServer.ini, in case something goes wrong. The steps below are the same regardless of the database server type that hMailServer is using. Please read through this entire page before you upgrade.
@@ -55,5 +58,3 @@ In hMailServer 5.2, the settings related to SMTP authentication in IP ranges hav
 
 
 When upgrading to hMailServer 5.2, message UID's will be regenerated. If your email client has connected information to the specific UID's, this information may be lost. For example, some email clients store flag information such as Important and Follow up per message UID, which means that these flags may be lost during an upgrade to 5.2.
-
-

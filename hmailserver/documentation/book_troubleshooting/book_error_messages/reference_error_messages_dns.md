@@ -6,11 +6,14 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## DNS errors
 
 ### General information
 
-hMailServer uses the Windows API to query the DNS server. hMailServer itself does not not ask Windows to use a specific DNS server. The DNS query is made using the Windows API function DnsQuery. Depending on what DNS error that has occurred, DnsQuery return different values. If an error occurs, this error is listed in the hMailServer log.
+ArzoieMail uses the Windows API to query the DNS server. ArzoieMail itself does not not ask Windows to use a specific DNS server. The DNS query is made using the Windows API function DnsQuery. Depending on what DNS error that has occurred, DnsQuery return different values. If an error occurs, this error is listed in the ArzoieMail log.
 
 ### 1460, ERROR_TIMEOUT
 

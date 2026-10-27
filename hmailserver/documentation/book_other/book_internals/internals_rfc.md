@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
 This page describes RFC's which are relevant to hMailServer.
@@ -53,5 +56,3 @@ This page describes RFC's which are relevant to hMailServer.
 - [RFC 4871](http://tools.ietf.org/html/rfc4871) - DKIM specification  
 
  DomainKeys Identified Mail (DKIM) defines a domain-level authentication framework for email using public-key cryptography and key server technology to permit verification of the source and contents of messages by either Mail Transfer Agents (MTAs) or Mail User Agents (MUAs).
-
- 

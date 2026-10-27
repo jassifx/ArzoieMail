@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Example 1, Delete email
 
 Automatically delete all email messages whose subject-line contains the word *SPAM*
@@ -62,7 +65,7 @@ The following tutorial will guide you through how to call a VBA-script depending
 
 ### Setting up the rule
 
-1. Start hMailServer Administrator
+1. Start ArzoieMail Administrator
 2. Select *Rules*
 3. Click on *Add*. Enter the name `SizeRule`
 4. Under *Criteria*, click on *Add*.
@@ -90,7 +93,7 @@ The following tutorial will guide you through how to call a VBA-script depending
 
 ### Enable scripting in hMailServer
 
-1. Start hMailServer Administrator
+1. Start ArzoieMail Administrator
 2. Navigate to Settings, Advanced, Scripts
 3. Click Check syntax to confirm that the syntax is correct
 4. Select Active

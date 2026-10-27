@@ -1,5 +1,5 @@
 ---
-title: "What is hMailServer?"
+title: "What is ArzoieMail?"
 slug: whatis_hmailserver
 parent: book_before_installation
 index: 10
@@ -8,12 +8,20 @@ is_book: false
 
 ## Overview
 
-hMailServer is an email server for Microsoft Windows. It allows you to handle all your email yourself without having to rely on an Internet service provider (ISP) to manage it. Compared to letting your ISP host your email, hMailServer adds flexibility and security and gives you the full control over spam protection.
+ArzoieMail is a free, open-source email server for 64-bit Windows, licensed under AGPLv3.
+It implements SMTP, IMAP and POP3, runs as a Windows service and provides desktop administration.
+The project continues the hMailServer 5.7.2 codebase as a project of its own.
 
-## History
+The modern ASP.NET Core/.NET 10 panel and REST/native API foundation are merged. Full web
+administration parity, guided certificate lifecycle, SpamAssassin packaging and optional Defender
+scanning remain Phase 1b work. The legacy PHP panel has not yet been retired by the installer.
 
-The hMailServer project was started in late 2002 by Martin Knafve. Since then, it has become one of the most popular email servers for Windows. From the start, the focus has been to create an easy-to-use email system that includes all the basic features you need. The project started on SourceForge.net, but moved later to it's own website.
+See [README](https://github.com/jassifx/ArzoieMail/blob/master/README.md) for the product overview
+and [ROADMAP](https://github.com/jassifx/ArzoieMail/blob/master/ROADMAP.md) for delivered versus
+planned features. Source and releases are in the [ArzoieMail repository](https://github.com/jassifx/ArzoieMail).
 
-hMailServer is free, and all the source code is on [GitHub](https://github.com/hmailserver/hmailserver).
+## Upstream history
 
- 
+Martin Knafve started the original hMailServer project in 2002. Its authorship and third-party
+credits remain preserved. Historical hMailServer release instructions are distinct from the
+current ArzoieMail requirements; do not infer support for old Windows versions from them.

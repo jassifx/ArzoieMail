@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ### Description
 
-The TCPIPPort object represents a single address and port hMailServer is configured to listen on.
+The TCPIPPort object represents a single address and port ArzoieMail is configured to listen on.
 
 ### Methods
 

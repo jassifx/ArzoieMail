@@ -6,21 +6,24 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 # Overview
 
-There are two different common methods to manage a hMailServer installation remotely. The first is to use PHPWebAdmin. PHPWebAdmin is a web based administration package which offers almost the same functionality as hMailServer (editing of rules is not available in PHPWebAdmin). PHPWebAdmin requires a web server with PHP support to run, but it makes it possible to manage your hMailServer installation from anywhere on the Internet. The other method is to install the hMailServer client tools and connect remotely to the hMailServer installation. Due to port blocking in firewalls, this method only works over a LAN or a VPN. Theoretically, it would be possible to open up these ports, but this is not recommended due to security issues this would give.
+There are two different common methods to manage a ArzoieMail installation remotely. The first is to use PHPWebAdmin. PHPWebAdmin is a web based administration package which offers almost the same functionality as ArzoieMail (editing of rules is not available in PHPWebAdmin). PHPWebAdmin requires a web server with PHP support to run, but it makes it possible to manage your ArzoieMail installation from anywhere on the Internet. The other method is to install the ArzoieMail client tools and connect remotely to the ArzoieMail installation. Due to port blocking in firewalls, this method only works over a LAN or a VPN. Theoretically, it would be possible to open up these ports, but this is not recommended due to security issues this would give.
 
 ## Using PHPWebAdmin
 
 Please see the [installation tutorial for PHPWebAdmin](?page=howto_install_phpwebadmin).
 
-## Using hMailServer Administrator
+## Using ArzoieMail Administrator
 
-To connect to an hMailServer instance running on another computer in your network, run the hMailServer installation program on the computer you want to connect from. During the installation, select to install the client tools. After installation of the client tools, start hMailServer Administrator. In the connect dialog, select the "localhost" item, and click edit, and enter the appropriate information.
+To connect to an ArzoieMail instance running on another computer in your network, run the ArzoieMail installation program on the computer you want to connect from. During the installation, select to install the client tools. After installation of the client tools, start ArzoieMail Administrator. In the connect dialog, select the "localhost" item, and click edit, and enter the appropriate information.
 
 ### Common problems
 
-<p>When using hMailServer Administrator to connect to a hMailServer instance running on another computer, it's quite common that you get an <em>Access denied</em> message. hMailServer Administrator uses DCOM/RPC to communicate with the hMailServer instance on the other computer, and for this to work properly you may need to modify settings on your client or server. Due to limitations in this Microsoft technology, it's not possible for hMailServer Administrator to determine the original cause of the <em>Access denied</em> message, so you need to manually check the settings. If you get an <em>Access denied error, or an </em><span class="postbody"><em>Automation Error</em> </span>when trying to connect, check that...</p>
+<p>When using ArzoieMail Administrator to connect to a ArzoieMail instance running on another computer, it's quite common that you get an <em>Access denied</em> message. ArzoieMail Administrator uses DCOM/RPC to communicate with the ArzoieMail instance on the other computer, and for this to work properly you may need to modify settings on your client or server. Due to limitations in this Microsoft technology, it's not possible for ArzoieMail Administrator to determine the original cause of the <em>Access denied</em> message, so you need to manually check the settings. If you get an <em>Access denied error, or an </em><span class="postbody"><em>Automation Error</em> </span>when trying to connect, check that...</p>
 
 <ul>
     <li>the <em>Remote Procedure Call (RPC) </em>service is running on both the client and the server.</li>

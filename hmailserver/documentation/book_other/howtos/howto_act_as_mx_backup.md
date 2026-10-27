@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
-This document describes how to configure hMailServer to act as a MXÂ backup server for a domain hosted on another server.
+This document describes how to configure ArzoieMail to act as a MXÂ backup server for a domain hosted on another server.
 
 ### Background
 
@@ -22,7 +25,7 @@ Please note that the term used here, backup mail server, only affects SMTP. If a
 
 Here's an example on how to set up a mail backup server for the domain hMailServer.com. There are two things which need to be made:
 
-1. A route needs to be added to hMailServer on the backup server which instructs hMailServer to forward email to the primary domain.
+1. A route needs to be added to ArzoieMail on the backup server which instructs ArzoieMail to forward email to the primary domain.
 2. The DNS records needsÂ  to be updated so that the secondary server receives email if the primary server does not respond.**
 
 In this scenario, there are two mail hosts and servers involved:
@@ -51,13 +54,13 @@ In the DNS, two records should be added. One for the primary server and one for 
     </tbody>
 </table>
 
-*Configuring hMailServer*
+*Configuring ArzoieMail*
 
 The sender of an email will first try to deliver to the primary server, in this case mail.hmailserver.com. If the delivery to this host fails, the sender will try to deliver to the backup server, mail-backup.hmailserver.com. The server mail-backup.hmailserver.com will then have to forward the email to mail.hmailserver.com whenever that server goes online. If the primary server does not come online within a specified amount of time, a bounce message will be delivered to the original sender saying that the message could nto be delivered.
 
-The steps below show how to configure the hMailServer installation running on mail-backup.hmailserver.com to forward all email for the domain hmailserver.com to the host mail.hmailserver.com.
+The steps below show how to configure the ArzoieMail installation running on mail-backup.hmailserver.com to forward all email for the domain hmailserver.com to the host mail.hmailserver.com.
 
-1. Start hMailServer Administrator.
+1. Start ArzoieMail Administrator.
 2. Expand the Settings node in the tree to the left.
 3. Expand the Protocols node.
 4. Expand the SMTP node
@@ -72,7 +75,7 @@ The steps below show how to configure the hMailServer installation running on ma
 
    
 
-   - *Domain* - The name of the domain you wish to provide backup for. In this example, this is hmailserver.com.Â Note that you should not add this domain to your hMailServer installation.Â You only need to set up a route to provide backup functionality.  
+   - *Domain* - The name of the domain you wish to provide backup for. In this example, this is hmailserver.com.Â Note that you should not add this domain to your ArzoieMail installation.Â You only need to set up a route to provide backup functionality. <br>
 
  Â 
   - *Target SMTP Host* - The host name or the IP address of the computer all e-mails to the domain should be forwarded to. In this example, this is mail.hmailserver.com.  
@@ -82,7 +85,7 @@ The steps below show how to configure the hMailServer installation running on ma
 
  Â 
   - Select that both sender and recipient should be treated as local if they are matching the route.
-  - *Address page* - If you have a list of the existing e-mail addresses on the target SMTP host, you can specify them here. If you do this, hMailServer will reject e-mail sent to non-existing addresses.  
+  - *Address page* - If you have a list of the existing e-mail addresses on the target SMTP host, you can specify them here. If you do this, ArzoieMail will reject e-mail sent to non-existing addresses. <br>
 
  Â 
-  - *Delivery page* - Specify the number of times hMailServer should try to deliver to this server.
+  - *Delivery page* - Specify the number of times ArzoieMail should try to deliver to this server.

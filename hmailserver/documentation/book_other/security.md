@@ -6,58 +6,43 @@ index: 0
 is_book: false
 ---
 
-## The service account
+## Service and compatibility identities
 
-The hMailServer service runs as the virtual account `NT SERVICE\hMailServer`. The
-account belongs to the service alone and has no password. If Windows cannot apply the
-account, the service runs as `LocalSystem` instead.
+ArzoieMail's Windows service identifier remains `hMailServer`; its display name is ArzoieMail.
+New installations use the isolated `NT SERVICE\hMailServer` identity where Windows can apply it;
+legacy/fallback configurations must be reviewed independently. The native executable remains
+`hMailServer.exe`. Do not rename compatibility files, COM ProgIDs or service registry keys by hand.
 
-## Where hMailServer stores its data
+## Data, permissions and secrets
 
-Everything the server writes is kept under `C:\ProgramData\ArzoieMail`. An installation
-upgraded from hMailServer keeps using `C:\ProgramData\hMailServer`; replace the path in the
-commands below with that one.
+New layouts use `Program Files\ArzoieMail` for the application and `ProgramData\ArzoieMail`
+for writable state. Upgrades may retain `ProgramData\hMailServer` or an administrator-configured
+location. Check the installed `hMailServer.ini` rather than assuming every deployment uses a default.
+Review ACLs on configuration, mail, logs, temporary files, scripts and certificate/private-key files;
+restrict them to the required service and administrator identities for the chosen deployment.
 
-| Item | Contains |
-| --- | --- |
-| `hMailServer.ini` | The database password and the hMailServer administrator password |
-| `Data` | All messages |
-| `Database` | The built-in database, if one is used |
-| `Logs` | The log files |
-| `Events` | The event handler scripts |
-| `Temp` | Temporary files |
+Database and stored route/fetcher secrets now use AES-256-GCM with a random installation key
+protected by machine-scope DPAPI. Administrator authentication is separate. The former statement
+that database passwords are merely obfuscated with a universal Blowfish key is obsolete; old
+values can be read and migrated. File access remains sensitive: encryption does not make mail
+or configuration safe to expose. Export the installation key with a passphrase for portable recovery.
 
-## Default permissions
+Built-in backups support an independent passphrase-protected archive. Without that passphrase,
+do not assume a backup contains portable plaintext credentials. Keep recovery passphrases and
+keys outside the repository and test restoration on a separate machine/VM.
 
-The installer removes the inherited permissions on the folder and grants these:
+## Management and transport boundaries
 
-| Account | Access |
-| --- | --- |
-| `NT SERVICE\hMailServer` | Full control |
-| `SYSTEM` | Full control |
-| `Administrators` | Full control |
-| `Users` | Read and execute |
+The modern panel uses ASP.NET Core/.NET 10, versioned REST and a restricted local native pipe.
+It has no COM backend or direct SQL credentials. Its restricted hosting identity must not be an
+administrator or LocalSystem. The existing desktop/setup/script COM API remains independently
+available for compatibility; review its activation permissions separately.
 
-Users are given read access so that whoever administers the server can open the logs
-and the event handler scripts without elevating.
+Mail TLS, web HTTPS and database TLS have separate configuration. Full SQL Server requires
+OLE DB 19, TCP and required encryption with certificate validation by default. Legacy PHP remains
+a temporary migration surface and must be retired after replacement acceptance. Guided certificate
+lifecycle and Defender email scanning are still planned; their requirements are not current capability.
 
-## Restricting access
-
-Read access to the folder is also read access to the messages and to
-`hMailServer.ini`. The database password in `hMailServer.ini` is obfuscated rather
-than encrypted, so anyone who can read the file can recover it.
-
-If other people log on to the computer that runs hMailServer, remove the read access.
-Run this in an elevated command prompt:
-
-```
-icacls "C:\ProgramData\ArzoieMail" /remove:g *S-1-5-32-545
-```
-
-`S-1-5-32-545` is the Users group. The SID is used instead of the name because the
-name is translated on non-English versions of Windows.
-
-Afterwards the folder can only be opened by a program that runs elevated. The buttons
-in hMailServer Administrator that open the log and the event handler folders stop
-working: Windows Explorer opens the Documents folder instead of the folder it was
-asked for.
+See the current [management architecture](https://github.com/jassifx/ArzoieMail/blob/master/docs/management-api-architecture.md),
+[SQL Server guide](https://github.com/jassifx/ArzoieMail/blob/master/docs/sql-server.md),
+[backup guidance](?page=backup_restore) and [CI inventory](https://github.com/jassifx/ArzoieMail/blob/master/docs/ci-test-inventory.md).

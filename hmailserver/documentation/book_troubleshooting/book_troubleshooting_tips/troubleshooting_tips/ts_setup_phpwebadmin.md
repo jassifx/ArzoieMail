@@ -6,13 +6,16 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
 This page describes common set up mistakes when installing PHPWebAdmin.
 
 ## Basic set up
 
-- When you upgrade your hMailServer installation to a later version, make sure to copy the latest PHPWebAdmin from the hMailServer installation directory to your web directory. Not doing this may prevent PHPWebAdmin from working.
+- When you upgrade your ArzoieMail installation to a later version, make sure to copy the latest PHPWebAdmin from the ArzoieMail installation directory to your web directory. Not doing this may prevent PHPWebAdmin from working.
 
 ## Settings in config.php
 
@@ -38,7 +41,7 @@ A common cause of trouble is to edit PHP.ini in the wrong directory. When a PHP 
 
 ### DCOM not being enabled
 
-<p>PHPWebAdmin uses the hMailServer COM API to access the settings and your objects in your hMailServer installation. For this to work, it may be required to enable DCOM in the PHP configuration. Make sure that <span class="Code">com.allow_dcom = true</span> exists and is uncommented in php.ini.</p>
+<p>PHPWebAdmin uses the ArzoieMail COM API to access the settings and your objects in your ArzoieMail installation. For this to work, it may be required to enable DCOM in the PHP configuration. Make sure that <span class="Code">com.allow_dcom = true</span> exists and is uncommented in php.ini.</p>
 
 <p>For php version 5.3.15 / 5.4.5 and higher the COM API has been disabled as a module. The error probably will be <span class="Code">PHP Fatal error:  Class 'COM' not found in \phpwebadmin\initialize.php on line xx</span>. Make sure you edit the php.ini file has been edited with the value <span class="Code">extension=php_com_dotnet.dll</span> in the extensions.</p>
 
@@ -48,7 +51,5 @@ A common cause of trouble is to edit PHP.ini in the wrong directory. When a PHP 
 
 ## Other permission issues
 
-- If you are using Microsoft SQL Server for hMailServer, you may need to give the user IUSR_[computername] access to the hMailServer database.
-- If you are using IIS, or Apache under a dedicated user, you must [give the service account access](?page=howto_dcom_permissions) to the hMailServer COM library.
-
- 
+- If you are using Microsoft SQL Server for ArzoieMail, you may need to give the user IUSR_[computername] access to the ArzoieMail database.
+- If you are using IIS, or Apache under a dedicated user, you must [give the service account access](?page=howto_dcom_permissions) to the ArzoieMail COM library.

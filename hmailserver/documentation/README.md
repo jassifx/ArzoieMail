@@ -1,35 +1,43 @@
-# hMailServer documentation source
+# ArzoieMail documentation source
 
-This folder is the source of truth for the "latest" version of the hMailServer
-manual published at https://www.hmailserver.com/documentation/latest/. It is
-pulled by a daily cron job on the website server, rendered to HTML, and
-published — the website repo does not maintain this content itself.
+This is the ArzoieMail manual, inherited from hMailServer and maintained with this repository.
+Product prose uses ArzoieMail. Historical releases, original authorship, source filenames,
+URL slugs, COM identifiers, service/executable names and examples needed for compatibility
+retain their original names. See [AGENTS.md](../../AGENTS.md) for the compatibility list.
 
-## Structure
+The former description of an upstream hmailserver.com daily publishing job does not describe
+an ArzoieMail deployment. This repository contains the manual source; an ArzoieMail rendering,
+link/image check and publication pipeline still need to be finalized. The main README links
+readers to the ArzoieMail documentation site; that is not evidence these edits are deployed.
 
-One Markdown file per page. A page with children becomes a directory: its own
-content lives in `_index.md` inside that directory, and children are sibling
-`.md` files (or further subdirectories) within it.
+## Start here
 
-## Front matter
+- [Documentation status and remaining work](../../docs/documentation-status.md)
+- [Project roadmap](../../ROADMAP.md) and [CI coverage](../../docs/ci-test-inventory.md)
+- [System requirements](book_installation/system_requirements.md)
+- [Install ArzoieMail](book_installation/book_quickstartguide/howto_install.md)
+- [Database choices](book_installation/choosing_database_engine.md)
+- [Security and secret storage](book_other/security.md)
+- [Backup and restore](book_maintenance/backup_restore.md)
+- [SQL Server / Express deployment](../../docs/sql-server.md)
+- [Management architecture](../../docs/management-api-architecture.md)
 
-Every file starts with a YAML front matter block:
+## Structure and compatibility
 
-```
----
-title: "Page title"
-slug: page_slug
-parent: parent_slug   # or "null" for a top-level page
-index: 10             # sort order among siblings
-is_book: false         # true for a section heading with no page content of its own
----
-```
+One Markdown file represents each page. A section's body is `_index.md`; child pages are
+sibling files or subdirectories. YAML front matter supplies `title`, `slug`, `parent`, `index`
+and `is_book`. Keep `slug`, `parent`, existing filenames, `?page=` targets and image paths stable
+until the website migration has an explicit redirect/asset plan. Change the visible title and
+prose without silently breaking those routes.
 
-- `slug` must be unique across the whole tree and match the filename (minus `.md`).
-- `parent` refers to another page's `slug`, not a path.
+The inherited manual contains 258 Markdown files including this index. Naming updates do not
+establish that every inherited instruction is current. Historical upgrade/integration pages are
+labelled separately; current installation/security/database guides take precedence over old
+platform, package-version or credential-decryption instructions. The remaining operational and
+rendering review is tracked in the status document.
 
-## Body
-
-Markdown after the front matter. A block of raw HTML (e.g. a table, or content
-with a `style`/`class` attribute) is also allowed and is passed through
-unchanged by the website's renderer.
+Fenced/inline code and compatibility identifiers are preserved during the prose rename. Reviewed
+current guides replace obsolete operational examples explicitly. Old
+upstream screenshots and version-specific examples may still show hMailServer; new screenshots
+must be captured in the disposable VM as those workflows are verified. No third-party attribution
+or upstream history is being reassigned to ArzoieMail.

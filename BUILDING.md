@@ -245,13 +245,17 @@ with `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>`:
 
 GitHub Actions does all of the above on every push to master and to the branch prefixes listed
 under Branches, then installs the result on a clean runner and runs the regression tests against
-it (`.github/workflows/build.yml` and `tests.yml`).
+it on SQL Server Compact, PostgreSQL, MySQL and SQL Server 2025 Express
+(`.github/workflows/build.yml` and `tests.yml`). See the [CI test inventory](docs/ci-test-inventory.md)
+for the check list, current baseline, management/browser fixture boundaries and manual suites.
 
 Running in Debug
 ----------------
 
 To run the server in debug mode in Visual Studio, add the command argument /debug. You find this
 setting in the Project properties, under Configuration Properties -> Debugging.
+Execute/debug the server only in the disposable VM; the development host is for editing,
+static inspection and compilation.
 
 Running tests
 -------------
@@ -260,10 +264,11 @@ The regression tests exercise the server end to end over SMTP, IMAP and POP3, an
 COM API. They are NUnit tests in `hmailserver\test\RegressionTests`. Every bug fix and every new
 feature needs a regression test.
 
-NOTE: The tests reconfigure the local server: existing domains and accounts are deleted and
-test accounts are created. Do not run them where you need to keep the server's data.
+Run all runtime tests only in the disposable VM or CI, including tests launched from an IDE.
+The tests reconfigure that VM's server: existing domains and accounts are deleted and test
+accounts are created. Preserve/restore its checkpoint and keep credentials out of the repository.
 
-1. Make sure the server is built, registered and running (see above).
+1. Make sure the matching server is installed, registered and running inside the disposable VM.
 2. Build the test solution with `build\build-tests.ps1`.
 3. Run the tests with the NUnit console runner from the restored packages, for example:
 
@@ -271,8 +276,9 @@ test accounts are created. Do not run them where you need to keep the server's d
    hmailserver\test\packages\nunit.consolerunner\<version>\tools\nunit3-console.exe hmailserver\test\RegressionTests\bin\x64\Debug\RegressionTests.dll
    ```
 
-You can also open `hmailserver\test\hMailServer Tests.sln` in Visual Studio and run tests from
-Test Explorer, under "RegressionTests".
+Inside the test VM, you can also open `hmailserver\test\hMailServer Tests.sln` in Visual Studio
+and run tests from Test Explorer, under "RegressionTests". Compilation on the development host
+does not authorize test execution there.
 
 Code signing
 ============

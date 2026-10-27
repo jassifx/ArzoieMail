@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Rule details
 
 This document contains details about rule processing.
@@ -14,11 +17,11 @@ This document contains details about rule processing.
 
 In general, messages forwarded by rules are also affected by rules. For example, if you set up a global rule which forwards all email to someone@example.com, a new message is created with someone@example.com as recipient address. When this new email is sent, this email is also affected by the rule and another copy of the message is created. This results in a loop which generates new messages.
 
-hMailServer has built-in functionality to stop this rule (see *Rules loop count* below), but it is still a problem since the recipient receive multiple copies of the same email message. To resolve the problem, rules must be configured to prevent forwarded messages from being affected by the rule. In the example above, a rule criteria with the configuration "*If RecipientList Not Contains someone@example.com*" must be added, to prevent the rule from affecting messages where someone@example.com is already in the recipient list.
+ArzoieMail has built-in functionality to stop this rule (see *Rules loop count* below), but it is still a problem since the recipient receive multiple copies of the same email message. To resolve the problem, rules must be configured to prevent forwarded messages from being affected by the rule. In the example above, a rule criteria with the configuration "*If RecipientList Not Contains someone@example.com*" must be added, to prevent the rule from affecting messages where someone@example.com is already in the recipient list.
 
 ### Rules loop count
 
-hMailServer 4.2 and later can limit the number of times a message is processed in a loop. The loop limit is found in the advanced SMTP settings. If two users set up rules that make an email to bounce back and forth between them, hMailServer will only handle the email the number of times defined by rule loop count.
+hMailServer 4.2 and later can limit the number of times a message is processed in a loop. The loop limit is found in the advanced SMTP settings. If two users set up rules that make an email to bounce back and forth between them, ArzoieMail will only handle the email the number of times defined by rule loop count.
 
 ### Global rules vs. Account rules
 
@@ -28,4 +31,4 @@ In the same way, account level rules can override behaviour of global rules. If 
 
 ### Order of rules and actions
 
-Rules and actions are executed in the same way as they appear in hMailServer Administrator. Starting with hMailServer 4.4, you can change the order of rules and actions by selecting the rule or action and then click *Move down* or *Move up*.
+Rules and actions are executed in the same way as they appear in ArzoieMail Administrator. Starting with hMailServer 4.4, you can change the order of rules and actions by selecting the rule or action and then click *Move down* or *Move up*.

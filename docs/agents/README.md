@@ -6,9 +6,12 @@ traps found along the way, and where the last session left off.
 
 ## Read in this order
 
-Current handoff: [2026-10-27](handoffs/2026-10-27.md). It records the authorized SQL Server
-Express modernization slice, VM evidence, new fourth CI backend, review gate and remaining
-Phase 1b plan. Verify live PR/CI state before continuing; planned features are not implemented.
+Current handoff: [2026-10-27](handoffs/2026-10-27.md). It records merged SQL Express PR #33,
+its green four-backend baseline, the CI documentation refresh and remaining Phase 1b plan.
+The [CI inventory](../ci-test-inventory.md) separates automated checks from manual/planned
+coverage. Verify live PR/CI state before continuing; planned features are not implemented.
+The [documentation status](../documentation-status.md) records the manual rebrand, refreshed
+current guides and remaining inherited-content, screenshot and website-publication work.
 
 | # | Document | What it gives you |
 |---|---|---|

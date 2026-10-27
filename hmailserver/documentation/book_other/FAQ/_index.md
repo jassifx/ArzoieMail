@@ -6,36 +6,39 @@ index: 0
 is_book: false
 ---
 
-### Question 1 - What is hMailServer?
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
 
-hMailServer is an e-mail server for Microsoft Windows. It allows you to handle all your email yourself without having to rely on an Internet service provider (ISP) to manage it. Compared to letting your ISP host your email, hMailServer adds flexibility and security and gives you the full control over spam protection.
 
-### Question 2 - Who are using hMailServer?
+### Question 1 - What is ArzoieMail?
 
-hMailServer is used by a lot of different types of users. Here's some examples:
+ArzoieMail is an e-mail server for Microsoft Windows. It allows you to handle all your email yourself without having to rely on an Internet service provider (ISP) to manage it. Compared to letting your ISP host your email, ArzoieMail adds flexibility and security and gives you the full control over spam protection.
 
-- The most common type is companies who use hMailServer to host email for their own domains.
-- hMailServer is also used by small and large Internet service provider who use hMailServer to host email for their customers.
-- Different types of governments spread across the world use hMailServer for hosting their email.
-- A lot of individuals and families are running hMailServer at home to reduce the amount of spam which reaches their inboxes.
+### Question 2 - Who are using ArzoieMail?
 
-### Question 3 - When should I use hMailServer?
+ArzoieMail is used by a lot of different types of users. Here's some examples:
 
-Anyone with an email address may benefit from using hMailServer. Typically, organizations and persons who have registered a domain name on the Internet use hMailServer to host email for this domain.
+- The most common type is companies who use ArzoieMail to host email for their own domains.
+- ArzoieMail is also used by small and large Internet service provider who use ArzoieMail to host email for their customers.
+- Different types of governments spread across the world use ArzoieMail for hosting their email.
+- A lot of individuals and families are running ArzoieMail at home to reduce the amount of spam which reaches their inboxes.
 
-### Question 4 - Do I need to be connected to the Internet to run hMailServer?
+### Question 3 - When should I use ArzoieMail?
 
-No, you can run hMailServer without being connected to the Internet, with the obvious limitation that you cannot send email to other people on the Internet.
+Anyone with an email address may benefit from using hMailServer. Typically, organizations and persons who have registered a domain name on the Internet use ArzoieMail to host email for this domain.
 
-### Question 5 - How many domains, accounts and messages can hMailServer handle?
+### Question 4 - Do I need to be connected to the Internet to run ArzoieMail?
 
-That depends mostly on the hardware of the computer where hMailServer runs and what type of users you have. For example, if your users are very active, you need a faster server compared to if your users does not check their email often. There are hMailServer installations with tens of thousands of users accounts on a single server.
+No, you can run ArzoieMail without being connected to the Internet, with the obvious limitation that you cannot send email to other people on the Internet.
+
+### Question 5 - How many domains, accounts and messages can ArzoieMail handle?
+
+That depends mostly on the hardware of the computer where ArzoieMail runs and what type of users you have. For example, if your users are very active, you need a faster server compared to if your users does not check their email often. There are ArzoieMail installations with tens of thousands of users accounts on a single server.
 
 ### Question 6 - How do I get started?
 
-The first thing you need to do is to determine what you want to use hMailServer for. After that, [follow the installation tutorial](?page=howto_install).
+The first thing you need to do is to determine what you want to use ArzoieMail for. After that, [follow the installation tutorial](?page=howto_install).
 
-### Question 7 - I have installed hMailServer, what do I do next?
+### Question 7 - I have installed ArzoieMail, what do I do next?
 
 That depends on how you plan to use hMailServer. If you want to host email for your own domain, you should add a domain and user accounts to hMailServer. The steps to do this are described on this page: [Basic configuration](?page=basic_configuration)
 

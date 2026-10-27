@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
-It is a common problem that people use weak passwords which spammers manages to figure out using dictionaries. Using the auto-ban functionality, hMailServer can automatically disconnect these spammers and reduce the risk of your server being used to send spam.
+It is a common problem that people use weak passwords which spammers manages to figure out using dictionaries. Using the auto-ban functionality, ArzoieMail can automatically disconnect these spammers and reduce the risk of your server being used to send spam.
 
 If *Max invalid logon attempts* are made from a specific IP address within *Minutes before reset*, the connecting clients IP address will be auto-banned for *Minutes to auto-ban* minutes.  
 
@@ -28,20 +31,18 @@ When a client is banned, an IP range matching his IP address will be created. Th
 
 <p style="margin-left: 40px;">Auto-ban: username</p>
 
-Where "username" is replaced with the username he is trying to log on with. If an IP range with that name already exists, hMailServer appends a number in parentheses, e.g. "Auto-ban: username (1)", trying up to 10 numbers. If all of those are taken too, hMailServer falls back to appending a 9-character random string, e.g. "Auto-ban: username (Zx7Hq2pLm)".  
+Where "username" is replaced with the username he is trying to log on with. If an IP range with that name already exists, ArzoieMail appends a number in parentheses, e.g. "Auto-ban: username (1)", trying up to 10 numbers. If all of those are taken too, ArzoieMail falls back to appending a 9-character random string, e.g. "Auto-ban: username (Zx7Hq2pLm)". <br>
 
   
 
-In hMailServer you can not have multiple IP ranges with the same name. This is the reason a suffix is appended when needed.
+In ArzoieMail you can not have multiple IP ranges with the same name. This is the reason a suffix is appended when needed.
 
 ### Potential problems
 
-The Auto-ban functionality blocks IP addresses. If too many invalid logon attempts are made from the same IP address, the IP address will be banned. If you are using a webmail system, all connections to hMailServer from that webmail system will come from the same IP address. If too many invalid logon attempts are made on that webmail system, the IP address the webmail system is connecting from will be blocked.
+The Auto-ban functionality blocks IP addresses. If too many invalid logon attempts are made from the same IP address, the IP address will be banned. If you are using a webmail system, all connections to ArzoieMail from that webmail system will come from the same IP address. If too many invalid logon attempts are made on that webmail system, the IP address the webmail system is connecting from will be blocked.
 
 To solve this problem, you can whitelist the webmail system. A workaround to this problem is to add a new IP range matching the shared IP address and give this IP range higher priority than any IP range added by the auto-ban functionality. The IP ranges added by auto-ban is given the priority 100, so if your own IP range has priority 105 it will take precedence.
 
 ## Settings
 
 If *Max invalid logon attempts* are made from a specific IP address within *Minutes before reset*, the connecting clients IP address will be auto-banned for *Minutes to auto-ban* minutes.
-
- 

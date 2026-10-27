@@ -6,9 +6,12 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
-This event is fired when hMailServer is about to validate the password for an account. It lets a script accept or reject the password, or leave the decision to hMailServer.
+This event is fired when ArzoieMail is about to validate the password for an account. It lets a script accept or reject the password, or leave the decision to hMailServer.
 
 The password is passed to the script in clear text, which means the event is only fired for logon methods where the client sends the password itself.
 
@@ -25,7 +28,7 @@ OnClientValidatePassword(oAccount as hMailServer.Account, sPassword)
 
 - 0 - The password is correct. The client is logged on.
 - 1 - The password is incorrect. The logon is rejected.
-- 2 - hMailServer validates the password as usual. This is the default.
+- 2 - ArzoieMail validates the password as usual. This is the default.
 
 ## Examples
 

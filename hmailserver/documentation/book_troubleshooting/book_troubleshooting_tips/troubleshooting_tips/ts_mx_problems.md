@@ -6,17 +6,20 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## What is MX?
 
-MX is an abbreviation for Mail Exchanger and is used by all mail servers when they send an email. It's used by hMailServer when it sends an email to an external domain, and it is used by external domains when they send an e-mail to hMailServer. MX records are stored in DNS servers.
+MX is an abbreviation for Mail Exchanger and is used by all mail servers when they send an email. It's used by ArzoieMail when it sends an email to an external domain, and it is used by external domains when they send an e-mail to hMailServer. MX records are stored in DNS servers.
 
 ## How does it work?
 
-Say, you want to send an email to webmaster@anexternaldomain.com. When you click Send in your mail client, the email is first submitted and stored in the hMailServer database. hMailServer then contacts the DNS server to obtain the IP of the server that is responsible for handling email for the domain, anexternaldomain.com. The DNS server responds with the IP address of the server. hMailServer connects to that IP and sends the email.   
+Say, you want to send an email to webmaster@anexternaldomain.com. When you click Send in your mail client, the email is first submitted and stored in the ArzoieMail database. ArzoieMail then contacts the DNS server to obtain the IP of the server that is responsible for handling email for the domain, anexternaldomain.com. The DNS server responds with the IP address of the server. ArzoieMail connects to that IP and sends the email. <br>
 
   
 
-The same process occurs the other way around. If you send an email via your ISP to hMailServer, your ISP will contact the DNS server to obtain the IP address of the server that is responsible for handling email for the domain, your-hmailserver-domain.com. The DNS server will respond with the IP address of your computer, the one on which your hMailServer is located. Your ISP's mail server then connects to that IP.
+The same process occurs the other way around. If you send an email via your ISP to ArzoieMail, your ISP will contact the DNS server to obtain the IP address of the server that is responsible for handling email for the domain, your-hmailserver-domain.com. The DNS server will respond with the IP address of your computer, the one on which your ArzoieMail is located. Your ISP's mail server then connects to that IP.
 
 ## So how does the DNS server know the IP of your computer?
 

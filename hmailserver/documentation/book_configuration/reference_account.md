@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## General
 
 ### Account address
@@ -14,7 +17,7 @@ is_book: false
 
 <div class="indented"> </div>
 
-<div class="indented">hMailServer does not support the following characters in accounts:</div>
+<div class="indented">ArzoieMail does not support the following characters in accounts:</div>
 
 - ? * |  \ / < >
 
@@ -22,11 +25,11 @@ is_book: false
 
 ### Account password
 
-<div class="indented">The password of the account. Passwords are encrypted and stored in the hMailServer database.</div>
+<div class="indented">The password of the account. Passwords are encrypted and stored in the ArzoieMail database.</div>
 
 ### Maximum size (MB)
 
-<div class="indented">The maximum disk space that the account may use. If the limit is reached, the account will not be able to receive any more email. In hMailServer 3.0, the account size is measured in KB. From hMailServer 4.0 onwards, it is measured in MB. If an e-mail is sent to this account when the quota has been used, hMailServer will deliver a notification to the sender containing the information that the quota for the recipient had been reached. After that, the email message will be dropped.</div>
+<div class="indented">The maximum disk space that the account may use. If the limit is reached, the account will not be able to receive any more email. In hMailServer 3.0, the account size is measured in KB. From hMailServer 4.0 onwards, it is measured in MB. If an e-mail is sent to this account when the quota has been used, ArzoieMail will deliver a notification to the sender containing the information that the quota for the recipient had been reached. After that, the email message will be dropped.</div>
 
 <div class="indented"> </div>
 
@@ -52,7 +55,7 @@ This option lets you enable and disable the account.</div>
 
 ## Auto-reply
 
-An Auto-reply is also known as a Vacation message or an Out-of-office Notification. An auto-reply is sent automatically when you go on vacation or are away from the office for some time. Before you leave, you enter a subject and a message. When someone sends you an email, hMailServer will automatically send your auto-reply message to the sender.
+An Auto-reply is also known as a Vacation message or an Out-of-office Notification. An auto-reply is sent automatically when you go on vacation or are away from the office for some time. Before you leave, you enter a subject and a message. When someone sends you an email, ArzoieMail will automatically send your auto-reply message to the sender.
 
 ### Specifying an auto-reply message
 
@@ -65,7 +68,7 @@ An Auto-reply is also known as a Vacation message or an Out-of-office Notificati
 ### Notes
 
 - If you leave the subject field empty, the server will automatically set the subject to `Re: [subject-line of sender's original email]`
-- To prevent message looping, auto-reply messages are not sent to accounts which have auto-reply enabled. Also, hMailServer only sends one auto-reply per sender.
+- To prevent message looping, auto-reply messages are not sent to accounts which have auto-reply enabled. Also, ArzoieMail only sends one auto-reply per sender.
 - We recommend that you unsubscribe from any distribution lists before you turn vacation messages on.
 - The macro %SUBJECT% can be used in the Subject and Body of the auto-reply message. The text %SUBJECT% will be replaced with the subject of the original e-mail message.
 
@@ -73,13 +76,13 @@ An Auto-reply is also known as a Vacation message or an Out-of-office Notificati
 
 ### Automatically expire
 
-<div class="indented">By selecting Automatically expire, you can configure hMailServer to automatically disable the auto-reply at a given date. This may be good if you know that you will be out of office for 3 days. When you're back, you don't have to remember to manually disable the auto-reply again.</div>
+<div class="indented">By selecting Automatically expire, you can configure ArzoieMail to automatically disable the auto-reply at a given date. This may be good if you know that you will be out of office for 3 days. When you're back, you don't have to remember to manually disable the auto-reply again.</div>
 
 <div class="indented">
 <h2>Forwarding</h2>
 <p>The forwarding functionality lets you forward email from this account to another. Select <em>enable forwarding </em>to start forwarding of messages. Enter the email address you want to forward messages to. If you want to forward messages without keeping copies of them, de-select <em>Keep original message</em>.</p>
 <h2>Signature</h2>
-<p>If you specify a signature, this will be appended to email messages sent from this account. It's possible to specify both a plain text signature and a HTML signature. If a plain text signature has been specified, but no HTML signature, hMailServer will use the plain text signature as HTML signature. hMailServer will convert the plain text line breaks to HTML line breaks. <br>
+<p>If you specify a signature, this will be appended to email messages sent from this account. It's possible to specify both a plain text signature and a HTML signature. If a plain text signature has been specified, but no HTML signature, ArzoieMail will use the plain text signature as HTML signature. ArzoieMail will convert the plain text line breaks to HTML line breaks. <br>
 <br>
 It is possible to use the macros %User.FirstName% and %User.LastName% in signatures. These macros will be replaced with the users first and last name as specified in the account settings.</p>
 <p>Depending on the signature configuration in the domain settings, signatures can be applied to all email messages or just messages sent to external addresses.</p>
@@ -91,11 +94,11 @@ Account rules work just like global rules. The difference is that local rules ar
 
 ## External accounts
 
-Using the external account functionality, you can configure hMailServer to download email from other e-mail servers, using the POP3 protocol. After the messages have been downloaded, global rules, virus scanning and etc are applied on the messages. After that, they are normally delivered to one or several local accounts.
+Using the external account functionality, you can configure ArzoieMail to download email from other e-mail servers, using the POP3 protocol. After the messages have been downloaded, global rules, virus scanning and etc are applied on the messages. After that, they are normally delivered to one or several local accounts.
 
 ### Scenario 1:
 
-You have a hMailServer installation where you host email for your domain. You want to download email from another email server and put it in one of the local accounts.
+You have a ArzoieMail installation where you host email for your domain. You want to download email from another email server and put it in one of the local accounts.
 
 ### Steps
 
@@ -105,10 +108,10 @@ You have a hMailServer installation where you host email for your domain. You wa
 4. Enter a name for the external account.
 5. Enter the login information.
 6. De-select "Deliver to recipients in MIME-headers" (if it is selected)
-7. Specify how often you want hMailServer to download messages, and how long they should be stoerd on the remote POP3 server.
+7. Specify how often you want ArzoieMail to download messages, and how long they should be stoerd on the remote POP3 server.
 8. Save the account
 
-After you have performed the steps above, hMailServer will download the messages and put them in the account in which you created the external account.
+After you have performed the steps above, ArzoieMail will download the messages and put them in the account in which you created the external account.
 
 ### Scenario 2:
 
@@ -116,7 +119,7 @@ Your domain is hosted by your ISP. They have created a "catch all" email account
 
 ### Steps
 
-1. Create the domain in hMailServer  
+1. Create the domain in ArzoieMail <br>
 
  The domain name should be your public domain name.
 2. Create accounts for your users.
@@ -126,16 +129,16 @@ Your domain is hosted by your ISP. They have created a "catch all" email account
 6. Enter a name for the external account.
 7. Enter the login information.
 8. Select "Deliver to recipients in MIME-headers"
-9. Specify how often you want hMailServer to download messages, and how long they should be stored on the remote POP3 server.
+9. Specify how often you want ArzoieMail to download messages, and how long they should be stored on the remote POP3 server.
 10. Save the account
 
-After you have performed the steps above, hMailServer will download the messages and deliver them to the recipients in the MIME headers of the email message. If hMailServer cannot determine who the message should be delivered to (if no local recipients exists in the MIME headers), it will be delivered to your account (the account in which you added the external account)
+After you have performed the steps above, ArzoieMail will download the messages and deliver them to the recipients in the MIME headers of the email message. If ArzoieMail cannot determine who the message should be delivered to (if no local recipients exists in the MIME headers), it will be delivered to your account (the account in which you added the external account)
 
 ## Active Directory connection
 
 ### Active Directory Account
 
-<div class="indented">Check this checkbox if you want to connect the account to a Windows NT/2000 Active Directory Account. There are several advantages in using a connection to an Active Directory. For example, none of the account passwords are stored in the hMailServer database. Instead, the user must supply his/her Windows NT/2000 domain password when logging in to the POP3 server.</div>
+<div class="indented">Check this checkbox if you want to connect the account to a Windows NT/2000 Active Directory Account. There are several advantages in using a connection to an Active Directory. For example, none of the account passwords are stored in the ArzoieMail database. Instead, the user must supply his/her Windows NT/2000 domain password when logging in to the POP3 server.</div>
 
 ### Active Directory Domain
 
@@ -149,7 +152,7 @@ After you have performed the steps above, hMailServer will download the messages
 
 <h3 class="indented">Personal information</h3>
 
-<div class="indented">Use this setting to specify the full name of the user holding this account. hMailServer does not use this information<span style='color: rgb(36, 41, 47); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;'>, except for signature macros</span></div>
+<div class="indented">Use this setting to specify the full name of the user holding this account. ArzoieMail does not use this information<span style='color: rgb(36, 41, 47); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; font-size: 14px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: start; text-indent: 0px; text-transform: none; white-space: normal; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(255, 255, 255); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;'>, except for signature macros</span></div>
 
 <h3 class="indented">Other actions</h3>
 
@@ -164,5 +167,3 @@ After you have performed the steps above, hMailServer will download the messages
     <div class="indented">Unlock - This option will remove the POP3 lock on this folder. This option should only be used if the account remains locked even though the client has disconnected.</div>
     </li>
 </ul>
-
- 

@@ -6,10 +6,13 @@ index: 5
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Overview
 
 The setup program can run without user interaction, which is useful when you
-install or upgrade hMailServer using a script or a deployment tool.
+install or upgrade ArzoieMail using a script or a deployment tool.
 
 ```
 hMailServer-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES /ADMINPASSWORD=<password>
@@ -19,7 +22,7 @@ hMailServer-<version>.exe /VERYSILENT /SUPPRESSMSGBOXES /ADMINPASSWORD=<password
 
 The setup program is built with Inno Setup, so it accepts the standard Inno
 Setup parameters such as `/SILENT`, `/VERYSILENT`, `/SUPPRESSMSGBOXES` and
-`/LOG`. In addition, hMailServer accepts the following:
+`/LOG`. In addition, ArzoieMail accepts the following:
 
 <table width="600" cellspacing="1" cellpadding="1" border="1">
     <tbody>
@@ -29,23 +32,23 @@ Setup parameters such as `/SILENT`, `/VERYSILENT`, `/SUPPRESSMSGBOXES` and
         </tr>
         <tr>
             <td>/ADMINPASSWORD=&lt;password&gt;</td>
-            <td>The hMailServer administrator password. On a new installation the password is set to this value. On an upgrade it is used to log on so that the database can be upgraded.</td>
+            <td>The ArzoieMail administrator password. On a new installation the password is set to this value. On an upgrade it is used to log on so that the database can be upgraded.</td>
         </tr>
         <tr>
             <td>/useinternaldbms=false</td>
-            <td>Don't use the built-in database. Use this if hMailServer should use an external database server. Defaults to true.</td>
+            <td>Don't use the built-in database. Use this if ArzoieMail should use an external database server. Defaults to true.</td>
         </tr>
     </tbody>
 </table>
 
 ### The administrator password
 
-The setup program upgrades the hMailServer database at the end of the
+The setup program upgrades the ArzoieMail database at the end of the
 installation, and it must log on as the administrator to do that. During an
 unattended installation there is no dialog to ask for the password, so if an
 administrator password is set you must supply it with `/ADMINPASSWORD`.
 
-If the password is missing or wrong, the database is not upgraded. hMailServer
+If the password is missing or wrong, the database is not upgraded. ArzoieMail
 then refuses to open any ports, and writes an error to the error log:
 
 ```

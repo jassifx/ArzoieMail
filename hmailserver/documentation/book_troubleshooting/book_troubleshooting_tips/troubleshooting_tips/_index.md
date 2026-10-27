@@ -6,9 +6,12 @@ index: 30
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Troubleshooting
 
-Below are some tips that can be useful if you run into problems with hMailServer. If you can't find the answer in any of the links, ask your question in the hMailServer Forum.
+Below are some tips that can be useful if you run into problems with hMailServer. If you can't find the answer in any of the links, ask your question in the ArzoieMail Forum.
 
 ### Common problems
 
@@ -20,7 +23,7 @@ Below are some tips that can be useful if you run into problems with hMailServer
 - [My server says "incorrect password"](?page=ts_connect_password)
 - [My Outlook crashes or gives an error message](?page=ts_outlook_crashes)
 - [Someone seems to be sending spam through my server](?page=ts_server_used_for_spam)
-- [hMailServer can't connect to the database](?page=ts_connect_to_database)
+- [ArzoieMail can't connect to the database](?page=ts_connect_to_database)
 - [PHPWebAdmin does not work](?page=ts_setup_phpwebadmin)
 
-###  
+###

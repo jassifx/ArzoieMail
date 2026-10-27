@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## General
 
 ### Enable logging
@@ -18,15 +21,15 @@ is_book: false
 
 ### SMTP conversation
 
-<div class="indented">The SMTP conversation log contains SMTP communication that hMailServer makes. Both when hMailServer acts as a SMTP client (when delivering) and when hMailServer acts as a SMTP server (when receiving).</div>
+<div class="indented">The SMTP conversation log contains SMTP communication that ArzoieMail makes. Both when ArzoieMail acts as a SMTP client (when delivering) and when ArzoieMail acts as a SMTP server (when receiving).</div>
 
 ### POP3 conversation
 
-<div class="indented">The POP3 conversation log contains POP3 communication that hMailServer makes. Both when hMailServer acts as a POP3 client (when downloading messages from external servers) and when hMailServer acts as a POP3 server (when email clients downloads messages from hMailServer).</div>
+<div class="indented">The POP3 conversation log contains POP3 communication that ArzoieMail makes. Both when ArzoieMail acts as a POP3 client (when downloading messages from external servers) and when ArzoieMail acts as a POP3 server (when email clients downloads messages from ArzoieMail).</div>
 
 ### IMAP conversation
 
-<div class="indented">The IMAP conversation log contains IMAP communication that hMailServer makes.</div>
+<div class="indented">The IMAP conversation log contains IMAP communication that ArzoieMail makes.</div>
 
 ### TCP/IP
 
@@ -50,15 +53,13 @@ LogSeparator="\t"</span></div>
 
 ### Keep files open
 
-<div class="indented">This setting lets you specify whether hMailServer should keep log files open in between writes. The default log writing behavior in hMailServer is that whenever hMailServer should append something to a log file, the file is open, written to and after that closed.  This means that any data hMailServer writes to the file is flushed immediately. If there are a lot of small writes to the log files, this may be bad for performance. </div>
+<div class="indented">This setting lets you specify whether ArzoieMail should keep log files open in between writes. The default log writing behavior in ArzoieMail is that whenever ArzoieMail should append something to a log file, the file is open, written to and after that closed.  This means that any data ArzoieMail writes to the file is flushed immediately. If there are a lot of small writes to the log files, this may be bad for performance. </div>
 
 <div class="indented"> </div>
 
-<div class="indented">If you configure hMailServer to keep log files open, Windows will buffer data being sent to the log file. This may dramatically improve log file performance. The downside is that the log files can not be deleted while they are open. When hMailServer has finished writing to a log file (in the case of the normal log files, this happens at midnight when a new file name is generated), hMailServer will close the file and the file can be deleted.</div>
+<div class="indented">If you configure ArzoieMail to keep log files open, Windows will buffer data being sent to the log file. This may dramatically improve log file performance. The downside is that the log files can not be deleted while they are open. When ArzoieMail has finished writing to a log file (in the case of the normal log files, this happens at midnight when a new file name is generated), ArzoieMail will close the file and the file can be deleted.</div>
 
 <div class="indented"> </div>
 
 <div class="indented"><br>
  </div>
-
- 

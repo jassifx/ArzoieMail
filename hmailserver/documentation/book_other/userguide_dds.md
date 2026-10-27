@@ -6,25 +6,28 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 ## Background
 
-When hMailServer receives a message, information regarding this message is stored in two places. Information on SMTP envelope, receive-time, and message flags are stored in the hMailServer database (tables hm_messages and hm_messagerecipients). The actual message is stored in an .eml file in the hMailServer Data Directory.  
+When ArzoieMail receives a message, information regarding this message is stored in two places. Information on SMTP envelope, receive-time, and message flags are stored in the ArzoieMail database (tables hm_messages and hm_messagerecipients). The actual message is stored in an .eml file in the ArzoieMail Data Directory. <br>
 
   
 
-In some situations, these two may come out of synch. For example, if a database table becomes corrupt, you may have messages in the Data directory which is not referenced by the database. When this happens, you will not be able to download the messages using your e-mail client. And if the messages have not been delivered, hMailServer won't deliver them.
+In some situations, these two may come out of synch. For example, if a database table becomes corrupt, you may have messages in the Data directory which is not referenced by the database. When this happens, you will not be able to download the messages using your e-mail client. And if the messages have not been delivered, ArzoieMail won't deliver them.
 
-The solution to this problem is to use the hMailServer Data Directory Synchronizer. The tool is installed with hMailServer and located in the Addons folder.
+The solution to this problem is to use the ArzoieMail Data Directory Synchronizer. The tool is installed with ArzoieMail and located in the Addons folder.
 
 ## What does it do?
 
-Data Directory Synchronizer goes through all the message files in the data folder. It searches for files with the extension .hma or .eml. (Older versions of hMailServer used .hma as extension, now .eml is used). When it has located an .eml file, it checks whether this .eml file is referenced by the database, if not, the message is inserted into the database.
+Data Directory Synchronizer goes through all the message files in the data folder. It searches for files with the extension .hma or .eml. (Older versions of ArzoieMail used .hma as extension, now .eml is used). When it has located an .eml file, it checks whether this .eml file is referenced by the database, if not, the message is inserted into the database.
 
-If the .eml file exists in a user directory, hMailServer inserts the message into this users account. The message then ends up in the users Inbox folder. The IMAP folder information is stored in the database, and since this info has been lost, hMailServer does not know what folder to store the message in.
+If the .eml file exists in a user directory, ArzoieMail inserts the message into this users account. The message then ends up in the users Inbox folder. The IMAP folder information is stored in the database, and since this info has been lost, ArzoieMail does not know what folder to store the message in.
 
-If the .eml file exists in the public folder, the message is inserted into the public IMAP folder you select when you run the tool. The public IMAP folder a message belongs to is stored in the database only - it's not part of the path on disk - so hMailServer is not able to tell which folder the message was stored in before the database information was lost.
+If the .eml file exists in the public folder, the message is inserted into the public IMAP folder you select when you run the tool. The public IMAP folder a message belongs to is stored in the database only - it's not part of the path on disk - so ArzoieMail is not able to tell which folder the message was stored in before the database information was lost.
 
-If the .eml file exists in the Data root directory, the message is inserted into the delivery queue. hMailServer parses the To and CC headers of the email to determine who the message should be delivered to. To prevent the email from being re-sent to recipients, hMailServer only sends the message to local recipients.
+If the .eml file exists in the Data root directory, the message is inserted into the delivery queue. ArzoieMail parses the To and CC headers of the email to determine who the message should be delivered to. To prevent the email from being re-sent to recipients, ArzoieMail only sends the message to local recipients.
 
 ## How do I run it?
 
@@ -44,21 +47,17 @@ If the .eml file exists in the Data root directory, the message is inserted into
 - Files located in the root data folder will be delivered to local recipients in the To and CC headers. The original recipient information, from the SMTP envelope, is not available in the .EML files. Hence, the To/CC headers are used. E-mail are only delivered to local recipients to prevent mail from being re-sent to external addresses.
 - Files located in data folder sub directories, such as domain\username will be connected to that user in the database.
 - Files located in the public folder, such as #Public, will be placed in the public IMAP folder you selected when you started the synchronization. Since the public IMAP folder isn't part of the path on disk, all messages found in the public folder are placed in that single folder.
-- Files imported directly to user accounts won't be treated by filters, rules, virus scanning features in hMailServer
+- Files imported directly to user accounts won't be treated by filters, rules, virus scanning features in ArzoieMail
 
 ### What effect does it have on production?
 
-- You don't have to stop hMailServer prior to running DDS.
-- After all messages have been imported, DDS will automatically re-start the hMailServer server to refresh the cache.
+- You don't have to stop ArzoieMail prior to running DDS.
+- After all messages have been imported, DDS will automatically re-start the ArzoieMail server to refresh the cache.
 
 ### How can I improve its performance?
 
-Data Directory Synchronizer iterates over all folders and files in the data directory. Whenever it sees a file, it checks whether this file exists in the database. If not, the message is added to the database. The time consuming part of this process is to check whether the message exists in the database. To speed up this part of the process, an index can be added to the hMailServer database. The index improves the performance when DDS searches for messages in the database.
+Data Directory Synchronizer iterates over all folders and files in the data directory. Whenever it sees a file, it checks whether this file exists in the database. If not, the message is added to the database. The time consuming part of this process is to check whether the message exists in the database. To speed up this part of the process, an index can be added to the ArzoieMail database. The index improves the performance when DDS searches for messages in the database.
 
-To add this index, execute the following SQL statement in the hMailServer database:
+To add this index, execute the following SQL statement in the ArzoieMail database:
 
 <p><span class="Code">CREATE INDEX idx_custom_hm_messages_messagefilename ON hm_messages (messagefilename) </span></p>
-
- 
-
- 

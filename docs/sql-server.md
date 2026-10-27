@@ -11,8 +11,10 @@ or OLE DB 18. An old `Provider` override produces a migration error instead of a
 Windows ADO remains the native data-access wrapper; it is supported with OLE DB 19 and is not
 the web administration COM API. The replacement panel still uses REST/native management only.
 
-Current implementation/validation status belongs in ROADMAP.md and the latest agent handoff.
-SQL Server 2025 Express is the new VM/CI target. Other qualifying engine versions require
+This implementation was merged in PR #33 with all four database CI jobs passing. See the
+[CI inventory](ci-test-inventory.md) for verified counts and the SQL-specific checks.
+Current status belongs in ROADMAP.md and the latest agent handoff.
+SQL Server 2025 Express is the validated VM/CI target. Other qualifying engine versions require
 version-specific validation before claiming a tested deployment combination.
 
 ## Install prerequisites and configure TLS

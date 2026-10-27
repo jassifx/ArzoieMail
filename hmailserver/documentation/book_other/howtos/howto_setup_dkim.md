@@ -6,6 +6,9 @@ index: 0
 is_book: false
 ---
 
+> **ArzoieMail reference status.** Product prose is maintained for ArzoieMail; inherited operational details still need version-specific review. Current installation, security and migration guides take precedence. See the [documentation status](https://github.com/jassifx/ArzoieMail/blob/master/docs/documentation-status.md) for remaining work.
+
+
 <div>This page describes how to set up DKIM with hMailServer.</div>
 
 <div> </div>
@@ -26,7 +29,7 @@ is_book: false
    
 
  k=rsa;p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCoEELiGTItqXPA8YzGd3/UX8NKYlTm9KDYy89KPofpqdlWRvvFDSzQdJiV0toYLzKA5P4x0fdARpXU54S6UNWngVSO3AVvSc1/gG8yfITPMcTyUmxf16GFTzKl2h5/K8rXrZd7SKeNaYEHcdFzGH5aTg3OJQiJMDT01r6xOlo3DQIDAQA 
-7. In the domain settings in hMailServer Administrator, choose to enable DKIM signing. Select the private key file (for example C:\Keys\dkim-private.pem), and enter the selector *dkim*.
+7. In the domain settings in ArzoieMail Administrator, choose to enable DKIM signing. Select the private key file (for example C:\Keys\dkim-private.pem), and enter the selector *dkim*.
 8. Choose signing algorithm SHA256.
 
 <div>After setting everything up, it's recommended that you use a DKIM validator to set your set up, for example <a href="http://dkimvalidator.com/">dkimvalidator.com</a>.</div>
@@ -34,5 +37,3 @@ is_book: false
 <div> </div>
 
 <div> </div>
-
- 
