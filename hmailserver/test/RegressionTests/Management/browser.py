@@ -17,6 +17,9 @@ mailboxes = []
 aliases = []
 lists = []
 list_members = {}
+behavior = {"forwardEnabled": False, "forwardAddress": "", "forwardKeepOriginal": True, "forwardAbortSpamFlagged": True,
+            "autoReplyEnabled": False, "autoReplySubject": "", "autoReplyBody": "", "autoReplyExpires": False,
+            "autoReplyExpiresDate": "", "autoReplyAbortSpamFlagged": True}
 revoked = False
 
 
@@ -64,6 +67,9 @@ def api(route):
             items = [v for v in domains if query.get('search', [''])[0].lower() in v['name'].lower()]
             offset = int(query.get('offset', [0])[0])
             data = {"items": items[offset:offset + 50], "total": len(items)}
+    elif path.endswith('/behavior'):
+        behavior.update(body)
+        data = behavior
     elif '/accounts' in path:
         if path.endswith('/accounts'):
             if request.method == 'POST':
@@ -173,6 +179,28 @@ with sync_playwright() as p:
     page.get_by_text('Mailbox saved.', exact=True).wait_for()
     assert mailboxes[0]['maxSizeMB'] == 50
     assert 'password' not in requests[-2][2], 'Blank edit password must not replace existing credentials.'
+    page.get_by_role('button', name='Forwarding and replies', exact=True).click()
+    page.get_by_label('forward Address', exact=True).fill('archive@example.com')
+    page.get_by_label('forward Enabled', exact=True).check()
+    page.get_by_label('auto Reply Enabled', exact=True).check()
+    page.get_by_label('auto Reply Body', exact=True).fill('Away\nContact the team. <script>literal text</script>')
+    page.get_by_label('auto Reply Expires', exact=True).check()
+    page.get_by_label('auto Reply Expires Date', exact=True).fill('2099-01-01')
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    before = len(requests)
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    assert len(requests) == before, 'Cancelling behavior activation must not submit settings.'
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.screenshot(path=str(output / 'mailbox-behavior-mobile.png'), full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Behavior controls overflow on mobile.'
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Forwarding and replies saved.', exact=True).wait_for()
+    assert behavior['forwardEnabled'] and behavior['autoReplyExpiresDate'] == '2099-01-01'
+    page.get_by_role('button', name='Forwarding and replies', exact=True).click()
+    assert page.get_by_label('auto Reply Body', exact=True).input_value().endswith('<script>literal text</script>')
+    page.get_by_role('button', name='Cancel', exact=True).click()
     page.screenshot(path=str(output / 'mailboxes-desktop.png'), full_page=True)
     page.set_viewport_size({"width": 390, "height": 844})
     page.screenshot(path=str(output / 'mailboxes-mobile.png'), full_page=True)

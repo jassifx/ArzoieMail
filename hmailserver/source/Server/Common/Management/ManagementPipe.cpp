@@ -17,6 +17,7 @@
 #include "../AntiSpam/SpamAssassin/SpamAssassinTestConnect.h"
 #include "../Util/Unicode.h"
 #include "../Util/ServerStatus.h"
+#include "../Util/Time.h"
 #include <sddl.h>
 #include <boost/json/src.hpp>
 
@@ -230,6 +231,86 @@ namespace HM
          if (!StringParser::IsValidEmailAddress(address) || address.FindOneOf(_T("\r\n\t ,;\"")) != -1)
             throw RequestError{422};
          return address;
+      }
+      json::object MailboxBehaviorView(const Account &account)
+      {
+         return {{"forwardEnabled", account.GetForwardEnabled()}, {"forwardAddress", Utf8(account.GetForwardAddress())},
+                 {"forwardKeepOriginal", account.GetForwardKeepOriginal()}, {"forwardAbortSpamFlagged", account.GetForwardAbortSpamFlagged()},
+                 {"autoReplyEnabled", account.GetVacationMessageIsOn()}, {"autoReplySubject", Utf8(account.GetVacationSubject())},
+                 {"autoReplyBody", Utf8(account.GetVacationMessage())}, {"autoReplyExpires", account.GetVacationExpires()},
+                 {"autoReplyExpiresDate", Utf8(account.GetVacationExpiresDate().Left(10))}, {"autoReplyAbortSpamFlagged", account.GetVacationAbortSpamFlagged()}};
+      }
+      json::value ManageMailboxBehavior(const std::string &operation, json::object &arguments, const Account &actor)
+      {
+         if (actor.GetAdminLevel() == Account::NormalUser) throw RequestError{403};
+         const bool server = actor.GetAdminLevel() == Account::ServerAdmin;
+         const auto domainId = Number(arguments, "domainId", 9223372036854775807LL);
+         if (!server && domainId != actor.GetDomainID()) throw RequestError{403};
+         auto target = std::make_shared<Account>();
+         if (!PersistentAccount::ReadObject(target, Id(arguments)) || target->GetDomainID() != domainId) throw RequestError{404};
+         if (!server && target->GetAdminLevel() == Account::ServerAdmin) throw RequestError{403};
+         if (operation == "accounts.behavior.read") return MailboxBehaviorView(*target);
+         if (operation != "accounts.behavior.update") throw RequestError{404};
+         auto *value = arguments.if_contains("fields");
+         if (!value || !value->is_object() || value->as_object().empty()) throw RequestError{422};
+         const auto &fields = value->as_object();
+         // Validate the entire request before invoking setters (disabling vacation clears
+         // the mail engine's per-sender reply history as an existing BO side effect).
+         for (const auto &field : fields)
+         {
+            const auto key = field.key();
+            if (key == "forwardEnabled" || key == "forwardKeepOriginal" || key == "forwardAbortSpamFlagged"
+                || key == "autoReplyEnabled" || key == "autoReplyExpires" || key == "autoReplyAbortSpamFlagged")
+            { if (!field.value().is_bool()) throw RequestError{422}; }
+            else if (key == "forwardAddress") MailAddress(fields, "forwardAddress", true);
+            else if (key == "autoReplySubject" || key == "autoReplyBody")
+            {
+               const auto text = Text(fields, std::string(key).c_str(), key == "autoReplyBody" ? 16000 : 255);
+               Wide(field.value());
+               for (const unsigned char character : text)
+                  if ((character < 32 && !(key == "autoReplyBody" && (character == '\r' || character == '\n' || character == '\t')))
+                      || character == 127) throw RequestError{422};
+            }
+            else if (key == "autoReplyExpiresDate")
+            {
+               const auto date = Text(fields, "autoReplyExpiresDate", 10);
+               for (size_t index = 0; index < date.size(); ++index)
+                  if (index != 4 && index != 7 && (date[index] < '0' || date[index] > '9')) throw RequestError{422};
+               if (!date.empty() && (date.size() != 10 || date[4] != '-' || date[7] != '-'
+                   || date.substr(0, 4) < "1900" || !Time::IsValidSystemDate(Wide(field.value())))) throw RequestError{422};
+            }
+            else throw RequestError{422};
+         }
+         const auto current = MailboxBehaviorView(*target);
+         const auto effective = [&](const char *key) -> const json::value & {
+            const auto *field = fields.if_contains(key); return field ? *field : current.at(key);
+         };
+         const auto address = Wide(effective("forwardAddress"));
+         if (effective("forwardEnabled").as_bool())
+         {
+            json::object check{{"address", effective("forwardAddress")}};
+            MailAddress(check, "address");
+            if (address.CompareNoCase(target->GetAddress()) == 0) throw RequestError{422};
+         }
+         if (effective("autoReplyExpires").as_bool() && effective("autoReplyExpiresDate").as_string().empty()) throw RequestError{422};
+         if (fields.if_contains("forwardAddress")) target->SetForwardAddress(address);
+         if (fields.if_contains("forwardEnabled")) target->SetForwardEnabled(fields.at("forwardEnabled").as_bool());
+         if (fields.if_contains("forwardKeepOriginal")) target->SetForwardKeepOriginal(fields.at("forwardKeepOriginal").as_bool());
+         if (fields.if_contains("forwardAbortSpamFlagged")) target->SetForwardAbortSpamFlagged(fields.at("forwardAbortSpamFlagged").as_bool());
+         if (fields.if_contains("autoReplySubject")) target->SetVacationSubject(Wide(fields.at("autoReplySubject")));
+         if (fields.if_contains("autoReplyBody")) target->SetVacationMessage(Wide(fields.at("autoReplyBody")));
+         if (fields.if_contains("autoReplyExpiresDate"))
+         {
+            // All supported schemas require a non-null timestamp even while expiry is off.
+            const auto date = Wide(fields.at("autoReplyExpiresDate"));
+            target->SetVacationExpiresDate(date.IsEmpty() ? Time::GetCurrentDate() : date);
+         }
+         if (fields.if_contains("autoReplyExpires")) target->SetVacationExpires(fields.at("autoReplyExpires").as_bool());
+         if (fields.if_contains("autoReplyAbortSpamFlagged")) target->SetVacationAbortSpamFlagged(fields.at("autoReplyAbortSpamFlagged").as_bool());
+         if (fields.if_contains("autoReplyEnabled")) target->SetVacationMessageIsOn(fields.at("autoReplyEnabled").as_bool());
+         String error;
+         if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+         return MailboxBehaviorView(*target);
       }
       json::object AliasView(const Alias &alias)
       {
@@ -456,6 +537,8 @@ namespace HM
          if (!argumentValue || !argumentValue->is_object()) throw RequestError{422};
          auto &arguments = argumentValue->as_object();
          if (operation == "authenticate") return User(*account);
+         if (operation.rfind("accounts.behavior.", 0) == 0)
+            return ManageMailboxBehavior(operation, arguments, *account);
          if (operation.rfind("aliases.", 0) == 0 || operation.rfind("lists.", 0) == 0 || operation.rfind("members.", 0) == 0)
             return ManageAddressing(operation, arguments, *account);
          if (operation.rfind("domains.", 0) == 0 || operation.rfind("accounts.", 0) == 0)

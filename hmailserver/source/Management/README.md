@@ -62,6 +62,7 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | GET / PATCH / DELETE | `/api/v1/domains/{id}` | Read/update own domain for domain administrator; server administrator for creation, limits and deletion |
 | GET / POST | `/api/v1/domains/{domainId}/accounts` | Paginated list/create; server administrator or administrator of that domain |
 | GET / PATCH / DELETE | `/api/v1/domains/{domainId}/accounts/{id}` | Read/update/delete; owning domain must match, server administrator accounts require server administrator |
+| GET / PATCH | `/api/v1/domains/{domainId}/accounts/{id}/behavior` | Forwarding/automatic replies; owning domain must match, server administrator accounts require server administrator |
 | GET / POST | `/api/v1/domains/{domainId}/aliases` | Paginated list/create; server administrator or administrator of that domain |
 | GET / PATCH / DELETE | `/api/v1/domains/{domainId}/aliases/{id}` | Read/update/delete within the owning domain |
 | GET / POST | `/api/v1/domains/{domainId}/lists` | Paginated list/create distribution lists within the owning domain |
@@ -105,6 +106,34 @@ in views. Omit `password` on PATCH to preserve it; blank passwords are rejected.
 password changes are rejected and must be made in the directory. No AD provisioning is added.
 The next request reauthenticates and observes password, role, active-state or deletion changes.
 The panel ends the session after changing its own password/role or disabling its own account.
+
+Mailbox behavior GET/PATCH is an admin-only operation. Server administrators may access any
+mailbox; domain administrators only their own domain's non-server-admin accounts. Normal users
+have no self-service access yet. Settings are excluded from mailbox collections and fetched
+separately. PATCH accepts only these fields (omitted values are preserved):
+
+- `forwardEnabled`, `forwardAddress`, `forwardKeepOriginal`, `forwardAbortSpamFlagged`.
+- `autoReplyEnabled`, `autoReplySubject`, `autoReplyBody`, `autoReplyExpires`,
+  `autoReplyExpiresDate`, `autoReplyAbortSpamFlagged`.
+
+Flags must be JSON booleans. Forwarding accepts one local/external address (255 UTF-8 bytes);
+an enabled forward needs a valid destination different from the mailbox. Indirect cycles are
+not detected here. Subject is limited to 255 UTF-8 bytes without control characters; plain-text
+body to 16,000 UTF-8 bytes, permitting CR/LF/tab but no other ASCII controls. Subject/body can
+be blank; a blank subject uses the existing `Re:` behavior. Total HTTP request/frame limits still
+apply. Expiry is a real `YYYY-MM-DD` date from 1900, or empty when expiration is disabled;
+expiration requires a date and occurs at its start in server local time, evaluated during delivery.
+An empty date while expiration is disabled is stored as today's server-local date because the
+existing database column requires a timestamp; the disabled flag is preserved.
+An expired enabled flag may remain visible until delivery evaluates it. Enabling with an elapsed
+date is allowed and does not send a reply. Unknown fields and invalid combined settings return
+422 before setters/persistence. Updates use existing persistence/cache invalidation; no schema
+or COM changes. As in the desktop tools, disabling replies clears in-memory per-sender history;
+editing an enabled reply does not reset it. History is not durable across service restart and
+disabling follows existing BO behavior even if the subsequent persistence operation fails.
+The panel confirms active forwarding/reply changes and warns about external destinations,
+storage and client-visible semantics. Existing spam-abort flags and mail-engine suppression
+remain authoritative; these controls do not add a new forwarding policy or vacation scheduler.
 
 Aliases, lists and members use the same `search`/`offset`/`limit` contract. Server administrators
 can manage every domain; domain administrators can manage only their own; ordinary mailbox
