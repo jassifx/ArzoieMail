@@ -1,5 +1,15 @@
 # CI test inventory
 
+Mailbox forwarding/automatic replies are implemented on the feature branch after merged PR #38.
+`MailboxBehaviorTests.cs` adds native permission/input/persistence coverage and local-only
+SMTP/POP3 delivery probes; HTTP route/CSRF and browser confirmation/mobile tests are expanded.
+Disposable-VM acceptance passed **26 DNS + 142 HTTP + 2 HTTPS + 188 native = 358 assertions**,
+plus browser workflows and 2 separate pipe-identity checks. The added live probes send local
+SMTP DATA and verify POP3 delivery, forward-only/retained copies, deactivation, reply suppression,
+expiry and re-enabling; none attempts external delivery. Native delivery waits account for the
+existing one-minute queue poll. Verify exact-head CI in the feature PR before merge; the older
+four-backend totals below remain the historical merged baseline until then.
+
 This describes the workflows and test entry points delivered through merged PR #36, including
 the alias/list/member coverage. CI dependency updates were separately validated in #37. Update
 this inventory and ROADMAP's baseline when coverage or test counts change. Counts below are

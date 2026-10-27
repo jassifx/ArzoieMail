@@ -15,8 +15,9 @@ advanced mailbox settings and self-service are still pending acceptance/delivery
 Keep end-user guidance aligned with [documentation status](documentation-status.md); inherited
 manual naming updates do not imply that these requirements have been implemented.
 
-The next proposed administration slice is mailbox forwarding and automatic replies, pending
-separate confirmation. Future UID capacity/maintenance controls belong to the
+Mailbox forwarding and automatic replies are implemented and VM-validated on the feature branch
+after merged #38, awaiting PR review/merge and required CI. Mailbox-user self-service remains
+planned. Future UID capacity/maintenance controls belong to the
 [identifier lifecycle plan](imap-uid-modernization.md); documenting them does not implement them.
 
 ## Modern administration

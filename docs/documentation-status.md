@@ -48,7 +48,8 @@ history. Third-party license text is not changed by this refresh.
 | Release and database matrices | Expand tested Windows/engine versions and capacity evidence as runs occur; do not generalize Express 2025 functional success into a universal throughput guarantee. |
 
 Basic domain/account and alias/list management are merged. Mailbox forwarding and automatic
-replies are the next proposed implementation slice after the roadmap PR review gate. Phase 2
+replies are implemented and VM-validated on the feature branch after merged PR #38, awaiting
+feature PR review/merge and its required CI gate. Phase 2
 remains the separate PowerShell event-host migration after Phase 1b acceptance; UID lifecycle
 implementation is planned in Phase 3, with earlier boundary fixes possible after authorization.
 Keep this list, ROADMAP, README, requirements and the current agent handoff aligned at each PR.

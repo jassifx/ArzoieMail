@@ -176,6 +176,8 @@ public static class ManagementHost
         api.MapGet("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.read", false, id, domainId));
         api.MapPatch("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.update", true, id, domainId));
         api.MapDelete("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.delete", false, id, domainId));
+        api.MapGet("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/behavior", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.behavior.read", false, id, domainId));
+        api.MapPatch("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/behavior", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.behavior.update", true, id, domainId));
         foreach (string resource in new[] { "aliases", "lists" })
         {
             string command = resource;

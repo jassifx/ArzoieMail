@@ -85,7 +85,7 @@
   }
   function inputField(name, value, help = '') {
     const wrap = el('div'); const label = el('label', name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
-    const input = el(['level', 'mode'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
+    const input = el(name === 'autoReplyBody' ? 'textarea' : ['level', 'mode'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
     if (name === 'level' || name === 'mode') {
       input.className = 'form-select';
       const choices = name === 'mode' ? ['Anyone (public)', 'List members', 'Specified sender (announcements)', 'Domain senders'] : ['Mailbox user', 'Domain administrator', 'Server administrator'];
@@ -99,7 +99,8 @@
       wrap.className = 'form-check'; input.type = 'checkbox'; input.className = 'form-check-input'; input.checked = value;
       label.className = 'form-check-label'; wrap.append(input, label);
     } else {
-      input.type = typeof value === 'number' ? 'number' : 'text'; input.className = 'form-control'; input.value = String(value);
+      if (input.tagName !== 'TEXTAREA') input.type = typeof value === 'number' ? 'number' : 'text';
+      input.className = 'form-control'; input.value = String(value);
       if (input.type === 'number') { input.min = name.endsWith('Port') ? '1' : '0'; input.max = name.endsWith('Port') ? '65535' : '2147483647'; input.step = '1'; }
       else input.maxLength = 255;
       wrap.append(label, input);
@@ -251,6 +252,7 @@
       const row = el('div', null, 'domain-row'); row.append(el('strong', account.address), pill(account.active ? 'Active' : 'Inactive', account.active ? '' : 'warning'), el('span', `${['Mailbox user', 'Domain administrator', 'Server administrator'][account.level]} · ${account.maxSizeMB || 'Unlimited'} MB`, 'help'));
       if (user.level === 2 || account.level !== 2) {
         row.append(button('Edit mailbox', () => accountEditor(detail, domain, account, () => reload())));
+        row.append(button('Forwarding and replies', () => mailboxBehavior(detail, domain, account)));
         if (account.id !== user.accountId) row.append(button('Delete mailbox', async () => {
           if (!confirm(`Permanently delete ${account.address} and all its messages? This cannot be undone.`)) return;
           await request(`/domains/${domain.id}/accounts/${account.id}`, 'DELETE'); await reload(0); notify('Mailbox deleted.');
@@ -260,6 +262,23 @@
     }
     if (!result.items.length) c.body.append(el('p', 'No matching mailboxes.', 'help'));
     pager(c.body, result, offset, next => reload(next)); editor.append(c.outer, detail);
+  }
+  async function mailboxBehavior(editor, domain, account) {
+    const path = `/domains/${domain.id}/accounts/${account.id}/behavior`;
+    const values = await request(path);
+    editor.replaceChildren(); const c = card(`Forwarding and automatic replies · ${account.address}`);
+    c.body.append(el('p', 'Forward to one local or external address. External forwarding can expose mail and affect SPF/DMARC delivery; review the destination. Keeping originals uses mailbox storage. Indirect forwarding loops are not checked here.', 'help'));
+    c.body.append(el('p', 'Automatic replies use plain text and the existing per-sender suppression policy. Expiry occurs at the start of the selected date in server local time. Disabling replies resets sender history; editing an enabled reply does not. A blank subject uses Re: and the original subject.', 'help'));
+    const form = editForm(values, async fields => {
+      if ((fields.forwardEnabled || fields.autoReplyEnabled) && !confirm(`Apply active forwarding/reply settings for ${account.address}? Review the destination and reply text before proceeding.`)) return;
+      await request(path, 'PATCH', fields); editor.replaceChildren(); notify('Forwarding and replies saved.');
+    });
+    const address = form.querySelector('[name=forwardAddress]'); address.type = 'email'; address.maxLength = 255;
+    const body = form.querySelector('[name=autoReplyBody]'); body.rows = 6; body.maxLength = 16000;
+    const expiry = form.querySelector('[name=autoReplyExpiresDate]'); expiry.type = 'date'; expiry.min = '1900-01-01';
+    form.querySelector('[name=autoReplyExpires]').addEventListener('change', event => { expiry.required = event.target.checked; });
+    expiry.required = values.autoReplyExpires;
+    c.body.append(form, button('Cancel', () => editor.replaceChildren())); editor.append(c.outer);
   }
   async function addressing(editor, domain, kind, parent = null, offset = 0, search = '') {
     const singular = { aliases: 'alias', lists: 'distribution list', members: 'member' }[kind];
