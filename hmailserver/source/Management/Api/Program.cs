@@ -176,6 +176,22 @@ public static class ManagementHost
         api.MapGet("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.read", false, id, domainId));
         api.MapPatch("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.update", true, id, domainId));
         api.MapDelete("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.delete", false, id, domainId));
+        foreach (string resource in new[] { "aliases", "lists" })
+        {
+            string command = resource;
+            var group = api.MapGroup("/domains/{domainId:long:min(1)}/" + resource);
+            group.MapGet("", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".list", domainId: domainId));
+            group.MapPost("", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".create", true, domainId: domainId));
+            group.MapGet("/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".read", false, id, domainId));
+            group.MapPatch("/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".update", true, id, domainId));
+            group.MapDelete("/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".delete", false, id, domainId));
+        }
+        var members = api.MapGroup("/domains/{domainId:long:min(1)}/lists/{listId:long:min(1)}/members");
+        members.MapGet("", (long domainId, long listId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "members.list", domainId: domainId, listId: listId));
+        members.MapPost("", (long domainId, long listId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "members.create", true, domainId: domainId, listId: listId));
+        members.MapGet("/{id:long:min(1)}", (long domainId, long listId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "members.read", false, id, domainId, listId));
+        members.MapPatch("/{id:long:min(1)}", (long domainId, long listId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "members.update", true, id, domainId, listId));
+        members.MapDelete("/{id:long:min(1)}", (long domainId, long listId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "members.delete", false, id, domainId, listId));
         api.MapPost("/domains/{id:long:min(1)}/dns", async (long id, HttpContext c, CredentialVault vault, IManagementChannel channel, ITxtResolver resolver) =>
         {
             var credentials = vault.Get(c.User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -208,11 +224,12 @@ public static class ManagementHost
 
     private static IResult Data(object data) => Results.Json(new { data });
     private static async Task<IResult> Objects(HttpContext context, CredentialVault vault, IManagementChannel channel,
-        string operation, bool readBody = false, long? id = null, long? domainId = null)
+        string operation, bool readBody = false, long? id = null, long? domainId = null, long? listId = null)
     {
         var arguments = new Dictionary<string, object?>();
         if (id.HasValue) arguments["id"] = id.Value;
         if (domainId.HasValue) arguments["domainId"] = domainId.Value;
+        if (listId.HasValue) arguments["listId"] = listId.Value;
         if (operation.EndsWith(".list", StringComparison.Ordinal))
         {
             foreach (string key in context.Request.Query.Keys)

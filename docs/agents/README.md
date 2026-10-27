@@ -7,8 +7,8 @@ traps found along the way, and where the last session left off.
 ## Read in this order
 
 Current handoff: [2026-10-27](handoffs/2026-10-27.md). It records merged SQL Express PR #33,
-its green four-backend baseline, merged documentation PR #34 and the authorized domain/mailbox
-management slice with its review gate and remaining Phase 1b plan.
+its green four-backend baseline, merged documentation/domain PRs #34/#35 and the authorized
+alias/list/member slice with its review gate and remaining Phase 1b plan.
 The [CI inventory](../ci-test-inventory.md) separates automated checks from manual/planned
 coverage. Verify live PR/CI state before continuing; planned features are not implemented.
 The [documentation status](../documentation-status.md) records the manual rebrand, refreshed

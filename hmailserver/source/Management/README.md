@@ -62,6 +62,12 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | GET / PATCH / DELETE | `/api/v1/domains/{id}` | Read/update own domain for domain administrator; server administrator for creation, limits and deletion |
 | GET / POST | `/api/v1/domains/{domainId}/accounts` | Paginated list/create; server administrator or administrator of that domain |
 | GET / PATCH / DELETE | `/api/v1/domains/{domainId}/accounts/{id}` | Read/update/delete; owning domain must match, server administrator accounts require server administrator |
+| GET / POST | `/api/v1/domains/{domainId}/aliases` | Paginated list/create; server administrator or administrator of that domain |
+| GET / PATCH / DELETE | `/api/v1/domains/{domainId}/aliases/{id}` | Read/update/delete within the owning domain |
+| GET / POST | `/api/v1/domains/{domainId}/lists` | Paginated list/create distribution lists within the owning domain |
+| GET / PATCH / DELETE | `/api/v1/domains/{domainId}/lists/{id}` | Read/update/delete list settings within the owning domain |
+| GET / POST | `/api/v1/domains/{domainId}/lists/{listId}/members` | Paginated list/create recipients; domain and list ownership are checked natively |
+| GET / PATCH / DELETE | `/api/v1/domains/{domainId}/lists/{listId}/members/{id}` | Read/update/delete a recipient belonging to that exact list |
 | POST | `/api/v1/domains/{id}/dns` | Native domain authorization, then DNS advice; domain/server administrator |
 | GET / PATCH | `/api/v1/antispam` | Server administrator; explicit allowlisted fields |
 | GET / POST | `/api/v1/dnsbl` | List/create providers; server administrator |
@@ -99,6 +105,44 @@ in views. Omit `password` on PATCH to preserve it; blank passwords are rejected.
 password changes are rejected and must be made in the directory. No AD provisioning is added.
 The next request reauthenticates and observes password, role, active-state or deletion changes.
 The panel ends the session after changing its own password/role or disabling its own account.
+
+Aliases, lists and members use the same `search`/`offset`/`limit` contract. Server administrators
+can manage every domain; domain administrators can manage only their own; ordinary mailbox
+users cannot use these operations. Parent IDs come from routes, never from writable fields.
+Foreign-domain requests are denied and mismatched object/list IDs return 404.
+
+Alias POST requires `address` and `target`; `active` is optional and defaults to false. PATCH
+accepts `target` and/or `active`. The source address must belong to the owning domain; the
+target can be local or external. Domain/address duplicate checks and configured alias limits
+use existing native persistence. Direct self-forwarding is rejected. Renaming is not exposed.
+
+List POST requires `address`; optional fields are `active` (default false), `mode` (default 1),
+`requireAuth` (default true) and `requireAddress` (default empty). PATCH accepts those fields
+except `address`. Existing domain list limits and account/alias/list collisions remain enforced.
+
+| Mode | Meaning |
+|---|---|
+| 0 | Public: accepts any envelope sender, subject to the other SMTP policies. |
+| 1 | Membership: the envelope sender must be a saved member. |
+| 2 | Announcements: the envelope sender must match `requireAddress`, which must be a valid nonempty address. |
+| 3 | Domain senders: the envelope sender must use this domain; the mailbox need not exist. |
+
+These are the existing mail engine's envelope-sender checks. `requireAuth` additionally requires
+SMTP authentication; it does not bind the envelope sender to the authenticated account. Keep
+SMTP sender policy appropriate to the deployment. The panel confirms saving an active public
+list or an active list without required authentication. REST callers explicitly control both.
+
+Member POST requires `address`; PATCH updates `address`. Local and external recipients are
+supported. Case-insensitive duplicates within the same list and a direct self-member pointing
+at the list address are rejected. Member changes invalidate the mail engine's cached list.
+Deleting a list removes its member entries through existing persistence; deleting an alias stops
+forwarding through it. These operations do not provide undo or full graph-cycle validation.
+
+All new address fields accept one unquoted email address, up to 255 UTF-8 bytes. Empty values,
+commas/semicolons, quotes and ASCII control characters are rejected; `requireAddress` can be empty outside
+announcement mode. Special local-part characters supported by the mail parser remain accepted.
+Unknown fields, wrong types, invalid mode values and duplicates return 422 before writes.
+No schema, web SQL or COM backend dependency is added.
 
 DNSBL creation accepts `Active` (boolean), `DNSHost`, `ExpectedResult`, `RejectMessage`
 (strings), and `Score` (integer 0..10000). All five fields are required. PATCH accepts a subset.

@@ -130,10 +130,11 @@ and the plan for the phases ahead.
 The phases run in this order, each starting once the one before it is done; code quality (5) runs
 alongside all of them.
 
-Phase 1b is currently adding domain and mailbox CRUD, storage limits, password resets, role
-management and paginated search to the native API and responsive panel. See the
+Phase 1b delivered domain and mailbox CRUD, storage limits, password resets, roles and paginated
+search in merged PR #35. The current slice adds aliases, distribution lists, posting settings
+and member management to the native API and responsive panel. See the
 [REST contract](hmailserver/source/Management/README.md#rest-v1-contract) for the supported
-fields and permissions. This slice is under review; advanced administration and production
+fields and permissions. Alias/list acceptance is in progress; advanced administration and production
 cutover remain unfinished.
 
 **Microsoft Defender Antivirus scanning is planned within Phase 1b; implementation has not

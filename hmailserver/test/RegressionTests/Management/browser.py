@@ -14,6 +14,9 @@ settings = {"SpamAssassinEnabled": True, "SpamAssassinHost": "127.0.0.1", "SpamA
 requests = []
 domains = [{"id": 5, "name": "example.com", "active": True, "dkimEnabled": True, "selector": "arzoie", "maxSizeMB": 0, "maxAccountSizeMB": 0, "maxMessageSizeKB": 0}]
 mailboxes = []
+aliases = []
+lists = []
+list_members = {}
 revoked = False
 
 
@@ -75,6 +78,31 @@ def api(route):
                 data = {"deleted": True}
             else:
                 item.update({k: v for k, v in body.items() if k != 'password'})
+                data = item
+    elif '/aliases' in path or '/lists' in path:
+        parts = path.strip('/').split('/')
+        members = len(parts) >= 5 and parts[4] == 'members'
+        collection = list_members.setdefault(int(parts[3]), []) if members else aliases if parts[2] == 'aliases' else lists
+        collection_length = 5 if members else 3
+        if len(parts) == collection_length:
+            if request.method == 'POST':
+                defaults = {} if members else {"active": False} if parts[2] == 'aliases' else {"active": False, "mode": 1, "requireAuth": True, "requireAddress": ""}
+                data = {"id": max([v['id'] for v in collection], default=20) + 1, **defaults, **body}
+                data['listId' if members else 'domainId'] = int(parts[3] if members else parts[1])
+                collection.append(data)
+            else:
+                items = [v for v in collection if query.get('search', [''])[0].lower() in v['address'].lower()]
+                offset = int(query.get('offset', [0])[0])
+                data = {"items": items[offset:offset + 50], "total": len(items)}
+        else:
+            item = next(v for v in collection if v['id'] == int(parts[-1]))
+            if request.method == 'DELETE':
+                collection.remove(item)
+                if not members and parts[2] == 'lists':
+                    list_members.pop(item['id'], None)
+                data = {"deleted": True}
+            else:
+                item.update(body)
                 data = item
     elif path.startswith('/domains/') and not path.endswith('/dns'):
         item = next(v for v in domains if v['id'] == int(path.rsplit('/', 1)[1]))
@@ -162,6 +190,70 @@ with sync_playwright() as p:
     page.get_by_text('Domain deleted.', exact=True).wait_for()
     assert len(domains) == 1
     assert page.get_by_role('button', name='Inspect DNS').count() == 1, 'Domain mutations must refresh the visible list after repeated saves.'
+    page.get_by_role('button', name='Aliases', exact=True).click()
+    page.get_by_role('button', name='New alias', exact=True).click()
+    page.get_by_label('address', exact=True).fill('support@example.com')
+    page.get_by_label('target', exact=True).fill('external@example.net')
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('support@example.com', exact=True).wait_for()
+    assert aliases[0]['active'] is False
+    page.get_by_role('button', name='Edit alias', exact=True).click()
+    page.get_by_label('active', exact=True).check()
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Alias saved.', exact=True).wait_for()
+    assert aliases[0]['active'] is True
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Delete alias', exact=True).click()
+    assert len(aliases) == 1
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Delete alias', exact=True).click()
+    page.get_by_text('Alias deleted.', exact=True).wait_for()
+    assert not aliases
+    page.get_by_role('button', name='Distribution lists', exact=True).click()
+    page.get_by_role('button', name='New distribution list', exact=True).click()
+    page.get_by_label('address', exact=True).fill('news@example.com')
+    assert page.get_by_label('mode', exact=True).input_value() == '1'
+    assert page.get_by_label('require Auth', exact=True).is_checked()
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('news@example.com', exact=True).wait_for()
+    assert lists[0]['active'] is False and lists[0]['mode'] == 1 and lists[0]['requireAuth'] is True
+    page.get_by_role('button', name='Members', exact=True).click()
+    page.get_by_role('button', name='New member', exact=True).click()
+    page.get_by_label('address', exact=True).fill('recipient@external.test')
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('recipient@external.test', exact=True).wait_for()
+    page.get_by_role('button', name='Edit member', exact=True).click()
+    page.get_by_label('address', exact=True).fill('updated@external.test')
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('updated@external.test', exact=True).wait_for()
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.screenshot(path=str(output / 'list-members-mobile.png'), full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'List member controls overflow on mobile.'
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Delete member', exact=True).click()
+    page.get_by_text('Member deleted.', exact=True).wait_for()
+    page.get_by_role('button', name='Edit distribution list', exact=True).click()
+    page.get_by_label('mode', exact=True).select_option('2')
+    page.get_by_label('require Address', exact=True).fill('owner@example.com')
+    page.get_by_label('active', exact=True).check()
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Announcements', exact=False).last.wait_for()
+    assert lists[0]['mode'] == 2 and lists[0]['requireAddress'] == 'owner@example.com'
+    page.get_by_role('button', name='Edit distribution list', exact=True).click()
+    page.get_by_label('mode', exact=True).select_option('0')
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    assert lists[0]['mode'] == 2, 'Cancelling public-mode activation must preserve the saved posting mode.'
+    page.once('dialog', lambda dialog: dialog.accept())
+    with page.expect_response(lambda response: '/lists/' in response.url and response.request.method == 'PATCH'):
+        page.get_by_role('button', name='Save changes', exact=True).click()
+    assert lists[0]['mode'] == 0
+    page.screenshot(path=str(output / 'distribution-lists-desktop.png'), full_page=True)
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Delete distribution list', exact=True).click()
+    page.get_by_text('Distribution list deleted.', exact=True).wait_for()
+    assert not lists and not list_members
     page.get_by_role('button', name='Inspect DNS').click()
     page.get_by_label('Sending IP addresses (comma separated)').fill('203.0.113.10')
     page.get_by_role('button', name='Validate published DNS & build recommendations').click()
@@ -200,4 +292,4 @@ with sync_playwright() as p:
     assert requests[-1][0:2] == ('GET', '/session'), 'Revocation must obtain a fresh anonymous CSRF token.'
     assert not errors, errors
     browser.close()
-print('Passed browser navigation, domain/mailbox CRUD and confirmation, password handling, DNSBL mutation, SpamAssassin test, DNS guidance, logout and mobile layout checks.')
+print('Passed browser navigation, domain/mailbox/alias/list/member CRUD, posting-policy confirmation, password handling, DNSBL mutation, SpamAssassin test, DNS guidance, session recovery and mobile layout checks.')

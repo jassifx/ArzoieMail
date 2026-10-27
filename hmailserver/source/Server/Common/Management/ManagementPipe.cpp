@@ -3,6 +3,10 @@
 #include "ManagementAuthentication.h"
 #include "../BO/Account.h"
 #include "../BO/Accounts.h"
+#include "../BO/Aliases.h"
+#include "../BO/DistributionLists.h"
+#include "../BO/DistributionListRecipients.h"
+#include "../Persistence/PersistentDistributionListRecipient.h"
 #include "../Persistence/PersistentDomain.h"
 #include "../Persistence/PersistenceMode.h"
 #include "../Util/Hashing/PasswordHasher.h"
@@ -216,6 +220,140 @@ namespace HM
          if (!PersistentDomain::SaveObject(domain, error, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
          return DomainView(*domain);
       }
+      String MailAddress(const json::object &fields, const char *key, bool optional = false)
+      {
+         const auto input = Text(fields, key, 255);
+         for (const unsigned char character : input)
+            if (character < 32 || character == 127) throw RequestError{422};
+         String address = Wide(fields.at(key));
+         if (optional && address.IsEmpty()) return address;
+         if (!StringParser::IsValidEmailAddress(address) || address.FindOneOf(_T("\r\n\t ,;\"")) != -1)
+            throw RequestError{422};
+         return address;
+      }
+      json::object AliasView(const Alias &alias)
+      {
+         return {{"id", alias.GetID()}, {"domainId", alias.GetDomainID()}, {"address", Utf8(alias.GetName())},
+                 {"target", Utf8(alias.GetValue())}, {"active", alias.GetIsActive()}};
+      }
+      json::object ListView(const DistributionList &list)
+      {
+         return {{"id", list.GetID()}, {"domainId", list.GetDomainID()}, {"address", Utf8(list.GetAddress())},
+                 {"active", list.GetActive()}, {"mode", static_cast<int>(list.GetListMode())},
+                 {"requireAuth", list.GetRequireAuth()}, {"requireAddress", Utf8(list.GetRequireAddress())}};
+      }
+      json::object MemberView(const DistributionListRecipient &member)
+      {
+         return {{"id", member.GetID()}, {"listId", member.GetListID()}, {"address", Utf8(member.GetAddress())}};
+      }
+      json::value ManageAddressing(const std::string &operation, const json::object &arguments, const Account &actor)
+      {
+         if (actor.GetAdminLevel() == Account::NormalUser) throw RequestError{403};
+         const auto action = operation.substr(operation.find('.') + 1);
+         if (action != "list" && action != "read" && action != "create" && action != "update" && action != "delete") throw RequestError{404};
+         const bool aliasOperation = operation.rfind("aliases.", 0) == 0;
+         const bool memberOperation = operation.rfind("members.", 0) == 0;
+         const bool create = action == "create";
+         const auto domainId = Number(arguments, "domainId", 9223372036854775807LL);
+         if (!domainId) throw RequestError{422};
+         if (actor.GetAdminLevel() != Account::ServerAdmin && actor.GetDomainID() != domainId) throw RequestError{403};
+         auto domain = std::make_shared<Domain>();
+         if (!PersistentDomain::ReadObject(domain, domainId)) throw RequestError{404};
+         if (action == "list" && !memberOperation)
+         {
+            if (aliasOperation) { Aliases items(domainId); items.Refresh(); return Page(items.GetVector(), arguments, AliasView); }
+            DistributionLists items(domainId); items.Refresh(); return Page(items.GetVector(), arguments, ListView);
+         }
+         auto alias = std::make_shared<Alias>();
+         auto list = std::make_shared<DistributionList>();
+         auto member = std::make_shared<DistributionListRecipient>();
+         std::shared_ptr<DistributionListRecipients> members;
+         if (memberOperation)
+         {
+            const auto listId = Number(arguments, "listId", 9223372036854775807LL);
+            if (!listId) throw RequestError{422};
+            if (!PersistentDistributionList::ReadObject(list, listId) || list->GetDomainID() != domainId) throw RequestError{404};
+            members = list->GetMembers();
+            if (action == "list") return Page(members->GetVector(), arguments, MemberView);
+            if (!create)
+            {
+               member = members->GetItemByDBID(Id(arguments));
+               if (!member) throw RequestError{404};
+            }
+         }
+         else if (!create)
+         {
+            const auto id = Id(arguments);
+            if (aliasOperation)
+            {
+               if (!PersistentAlias::ReadObject(alias, id) || alias->GetDomainID() != domainId) throw RequestError{404};
+            }
+            else if (!PersistentDistributionList::ReadObject(list, id) || list->GetDomainID() != domainId) throw RequestError{404};
+         }
+         if (action == "read") return memberOperation ? MemberView(*member) : aliasOperation ? AliasView(*alias) : ListView(*list);
+         if (action == "delete")
+         {
+            bool success = memberOperation ? PersistentDistributionListRecipient::DeleteObject(member)
+               : aliasOperation ? PersistentAlias::DeleteObject(alias) : PersistentDistributionList::DeleteObject(list);
+            if (!success) throw RequestError{503};
+            return json::object{{"deleted", true}};
+         }
+         const auto *value = arguments.if_contains("fields");
+         if (!value || !value->is_object() || value->as_object().empty()) throw RequestError{422};
+         const auto &fields = value->as_object();
+         for (const auto &field : fields)
+         {
+            const auto key = field.key();
+            if (key == "address" && (create || memberOperation)) MailAddress(fields, "address");
+            else if (key == "target" && aliasOperation) MailAddress(fields, "target");
+            else if (!memberOperation && (key == "active" || (!aliasOperation && key == "requireAuth")))
+            { if (!field.value().is_bool()) throw RequestError{422}; }
+            else if (!aliasOperation && !memberOperation && key == "mode") Number(fields, "mode", 3);
+            else if (!aliasOperation && !memberOperation && key == "requireAddress") MailAddress(fields, "requireAddress", true);
+            else throw RequestError{422};
+         }
+         if (create && !fields.if_contains("address")) throw RequestError{422};
+         String error;
+         bool success;
+         if (memberOperation)
+         {
+            if (create) member->SetListID(list->GetID());
+            if (fields.if_contains("address")) member->SetAddress(MailAddress(fields, "address"));
+            if (member->GetAddress().CompareNoCase(list->GetAddress()) == 0) throw RequestError{422};
+            for (const auto &existing : members->GetVector())
+               if (existing->GetID() != member->GetID() && existing->GetAddress().CompareNoCase(member->GetAddress()) == 0) throw RequestError{422};
+            success = PersistentDistributionListRecipient::SaveObject(member, error, PersistenceModeNormal);
+         }
+         else if (aliasOperation)
+         {
+            if (create)
+            {
+               if (!fields.if_contains("target")) throw RequestError{422};
+               alias->SetDomainID(domainId); alias->SetName(MailAddress(fields, "address"));
+            }
+            if (fields.if_contains("target")) alias->SetValue(MailAddress(fields, "target"));
+            if (fields.if_contains("active")) alias->SetIsActive(fields.at("active").as_bool());
+            if (alias->GetName().CompareNoCase(alias->GetValue()) == 0) throw RequestError{422};
+            success = PersistentAlias::SaveObject(alias, error, PersistenceModeNormal);
+         }
+         else
+         {
+            if (create)
+            {
+               list->SetDomainID(domainId); list->SetAddress(MailAddress(fields, "address"));
+               list->SetRequireAuth(true); list->SetListMode(DistributionList::LMMembership);
+            }
+            if (fields.if_contains("active")) list->SetActive(fields.at("active").as_bool());
+            if (fields.if_contains("requireAuth")) list->SetRequireAuth(fields.at("requireAuth").as_bool());
+            if (fields.if_contains("mode")) list->SetListMode(static_cast<DistributionList::ListMode>(Number(fields, "mode", 3)));
+            if (fields.if_contains("requireAddress")) list->SetRequireAddress(MailAddress(fields, "requireAddress", true));
+            if (list->GetListMode() == DistributionList::LMAnnouncement
+                && (list->GetRequireAddress().IsEmpty() || !StringParser::IsValidEmailAddress(list->GetRequireAddress()))) throw RequestError{422};
+            success = PersistentDistributionList::SaveObject(list, error, PersistenceModeNormal);
+         }
+         if (!success) throw RequestError{error.IsEmpty() ? 503 : 422};
+         return memberOperation ? MemberView(*member) : aliasOperation ? AliasView(*alias) : ListView(*list);
+      }
       json::object DnsblView(DNSBlackList &item)
       {
          return {{"id", item.GetID()}, {"Active", item.GetIsActive()}, {"DNSHost", Utf8(item.GetDNSHost())},
@@ -318,6 +456,8 @@ namespace HM
          if (!argumentValue || !argumentValue->is_object()) throw RequestError{422};
          auto &arguments = argumentValue->as_object();
          if (operation == "authenticate") return User(*account);
+         if (operation.rfind("aliases.", 0) == 0 || operation.rfind("lists.", 0) == 0 || operation.rfind("members.", 0) == 0)
+            return ManageAddressing(operation, arguments, *account);
          if (operation.rfind("domains.", 0) == 0 || operation.rfind("accounts.", 0) == 0)
             return ManageObjects(operation, arguments, *account);
          if (operation == "domains" || operation == "domain")
