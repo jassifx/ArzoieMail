@@ -8,12 +8,16 @@ requirements below are not claims of completed features. See
 The API/panel foundation is merged in PR #31 and SQL Express modernization in PR #33. Full
 administration parity, certificate lifecycle, Defender scanning and PHP retirement remain pending.
 Merged PR #35 implements basic domain/mailbox CRUD, quota controls, password resets, roles
-and paginated search with native permissions. The next authorized slice adds alias/list/member
-administration and posting-policy controls. Their precise fields and remaining limits are
+and paginated search with native permissions. Merged PR #36 adds alias/list/member administration
+and posting-policy controls. Their precise fields and remaining limits are
 documented in the [REST contract](../hmailserver/source/Management/README.md#rest-v1-contract);
 advanced mailbox settings and self-service are still pending acceptance/delivery.
 Keep end-user guidance aligned with [documentation status](documentation-status.md); inherited
 manual naming updates do not imply that these requirements have been implemented.
+
+The next proposed administration slice is mailbox forwarding and automatic replies, pending
+separate confirmation. Future UID capacity/maintenance controls belong to the
+[identifier lifecycle plan](imap-uid-modernization.md); documenting them does not implement them.
 
 ## Modern administration
 

@@ -10,12 +10,12 @@ implement planned features or publish the website.
 
 | Area | Current state |
 |---|---|
-| Product overview and engineering roadmap | README and ROADMAP distinguish merged #31 API foundation and #33 SQL Express modernization from remaining Phase 1b delivery. |
+| Product overview and engineering roadmap | README/ROADMAP track merged #31 foundation, #33 SQL Express, #35 domain/mailbox and #36 alias/list controls, plus remaining Phase 1b delivery and planned UID lifecycle work. |
 | CI test inventory | Four database jobs, the verified 1,315-test baseline, management/browser fixture boundaries, SQL TLS checks, artifacts and manual-only coverage are documented. |
 | Manual entry and installation | ArzoieMail source/provenance, current platform baseline, installation paths, database prerequisites and supported upgrade procedure replace old generic hMailServer instructions. |
 | Database guidance | Full SQL Server/Express is separated from Compact; OLE DB 19/TLS prerequisites and validated SQL Server 2025 Express coverage are explicit. Old bundled-MySQL/Blowfish recipes are not current connection guidance. |
 | Security and backup | Current service identity, protected secrets, key export and passphrase-protected backups replace the obsolete universal-obfuscation description. |
-| Web administration | ASP.NET Core/REST/native design and domain/mailbox CRUD are merged through #35. The current alias/list/member slice documents fields, parent permissions, defaults and posting semantics. Advanced parity and production provisioning remain unfinished; legacy PHP/COM consumers remain during migration. |
+| Web administration | ASP.NET Core/REST/native design, domain/mailbox CRUD and alias/list/member controls are merged through #36. Contracts document fields, parent permissions, defaults and posting semantics. Advanced parity and production provisioning remain unfinished; legacy PHP/COM consumers remain during migration. |
 | Certificates and antivirus | Present manual file/listener configuration and existing scanners are separated from the planned certificate wizard/renewal and optional Defender lifecycle/pressure acceptance. |
 | Inherited references | Product prose is rebranded; code/compatibility examples are preserved. Pages needing technical review carry a reference-status note. Historical upgrade/integration recipes retain upstream names and explicit historical notices. |
 
@@ -37,6 +37,7 @@ history. Third-party license text is not changed by this refresh.
 |---|---|
 | Technical review of inherited reference pages | Walk each setting, protocol, error, script and administration recipe against the current source and a supported VM. Naming cleanup alone does not validate inherited behavior. |
 | Remaining credential/database recovery recipes | Replace version-specific old MySQL/Compact repair, password-recovery and migration instructions with reviewed procedures for current protected secrets and supported tools. |
+| Message-ID/IMAP UID maintenance guidance | Replace `maintenance_database`'s global message-count explanation with reviewed database-ID versus per-folder-UID guidance and publish it. Add tested monitoring, generation renewal, client-resync and recovery instructions as the [UID plan](imap-uid-modernization.md) is implemented. |
 | New screenshots and UI walkthroughs | Capture the actual Administrator, installer and replacement panel in the disposable VM; replace legacy screenshots without inventing UI that has not shipped. |
 | Website rendering/publication | Confirm the ArzoieMail hosting/build pipeline, render front matter/raw HTML, validate internal navigation and image assets, and publish the reviewed manual. This repository's Markdown changes do not prove deployment. |
 | Route and external-link migration | Validate legacy slugs and `?page=` routing, add redirects before changing routes, and review upstream/external links for current purpose and availability. |
@@ -46,8 +47,10 @@ history. Third-party license text is not changed by this refresh.
 | PHP retirement | Publish the final upgrade/cutover guide, verify old endpoints are disabled, then remove legacy PHP deployment material with the source/packaging migration. |
 | Release and database matrices | Expand tested Windows/engine versions and capacity evidence as runs occur; do not generalize Express 2025 functional success into a universal throughput guarantee. |
 
-Domain/account management is the next proposed implementation slice after the current PR review
-gate. Phase 2 remains the separate PowerShell event-host migration after Phase 1b acceptance.
+Basic domain/account and alias/list management are merged. Mailbox forwarding and automatic
+replies are the next proposed implementation slice after the roadmap PR review gate. Phase 2
+remains the separate PowerShell event-host migration after Phase 1b acceptance; UID lifecycle
+implementation is planned in Phase 3, with earlier boundary fixes possible after authorization.
 Keep this list, ROADMAP, README, requirements and the current agent handoff aligned at each PR.
 All application previews, screenshots, runtime checks and tests execute only in the disposable
 VM or CI; the development host is for editing, static inspection and compilation.
