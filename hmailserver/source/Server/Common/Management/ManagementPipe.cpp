@@ -2,6 +2,11 @@
 #include "ManagementPipe.h"
 #include "ManagementAuthentication.h"
 #include "../BO/Account.h"
+#include "../BO/Accounts.h"
+#include "../Persistence/PersistentDomain.h"
+#include "../Persistence/PersistenceMode.h"
+#include "../Util/Hashing/PasswordHasher.h"
+#include "../Util/Crypt.h"
 #include "../BO/Domains.h"
 #include "../BO/DNSBlackLists.h"
 #include "../Persistence/PersistentDNSBlacklist.h"
@@ -19,6 +24,18 @@ namespace HM
       const wchar_t PipeName[] = L"\\\\.\\pipe\\ArzoieMail.Management.v1";
       const DWORD MaximumFrame = 65536;
       struct RequestError { int status; };
+      struct SecretWipe
+      {
+         json::value *value;
+         ~SecretWipe()
+         {
+            if (value && value->is_string())
+            {
+               auto &text = value->as_string();
+               SecureZeroMemory(text.data(), text.size());
+            }
+         }
+      };
 
       std::string Utf8(const String &text) { return Unicode::ToUTF8(text); }
       String Wide(const json::value &value)
@@ -50,7 +67,154 @@ namespace HM
       json::object DomainView(const Domain &domain)
       {
          return {{"id", domain.GetID()}, {"name", Utf8(domain.GetName())}, {"active", domain.GetIsActive()},
-                 {"dkimEnabled", domain.GetDKIMEnabled()}, {"selector", std::string(domain.GetDKIMSelector())}};
+                 {"dkimEnabled", domain.GetDKIMEnabled()}, {"selector", std::string(domain.GetDKIMSelector())},
+                 {"maxMessageSizeKB", domain.GetMaxMessageSize()}, {"maxSizeMB", domain.GetMaxSizeMB()},
+                 {"maxAccountSizeMB", domain.GetMaxAccountSize()}};
+      }
+      json::object AccountView(const Account &account)
+      {
+         // Never return password hashes, AD credentials or private configuration.
+         return {{"id", account.GetID()}, {"domainId", account.GetDomainID()},
+                 {"address", Utf8(account.GetAddress())}, {"active", account.GetActive()},
+                 {"level", static_cast<int>(account.GetAdminLevel())}, {"maxSizeMB", account.GetAccountMaxSize()}};
+      }
+      __int64 Number(const json::object &fields, const char *name, __int64 maximum, __int64 fallback = 0)
+      {
+         const auto *value = fields.if_contains(name);
+         if (!value) return fallback;
+         if (!value->is_int64() || value->as_int64() < 0 || value->as_int64() > maximum) throw RequestError{422};
+         return value->as_int64();
+      }
+      template<class T, class View>
+      json::object Page(const std::vector<std::shared_ptr<T>> &items, const json::object &arguments, View view)
+      {
+         const auto offset = Number(arguments, "offset", 2147483647);
+         const auto limit = Number(arguments, "limit", 100, 50);
+         if (!limit) throw RequestError{422};
+         String search;
+         if (arguments.if_contains("search")) { Text(arguments, "search", 255); search = Wide(arguments.at("search")); search.ToLower(); }
+         json::array result;
+         __int64 total = 0;
+         for (const auto &item : items)
+         {
+            String name = item->GetName(); name.ToLower();
+            if (!search.IsEmpty() && name.Find(search) < 0) continue;
+            if (total >= offset && result.size() < static_cast<size_t>(limit)) result.push_back(view(*item));
+            ++total;
+         }
+         return {{"items", std::move(result)}, {"total", total}, {"offset", offset}, {"limit", limit}};
+      }
+      // Loaded objects are request-local. All fields are checked before SaveObject, which also
+      // enforces shared quota/duplicate/address rules and invalidates the existing caches.
+      json::value ManageObjects(const std::string &operation, json::object &arguments, const Account &actor)
+      {
+         const bool server = actor.GetAdminLevel() == Account::ServerAdmin;
+         if (actor.GetAdminLevel() == Account::NormalUser) throw RequestError{403};
+         const bool accountOperation = operation.rfind("accounts.", 0) == 0;
+         const bool create = operation == "domains.create" || operation == "accounts.create";
+         const bool remove = operation == "domains.delete" || operation == "accounts.delete";
+         const bool list = operation == "domains.list" || operation == "accounts.list";
+         if (operation != "domains.list" && operation != "domains.create" && operation != "domains.update"
+             && operation != "domains.delete" && operation != "accounts.list" && operation != "accounts.read"
+             && operation != "accounts.create" && operation != "accounts.update" && operation != "accounts.delete") throw RequestError{404};
+         if (!accountOperation && (create || remove) && !server) throw RequestError{403};
+         if (operation == "domains.list")
+         {
+            Domains domains;
+            if (server) domains.Refresh(); else domains.Refresh(actor.GetDomainID());
+            return Page(domains.GetVector(), arguments, DomainView);
+         }
+         const auto domainId = accountOperation ? Number(arguments, "domainId", 9223372036854775807LL) : (create ? 0 : Id(arguments));
+         if (!create || accountOperation)
+            if (!server && domainId != actor.GetDomainID()) throw RequestError{403};
+         auto domain = std::make_shared<Domain>();
+         if ((!create || accountOperation) && !PersistentDomain::ReadObject(domain, domainId)) throw RequestError{404};
+         if (accountOperation && list)
+         {
+            Accounts accounts(domainId); accounts.Refresh();
+            return Page(accounts.GetVector(), arguments, AccountView);
+         }
+         auto target = std::make_shared<Account>();
+         if (accountOperation && !create)
+         {
+            if (!PersistentAccount::ReadObject(target, Id(arguments)) || target->GetDomainID() != domainId) throw RequestError{404};
+            // Check the persisted role, before accepting any requested role change.
+            if (!server && target->GetAdminLevel() == Account::ServerAdmin) throw RequestError{403};
+            if (operation == "accounts.read") return AccountView(*target);
+         }
+         if (remove)
+         {
+            if (accountOperation && target->GetID() == actor.GetID()) throw RequestError{409};
+            if (!accountOperation && actor.GetDomainID() == domainId) throw RequestError{409};
+            if (!(accountOperation ? PersistentAccount::DeleteObject(target) : PersistentDomain::DeleteObject(domain))) throw RequestError{503};
+            return json::object{{"deleted", true}};
+         }
+         auto *value = arguments.if_contains("fields");
+         if (!value || !value->is_object() || value->as_object().empty()) throw RequestError{422};
+         auto &fields = value->as_object();
+         SecretWipe wipe{fields.if_contains("password")};
+         for (const auto &field : fields)
+         {
+            const auto key = field.key();
+            if (key == "active") { if (!field.value().is_bool()) throw RequestError{422}; }
+            else if (key == "maxSizeMB" || (!accountOperation && (key == "maxMessageSizeKB" || key == "maxAccountSizeMB")))
+            {
+               if (!server && !accountOperation) throw RequestError{403};
+               Number(fields, std::string(key).c_str(), 2147483647);
+            }
+            else if (accountOperation && key == "level")
+            {
+               auto level = Number(fields, "level", 2);
+               if (!server && (level == 2 || (target->GetID() == actor.GetID() && level != actor.GetAdminLevel()))) throw RequestError{403};
+            }
+            else if (accountOperation && key == "password")
+            {
+               if (Text(fields, "password", 1024).empty()) throw RequestError{422};
+               Wide(field.value());
+            }
+            else if (create && key == (accountOperation ? "address" : "name"))
+            {
+               if (Text(fields, accountOperation ? "address" : "name", accountOperation ? 320 : 253).empty()) throw RequestError{422};
+               Wide(field.value());
+            }
+            else throw RequestError{422};
+         }
+         if (create)
+         {
+            if (accountOperation)
+            {
+               if (!fields.if_contains("address") || !fields.if_contains("password")) throw RequestError{422};
+               target->SetDomainID(domainId); target->SetAddress(Wide(fields.at("address")));
+            }
+            else
+            {
+               if (!fields.if_contains("name")) throw RequestError{422};
+               domain->SetName(Wide(fields.at("name")));
+            }
+         }
+         if (accountOperation)
+         {
+            if (fields.if_contains("active")) target->SetActive(fields.at("active").as_bool());
+            if (fields.if_contains("maxSizeMB")) target->SetAccountMaxSize(static_cast<long>(Number(fields, "maxSizeMB", 2147483647)));
+            if (fields.if_contains("level")) target->SetAdminLevel(static_cast<Account::AdminLevel>(Number(fields, "level", 2)));
+            if (fields.if_contains("password"))
+            {
+               if (target->GetIsAD()) throw RequestError{422}; // AD password changes belong to the directory.
+               auto hash = PasswordHasher::Hash(Wide(fields.at("password")));
+               if (hash.GetLength() == 0) throw RequestError{503};
+               target->SetPassword(hash); target->SetPasswordEncryption(Crypt::ETPHC);
+            }
+            String error;
+            if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+            return AccountView(*target);
+         }
+         if (fields.if_contains("active")) domain->SetIsActive(fields.at("active").as_bool());
+         if (fields.if_contains("maxSizeMB")) domain->SetMaxSizeMB(static_cast<int>(Number(fields, "maxSizeMB", 2147483647)));
+         if (fields.if_contains("maxAccountSizeMB")) domain->SetMaxAccountSize(static_cast<int>(Number(fields, "maxAccountSizeMB", 2147483647)));
+         if (fields.if_contains("maxMessageSizeKB")) domain->SetMaxMessageSize(static_cast<int>(Number(fields, "maxMessageSizeKB", 2147483647)));
+         String error;
+         if (!PersistentDomain::SaveObject(domain, error, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+         return DomainView(*domain);
       }
       json::object DnsblView(DNSBlackList &item)
       {
@@ -150,10 +314,12 @@ namespace HM
          SecureZeroMemory(secret.data(), secret.size());
          if (!account) throw RequestError{401};
          const auto operation = Text(request, "operation", 64);
-         const auto *argumentValue = request.if_contains("arguments");
+         auto *argumentValue = request.if_contains("arguments");
          if (!argumentValue || !argumentValue->is_object()) throw RequestError{422};
-         const auto &arguments = argumentValue->as_object();
+         auto &arguments = argumentValue->as_object();
          if (operation == "authenticate") return User(*account);
+         if (operation.rfind("domains.", 0) == 0 || operation.rfind("accounts.", 0) == 0)
+            return ManageObjects(operation, arguments, *account);
          if (operation == "domains" || operation == "domain")
          {
             const bool serverAdmin = account->GetAdminLevel() == Account::ServerAdmin;

@@ -91,6 +91,85 @@ if (args.Contains("--live"))
         catch (ManagementError e) { Check(e.Status == 403, "Native ordinary-user restrictions."); }
     }
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
+    // Real native persistence/authorization coverage runs on every CI database backend.
+    async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>
+        await native.SendAsync(op, actor ?? name, secret ?? password, data, CancellationToken.None);
+    async Task Denied(string op, object data, int status, string? actor = null, string? secret = null)
+    {
+        try { await Command(op, data, actor, secret); throw new Exception($"Unexpected native success: {op}."); }
+        catch (ManagementError error) { Check(error.Status == status, $"Native {op}: expected {status}, got {error.Status}."); }
+    }
+    long? managedDomain = null;
+    string managedName = "management-" + Guid.NewGuid().ToString("N") + ".test";
+    string mailboxPassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24));
+    try
+    {
+        await Denied("domains.create", new { fields = new { name = "bad domain", active = true } }, 422);
+        var created = await Command("domains.create", new { fields = new { name = managedName, active = true, maxAccountSizeMB = 20 } });
+        managedDomain = created.GetProperty("id").GetInt64();
+        long domainId = managedDomain.Value;
+        Check(created.GetProperty("name").GetString() == managedName, "Create a persistent domain.");
+        await Denied("domains.create", new { fields = new { name = managedName.ToUpperInvariant() } }, 422);
+        var page = await Command("domains.list", new { search = managedName.ToUpperInvariant(), offset = 0, limit = 1 });
+        Check(page.GetProperty("total").GetInt64() == 1 && page.GetProperty("items")[0].GetProperty("id").GetInt64() == domainId, "Case-insensitive domain search and bounded paging.");
+        page = await Command("domains.list", new { search = managedName, offset = 1, limit = 1 });
+        Check(page.GetProperty("items").GetArrayLength() == 0 && page.GetProperty("total").GetInt64() == 1, "Domain paging beyond last result.");
+        foreach (var bad in new object[] { new { limit = 0 }, new { limit = 101 }, new { offset = -1 }, new { search = 7 } })
+            await Denied("domains.list", bad, 422);
+        await Denied("domains.update", new { id = domainId, fields = new { active = false, unknown = true } }, 422);
+        Check((await Command("domain", new { id = domainId })).GetProperty("active").GetBoolean(), "Invalid fields cannot partially change domain state.");
+        await Denied("domains.update", new { id = domainId, fields = new { name = "renamed.test" } }, 422);
+        await Denied("accounts.create", new { domainId, fields = new { address = "wrong@elsewhere.test", password = mailboxPassword, maxSizeMB = 10 } }, 422);
+        await Denied("accounts.create", new { domainId, fields = new { address = "empty@" + managedName, password = "", maxSizeMB = 10 } }, 422);
+        await Denied("accounts.create", new { domainId, fields = new { address = "large@" + managedName, password = mailboxPassword, maxSizeMB = 21 } }, 422);
+        async Task<JsonElement> CreateAccount(string local, int level) => await Command("accounts.create", new { domainId,
+            fields = new { address = local + "@" + managedName, password = mailboxPassword, active = true, maxSizeMB = 10, level } });
+        var admin = await CreateAccount("manager", 1);
+        var server = await CreateAccount("server", 2);
+        var mailbox = await CreateAccount("mailbox", 0);
+        long mailboxId = mailbox.GetProperty("id").GetInt64(), serverId = server.GetProperty("id").GetInt64(), adminId = admin.GetProperty("id").GetInt64();
+        string manager = "manager@" + managedName, ordinary = "mailbox@" + managedName;
+        Check(!mailbox.GetRawText().Contains("password", StringComparison.OrdinalIgnoreCase), "Mailbox responses contain no password or hash.");
+        await Denied("accounts.create", new { domainId, fields = new { address = ordinary.ToUpperInvariant(), password = mailboxPassword, maxSizeMB = 10 } }, 422);
+        page = await Command("accounts.list", new { domainId, search = "MAILBOX", limit = 1 }, manager, mailboxPassword);
+        Check(page.GetProperty("total").GetInt64() == 1 && page.GetProperty("items")[0].GetProperty("id").GetInt64() == mailboxId, "Domain admin scoped mailbox search.");
+        page = await Command("accounts.list", new { domainId, offset = 2, limit = 1 });
+        Check(page.GetProperty("total").GetInt64() == 3 && page.GetProperty("items").GetArrayLength() == 1, "Account paging and total.");
+        await Denied("accounts.read", new { domainId = identity.GetProperty("domainId").GetInt64(), id = mailboxId }, 404);
+        await Denied("accounts.list", new { domainId = long.MaxValue }, 403, manager, mailboxPassword);
+        await Denied("domains.update", new { id = long.MaxValue, fields = new { active = false } }, 403, manager, mailboxPassword);
+        await Denied("domains.create", new { fields = new { name = "forbidden.test" } }, 403, manager, mailboxPassword);
+        await Denied("domains.delete", new { id = domainId }, 403, manager, mailboxPassword);
+        await Denied("domains.update", new { id = domainId, fields = new { maxAccountSizeMB = 100 } }, 403, manager, mailboxPassword);
+        foreach (string op in new[] { "accounts.read", "accounts.update", "accounts.delete" })
+            await Denied(op, new { domainId, id = serverId, fields = new { level = 0, password = "takeover" } }, 403, manager, mailboxPassword);
+        await Denied("accounts.update", new { domainId, id = mailboxId, fields = new { level = 2 } }, 403, manager, mailboxPassword);
+        await Denied("accounts.create", new { domainId, fields = new { address = "elevate@" + managedName, password = mailboxPassword, maxSizeMB = 10, level = 2 } }, 403, manager, mailboxPassword);
+        await Denied("accounts.update", new { domainId, id = adminId, fields = new { level = 0 } }, 403, manager, mailboxPassword);
+        await Denied("accounts.delete", new { domainId, id = adminId }, 409, manager, mailboxPassword);
+        await Denied("accounts.delete", new { domainId, id = serverId }, 409, "server@" + managedName, mailboxPassword);
+        await Denied("domains.delete", new { id = domainId }, 409, "server@" + managedName, mailboxPassword);
+        foreach (string op in new[] { "accounts.list", "accounts.read", "accounts.create", "accounts.update", "accounts.delete", "domains.list", "domains.update" })
+            await Denied(op, new { domainId, id = mailboxId, fields = new { active = false } }, 403, ordinary, mailboxPassword);
+        await Denied("accounts.update", new { domainId, id = mailboxId, fields = new { active = false, level = 3 } }, 422, manager, mailboxPassword);
+        Check((await Command("accounts.read", new { domainId, id = mailboxId })).GetProperty("active").GetBoolean(), "Invalid mailbox fields do not partially save.");
+        var saved = await Command("accounts.update", new { domainId, id = mailboxId, fields = new { maxSizeMB = 15, level = 1 } }, manager, mailboxPassword);
+        Check(saved.GetProperty("maxSizeMB").GetInt32() == 15 && (await Command("authenticate", new { }, ordinary, mailboxPassword)).GetProperty("level").GetInt32() == 1, "Quota/role persistence and immediate authentication cache invalidation.");
+        await Command("accounts.update", new { domainId, id = mailboxId, fields = new { active = false } }, manager, mailboxPassword);
+        await Denied("authenticate", new { }, 401, ordinary, mailboxPassword);
+        await Command("accounts.update", new { domainId, id = mailboxId, fields = new { active = true, password = mailboxPassword + "new" } }, manager, mailboxPassword);
+        await Denied("authenticate", new { }, 401, ordinary, mailboxPassword);
+        Check((await Command("authenticate", new { }, ordinary, mailboxPassword + "new")).GetProperty("accountId").GetInt64() == mailboxId, "Reset password is hashed and usable immediately.");
+        await Command("domains.update", new { id = domainId, fields = new { active = false } }, manager, mailboxPassword);
+        await Denied("authenticate", new { }, 401, manager, mailboxPassword);
+        await Command("domains.update", new { id = domainId, fields = new { active = true } });
+        await Command("accounts.delete", new { domainId, id = mailboxId }, manager, mailboxPassword);
+        await Denied("accounts.read", new { domainId, id = mailboxId }, 404);
+        await Command("domains.delete", new { id = domainId }); managedDomain = null;
+        await Denied("domain", new { id = domainId }, 404);
+        await Denied("authenticate", new { }, 401, manager, mailboxPassword);
+    }
+    finally { if (managedDomain.HasValue) await Command("domains.delete", new { id = managedDomain.Value }); }
     Check(settings.TryGetProperty("SpamAssassinHost", out _), "Read native configuration.");
     var originalSpf = settings.GetProperty("UseSPF").GetBoolean();
     long? id = null;
@@ -189,6 +268,24 @@ try
     fake.Unavailable = false;
     await Send("/antispam", HttpMethod.Patch, new { UseSPF = true }, token);
     Check(fake.LastOperation == "antispam.update", "Route calls explicit native command.");
+    await Send("/domains?search=example&offset=5&limit=10", HttpMethod.Get);
+    Check(fake.LastOperation == "domains.list" && fake.LastArguments.GetProperty("offset").GetInt64() == 5, "HTTP paging maps explicit native arguments.");
+    await Send("/domains?limit=101", HttpMethod.Get, status: 422);
+    await Send("/domains?search=a&search=b", HttpMethod.Get, status: 422);
+    await Send("/domains?unexpected=true", HttpMethod.Get, status: 422);
+    await Send("/domains", HttpMethod.Post, new { name = "example.test", active = true }, token);
+    Check(fake.LastOperation == "domains.create", "Domain creation uses its native operation.");
+    await Send("/domains/5", HttpMethod.Patch, new { active = false }, token);
+    Check(fake.LastOperation == "domains.update" && fake.LastArguments.GetProperty("id").GetInt64() == 5, "Domain updates carry route identity.");
+    await Send("/domains/5", HttpMethod.Delete, new { }, token);
+    Check(fake.LastOperation == "domains.delete", "Domain deletion uses its native operation.");
+    await Send("/domains/5/accounts", HttpMethod.Post, new { address = "test@example.test", password = "new-password" }, "wrong", 403);
+    await Send("/domains/5/accounts", HttpMethod.Post, new { address = "test@example.test", password = "new-password" }, token);
+    Check(fake.LastOperation == "accounts.create" && fake.LastArguments.GetProperty("domainId").GetInt64() == 5 && fake.LastArguments.GetProperty("fields").GetProperty("password").GetString() == "new-password", "Account creation routes credentials and owning domain only to native command.");
+    await Send("/domains/5/accounts/7", HttpMethod.Patch, new { active = false }, token);
+    Check(fake.LastOperation == "accounts.update" && fake.LastArguments.GetProperty("id").GetInt64() == 7, "Account update preserves both route IDs.");
+    await Send("/domains/5/accounts/7", HttpMethod.Delete, new { }, token);
+    Check(fake.LastOperation == "accounts.delete", "Account deletion uses dedicated native operation.");
     fake.Level = 1;
     var current = await Send("/session", HttpMethod.Get);
     Check(current.GetProperty("user").GetProperty("level").GetInt32() == 1, "Refresh roles from the native service.");
@@ -248,16 +345,18 @@ sealed class FakeChannel : IManagementChannel
 {
     public int Calls { get; private set; }
     public string LastOperation { get; private set; } = "";
+    public JsonElement LastArguments { get; private set; }
     public int Level { get; set; } = 2;
     public bool Valid { get; set; } = true;
     public bool Unavailable { get; set; }
     public Task<JsonElement> SendAsync(string operation, string username, string password, object? arguments, CancellationToken cancellationToken)
     {
         ++Calls; LastOperation = operation;
+        LastArguments = JsonSerializer.SerializeToElement(arguments ?? new { });
         if (Unavailable) throw new IOException("Simulated unavailable native service.");
         if (!Valid || password != "test-password") throw new ManagementError(401, "Incorrect username or password.");
         if (operation == "authenticate") return Task.FromResult(JsonSerializer.SerializeToElement(new { address = username, level = Level, domainId = 5, accountId = 7 }));
-        if (operation != "domains" && Level != 2) throw new ManagementError(403, "Access denied.");
+        if (operation != "domains.list" && Level != 2) throw new ManagementError(403, "Access denied.");
         return Task.FromResult(JsonSerializer.SerializeToElement(new { ok = true }));
     }
 }

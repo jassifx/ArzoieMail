@@ -60,7 +60,8 @@ public sealed class ManagementChannel : IManagementChannel
             if (status != 200)
                 throw new ManagementError(status is >= 400 and <= 599 ? status : 503,
                     status switch { 401 => "Incorrect username or password.", 403 => "Access denied.",
-                        404 => "Resource not found.", 422 => "Invalid management request.", _ => "Management operation failed." });
+                        404 => "Resource not found.", 409 => "Your current account or domain cannot be deleted from this session.",
+                        422 => "Invalid settings, duplicate address/name, or domain limits exceeded. Review the fields and try again.", _ => "Management operation failed." });
             return document.RootElement.GetProperty("data").Clone();
         }
         finally { System.Security.Cryptography.CryptographicOperations.ZeroMemory(body); }

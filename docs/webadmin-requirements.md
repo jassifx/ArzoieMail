@@ -7,6 +7,10 @@ requirements below are not claims of completed features. See
 
 The API/panel foundation is merged in PR #31 and SQL Express modernization in PR #33. Full
 administration parity, certificate lifecycle, Defender scanning and PHP retirement remain pending.
+The authorized domain/mailbox slice implements basic CRUD, quota controls, password resets,
+roles and paginated search with native permissions. Its precise fields and remaining limits are
+documented in the [REST contract](../hmailserver/source/Management/README.md#rest-v1-contract);
+advanced mailbox settings and self-service are still pending acceptance/delivery.
 Keep end-user guidance aligned with [documentation status](documentation-status.md); inherited
 manual naming updates do not imply that these requirements have been implemented.
 

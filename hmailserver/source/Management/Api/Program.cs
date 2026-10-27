@@ -166,7 +166,16 @@ public static class ManagementHost
         });
         var api = app.MapGroup("/api/v1").RequireAuthorization();
         api.MapGet("/status", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "status"));
-        api.MapGet("/domains", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "domains"));
+        api.MapGet("/domains", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.list"));
+        api.MapPost("/domains", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.create", true));
+        api.MapGet("/domains/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "domain", false, id));
+        api.MapPatch("/domains/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.update", true, id));
+        api.MapDelete("/domains/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.delete", false, id));
+        api.MapGet("/domains/{domainId:long:min(1)}/accounts", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.list", domainId: domainId));
+        api.MapPost("/domains/{domainId:long:min(1)}/accounts", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.create", true, domainId: domainId));
+        api.MapGet("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.read", false, id, domainId));
+        api.MapPatch("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.update", true, id, domainId));
+        api.MapDelete("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.delete", false, id, domainId));
         api.MapPost("/domains/{id:long:min(1)}/dns", async (long id, HttpContext c, CredentialVault vault, IManagementChannel channel, ITxtResolver resolver) =>
         {
             var credentials = vault.Get(c.User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -198,6 +207,34 @@ public static class ManagementHost
     }
 
     private static IResult Data(object data) => Results.Json(new { data });
+    private static async Task<IResult> Objects(HttpContext context, CredentialVault vault, IManagementChannel channel,
+        string operation, bool readBody = false, long? id = null, long? domainId = null)
+    {
+        var arguments = new Dictionary<string, object?>();
+        if (id.HasValue) arguments["id"] = id.Value;
+        if (domainId.HasValue) arguments["domainId"] = domainId.Value;
+        if (operation.EndsWith(".list", StringComparison.Ordinal))
+        {
+            foreach (string key in context.Request.Query.Keys)
+            {
+                var values = context.Request.Query[key];
+                if (values.Count != 1) throw new ManagementError(422, "Supply one value per filter.");
+                string value = values.ToString();
+                if (key == "search" && value.Length <= 255) arguments[key] = value;
+                else if ((key == "offset" || key == "limit") && long.TryParse(value, out long number)
+                         && number >= (key == "limit" ? 1 : 0) && number <= (key == "limit" ? 100 : int.MaxValue)) arguments[key] = number;
+                else throw new ManagementError(422, "Invalid list filter. Use search, offset and limit (1–100).");
+            }
+        }
+        if (readBody)
+        {
+            var fields = await context.Request.ReadFromJsonAsync<JsonElement>(context.RequestAborted);
+            if (fields.ValueKind != JsonValueKind.Object) throw new ManagementError(422, "Supply a JSON object.");
+            arguments["fields"] = fields;
+        }
+        var credentials = vault.Get(context.User.FindFirstValue(ClaimTypes.NameIdentifier));
+        return Data(await channel.SendAsync(operation, credentials.Username, credentials.Password, arguments, context.RequestAborted));
+    }
     private static ClaimsPrincipal Principal(string id, JsonElement user) => new(new ClaimsIdentity([
         new Claim(ClaimTypes.NameIdentifier, id), new Claim(ClaimTypes.Name, user.GetProperty("address").GetString()!),
         new Claim("level", user.GetProperty("level").GetInt32().ToString(System.Globalization.CultureInfo.InvariantCulture)),

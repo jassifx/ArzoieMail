@@ -1,6 +1,7 @@
 # CI test inventory
 
-This describes the workflows and test entry points delivered through merged PR #33. Update
+This describes the workflows and test entry points delivered through merged PR #33, plus the
+authorized domain/mailbox management coverage added in the current Phase 1b PR. Update
 this inventory and ROADMAP's baseline when coverage or test counts change. Counts below are
 a verified snapshot, not a promise that a future commit has passed.
 
@@ -69,13 +70,15 @@ Each database job runs the `Test the native management API` step after NUnit:
 | Entry point | Verified coverage | Boundary |
 |---|---|---|
 | [test-management.ps1](../build/test-management.ps1) | 26 deterministic DNS assertions covering shared-provider SPF, syntax, includes/redirects, cycles/lookup limits, DKIM and DMARC publication advice. | Uses DNS fixtures; does not prove live DNS-provider configuration or message-level authentication. |
-| Same executable, default mode | 54 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions and security behavior. |
-| [test-management-browser.ps1](../build/test-management-browser.ps1) and [browser.py](../hmailserver/test/RegressionTests/Management/browser.py) | Navigation, DNSBL mutations, saved SpamAssassin test feedback, DNS advice, logout and mobile layout. | Playwright uses explicit API response fixtures. It verifies the UI workflow, not an end-to-end browser-to-database mutation. |
-| [test-management-live.ps1](../build/test-management-live.ps1) | 18 live native transport/parser/authorization assertions. | Uses the installed service and its selected database. COM is used only to prepare/clean fixtures; the management channel itself is native, without COM. |
+| Same executable, default mode | 83 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions, CRUD route/ID mapping, pagination and security behavior. |
+| [test-management-browser.ps1](../build/test-management-browser.ps1) and [browser.py](../hmailserver/test/RegressionTests/Management/browser.py) | Navigation, repeated domain/mailbox CRUD, deletion confirmation/cancellation, write-only password controls, responsive layout, DNSBL mutations, SpamAssassin feedback, DNS advice and logout. | Playwright uses explicit API response fixtures. It verifies the UI workflow, not an end-to-end browser-to-database mutation. |
+| [test-management-live.ps1](../build/test-management-live.ps1) | 69 live native transport/parser/authorization/persistence assertions, including domain/mailbox CRUD, quotas, duplicate/address validation, paging/search, cross-domain/role boundaries and immediate credential revocation. | Uses the installed service and its selected database. COM is used only to prepare/clean fixtures; the management channel itself is native, without COM. |
 
-The deterministic/HTTP/HTTPS/live groups total **100 assertions per database job**, independently
+The deterministic/HTTP/HTTPS/live groups now total **180 assertions per database job**, independently
 of NUnit totals; browser checks are separate. Do not report the manually exercised pipe-squatting
-checks as part of that automated total.
+checks as part of that automated total. The merged #33 baseline was 100 (26/54/2/18);
+the expanded 26/83/2/69 counts require the current PR's VM/CI acceptance and do not retroactively
+change the historical four-backend baseline above.
 
 ## SQL Express-specific checks
 

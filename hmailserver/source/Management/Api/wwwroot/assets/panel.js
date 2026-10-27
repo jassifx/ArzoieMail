@@ -1,10 +1,10 @@
 'use strict';
 (() => {
   const $ = (id) => document.getElementById(id);
-  let csrf = '', user = null, currentPage = '', generation = 0;
+  let csrf = '', user = null, currentPage = '', generation = 0, fieldSequence = 0;
   const pages = {
     overview: ['Overview', 'Your mail infrastructure, at a glance.'],
-    domains: ['Domains & DNS', 'Inspect authentication records and keep all your sending providers working together.'],
+    domains: ['Domains & DNS', 'Manage domains, mailboxes, storage limits and authentication records.'],
     antispam: ['Spam protection', 'Fine-tune filtering, authentication checks, and your SpamAssassin connection.'],
     dnsbl: ['DNS blocklists', 'Your providers. Your policy. Manage multiple lists without vendor restrictions.'],
     diagnostics: ['Diagnostics', 'Check the administration runtime and deployment configuration.'],
@@ -28,9 +28,14 @@
       options.body = JSON.stringify(body);
     }
     const response = await fetch(`api/v1${path}`, options);
-    const payload = await response.json();
+    const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
-      if (response.status === 401 && path !== '/session') { user = null; showIdentity(); }
+      if (response.status === 401 && path !== '/session') {
+        user = null; ++generation; showIdentity();
+        // Cookie challenges can be empty. Refresh the anonymous token after revocation so
+        // the sign-in form does not keep a token bound to the former identity.
+        try { const session = await request('/session'); csrf = session.csrf; } catch { csrf = ''; }
+      }
       throw new Error(payload.error?.message || `Request failed (${response.status}).`);
     }
     return payload.data;
@@ -57,12 +62,13 @@
     if (user) {
       $('identity').textContent = user.address;
       document.querySelectorAll('[data-server]').forEach(n => { n.hidden = user.level !== 2; });
+      document.querySelectorAll('[data-page=domains]').forEach(n => { n.hidden = user.level < 1; });
     }
   }
   async function overview(root) {
     if (user.level !== 2) {
       const c = card('Your domain workspace');
-      c.body.append(el('p', 'Inspect your domain and its DNS authentication configuration.', 'text-secondary'));
+      c.body.append(el('p', user.level === 1 ? 'Manage your mailboxes and inspect domain authentication records.' : 'Your mailbox is active. Self-service account settings are planned for a later slice.', 'text-secondary'));
       root.append(c.outer); return;
     }
     const status = await request('/status');
@@ -74,12 +80,20 @@
     root.append(metrics);
     const c = card('A stronger foundation for your mail'); c.outer.classList.add('section-gap');
     c.body.append(el('p', 'Manage spam protection, choose your blocklist providers, and inspect SPF, DKIM and DMARC from one workspace.', 'text-secondary'));
-    c.body.append(el('p', 'Preview scope: existing administration functions are being migrated in stages. This panel currently covers inspection, spam settings and DNSBL management; it does not yet replace every legacy administration page.', 'help'));
+    c.body.append(el('p', 'Preview scope: domain and mailbox management, DNS inspection, spam settings and DNSBL management. Other administration functions are still being migrated.', 'help'));
     root.append(c.outer);
   }
   function inputField(name, value, help = '') {
     const wrap = el('div'); const label = el('label', name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
-    const input = el('input'); input.name = name; input.id = `field-${name}`; label.htmlFor = input.id;
+    const input = el(name === 'level' ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
+    if (name === 'level') {
+      input.className = 'form-select';
+      ['Mailbox user', 'Domain administrator', 'Server administrator'].forEach((title, level) => {
+        if (level > (user.level === 2 ? 2 : 1)) return;
+        const option = el('option', title); option.value = String(level); input.append(option);
+      }); input.value = String(value); wrap.append(label, input);
+      return { wrap, input };
+    }
     if (typeof value === 'boolean') {
       wrap.className = 'form-check'; input.type = 'checkbox'; input.className = 'form-check-input'; input.checked = value;
       label.className = 'form-check-label'; wrap.append(input, label);
@@ -187,12 +201,95 @@
       root.append(c.outer);
     }
   }
-  async function domains(root) {
-    const { items } = await request('/domains'); const list = card('Configured domains'); const editor = el('div', null, 'section-gap');
-    if (!items.length) list.body.append(el('p', 'No domains are configured. Domain creation will arrive in a later migration slice.', 'text-secondary'));
+  function pager(body, result, offset, reload) {
+    const row = el('div', null, 'domain-row');
+    row.append(el('span', `${result.total} results · showing ${result.items.length ? offset + 1 : 0}–${offset + result.items.length}`, 'help'));
+    const previous = button('Previous', () => reload(Math.max(0, offset - 50))); previous.disabled = offset === 0;
+    const next = button('Next', () => reload(offset + 50)); next.disabled = offset + result.items.length >= result.total;
+    row.append(previous, next); body.append(row);
+  }
+  function searchForm(body, value, reload) {
+    const form = el('form', null, 'domain-row'); const field = inputField('search', value);
+    const submit = el('button', 'Search', 'btn btn-outline-secondary'); submit.type = 'submit';
+    form.append(field.wrap, submit); form.addEventListener('submit', async event => {
+      event.preventDefault(); submit.disabled = true;
+      try { await reload(field.input.value); } catch (error) { notify(error.message, true); }
+      finally { submit.disabled = false; }
+    }); body.append(form);
+  }
+  function accountEditor(editor, domain, account, saved) {
+    editor.replaceChildren(); const create = !account; const c = card(create ? `New mailbox · ${domain.name}` : account.address);
+    const values = create ? { address: `@${domain.name}`, password: '', active: true, maxSizeMB: domain.maxAccountSizeMB || 0, level: 0 }
+      : { active: account.active, maxSizeMB: account.maxSizeMB, level: account.level, password: '' };
+    c.body.append(el('p', 'Storage is in MB; 0 means unlimited where domain policy allows. Roles: 0 mailbox user, 1 domain administrator, 2 server administrator. Leave the password blank to keep it when editing. Addresses cannot be renamed here.', 'help'));
+    const form = editForm(values, async fields => {
+      if (!create && !fields.password) delete fields.password;
+      await request(`/domains/${domain.id}/accounts${create ? '' : `/${account.id}`}`, create ? 'POST' : 'PATCH', fields);
+      // Never retain the entered password in a detached editor or browser session.
+      form.querySelector('[name=password]').value = ''; editor.replaceChildren();
+      if (!create && account.id === user.accountId && (fields.password || fields.active === false || fields.level !== user.level)) {
+        let result = await request('/session'); csrf = result.csrf;
+        if (result.user) result = await request('/session', 'DELETE');
+        csrf = result.csrf; user = null; ++generation; showIdentity(); return;
+      }
+      await saved(); notify(create ? 'Mailbox created.' : 'Mailbox saved.');
+    });
+    const password = form.querySelector('[name=password]'); password.type = 'password'; password.maxLength = 1024; password.autocomplete = 'new-password'; password.required = create;
+    const address = form.querySelector('[name=address]'); if (address) { address.required = true; address.type = 'email'; address.maxLength = 320; }
+    const role = form.querySelector('[name=level]'); role.max = user.level === 2 ? '2' : '1';
+    if (account?.id === user.accountId && user.level !== 2) role.disabled = true;
+    c.body.append(form, button('Cancel', () => editor.replaceChildren())); editor.append(c.outer);
+  }
+  async function accounts(editor, domain, offset = 0, search = '') {
+    const result = await request(`/domains/${domain.id}/accounts?limit=50&offset=${offset}&search=${encodeURIComponent(search)}`);
+    editor.replaceChildren(); const c = card(`Mailboxes · ${domain.name}`); const detail = el('div', null, 'section-gap');
+    const reload = (next = offset, filter = search) => accounts(editor, domain, next, filter);
+    searchForm(c.body, search, filter => reload(0, filter));
+    c.body.append(button('New mailbox', () => accountEditor(detail, domain, null, () => reload(0)), 'btn btn-primary btn-sm'));
+    for (const account of result.items) {
+      const row = el('div', null, 'domain-row'); row.append(el('strong', account.address), pill(account.active ? 'Active' : 'Inactive', account.active ? '' : 'warning'), el('span', `${['Mailbox user', 'Domain administrator', 'Server administrator'][account.level]} · ${account.maxSizeMB || 'Unlimited'} MB`, 'help'));
+      if (user.level === 2 || account.level !== 2) {
+        row.append(button('Edit mailbox', () => accountEditor(detail, domain, account, () => reload())));
+        if (account.id !== user.accountId) row.append(button('Delete mailbox', async () => {
+          if (!confirm(`Permanently delete ${account.address} and all its messages? This cannot be undone.`)) return;
+          await request(`/domains/${domain.id}/accounts/${account.id}`, 'DELETE'); await reload(0); notify('Mailbox deleted.');
+        }, 'btn btn-outline-danger btn-sm'));
+      }
+      c.body.append(row);
+    }
+    if (!result.items.length) c.body.append(el('p', 'No matching mailboxes.', 'help'));
+    pager(c.body, result, offset, next => reload(next)); editor.append(c.outer, detail);
+  }
+  async function domains(root, offset = 0, search = '') {
+    const result = await request(`/domains?limit=50&offset=${offset}&search=${encodeURIComponent(search)}`); const { items } = result;
+    const list = card('Configured domains'); const editor = el('div', null, 'section-gap');
+    const reload = (next = offset, filter = search) => domains(root, next, filter);
+    searchForm(list.body, search, filter => reload(0, filter));
+    if (user.level === 2) list.body.append(button('New domain', () => {
+      editor.replaceChildren(); const c = card('New domain');
+      const form = editForm({ name: '', active: true, maxMessageSizeKB: 0, maxSizeMB: 0, maxAccountSizeMB: 0 }, async fields => {
+        await request('/domains', 'POST', fields); await reload(0, ''); notify('Domain created.');
+      }); form.querySelector('[name=name]').required = true; c.body.append(form); editor.append(c.outer);
+    }, 'btn btn-primary btn-sm'));
+    if (!items.length) list.body.append(el('p', 'No matching domains.', 'text-secondary'));
     items.forEach(domain => {
       const row = el('div', null, 'domain-row'); const text = el('div'); text.append(el('strong', domain.name), el('p', domain.dkimEnabled ? `DKIM signing enabled · selector ${domain.selector || 'not set'}` : 'DKIM signing is disabled', 'help'));
       row.append(text, pill(domain.active ? 'Active' : 'Inactive', domain.active ? '' : 'warning'));
+      if (user.level >= 1) {
+        row.append(button('Mailboxes', () => accounts(editor, domain)));
+        row.append(button('Edit domain', () => {
+          editor.replaceChildren(); const c = card(`Domain settings · ${domain.name}`);
+          const values = { active: domain.active };
+          if (user.level === 2) Object.assign(values, { maxMessageSizeKB: domain.maxMessageSizeKB, maxSizeMB: domain.maxSizeMB, maxAccountSizeMB: domain.maxAccountSizeMB });
+          c.body.append(el('p', 'Message size is in KB; storage limits are in MB. 0 means unlimited. Domain names cannot be renamed here.', 'help'), editForm(values, async fields => {
+            await request(`/domains/${domain.id}`, 'PATCH', fields); await reload(); notify('Domain saved.');
+          })); editor.append(c.outer);
+        }));
+      }
+      if (user.level === 2 && user.domainId !== domain.id) row.append(button('Delete domain', async () => {
+        if (!confirm(`Permanently delete ${domain.name}, every mailbox, alias, list and all stored messages? This cannot be undone.`)) return;
+        await request(`/domains/${domain.id}`, 'DELETE'); await reload(0); notify('Domain deleted.');
+      }, 'btn btn-outline-danger btn-sm'));
       if (user.level >= 1) row.append(button('Inspect DNS', () => {
         editor.replaceChildren(); const c = card(`Authentication setup · ${domain.name}`);
         c.body.append(el('p', 'Enter every public sending IP and any additional provider includes. Existing SPF mechanisms are preserved. Supply a public DKIM key only; private keys never belong here.', 'help'));
@@ -215,7 +312,7 @@
         editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }));
       list.body.append(row);
-    }); root.append(list.outer, editor);
+    }); pager(list.body, result, offset, next => reload(next)); root.replaceChildren(list.outer, editor);
   }
   async function diagnostics(root) {
     const result = await request('/diagnostics');
@@ -226,7 +323,7 @@
   async function render() {
     if (!user) return;
     const run = ++generation; let page = location.hash.slice(1) || 'overview';
-    if (!pages[page] || (user.level !== 2 && !['overview', 'domains'].includes(page))) page = 'overview';
+    if (!pages[page] || (user.level !== 2 && !['overview', 'domains'].includes(page)) || (user.level < 1 && page === 'domains')) page = 'overview';
     currentPage = page; $('notice').hidden = true;
     $('page-title').textContent = pages[page][0]; $('page-description').textContent = pages[page][1];
     document.querySelectorAll('[data-page]').forEach(node => {

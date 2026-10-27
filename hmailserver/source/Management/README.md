@@ -58,13 +58,47 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | POST | `/api/v1/session` | Sign in with username/password; rate limited |
 | DELETE | `/api/v1/session` | Sign out |
 | GET | `/api/v1/status` | Server administrator |
-| GET | `/api/v1/domains` | Server scope or the caller's own domain |
+| GET / POST | `/api/v1/domains` | Paginated list (server/all or domain administrator/own); create requires server administrator |
+| GET / PATCH / DELETE | `/api/v1/domains/{id}` | Read/update own domain for domain administrator; server administrator for creation, limits and deletion |
+| GET / POST | `/api/v1/domains/{domainId}/accounts` | Paginated list/create; server administrator or administrator of that domain |
+| GET / PATCH / DELETE | `/api/v1/domains/{domainId}/accounts/{id}` | Read/update/delete; owning domain must match, server administrator accounts require server administrator |
 | POST | `/api/v1/domains/{id}/dns` | Native domain authorization, then DNS advice; domain/server administrator |
 | GET / PATCH | `/api/v1/antispam` | Server administrator; explicit allowlisted fields |
 | GET / POST | `/api/v1/dnsbl` | List/create providers; server administrator |
 | PATCH / DELETE | `/api/v1/dnsbl/{id}` | Update/delete provider; server administrator |
 | POST | `/api/v1/spamassassin/test` | Test saved host/port; server administrator |
 | GET | `/api/v1/diagnostics` | Server administrator |
+
+Domain and mailbox lists accept `search` (case-insensitive substring), `offset` (default 0),
+and `limit` (default 50, maximum 100). Responses contain `items`, `total`, `offset`, `limit`.
+Unknown/duplicate HTTP filters and out-of-range native pagination are rejected. Collections are
+loaded using existing business objects and filtered in memory; pagination bounds the response,
+not database work. Indexed database-side paging remains a capacity follow-up.
+
+Domain POST accepts `name` (required), `active`, `maxMessageSizeKB`, `maxSizeMB`,
+`maxAccountSizeMB`. PATCH accepts the same fields except `name`; domain administrators may
+change only `active` on their own domain. Names/addresses are immutable in this slice.
+Mailbox POST accepts `address` and a nonempty `password` (required), `active`, `maxSizeMB`,
+and `level` (0 user, 1 domain administrator, 2 server administrator). PATCH accepts all except
+`address`. Defaults follow the native business objects; the panel explicitly creates active
+objects and normal-user mailboxes. Numeric sizes are nonnegative 32-bit integers; 0 means
+unlimited subject to domain policy. Names/addresses, duplicate aliases/lists and quotas use the
+shared native persistence validation. Invalid/duplicate/quota failures return 422 without
+echoing submitted credentials. Infrastructure failures return 503.
+
+Domain administrators cannot create/promote server administrators or read the detail, reset,
+demote, disable or delete an existing server administrator account. Scoped listings show only
+basic identity/status/role/quota information for these accounts. They cannot change their own role.
+Mailbox users have no access to these administrative operations; account self-service remains
+future work. The active account and its owning domain cannot be deleted by that session (409).
+Deletion uses existing cascading persistence and permanently removes dependent mail data;
+the panel confirms the impact first. There is no new undo facility.
+
+Passwords are write-only, hashed using the configured native password hasher, and never included
+in views. Omit `password` on PATCH to preserve it; blank passwords are rejected. AD-backed
+password changes are rejected and must be made in the directory. No AD provisioning is added.
+The next request reauthenticates and observes password, role, active-state or deletion changes.
+The panel ends the session after changing its own password/role or disabling its own account.
 
 DNSBL creation accepts `Active` (boolean), `DNSHost`, `ExpectedResult`, `RejectMessage`
 (strings), and `Score` (integer 0..10000). All five fields are required. PATCH accepts a subset.

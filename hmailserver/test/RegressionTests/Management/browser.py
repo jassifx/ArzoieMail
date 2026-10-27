@@ -2,6 +2,7 @@
 import json
 import pathlib
 import sys
+from urllib.parse import urlsplit, parse_qs
 from playwright.sync_api import sync_playwright
 
 base = sys.argv[1].rstrip('/')
@@ -11,14 +12,23 @@ providers = [{"id": 1, "Active": True, "DNSHost": "dnsbl.example.net", "Expected
 user = {"address": "Administrator", "level": 2, "domainId": 0, "accountId": 0}
 settings = {"SpamAssassinEnabled": True, "SpamAssassinHost": "127.0.0.1", "SpamAssassinPort": 783, "SpamAssassinMergeScore": True, "SpamAssassinScore": 5, "UseSPF": True, "UseSPFScore": 3, "DMARCEnabled": True, "SpamMarkThreshold": 5, "SpamDeleteThreshold": 20}
 requests = []
+domains = [{"id": 5, "name": "example.com", "active": True, "dkimEnabled": True, "selector": "arzoie", "maxSizeMB": 0, "maxAccountSizeMB": 0, "maxMessageSizeKB": 0}]
+mailboxes = []
+revoked = False
 
 
 def api(route):
     global user
     request = route.request
     path = request.url.split('/api/v1', 1)[1]
+    query = parse_qs(urlsplit(path).query)
+    path = urlsplit(path).path
     body = json.loads(request.post_data or '{}')
     requests.append((request.method, path, body))
+    if revoked and path == '/domains':
+        user = None
+        route.fulfill(status=401, body='')  # Cookie challenge has no JSON error envelope.
+        return
     data = {}
     if path == '/session':
         if request.method == 'DELETE':
@@ -44,7 +54,36 @@ def api(route):
         settings.update(body)
         data = settings
     elif path == '/domains':
-        data = {"items": [{"id": 5, "name": "example.com", "active": True, "dkimEnabled": True, "selector": "arzoie"}]}
+        if request.method == 'POST':
+            data = {"id": 6, "dkimEnabled": False, "selector": "", **body}
+            domains.append(data)
+        else:
+            items = [v for v in domains if query.get('search', [''])[0].lower() in v['name'].lower()]
+            offset = int(query.get('offset', [0])[0])
+            data = {"items": items[offset:offset + 50], "total": len(items)}
+    elif '/accounts' in path:
+        if path.endswith('/accounts'):
+            if request.method == 'POST':
+                data = {"id": 10, "domainId": 5, **{k: v for k, v in body.items() if k != 'password'}}
+                mailboxes.append(data)
+            else:
+                data = {"items": mailboxes, "total": len(mailboxes)}
+        else:
+            item = next(v for v in mailboxes if v['id'] == int(path.rsplit('/', 1)[1]))
+            if request.method == 'DELETE':
+                mailboxes.remove(item)
+                data = {"deleted": True}
+            else:
+                item.update({k: v for k, v in body.items() if k != 'password'})
+                data = item
+    elif path.startswith('/domains/') and not path.endswith('/dns'):
+        item = next(v for v in domains if v['id'] == int(path.rsplit('/', 1)[1]))
+        if request.method == 'DELETE':
+            domains.remove(item)
+            data = {"deleted": True}
+        else:
+            item.update(body)
+            data = item
     elif path.endswith('/dns'):
         record = {"name": "example.com", "type": "TXT", "published": "v=spf1 include:provider.example -all", "proposed": "v=spf1 include:provider.example ip4:203.0.113.10 -all", "status": "valid", "errors": [], "warnings": []}
         data = {"domain": "example.com", "spf": record,
@@ -84,6 +123,45 @@ with sync_playwright() as p:
     page.get_by_role('button', name='Test saved connection').click()
     page.get_by_text('SpamAssassin connection succeeded.', exact=True).wait_for()
     page.get_by_role('link', name='Domains & DNS').click()
+    page.get_by_role('button', name='New domain', exact=True).click()
+    page.get_by_label('name', exact=True).fill('second.test')
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('second.test', exact=True).wait_for()
+    page.get_by_role('button', name='Edit domain', exact=True).first.click()
+    page.get_by_label('max Account Size MB', exact=True).fill('100')
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Domain saved.', exact=True).wait_for()
+    assert domains[0]['maxAccountSizeMB'] == 100
+    page.get_by_role('button', name='Mailboxes', exact=True).first.click()
+    page.get_by_role('button', name='New mailbox', exact=True).click()
+    page.get_by_label('address', exact=True).fill('new@example.com')
+    page.get_by_label('password', exact=True).fill('browser-fixture-only')
+    assert page.get_by_label('password', exact=True).get_attribute('type') == 'password'
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('new@example.com', exact=True).wait_for()
+    page.get_by_role('button', name='Edit mailbox', exact=True).click()
+    page.get_by_label('max Size MB', exact=True).fill('50')
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Mailbox saved.', exact=True).wait_for()
+    assert mailboxes[0]['maxSizeMB'] == 50
+    assert 'password' not in requests[-2][2], 'Blank edit password must not replace existing credentials.'
+    page.screenshot(path=str(output / 'mailboxes-desktop.png'), full_page=True)
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.screenshot(path=str(output / 'mailboxes-mobile.png'), full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mailbox controls overflow on mobile.'
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Delete mailbox', exact=True).click()
+    assert len(mailboxes) == 1, 'Cancelling deletion must preserve the mailbox.'
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Delete mailbox', exact=True).click()
+    page.get_by_text('Mailbox deleted.', exact=True).wait_for()
+    assert not mailboxes
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Delete domain', exact=True).last.click()
+    page.get_by_text('Domain deleted.', exact=True).wait_for()
+    assert len(domains) == 1
+    assert page.get_by_role('button', name='Inspect DNS').count() == 1, 'Domain mutations must refresh the visible list after repeated saves.'
     page.get_by_role('button', name='Inspect DNS').click()
     page.get_by_label('Sending IP addresses (comma separated)').fill('203.0.113.10')
     page.get_by_role('button', name='Validate published DNS & build recommendations').click()
@@ -93,9 +171,33 @@ with sync_playwright() as p:
     page.set_viewport_size({"width": 390, "height": 844})
     page.screenshot(path=str(output / 'dns-mobile.png'), full_page=True)
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mobile page overflows horizontally.'
+    user = {"address": "manager@example.com", "level": 1, "domainId": 5, "accountId": 11}
+    mailboxes.append({"id": 12, "domainId": 5, "address": "server@example.com", "active": True, "maxSizeMB": 10, "level": 2})
+    page.reload()
+    page.get_by_role('button', name='Mailboxes', exact=True).wait_for()
+    assert page.get_by_role('button', name='New domain', exact=True).count() == 0
+    assert page.get_by_role('button', name='Delete domain', exact=True).count() == 0
+    page.get_by_role('button', name='Edit domain', exact=True).click()
+    assert page.get_by_label('max Account Size MB', exact=True).count() == 0
+    page.get_by_role('button', name='Mailboxes', exact=True).click()
+    page.get_by_text('server@example.com', exact=True).wait_for()
+    assert page.get_by_role('button', name='Edit mailbox', exact=True).count() == 0
+    assert page.get_by_role('button', name='Delete mailbox', exact=True).count() == 0
+    page.get_by_role('button', name='New mailbox', exact=True).click()
+    assert page.get_by_label('level', exact=True).locator('option[value="2"]').count() == 0
+    page.screenshot(path=str(output / 'domain-admin-mobile.png'), full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Domain administrator editor overflows on mobile.'
     page.get_by_role('button', name='Sign out').click()
     page.get_by_role('heading', name='Sign in to your server').wait_for()
     page.screenshot(path=str(output / 'login-mobile.png'), full_page=True)
+    user = {"address": "Administrator", "level": 2, "domainId": 0, "accountId": 0}
+    page.reload()
+    page.get_by_role('button', name='Mailboxes', exact=True).wait_for()
+    revoked = True
+    with page.expect_response(lambda response: response.url.endswith('/api/v1/session') and response.request.method == 'GET'):
+        page.get_by_role('button', name='Refresh', exact=True).click()
+    page.get_by_role('heading', name='Sign in to your server').wait_for(timeout=5000)
+    assert requests[-1][0:2] == ('GET', '/session'), 'Revocation must obtain a fresh anonymous CSRF token.'
     assert not errors, errors
     browser.close()
-print('Passed browser navigation, DNSBL mutation, SpamAssassin test, DNS guidance, logout and mobile layout checks.')
+print('Passed browser navigation, domain/mailbox CRUD and confirmation, password handling, DNSBL mutation, SpamAssassin test, DNS guidance, logout and mobile layout checks.')

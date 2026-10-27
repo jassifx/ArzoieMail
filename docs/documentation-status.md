@@ -15,7 +15,7 @@ implement planned features or publish the website.
 | Manual entry and installation | ArzoieMail source/provenance, current platform baseline, installation paths, database prerequisites and supported upgrade procedure replace old generic hMailServer instructions. |
 | Database guidance | Full SQL Server/Express is separated from Compact; OLE DB 19/TLS prerequisites and validated SQL Server 2025 Express coverage are explicit. Old bundled-MySQL/Blowfish recipes are not current connection guidance. |
 | Security and backup | Current service identity, protected secrets, key export and passphrase-protected backups replace the obsolete universal-obfuscation description. |
-| Web administration | ASP.NET Core/REST/native design is current. Legacy PHP and COM consumers remain during their documented migrations; full parity and production provisioning are unfinished. |
+| Web administration | ASP.NET Core/REST/native design is current. The domain/mailbox slice adds its field/role/paging contract and panel workflows; advanced parity and production provisioning remain unfinished. Legacy PHP and COM consumers remain during their documented migrations. |
 | Certificates and antivirus | Present manual file/listener configuration and existing scanners are separated from the planned certificate wizard/renewal and optional Defender lifecycle/pressure acceptance. |
 | Inherited references | Product prose is rebranded; code/compatibility examples are preserved. Pages needing technical review carry a reference-status note. Historical upgrade/integration recipes retain upstream names and explicit historical notices. |
 
