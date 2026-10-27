@@ -29,8 +29,8 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-Verified after merged PR #36, using its tested head
-`3e83eaddfd2f23daf7255ae17bf22a67e3bc8b70` on 2026-10-27 (Asia/Colombo):
+Verified after merged PR #39, using its tested head
+`99e0948261efad10279fc34f257d9b6efeca3374` on 2026-10-27 (Asia/Colombo):
 
 | Backend | Total | Passed | Failed | Inconclusive | Skipped |
 |---|---:|---:|---:|---:|---:|
@@ -42,7 +42,7 @@ Verified after merged PR #36, using its tested head
 Warnings were zero on all four jobs. The extra non-MSSQL skip is the SQL-session encryption
 test. Explicit/environment-dependent outcomes remain expected; investigate unexplained changes.
 The [CI inventory](docs/ci-test-inventory.md) distinguishes these NUnit totals from the separate
-312 management assertions per job at #36, browser checks and manual-only coverage. The earlier Phase 1
+358 management assertions per job at #39, browser checks and manual-only coverage. The earlier Phase 1
 baseline was 1313 tests, 1204 passed, zero failed, 34 inconclusive and 75 skipped on three backends.
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
@@ -79,7 +79,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#36 merged; basic domain/mailbox/alias/list controls delivered; advanced parity remains |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#39 merged; domain/mailbox/alias/list and forwarding/reply controls delivered; mailbox signatures in progress, advanced parity remains |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols and data integrity** | Safe UID allocation/generation renewal, identifier boundaries, SMTP/IMAP/authentication extensions, MTA-STS, DANE, DKIM Ed25519 | 📋 | UID plan added; implementation not started |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -301,7 +301,8 @@ actual SignPath certificate signing remains a separate master-only manual valida
 | SQL Server Express modernization | ✅ Done | #33 merged; OLE DB 19, required TLS/certificate validation, migration diagnostics and SQL Server 2025 Express VM/CI coverage passed. Other engine versions and workload capacity still need separate validation; see [SQL Server guide](docs/sql-server.md). |
 | Basic domain/mailbox administration | ✅ Done | [PR #35](https://github.com/jassifx/ArzoieMail/pull/35) merged; native CRUD, password resets, roles/quotas, bounded responses and responsive panel passed VM/CI acceptance. |
 | Aliases, distribution lists and member administration | ✅ Done | [PR #36](https://github.com/jassifx/ArzoieMail/pull/36) merged; scoped native/REST CRUD, posting controls, members, search and panel confirmations passed VM/four-backend CI. New aliases/lists default disabled; lists default members-only with SMTP authentication required. |
-| Mailbox forwarding and automatic replies | 🔄 In progress | Authorized after merged #38; implemented on `feature/webadmin-mailbox-behavior`, VM-validated and awaiting PR review/merge. Native/REST/panel controls, domain/target-role checks, input validation and local SMTP/POP3 coverage. VM: 26 DNS + 142 HTTP + 2 HTTPS + 188 native = 358 assertions, browser checks and 2 separate pipe checks passed. All four CI backends must pass before merge. Mailbox-user self-service remains planned. |
+| Mailbox forwarding and automatic replies | ✅ Done | #39 merged; native/REST/panel controls, domain/target-role checks, validation and local SMTP/POP3 coverage passed VM and all four CI backends. 358 management assertions per backend, browser checks and separate VM pipe-identity checks passed. Mailbox-user self-service remains planned. |
+| Mailbox signatures | 🔄 In progress | Implemented and VM-validated on `feature/webadmin-mailbox-signatures`, awaiting PR review/merge. Scoped native/REST controls, source-only text/HTML editor, domain policy preserved, SMTP/MIME and browser safety/newline tests passed. VM: 26 DNS + 152 HTTP + 2 HTTPS + 224 native = 404 assertions, browser checks and 2 separate pipe checks. Verify all four backend CI jobs before merge; wait for review before further work. |
 | Remaining advanced administration | 📋 Planned | Advanced mailbox/domain settings, queue, rules, routing and listener/TLS parity. Separate confirmation after the current PR; no production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |

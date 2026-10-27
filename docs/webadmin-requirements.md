@@ -15,8 +15,10 @@ advanced mailbox settings and self-service are still pending acceptance/delivery
 Keep end-user guidance aligned with [documentation status](documentation-status.md); inherited
 manual naming updates do not imply that these requirements have been implemented.
 
-Mailbox forwarding and automatic replies are implemented and VM-validated on the feature branch
-after merged #38, awaiting PR review/merge and required CI. Mailbox-user self-service remains
+Mailbox forwarding and automatic replies merged in #39 with VM/four-backend CI acceptance.
+Mailbox signatures are implemented and VM-validated on the feature branch: plain-text and HTML source settings,
+native/REST/panel controls, safe browser handling and SMTP/MIME regressions. Existing domain
+policy/macros remain authoritative; PR review/merge and its required CI gate remain. Mailbox-user self-service remains
 planned. Future UID capacity/maintenance controls belong to the
 [identifier lifecycle plan](imap-uid-modernization.md); documenting them does not implement them.
 

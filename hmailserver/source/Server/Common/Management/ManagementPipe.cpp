@@ -240,7 +240,40 @@ namespace HM
                  {"autoReplyBody", Utf8(account.GetVacationMessage())}, {"autoReplyExpires", account.GetVacationExpires()},
                  {"autoReplyExpiresDate", Utf8(account.GetVacationExpiresDate().Left(10))}, {"autoReplyAbortSpamFlagged", account.GetVacationAbortSpamFlagged()}};
       }
-      json::value ManageMailboxBehavior(const std::string &operation, json::object &arguments, const Account &actor)
+      json::object SignatureView(const Account &account)
+      {
+         return {{"signatureEnabled", account.GetEnableSignature()}, {"signaturePlainText", Utf8(account.GetSignaturePlainText())},
+                 {"signatureHtml", Utf8(account.GetSignatureHTML())}};
+      }
+      json::value ManageSignature(const std::string &operation, const json::object &arguments, std::shared_ptr<Account> target)
+      {
+         if (operation == "accounts.signature.read") return SignatureView(*target);
+         if (operation != "accounts.signature.update") throw RequestError{404};
+         const auto *value = arguments.if_contains("fields");
+         if (!value || !value->is_object() || value->as_object().empty()) throw RequestError{422};
+         const auto &fields = value->as_object();
+         for (const auto &field : fields)
+         {
+            if (field.key() == "signatureEnabled")
+            { if (!field.value().is_bool()) throw RequestError{422}; }
+            else if (field.key() == "signaturePlainText" || field.key() == "signatureHtml")
+            {
+               const auto text = Text(fields, std::string(field.key()).c_str(), 16000);
+               Wide(field.value());
+               for (const unsigned char character : text)
+                  if ((character < 32 && character != '\r' && character != '\n' && character != '\t') || character == 127)
+                     throw RequestError{422};
+            }
+            else throw RequestError{422};
+         }
+         if (fields.if_contains("signatureEnabled")) target->SetEnableSignature(fields.at("signatureEnabled").as_bool());
+         if (fields.if_contains("signaturePlainText")) target->SetSignaturePlainText(Wide(fields.at("signaturePlainText")));
+         if (fields.if_contains("signatureHtml")) target->SetSignatureHTML(Wide(fields.at("signatureHtml")));
+         String error;
+         if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+         return SignatureView(*target);
+      }
+      json::value ManageMailboxSettings(const std::string &operation, json::object &arguments, const Account &actor)
       {
          if (actor.GetAdminLevel() == Account::NormalUser) throw RequestError{403};
          const bool server = actor.GetAdminLevel() == Account::ServerAdmin;
@@ -249,6 +282,7 @@ namespace HM
          auto target = std::make_shared<Account>();
          if (!PersistentAccount::ReadObject(target, Id(arguments)) || target->GetDomainID() != domainId) throw RequestError{404};
          if (!server && target->GetAdminLevel() == Account::ServerAdmin) throw RequestError{403};
+         if (operation.rfind("accounts.signature.", 0) == 0) return ManageSignature(operation, arguments, target);
          if (operation == "accounts.behavior.read") return MailboxBehaviorView(*target);
          if (operation != "accounts.behavior.update") throw RequestError{404};
          auto *value = arguments.if_contains("fields");
@@ -537,8 +571,8 @@ namespace HM
          if (!argumentValue || !argumentValue->is_object()) throw RequestError{422};
          auto &arguments = argumentValue->as_object();
          if (operation == "authenticate") return User(*account);
-         if (operation.rfind("accounts.behavior.", 0) == 0)
-            return ManageMailboxBehavior(operation, arguments, *account);
+         if (operation.rfind("accounts.behavior.", 0) == 0 || operation.rfind("accounts.signature.", 0) == 0)
+            return ManageMailboxSettings(operation, arguments, *account);
          if (operation.rfind("aliases.", 0) == 0 || operation.rfind("lists.", 0) == 0 || operation.rfind("members.", 0) == 0)
             return ManageAddressing(operation, arguments, *account);
          if (operation.rfind("domains.", 0) == 0 || operation.rfind("accounts.", 0) == 0)

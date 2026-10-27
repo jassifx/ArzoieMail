@@ -134,8 +134,9 @@ Phase 1b delivered domain and mailbox CRUD, storage limits, password resets, rol
 search in merged PR #35. PR #36 adds aliases, distribution lists, posting settings and member
 management to the native API and responsive panel. See the
 [REST contract](hmailserver/source/Management/README.md#rest-v1-contract) for the supported
-fields and permissions. Mailbox forwarding and automatic replies are implemented and VM-validated
-on the current feature branch, awaiting PR review/merge;
+fields and permissions. Mailbox forwarding and automatic replies merged in #39 after VM and
+four-backend CI acceptance. Mailbox signatures are implemented and VM-validated on the feature
+branch, awaiting PR review/merge;
 advanced administration and production cutover remain unfinished. Implementation still requires
 the maintainer's confirmation after each PR review.
 

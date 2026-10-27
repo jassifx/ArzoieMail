@@ -22,14 +22,15 @@ DB setup and scripts to the new API must precede any eventual removal of COM reg
 
 ## Boundaries
 
-Current authorized slice after merged PR #38: mailbox forwarding and automatic replies,
-implemented and VM-validated on `feature/webadmin-mailbox-behavior`, awaiting PR review/merge. Dedicated
-`accounts.behavior.read/update` native commands and scoped REST `/behavior` operations use
-existing account persistence and mail-engine behavior, with administrator/domain/target-role
-checks at the native boundary. Settings are fetched separately from collection summaries.
+Mailbox forwarding and automatic replies merged in PR #39 with VM/four-backend CI acceptance.
+Current authorized slice: mailbox signatures on `feature/webadmin-mailbox-signatures`,
+implemented and VM-validated, awaiting PR review/merge. Dedicated `accounts.signature.read/update` native commands and scoped
+REST `/signature` operations share the behavior controls' native domain/target-role boundary.
+The panel edits HTML as inert source without evaluating or sanitizing it. Both operations use
+existing persistence/cache invalidation and mail-engine policy. Settings are fetched separately from collection summaries.
 No COM, SQL, schema migration or mailbox-user self-service is introduced. See the
 [REST contract](../hmailserver/source/Management/README.md#rest-v1-contract) for limits and
-expiry/suppression semantics. VM acceptance passed; verify current-head CI in the feature PR.
+expiry/suppression and signature semantics. Verify current-head VM/CI acceptance in the feature PR.
 
 ```text
 Browser -> HTTPS REST /api/v1 -> ASP.NET Core administration process

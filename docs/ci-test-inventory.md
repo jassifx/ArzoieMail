@@ -1,17 +1,27 @@
 # CI test inventory
 
-Mailbox forwarding/automatic replies are implemented on the feature branch after merged PR #38.
+Mailbox signatures are the current authorized slice after merged PR #39. `SignatureTests.cs`
+adds native scope/type/size/persistence checks and local SMTP/POP3 plain, HTML, multipart and
+disabled-signature probes. HTTP and browser coverage includes scoped routes, CSRF/origin,
+confirmation, literal HTML source, omission/newline preservation, UTF-8/request limits and
+mobile layout. VM validation passed **26 DNS + 152 HTTP + 2 HTTPS + 224 native = 404 assertions**,
+plus browser workflows and 2 separate pipe-identity checks. The CRLF omission regression failed
+before the panel fix and passed afterward. Verify exact-head four-backend CI in the feature PR;
+the merged baseline below remains historical evidence.
+
+Mailbox forwarding/automatic replies merged in PR #39.
 `MailboxBehaviorTests.cs` adds native permission/input/persistence coverage and local-only
 SMTP/POP3 delivery probes; HTTP route/CSRF and browser confirmation/mobile tests are expanded.
 Disposable-VM acceptance passed **26 DNS + 142 HTTP + 2 HTTPS + 188 native = 358 assertions**,
 plus browser workflows and 2 separate pipe-identity checks. The added live probes send local
 SMTP DATA and verify POP3 delivery, forward-only/retained copies, deactivation, reply suppression,
 expiry and re-enabling; none attempts external delivery. Native delivery waits account for the
-existing one-minute queue poll. Verify exact-head CI in the feature PR before merge; the older
-four-backend totals below remain the historical merged baseline until then.
+existing one-minute queue poll. All four backend jobs passed these 358 assertions on tested
+head `99e0948261efad10279fc34f257d9b6efeca3374`, merged as `c9bcd51861f22cf83a7e4be6fd0531c0e410fb28`.
+Verify the new signature feature head independently; earlier green CI is historical.
 
-This describes the workflows and test entry points delivered through merged PR #36, including
-the alias/list/member coverage. CI dependency updates were separately validated in #37. Update
+This describes the workflows and test entry points delivered through merged PR #39, including
+forwarding/reply coverage. CI dependency updates were separately validated in #37. Update
 this inventory and ROADMAP's baseline when coverage or test counts change. Counts below are
 a verified snapshot, not a promise that a future commit has passed.
 
@@ -53,12 +63,12 @@ The native class suite is invoked from NUnit, including SQL connection-policy va
 `API/SqlServer.cs` additionally verifies encryption of native mail-service SQL sessions in the
 Express fixture. That database-specific test is explicitly skipped on the other three backends.
 
-### Verified baseline after PR #36
+### Verified baseline after PR #39
 
 Verified on **2026-10-27 (Asia/Colombo)** from the successful logs for tested head
-`3e83eaddfd2f23daf7255ae17bf22a67e3bc8b70`, merged by
-[PR #36](https://github.com/jassifx/ArzoieMail/pull/36) as
-`17a9b6f63cf514c644b7cfd1e3276fa7f4dc55f0`. NUnit totals match #33/#35:
+`99e0948261efad10279fc34f257d9b6efeca3374`, merged by
+[PR #39](https://github.com/jassifx/ArzoieMail/pull/39) as
+`c9bcd51861f22cf83a7e4be6fd0531c0e410fb28`. NUnit totals match #33/#35/#36:
 
 | Backend | Total | Passed | Failed | Warnings | Inconclusive | Skipped |
 |---|---:|---:|---:|---:|---:|---:|
@@ -80,15 +90,16 @@ Each database job runs the `Test the native management API` step after NUnit:
 | Entry point | Verified coverage | Boundary |
 |---|---|---|
 | [test-management.ps1](../build/test-management.ps1) | 26 deterministic DNS assertions covering shared-provider SPF, syntax, includes/redirects, cycles/lookup limits, DKIM and DMARC publication advice. | Uses DNS fixtures; does not prove live DNS-provider configuration or message-level authentication. |
-| Same executable, default mode | 132 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions, CRUD route/parent-ID mapping, pagination and security behavior. |
+| Same executable, default mode | 142 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions at #39. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions, CRUD route/parent-ID mapping, pagination and security behavior. |
 | [test-management-browser.ps1](../build/test-management-browser.ps1) and [browser.py](../hmailserver/test/RegressionTests/Management/browser.py) | Domain/mailbox/alias/list/member CRUD, posting-policy and deletion confirmation/cancellation, password controls, session recovery, responsive layout, DNSBL mutations, SpamAssassin feedback and DNS advice. | Playwright uses explicit API response fixtures. It verifies UI workflows, not an end-to-end browser-to-database mutation. |
-| [test-management-live.ps1](../build/test-management-live.ps1) | 152 live native transport/parser/authorization/persistence assertions, including CRUD, quotas, address validation, parent/role boundaries and credential revocation. [AddressingTests.cs](../hmailserver/test/RegressionTests/Management/AddressingTests.cs) adds alias/list/member checks and real SMTP RCPT probes for routing, posting modes/authentication and cache invalidation. | Uses the installed service and its selected database. SMTP probes issue no DATA, queue no messages and perform no external delivery. COM is used only to prepare/clean fixtures; management commands are native. |
+| [test-management-live.ps1](../build/test-management-live.ps1) | 188 live native transport/parser/authorization/persistence assertions at #39, including CRUD, quotas, address validation, parent/role boundaries, credential revocation and forwarding/replies. [AddressingTests.cs](../hmailserver/test/RegressionTests/Management/AddressingTests.cs) adds SMTP RCPT routing/policy probes; [MailboxBehaviorTests.cs](../hmailserver/test/RegressionTests/Management/MailboxBehaviorTests.cs) adds local SMTP DATA and POP3 delivery checks. | Uses the installed service/database. Alias/list probes issue no DATA; forwarding/reply probes deliver only to disposable local mailboxes. No external delivery is attempted. COM is used only to prepare/clean fixtures; management commands are native. |
 
-The deterministic/HTTP/HTTPS/live groups now total **312 assertions per database job**, independently
+The deterministic/HTTP/HTTPS/live groups total **358 assertions per database job at merged #39**, independently
 of NUnit totals; browser checks are separate. Do not report the manually exercised pipe-squatting
 checks as part of that automated total. Merged #33 passed 100 (26/54/2/18) and #35 passed
 180 (26/83/2/69). The expanded 26/132/2/152 counts passed VM and all four CI backend jobs
-in #36. These are verified historical results, not proof that a later PR head has passed.
+in #36; #39 passed 26/142/2/188 on all four backends. These are verified historical results,
+not proof that a later signature-feature head has passed.
 
 The [UID lifecycle plan](imap-uid-modernization.md#validation-and-completion-gate) adds future
 boundary, concurrency, generation-renewal, crash/restore and client-interoperability acceptance.

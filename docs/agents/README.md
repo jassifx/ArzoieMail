@@ -9,7 +9,7 @@ traps found along the way, and where the last session left off.
 Current handoff: [2026-10-27](handoffs/2026-10-27.md). It records merged SQL Express PR #33,
 its green four-backend baseline, merged administration/CI PRs through #37, the requested UID
 lifecycle roadmap update in merged #38, the deferred CodeQL re-audit and the authorized
-forwarding/automatic-reply slice now in progress.
+merged forwarding/automatic-reply slice (#39) and the authorized mailbox-signature slice now in progress.
 The [CI inventory](../ci-test-inventory.md) separates automated checks from manual/planned
 coverage. Verify live PR/CI state before continuing; planned features are not implemented.
 The [documentation status](../documentation-status.md) records the manual rebrand, refreshed

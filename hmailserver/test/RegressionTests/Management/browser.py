@@ -20,6 +20,7 @@ list_members = {}
 behavior = {"forwardEnabled": False, "forwardAddress": "", "forwardKeepOriginal": True, "forwardAbortSpamFlagged": True,
             "autoReplyEnabled": False, "autoReplySubject": "", "autoReplyBody": "", "autoReplyExpires": False,
             "autoReplyExpiresDate": "", "autoReplyAbortSpamFlagged": True}
+signature = {"signatureEnabled": False, "signaturePlainText": "", "signatureHtml": ""}
 revoked = False
 
 
@@ -67,6 +68,9 @@ def api(route):
             items = [v for v in domains if query.get('search', [''])[0].lower() in v['name'].lower()]
             offset = int(query.get('offset', [0])[0])
             data = {"items": items[offset:offset + 50], "total": len(items)}
+    elif path.endswith('/signature'):
+        signature.update(body)
+        data = signature
     elif path.endswith('/behavior'):
         behavior.update(body)
         data = behavior
@@ -179,6 +183,44 @@ with sync_playwright() as p:
     page.get_by_text('Mailbox saved.', exact=True).wait_for()
     assert mailboxes[0]['maxSizeMB'] == 50
     assert 'password' not in requests[-2][2], 'Blank edit password must not replace existing credentials.'
+    page.get_by_role('button', name='Signature', exact=True).click()
+    page.get_by_label('signature Enabled', exact=True).check()
+    page.get_by_label('signature Plain Text', exact=True).fill('Regards\n%User.Address%')
+    literal_html = '</textarea><img src=x onerror="window.signatureExecuted=true"><script>window.signatureExecuted=true</script>'
+    page.get_by_label('signature Html', exact=True).fill('✓' * 6000)
+    before = len(requests)
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Each signature format is limited to 16,000 UTF-8 bytes.', exact=True).wait_for()
+    assert len(requests) == before, 'Oversized UTF-8 formats must fail before sending a request.'
+    page.get_by_label('signature Plain Text', exact=True).fill('P' * 9000)
+    page.get_by_label('signature Html', exact=True).fill('H' * 9000)
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('This save exceeds the 16 KiB request limit. Shorten the signature or save each format separately.', exact=True).wait_for()
+    assert len(requests) == before, 'Oversized signature saves must fail before sending a request.'
+    page.get_by_label('signature Plain Text', exact=True).fill('Regards\n%User.Address%')
+    page.get_by_label('signature Html', exact=True).fill(literal_html)
+    before = len(requests)
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    assert len(requests) == before, 'Cancelling signature activation must not write.'
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.screenshot(path=str(output / 'mailbox-signature-mobile.png'), full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Signature controls overflow on mobile.'
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Signature saved.', exact=True).wait_for()
+    assert signature['signatureHtml'] == literal_html and signature['signatureEnabled']
+    assert signature['signaturePlainText'] == 'Regards\r\n%User.Address%', 'Plain-text edits must retain line breaks in the native HTML fallback.'
+    signature['signatureHtml'] = literal_html.replace('><script>', '>\r\n<script>')
+    page.get_by_role('button', name='Signature', exact=True).click()
+    assert page.get_by_label('signature Html', exact=True).input_value() == signature['signatureHtml'].replace('\r\n', '\n')
+    assert page.evaluate('typeof window.signatureExecuted') == 'undefined', 'Stored HTML must remain inert source text.'
+    page.get_by_label('signature Enabled', exact=True).uncheck()
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Signature saved.', exact=True).wait_for()
+    assert requests[-1][2] == {'signatureEnabled': False}, 'Signature PATCH preserves omitted formats.'
+    assert signature['signatureHtml'] == literal_html.replace('><script>', '>\r\n<script>')
     page.get_by_role('button', name='Forwarding and replies', exact=True).click()
     page.get_by_label('forward Address', exact=True).fill('archive@example.com')
     page.get_by_label('forward Enabled', exact=True).check()
@@ -302,6 +344,7 @@ with sync_playwright() as p:
     page.get_by_role('button', name='Mailboxes', exact=True).click()
     page.get_by_text('server@example.com', exact=True).wait_for()
     assert page.get_by_role('button', name='Edit mailbox', exact=True).count() == 0
+    assert page.get_by_role('button', name='Signature', exact=True).count() == 0
     assert page.get_by_role('button', name='Delete mailbox', exact=True).count() == 0
     page.get_by_role('button', name='New mailbox', exact=True).click()
     assert page.get_by_label('level', exact=True).locator('option[value="2"]').count() == 0
@@ -320,4 +363,4 @@ with sync_playwright() as p:
     assert requests[-1][0:2] == ('GET', '/session'), 'Revocation must obtain a fresh anonymous CSRF token.'
     assert not errors, errors
     browser.close()
-print('Passed browser navigation, domain/mailbox/alias/list/member CRUD, posting-policy confirmation, password handling, DNSBL mutation, SpamAssassin test, DNS guidance, session recovery and mobile layout checks.')
+    print('Passed browser navigation, domain/mailbox/alias/list/member CRUD, forwarding/replies, signature source safety and confirmation, posting-policy confirmation, password handling, DNSBL mutation, SpamAssassin test, DNS guidance, session recovery and mobile layout checks.')

@@ -92,6 +92,7 @@ if (args.Contains("--live"))
     }
     await AddressingTests.Run(native, name, password, Check);
     await MailboxBehaviorTests.Run(native, name, password, Check);
+    await SignatureTests.Run(native, name, password, Check);
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
     // Real native persistence/authorization coverage runs on every CI database backend.
     async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>
@@ -295,6 +296,13 @@ try
     await Send("/domains/5/accounts/7/behavior", HttpMethod.Patch, new { autoReplyEnabled = true }, token, 403, "https://evil.example");
     await Send("/domains/5/accounts/7/behavior", HttpMethod.Patch, new { autoReplyEnabled = true }, token);
     Check(fake.LastOperation == "accounts.behavior.update" && fake.LastArguments.GetProperty("fields").GetProperty("autoReplyEnabled").GetBoolean(), "Behavior updates use the explicit native command.");
+    await Send("/domains/5/accounts/7/signature", HttpMethod.Get);
+    Check(fake.LastOperation == "accounts.signature.read" && fake.LastArguments.GetProperty("domainId").GetInt64() == 5
+          && fake.LastArguments.GetProperty("id").GetInt64() == 7, "Signature reads preserve parent IDs.");
+    await Send("/domains/5/accounts/7/signature", HttpMethod.Patch, new { signatureEnabled = true }, "wrong", 403);
+    await Send("/domains/5/accounts/7/signature", HttpMethod.Patch, new { signatureEnabled = true }, token, 403, "https://evil.example");
+    await Send("/domains/5/accounts/7/signature", HttpMethod.Patch, new { signatureEnabled = true }, token);
+    Check(fake.LastOperation == "accounts.signature.update" && fake.LastArguments.GetProperty("fields").GetProperty("signatureEnabled").GetBoolean(), "Signature updates use the explicit native command.");
     foreach (var resource in new[] { ("aliases", "/domains/5/aliases"), ("lists", "/domains/5/lists"), ("members", "/domains/5/lists/8/members") })
     {
         foreach (var action in new[] { ("list", HttpMethod.Get, "?search=test&limit=1"), ("create", HttpMethod.Post, ""),

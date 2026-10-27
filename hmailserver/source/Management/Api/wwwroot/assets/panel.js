@@ -85,7 +85,7 @@
   }
   function inputField(name, value, help = '') {
     const wrap = el('div'); const label = el('label', name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
-    const input = el(name === 'autoReplyBody' ? 'textarea' : ['level', 'mode'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
+    const input = el(['autoReplyBody', 'signaturePlainText', 'signatureHtml'].includes(name) ? 'textarea' : ['level', 'mode'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
     if (name === 'level' || name === 'mode') {
       input.className = 'form-select';
       const choices = name === 'mode' ? ['Anyone (public)', 'List members', 'Specified sender (announcements)', 'Domain senders'] : ['Mailbox user', 'Domain administrator', 'Server administrator'];
@@ -253,6 +253,7 @@
       if (user.level === 2 || account.level !== 2) {
         row.append(button('Edit mailbox', () => accountEditor(detail, domain, account, () => reload())));
         row.append(button('Forwarding and replies', () => mailboxBehavior(detail, domain, account)));
+        row.append(button('Signature', () => mailboxSignature(detail, domain, account)));
         if (account.id !== user.accountId) row.append(button('Delete mailbox', async () => {
           if (!confirm(`Permanently delete ${account.address} and all its messages? This cannot be undone.`)) return;
           await request(`/domains/${domain.id}/accounts/${account.id}`, 'DELETE'); await reload(0); notify('Mailbox deleted.');
@@ -262,6 +263,31 @@
     }
     if (!result.items.length) c.body.append(el('p', 'No matching mailboxes.', 'help'));
     pager(c.body, result, offset, next => reload(next)); editor.append(c.outer, detail);
+  }
+  async function mailboxSignature(editor, domain, account) {
+    const path = `/domains/${domain.id}/accounts/${account.id}/signature`;
+    const values = await request(path);
+    editor.replaceChildren(); const c = card(`Signature · ${account.address}`);
+    c.body.append(el('p', 'Choose plain text and HTML signatures for this mailbox. Domain policy can replace or append a signature, or omit it for local mail and replies. HTML is edited as source text. Saving does not sanitize email markup.', 'help'));
+    c.body.append(el('p', 'Supported macros: %User.FirstName%, %User.LastName%, %User.Address%. Leave HTML empty to use the mail engine’s existing plain-text fallback. Disabling preserves both saved formats.', 'help'));
+    c.body.append(el('p', 'Each format allows up to 16,000 UTF-8 bytes. A save has a 16 KiB request limit; large formats can be saved separately.', 'help'));
+    const form = editForm(values, async fields => {
+      // Textareas display CRLF/CR as LF. Toggling the flag must not rewrite saved source.
+      const changed = Object.fromEntries(Object.entries(fields).filter(([key, value]) => value !==
+        (typeof values[key] === 'string' ? values[key].replace(/\r\n?/g, '\n') : values[key])));
+      if (!Object.keys(changed).length) { notify('No signature changes.'); return; }
+      // The existing plain-to-HTML fallback recognizes Windows line breaks.
+      if (changed.signaturePlainText !== undefined) changed.signaturePlainText = changed.signaturePlainText.replace(/\n/g, '\r\n');
+      if (['signaturePlainText', 'signatureHtml'].some(key => changed[key] !== undefined && new TextEncoder().encode(changed[key]).length > 16000)) throw new Error('Each signature format is limited to 16,000 UTF-8 bytes.');
+      if (new TextEncoder().encode(JSON.stringify(changed)).length > 16384) throw new Error('This save exceeds the 16 KiB request limit. Shorten the signature or save each format separately.');
+      if (fields.signatureEnabled && !confirm(`Apply this active signature for ${account.address}? Domain policy also affects the result.`)) return;
+      await request(path, 'PATCH', changed); editor.replaceChildren(); notify('Signature saved.');
+    });
+    for (const name of ['signaturePlainText', 'signatureHtml']) {
+      const field = form.querySelector(`[name=${name}]`); field.rows = 6; field.maxLength = 16000;
+      if (name === 'signatureHtml') field.spellcheck = false;
+    }
+    c.body.append(form, button('Cancel', () => editor.replaceChildren())); editor.append(c.outer);
   }
   async function mailboxBehavior(editor, domain, account) {
     const path = `/domains/${domain.id}/accounts/${account.id}/behavior`;
