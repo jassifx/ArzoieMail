@@ -122,7 +122,7 @@ and the plan for the phases ahead.
 | **1 · Security** | Bound SQL parameters on every database, retiring the `libmysql.dll` fallback, AES-GCM and DPAPI instead of Blowfish with an exportable key, passphrase-protected backups, DPAPI for the Administrator's saved passwords, an Argon2id review (logon timing), UTF-8 client credentials | ✅ Done |
 | **1b · Web admin** | Modern Bootstrap panel with advanced administration and REST API from the first release; SpamAssassin management, configurable DNSBLs, SPF/DKIM/DMARC guidance and validation including shared-provider SPF; .NET 10 backend with native management access and no COM dependency; guided TLS certificate setup/renewal, optional Microsoft Defender Antivirus scanning, full PHP retirement after migration and SQL Server Express modernization | In progress |
 | **2 · Scripting** | PowerShell event host replacing VBScript and JScript | Planned |
-| **3 · Protocols** | SMTP: PIPELINING, 8BITMIME, ENHANCEDSTATUSCODES, CHUNKING, DSN, SMTPUTF8. IMAP: ENABLE, MOVE, LITERAL+, CONDSTORE/QRESYNC, UTF8=ACCEPT. SCRAM-SHA-256, MTA-STS, DANE, DKIM with Ed25519 | Planned |
+| **3 · Protocols and data integrity** | Checked identifiers and transactional IMAP UID allocation, safe generation renewal and capacity controls; SMTP/IMAP extensions, SCRAM-SHA-256, MTA-STS, DANE and DKIM with Ed25519 | Planned |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact, migrated automatically | Planned |
 | **5 · Code quality** | Modern ownership (smart pointers), compiling at warning level 4, smaller modules, more of the server in the portable core with its tests and fuzzers - continuously, alongside the other phases | Ongoing |
 | **6 · Features** | Sieve filtering, DMARC aggregate reports, ARC, webmail | Planned |
@@ -131,11 +131,17 @@ The phases run in this order, each starting once the one before it is done; code
 alongside all of them.
 
 Phase 1b delivered domain and mailbox CRUD, storage limits, password resets, roles and paginated
-search in merged PR #35. The current slice adds aliases, distribution lists, posting settings
-and member management to the native API and responsive panel. See the
+search in merged PR #35. PR #36 adds aliases, distribution lists, posting settings and member
+management to the native API and responsive panel. See the
 [REST contract](hmailserver/source/Management/README.md#rest-v1-contract) for the supported
-fields and permissions. Alias/list acceptance is in progress; advanced administration and production
-cutover remain unfinished.
+fields and permissions. The next proposed slice is mailbox forwarding and automatic replies;
+advanced administration and production cutover remain unfinished. Implementation still requires
+the maintainer's confirmation after each PR review.
+
+The [identifier and IMAP UID lifecycle plan](docs/imap-uid-modernization.md) tracks boundary
+fixes, checked allocation, controlled generation renewal and panel capacity monitoring. It is
+planned work, independent of PHP removal. Standard IMAP's finite UID range remains; the goal is
+safe operation and recovery, with explicit client resynchronization when generations change.
 
 **Microsoft Defender Antivirus scanning is planned within Phase 1b; implementation has not
 started.** Its [delivery checklist](ROADMAP.md#microsoft-defender-antivirus-delivery-checklist)

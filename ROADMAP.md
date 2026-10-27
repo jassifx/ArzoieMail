@@ -29,8 +29,8 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-Verified after merged PR #35, using its tested head
-`7fa4f1375a799faae27dcb8fa5ab9ee8a619a0e1` on 2026-10-27 (Asia/Colombo):
+Verified after merged PR #36, using its tested head
+`3e83eaddfd2f23daf7255ae17bf22a67e3bc8b70` on 2026-10-27 (Asia/Colombo):
 
 | Backend | Total | Passed | Failed | Inconclusive | Skipped |
 |---|---:|---:|---:|---:|---:|
@@ -42,7 +42,7 @@ Verified after merged PR #35, using its tested head
 Warnings were zero on all four jobs. The extra non-MSSQL skip is the SQL-session encryption
 test. Explicit/environment-dependent outcomes remain expected; investigate unexplained changes.
 The [CI inventory](docs/ci-test-inventory.md) distinguishes these NUnit totals from the separate
-180 management assertions per job at #35 (312 targeted by the current slice), browser checks and manual-only coverage. The earlier Phase 1
+312 management assertions per job at #36, browser checks and manual-only coverage. The earlier Phase 1
 baseline was 1313 tests, 1204 passed, zero failed, 34 inconclusive and 75 skipped on three backends.
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
@@ -79,9 +79,9 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#35 merged; aliases/lists in progress; administration parity remains |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#36 merged; basic domain/mailbox/alias/list controls delivered; advanced parity remains |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
-| **3 · Protocols** | SMTP, IMAP and authentication extensions; MTA-STS, DANE, DKIM Ed25519 | 📋 | |
+| **3 · Protocols and data integrity** | Safe UID allocation/generation renewal, identifier boundaries, SMTP/IMAP/authentication extensions, MTA-STS, DANE, DKIM Ed25519 | 📋 | UID plan added; implementation not started |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
 | **5 · Code quality** | Ownership, `/W4`, smaller modules, more of the portable core, more fuzzing | 🔄 ongoing | |
 | **6 · Features** | Sieve, DMARC aggregate reports, ARC, webmail | 📋 | |
@@ -290,14 +290,18 @@ that work merged as #34. The maintainer subsequently authorized beginning the do
 slice with “begin phase 1b”. Deliver this slice in one PR, monitor/fix CI and wait for explicit
 confirmation before the next task. A green PR does not authorize merging. PR #35 was merged as
 `7d00d2d8b3794aaf2ae8bad3c5e35b5625bd68f0` after all required checks passed. The maintainer's
-subsequent “continue” authorizes the alias/distribution-list/member slice as the next single PR.
+subsequent “continue” authorized the alias/distribution-list/member slice, merged as #36
+(`17a9b6f63cf514c644b7cfd1e3276fa7f4dc55f0`) after all four database jobs passed. Dependabot
+CI dependency update #37 also merged after compatibility review, workflow lint and full CI;
+actual SignPath certificate signing remains a separate master-only manual validation.
 
 | Item | Status | Evidence or remaining acceptance |
 |---|---|---|
 | Native management boundary, REST/session security and modern panel foundation | ✅ Done | #31 merged; VM and CI checks passed. This is a foundation, not full administration parity. |
 | SQL Server Express modernization | ✅ Done | #33 merged; OLE DB 19, required TLS/certificate validation, migration diagnostics and SQL Server 2025 Express VM/CI coverage passed. Other engine versions and workload capacity still need separate validation; see [SQL Server guide](docs/sql-server.md). |
 | Basic domain/mailbox administration | ✅ Done | [PR #35](https://github.com/jassifx/ArzoieMail/pull/35) merged; native CRUD, password resets, roles/quotas, bounded responses and responsive panel passed VM/CI acceptance. |
-| Aliases, distribution lists and member administration | 🔄 In progress | Scoped native/REST CRUD, posting modes/authentication, searchable lists, explicit activation and panel confirmations. New aliases/lists default disabled; lists default members-only with required SMTP authentication. See [REST contract](hmailserver/source/Management/README.md#rest-v1-contract); VM and four-backend CI acceptance required. |
+| Aliases, distribution lists and member administration | ✅ Done | [PR #36](https://github.com/jassifx/ArzoieMail/pull/36) merged; scoped native/REST CRUD, posting controls, members, search and panel confirmations passed VM/four-backend CI. New aliases/lists default disabled; lists default members-only with SMTP authentication required. |
+| Mailbox forwarding and automatic replies | 🔜 Next proposed slice | Native/REST/panel controls, owning-domain and protected-server-admin checks, validation and protocol regression coverage. Requires separate implementation confirmation after the roadmap PR review. |
 | Remaining advanced administration | 📋 Planned | Advanced mailbox/domain settings, queue, rules, routing and listener/TLS parity. Separate confirmation after the current PR; no production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
@@ -332,6 +336,13 @@ with a migration guide for existing scripts. A script that hangs or crashes must
 server.
 
 ### Phase 3 · Protocols
+- Message identifier and IMAP UID lifecycle modernization: [delivery plan](docs/imap-uid-modernization.md).
+  Audit 64-bit IDs end to end; fix signed/narrowing defects and UIDNEXT boundaries; add checked
+  transactional per-folder allocation and controlled UIDVALIDITY generation renewal, recovery,
+  monitoring and client interoperability. Boundary fixes may be brought forward through Phase 5
+  after authorization. No wrap, silent UID reuse or manual SQL resets; do not claim unlimited
+  per-folder capacity or invisible client resynchronization. Full acceptance gates high-volume
+  production-readiness claims, independently of PHP retirement and the SQLite migration.
 - SMTP: PIPELINING, 8BITMIME, ENHANCEDSTATUSCODES, CHUNKING, DSN, SMTPUTF8.
 - IMAP: ENABLE, MOVE, LITERAL+, CONDSTORE/QRESYNC, UTF8=ACCEPT.
 - Authentication: SCRAM-SHA-256.
@@ -370,6 +381,12 @@ setup/validation have moved to Phase 1b; DMARC aggregate reporting remains here.
   [documentation status](docs/documentation-status.md). Application/UI/logo renames remain a
   separate gradual task; compatibility identifiers stay unchanged.
 - Upgrading from old MySQL server versions with the MariaDB client is untested in a VM.
+- Re-audit CodeQL observations #1–#3 at the end of modernization, as requested by the maintainer.
+  Confirm which source/packaging was removed and which native paths remain; do not auto-dismiss
+  or assume PHP retirement removes shared C++ issues. Findings are reviewed, not all confirmed
+  exploitable vulnerabilities; native fixes still need regression evidence when scheduled.
+- Correct and publish `maintenance_database` after the identifier/UID review. Its global-ID
+  explanation and `MAX(messageid)` advice are not a current IMAP UID-capacity assessment.
 
 ---
 

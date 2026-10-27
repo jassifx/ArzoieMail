@@ -94,11 +94,16 @@ for fields, units and the role matrix. Native commands load request-local busine
 use existing persistence validation/cache invalidation. Persisted server-administrator roles
 are checked before requested changes, preventing a domain administrator from demoting an account
 and then replacing its password. No new schema, COM dependency or direct web SQL is introduced.
-The next authorized slice adds aliases, distribution lists and recipients through the same
+Merged PR #36 adds aliases, distribution lists and recipients through the same
 boundary. It validates domain/list/object ownership before writes and uses existing persistence
 and cache invalidation. New lists default disabled, members-only and SMTP-authenticated; posting
 modes retain the native engine's envelope-sender semantics. Advanced account settings and full
 administration parity remain separate work.
+
+Future identifier changes follow the [UID lifecycle plan](imap-uid-modernization.md), including
+exact ID serialization for browser clients and deliberate API compatibility/versioning. Capacity
+diagnostics and maintenance commands must remain native-authorized; the web host must not reset
+counters or rewrite UID mappings through direct database access.
 
 ## Antivirus lifecycle and high-load boundary
 

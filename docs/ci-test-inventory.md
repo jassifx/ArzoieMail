@@ -1,7 +1,7 @@
 # CI test inventory
 
-This describes the workflows and test entry points delivered through merged PR #35, plus the
-authorized alias/list/member coverage in the current Phase 1b slice. Update
+This describes the workflows and test entry points delivered through merged PR #36, including
+the alias/list/member coverage. CI dependency updates were separately validated in #37. Update
 this inventory and ROADMAP's baseline when coverage or test counts change. Counts below are
 a verified snapshot, not a promise that a future commit has passed.
 
@@ -43,12 +43,12 @@ The native class suite is invoked from NUnit, including SQL connection-policy va
 `API/SqlServer.cs` additionally verifies encryption of native mail-service SQL sessions in the
 Express fixture. That database-specific test is explicitly skipped on the other three backends.
 
-### Verified baseline after PR #35
+### Verified baseline after PR #36
 
 Verified on **2026-10-27 (Asia/Colombo)** from the successful logs for tested head
-`7fa4f1375a799faae27dcb8fa5ab9ee8a619a0e1`, merged by
-[PR #35](https://github.com/jassifx/ArzoieMail/pull/35) as
-`7d00d2d8b3794aaf2ae8bad3c5e35b5625bd68f0`. NUnit totals match #33:
+`3e83eaddfd2f23daf7255ae17bf22a67e3bc8b70`, merged by
+[PR #36](https://github.com/jassifx/ArzoieMail/pull/36) as
+`17a9b6f63cf514c644b7cfd1e3276fa7f4dc55f0`. NUnit totals match #33/#35:
 
 | Backend | Total | Passed | Failed | Warnings | Inconclusive | Skipped |
 |---|---:|---:|---:|---:|---:|---:|
@@ -77,8 +77,13 @@ Each database job runs the `Test the native management API` step after NUnit:
 The deterministic/HTTP/HTTPS/live groups now total **312 assertions per database job**, independently
 of NUnit totals; browser checks are separate. Do not report the manually exercised pipe-squatting
 checks as part of that automated total. Merged #33 passed 100 (26/54/2/18) and #35 passed
-180 (26/83/2/69). The expanded 26/132/2/152 counts require the current PR's VM/CI acceptance
-and do not retroactively change the historical four-backend baseline above.
+180 (26/83/2/69). The expanded 26/132/2/152 counts passed VM and all four CI backend jobs
+in #36. These are verified historical results, not proof that a later PR head has passed.
+
+The [UID lifecycle plan](imap-uid-modernization.md#validation-and-completion-gate) adds future
+boundary, concurrency, generation-renewal, crash/restore and client-interoperability acceptance.
+Those tests are not implemented or included in the totals above. Boundary fixtures will simulate
+large counters; they will not by themselves establish billions-of-messages workload capacity.
 
 ## SQL Express-specific checks
 
