@@ -60,10 +60,14 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | GET | `/api/v1/status` | Server administrator |
 | GET / POST | `/api/v1/domains` | Paginated list (server/all or domain administrator/own); create requires server administrator |
 | GET / PATCH / DELETE | `/api/v1/domains/{id}` | Read/update own domain for domain administrator; server administrator for creation, limits and deletion |
+| GET / PATCH | `/api/v1/domains/{id}/settings` | Advanced policies/signatures; own domain administrator or server administrator, object limits require server administrator |
+| GET / POST | `/api/v1/domains/{domainId}/names` | Alternate domain list/create; own domain administrator may list, server administrator required to create |
+| GET / DELETE | `/api/v1/domains/{domainId}/names/{id}` | Read/remove matching alternate name; server administrator required to remove |
 | GET / POST | `/api/v1/domains/{domainId}/accounts` | Paginated list/create; server administrator or administrator of that domain |
 | GET / PATCH / DELETE | `/api/v1/domains/{domainId}/accounts/{id}` | Read/update/delete; owning domain must match, server administrator accounts require server administrator |
 | GET / PATCH | `/api/v1/domains/{domainId}/accounts/{id}/behavior` | Forwarding/automatic replies; owning domain must match, server administrator accounts require server administrator |
 | GET / PATCH | `/api/v1/domains/{domainId}/accounts/{id}/signature` | Mailbox signature; same administrator, owning-domain and protected-target checks |
+| GET / PATCH | `/api/v1/domains/{domainId}/accounts/{id}/profile` | Profile names and read-only directory/last-logon state; same administrator/domain/protected-target checks |
 | GET / POST | `/api/v1/domains/{domainId}/aliases` | Paginated list/create; server administrator or administrator of that domain |
 | GET / PATCH / DELETE | `/api/v1/domains/{domainId}/aliases/{id}` | Read/update/delete within the owning domain |
 | GET / POST | `/api/v1/domains/{domainId}/lists` | Paginated list/create distribution lists within the owning domain |
@@ -107,6 +111,57 @@ in views. Omit `password` on PATCH to preserve it; blank passwords are rejected.
 password changes are rejected and must be made in the directory. No AD provisioning is added.
 The next request reauthenticates and observes password, role, active-state or deletion changes.
 The panel ends the session after changing its own password/role or disabling its own account.
+
+Advanced domain settings GET/PATCH uses explicit `domains.settings.read/update` native commands.
+Ordinary mailbox users are denied; domain administrators may access only their own domain.
+PATCH fields are:
+
+- `catchAllAddress`: empty to disable, or one valid address belonging to an active mailbox in
+  this primary domain. Setting a protected server-administrator mailbox requires server admin.
+  The mailbox is checked at save time; later disabling/deleting it can invalidate catch-all
+  delivery. Existing external/alias catch-all configurations are preserved when omitted;
+  new writes through this endpoint require a mailbox. External forwarding can be configured
+  on that mailbox through the existing forwarding controls.
+- `plusAddressingEnabled`, `plusAddressingCharacter`: boolean and one of `+`, `-`, `.`, `=`, `_`.
+  Empty separator is allowed only while disabled. Existing unusual separators are preserved
+  when omitted. Address matching continues to use the native engine's separator semantics.
+- `greylistingEnabled`: this domain's flag; global greylisting policy remains authoritative.
+- `maxAccounts`, `maxAliases`, `maxLists`: nonnegative 32-bit object counts; 0 means unlimited.
+  Only server administrators may write these, even when submitting an unchanged value. Counts
+  use existing native creation limits. Lowering a limit retains existing objects and blocks
+  further creation; it does not delete data. The native distribution-list limit uses its count
+  directly; the endpoint clears the count for unlimited and updates legacy enable flags together.
+- `signatureEnabled`, `signaturePlainText`, `signatureHtml`: existing domain formats, with the
+  same types, 16,000 UTF-8 byte limits and control-character rules as mailbox signatures below.
+- `signatureMethod`: 1 uses domain formats where mailbox formats are empty; 2 replaces mailbox
+  formats; 3 appends domain formats. `signaturesOnReplies` and `signaturesOnLocalMail` are booleans
+  affecting signature application, including mailbox signatures, under existing engine rules.
+
+Omitted settings are preserved. The entire request and effective plus-addressing combination
+are checked before setters/persistence. Settings are saved together in the existing domain row
+and invalidate the native domain cache. No schema or web SQL is added. The panel submits changed
+fields, edits HTML as inert source, handles CRLF like mailbox signatures, and confirms catch-all
+activation/changes and active signature-policy changes. Other domain controls (DKIM key lifecycle,
+directory provisioning and further administration) remain separate delivery work.
+
+Alternate domain names use `domainaliases.list/read/create/delete`; there is no rename/PATCH.
+Listing accepts the standard search/offset/limit filters. POST accepts only `name`, up to 253
+ASCII bytes with DNS labels up to 63 characters, letters/digits/interior hyphens and dots;
+use ASCII IDN/punycode labels. Names are stored lowercase. Empty labels, trailing dot, controls,
+invalid labels, duplicates and collisions with primary domains are refused. Creation/removal
+requires server administrator because these names reserve global server namespace; an owning
+domain administrator may only list/read. Every object ID is checked against its parent domain.
+Mappings are active immediately and use existing native routing/cache invalidation. Adding a
+name does not create mailboxes, provision DNS/certificates/DKIM or prove domain ownership.
+The panel confirms activation/removal. Existing alias persistence's insert result is additionally
+checked for a newly assigned ID before reporting success. Removal has no undo facility.
+
+Mailbox profile GET/PATCH uses `accounts.profile.read/update`. Only `firstName` and `lastName`
+are writable: strings up to 255 UTF-8 bytes, including empty strings, without ASCII control
+characters. GET additionally returns `directoryBacked` and the engine's recorded `lastLogon`;
+both are read-only. No directory credentials/bindings or password changes are exposed here.
+Names feed existing signature macros; HTML/email sanitization behavior is unchanged. The panel
+uses text/input values, not executable markup. Parent/role protections match mailbox signatures.
 
 Mailbox behavior GET/PATCH is an admin-only operation. Server administrators may access any
 mailbox; domain administrators only their own domain's non-server-admin accounts. Normal users

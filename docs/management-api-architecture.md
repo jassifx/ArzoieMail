@@ -23,9 +23,14 @@ DB setup and scripts to the new API must precede any eventual removal of COM reg
 ## Boundaries
 
 Mailbox forwarding and automatic replies merged in PR #39 with VM/four-backend CI acceptance.
-Current authorized slice: mailbox signatures on `feature/webadmin-mailbox-signatures`,
-implemented and VM-validated, awaiting PR review/merge. Dedicated `accounts.signature.read/update` native commands and scoped
-REST `/signature` operations share the behavior controls' native domain/target-role boundary.
+Mailbox signatures merged in PR #40 with VM/four-backend CI acceptance. The current larger
+bundle on `feature/webadmin-advanced-domain-mailbox` is implemented and VM-validated, awaiting
+PR review/merge and its required CI gate. It adds mailbox profile read/update, domain
+settings read/update and alternate domain-name list/create/read/delete. All use explicit native
+operations with scoped parent/role checks. Alternate names reserve global namespace, so writes
+require server administrator; object limits do too. Own-domain administrators can manage the
+other domain settings and non-protected mailbox profiles. Directory backing and last-logon
+state are read-only, with no credentials or directory bindings exposed.
 The panel edits HTML as inert source without evaluating or sanitizing it. Both operations use
 existing persistence/cache invalidation and mail-engine policy. Settings are fetched separately from collection summaries.
 No COM, SQL, schema migration or mailbox-user self-service is introduced. See the

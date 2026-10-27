@@ -113,7 +113,7 @@ static class AddressingTests
         finally { await Send("domains.delete", new { id = domainId }); }
     }
 
-    private static async Task<int> RecipientStatus(string recipient, string sender = "outsider@example.net")
+    internal static async Task<int> RecipientStatus(string recipient, string sender = "outsider@example.net")
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var client = new TcpClient();

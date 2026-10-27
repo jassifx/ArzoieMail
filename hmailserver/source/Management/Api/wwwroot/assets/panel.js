@@ -85,13 +85,13 @@
   }
   function inputField(name, value, help = '') {
     const wrap = el('div'); const label = el('label', name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
-    const input = el(['autoReplyBody', 'signaturePlainText', 'signatureHtml'].includes(name) ? 'textarea' : ['level', 'mode'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
-    if (name === 'level' || name === 'mode') {
+    const input = el(['autoReplyBody', 'signaturePlainText', 'signatureHtml'].includes(name) ? 'textarea' : ['level', 'mode', 'signatureMethod'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
+    if (name === 'level' || name === 'mode' || name === 'signatureMethod') {
       input.className = 'form-select';
-      const choices = name === 'mode' ? ['Anyone (public)', 'List members', 'Specified sender (announcements)', 'Domain senders'] : ['Mailbox user', 'Domain administrator', 'Server administrator'];
+      const choices = name === 'signatureMethod' ? ['Use domain format when mailbox format is empty', 'Replace mailbox signature', 'Append to mailbox signature'] : name === 'mode' ? ['Anyone (public)', 'List members', 'Specified sender (announcements)', 'Domain senders'] : ['Mailbox user', 'Domain administrator', 'Server administrator'];
       choices.forEach((title, level) => {
         if (name === 'level' && level > (user.level === 2 ? 2 : 1)) return;
-        const option = el('option', title); option.value = String(level); input.append(option);
+        const option = el('option', title); option.value = String(level + (name === 'signatureMethod' ? 1 : 0)); input.append(option);
       }); input.value = String(value); wrap.append(label, input);
       return { wrap, input };
     }
@@ -254,6 +254,7 @@
         row.append(button('Edit mailbox', () => accountEditor(detail, domain, account, () => reload())));
         row.append(button('Forwarding and replies', () => mailboxBehavior(detail, domain, account)));
         row.append(button('Signature', () => mailboxSignature(detail, domain, account)));
+        row.append(button('Profile', () => mailboxProfile(detail, domain, account)));
         if (account.id !== user.accountId) row.append(button('Delete mailbox', async () => {
           if (!confirm(`Permanently delete ${account.address} and all its messages? This cannot be undone.`)) return;
           await request(`/domains/${domain.id}/accounts/${account.id}`, 'DELETE'); await reload(0); notify('Mailbox deleted.');
@@ -263,6 +264,58 @@
     }
     if (!result.items.length) c.body.append(el('p', 'No matching mailboxes.', 'help'));
     pager(c.body, result, offset, next => reload(next)); editor.append(c.outer, detail);
+  }
+  async function mailboxProfile(editor, domain, account) {
+    const path = `/domains/${domain.id}/accounts/${account.id}/profile`; const profile = await request(path);
+    editor.replaceChildren(); const c = card(`Mailbox profile · ${account.address}`);
+    c.body.append(el('p', `${profile.directoryBacked ? 'Directory-backed' : 'Local'} account · Last logon: ${profile.lastLogon || 'Not recorded'}`, 'help'));
+    c.body.append(el('p', 'Names are used by signature macros. Directory authentication settings and credentials are managed separately.', 'help'));
+    const form = editForm({ firstName: profile.firstName, lastName: profile.lastName }, async fields => {
+      await request(path, 'PATCH', fields); editor.replaceChildren(); notify('Profile saved.');
+    });
+    c.body.append(form, button('Cancel', () => editor.replaceChildren())); editor.append(c.outer);
+  }
+  async function domainSettings(editor, domain) {
+    const path = `/domains/${domain.id}/settings`; const values = await request(path);
+    if (user.level !== 2) for (const key of ['maxAccounts', 'maxAliases', 'maxLists']) delete values[key];
+    editor.replaceChildren(); const c = card(`Advanced settings · ${domain.name}`);
+    c.body.append(el('p', 'Catch-all accepts otherwise unknown recipients and can increase unwanted mail. Choose an active mailbox in this primary domain, or leave blank to disable. Plus addressing uses one of + - . = _ as its separator.', 'help'));
+    c.body.append(el('p', 'Object limits: 0 means unlimited. Existing objects are retained when limits are lowered. Domain signature policy can replace or append mailbox signatures; local-mail and reply switches affect both. HTML is source text and is not sanitized on save.', 'help'));
+    c.body.append(el('p', 'Signature formats allow 16,000 UTF-8 bytes each. A save is limited to 16 KiB; large formats can be saved separately. Macros: %User.FirstName%, %User.LastName%, %User.Address%.', 'help'));
+    const form = editForm(values, async fields => {
+      const changed = Object.fromEntries(Object.entries(fields).filter(([key, value]) => value !== (typeof values[key] === 'string' ? values[key].replace(/\r\n?/g, '\n') : values[key])));
+      if (!Object.keys(changed).length) { notify('No domain setting changes.'); return; }
+      if (changed.signaturePlainText !== undefined) changed.signaturePlainText = changed.signaturePlainText.replace(/\n/g, '\r\n');
+      if (['signaturePlainText', 'signatureHtml'].some(key => changed[key] !== undefined && new TextEncoder().encode(changed[key]).length > 16000)) throw new Error('Each signature format is limited to 16,000 UTF-8 bytes.');
+      if (new TextEncoder().encode(JSON.stringify(changed)).length > 16384) throw new Error('This save exceeds the 16 KiB request limit. Shorten the signature or save each format separately.');
+      if ((changed.catchAllAddress || (fields.signatureEnabled && Object.keys(changed).some(key => key.startsWith('signature')))) && !confirm(`Apply catch-all or active signature changes to ${domain.name}? These settings can affect every mailbox.`)) return;
+      await request(path, 'PATCH', changed); editor.replaceChildren(); notify('Advanced domain settings saved.');
+    });
+    const catchAll = form.querySelector('[name=catchAllAddress]'); catchAll.type = 'email'; catchAll.maxLength = 255;
+    form.querySelector('[name=plusAddressingCharacter]').maxLength = 1;
+    for (const name of ['signaturePlainText', 'signatureHtml']) { const field = form.querySelector(`[name=${name}]`); field.rows = 5; field.maxLength = 16000; if (name === 'signatureHtml') field.spellcheck = false; }
+    c.body.append(form, button('Cancel', () => editor.replaceChildren())); editor.append(c.outer);
+  }
+  async function domainNames(editor, domain, offset = 0, search = '') {
+    const path = `/domains/${domain.id}/names`; const result = await request(`${path}?limit=50&offset=${offset}&search=${encodeURIComponent(search)}`);
+    editor.replaceChildren(); const c = card(`Alternate domains · ${domain.name}`);
+    const reload = (next = offset, filter = search) => domainNames(editor, domain, next, filter);
+    c.body.append(el('p', 'Each alternate name maps addresses to this primary domain and is active immediately. Configure its DNS, certificates and authentication separately; adding a name does not prove DNS ownership. Server administrators manage these global names.', 'help'));
+    searchForm(c.body, search, filter => reload(0, filter));
+    if (user.level === 2) c.body.append(editForm({ name: '' }, async fields => {
+      if (!confirm(`Activate ${fields.name} as an alternate name for ${domain.name}? Review DNS and ownership before proceeding.`)) return;
+      await request(path, 'POST', fields); await reload(0); notify('Alternate domain added.');
+    }));
+    for (const item of result.items) {
+      const row = el('div', null, 'domain-row'); row.append(el('strong', item.name));
+      if (user.level === 2) row.append(button('Remove alternate domain', async () => {
+        if (!confirm(`Remove ${item.name}? Mail addressed through this name will stop routing to ${domain.name}.`)) return;
+        await request(`${path}/${item.id}`, 'DELETE'); await reload(0); notify('Alternate domain removed.');
+      }, 'btn btn-outline-danger btn-sm'));
+      c.body.append(row);
+    }
+    if (!result.items.length) c.body.append(el('p', 'No alternate domain names.', 'help'));
+    pager(c.body, result, offset, next => reload(next)); editor.append(c.outer);
   }
   async function mailboxSignature(editor, domain, account) {
     const path = `/domains/${domain.id}/accounts/${account.id}/signature`;
@@ -372,6 +425,8 @@
         row.append(button('Mailboxes', () => accounts(editor, domain)));
         row.append(button('Aliases', () => addressing(editor, domain, 'aliases')));
         row.append(button('Distribution lists', () => addressing(editor, domain, 'lists')));
+        row.append(button('Advanced settings', () => domainSettings(editor, domain)));
+        row.append(button('Alternate domains', () => domainNames(editor, domain)));
         row.append(button('Edit domain', () => {
           editor.replaceChildren(); const c = card(`Domain settings · ${domain.name}`);
           const values = { active: domain.active };

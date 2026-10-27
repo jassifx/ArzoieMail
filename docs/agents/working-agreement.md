@@ -12,6 +12,10 @@ unless the maintainer says otherwise for a specific task.
   on 2026-10-26 to allow time for project review.
 
 - **One item, one pull request** to `master`. `master` is protected and only takes pull requests.
+- **Use larger coherent Phase 1b bundles**, requested on 2026-10-27: combine related capabilities
+  across native/REST/panel, regressions and documentation in one PR rather than one small setting
+  per PR. Preserve VM/CI-only execution and the review gate between PRs; this does not authorize
+  automatic merging or starting the next bundle after submission.
 - **Branch names decide whether CI runs.** Use `feature/…`, `bugfix/…`, `techdebt/…` or
   `claude/…` (version branches also run). Any other prefix, for example `security/…`, gets no CI
   at all.

@@ -3,6 +3,7 @@
 #include "ManagementAuthentication.h"
 #include "../BO/Account.h"
 #include "../BO/Accounts.h"
+#include "../BO/DomainAliases.h"
 #include "../BO/Aliases.h"
 #include "../BO/DistributionLists.h"
 #include "../BO/DistributionListRecipients.h"
@@ -282,6 +283,28 @@ namespace HM
          auto target = std::make_shared<Account>();
          if (!PersistentAccount::ReadObject(target, Id(arguments)) || target->GetDomainID() != domainId) throw RequestError{404};
          if (!server && target->GetAdminLevel() == Account::ServerAdmin) throw RequestError{403};
+         if (operation == "accounts.profile.read" || operation == "accounts.profile.update")
+         {
+            const auto view = [&]() { return json::object{{"firstName", Utf8(target->GetPersonFirstName())},
+               {"lastName", Utf8(target->GetPersonLastName())}, {"directoryBacked", target->GetIsAD()},
+               {"lastLogon", Utf8(target->GetLastLogonTime())}}; };
+            if (operation == "accounts.profile.read") return view();
+            const auto *value = arguments.if_contains("fields");
+            if (!value || !value->is_object() || value->as_object().empty()) throw RequestError{422};
+            const auto &fields = value->as_object();
+            for (const auto &field : fields)
+            {
+               if (field.key() != "firstName" && field.key() != "lastName") throw RequestError{422};
+               const auto text = Text(fields, std::string(field.key()).c_str(), 255);
+               Wide(field.value());
+               for (const unsigned char character : text) if (character < 32 || character == 127) throw RequestError{422};
+            }
+            if (fields.if_contains("firstName")) target->SetPersonFirstName(Wide(fields.at("firstName")));
+            if (fields.if_contains("lastName")) target->SetPersonLastName(Wide(fields.at("lastName")));
+            String error;
+            if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+            return view();
+         }
          if (operation.rfind("accounts.signature.", 0) == 0) return ManageSignature(operation, arguments, target);
          if (operation == "accounts.behavior.read") return MailboxBehaviorView(*target);
          if (operation != "accounts.behavior.update") throw RequestError{404};
@@ -345,6 +368,135 @@ namespace HM
          String error;
          if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
          return MailboxBehaviorView(*target);
+      }
+      json::object DomainSettingsView(const Domain &domain)
+      {
+         return {{"catchAllAddress", Utf8(domain.GetPostmaster())}, {"plusAddressingEnabled", domain.GetUsePlusAddressing()},
+            {"plusAddressingCharacter", Utf8(domain.GetPlusAddressingChar())}, {"greylistingEnabled", domain.GetASUseGreyListing()},
+            {"maxAccounts", domain.GetMaxNoOfAccountsEnabled() ? domain.GetMaxNoOfAccounts() : 0},
+            {"maxAliases", domain.GetMaxNoOfAliasesEnabled() ? domain.GetMaxNoOfAliases() : 0},
+            {"maxLists", domain.GetMaxNoOfDistributionLists()}, {"signatureEnabled", domain.GetEnableSignature()},
+            {"signaturePlainText", Utf8(domain.GetSignaturePlainText())}, {"signatureHtml", Utf8(domain.GetSignatureHTML())},
+            {"signatureMethod", static_cast<int>(domain.GetSignatureMethod())},
+            {"signaturesOnReplies", domain.GetAddSignaturesToReplies()}, {"signaturesOnLocalMail", domain.GetAddSignaturesToLocalMail()}};
+      }
+      json::value ManageDomainSettings(const std::string &operation, const json::object &arguments, const Account &actor)
+      {
+         if (actor.GetAdminLevel() == Account::NormalUser) throw RequestError{403};
+         const bool server = actor.GetAdminLevel() == Account::ServerAdmin;
+         const auto id = Id(arguments);
+         if (!server && id != actor.GetDomainID()) throw RequestError{403};
+         auto domain = std::make_shared<Domain>();
+         if (!PersistentDomain::ReadObject(domain, id)) throw RequestError{404};
+         if (operation == "domains.settings.read") return DomainSettingsView(*domain);
+         if (operation != "domains.settings.update") throw RequestError{404};
+         const auto *value = arguments.if_contains("fields");
+         if (!value || !value->is_object() || value->as_object().empty()) throw RequestError{422};
+         const auto &fields = value->as_object();
+         for (const auto &field : fields)
+         {
+            const auto key = field.key();
+            if (key == "plusAddressingEnabled" || key == "greylistingEnabled" || key == "signatureEnabled"
+                || key == "signaturesOnReplies" || key == "signaturesOnLocalMail")
+            { if (!field.value().is_bool()) throw RequestError{422}; }
+            else if (key == "maxAccounts" || key == "maxAliases" || key == "maxLists")
+            {
+               if (!server) throw RequestError{403};
+               Number(fields, std::string(key).c_str(), 2147483647);
+            }
+            else if (key == "signatureMethod")
+            { if (Number(fields, "signatureMethod", 3) < 1) throw RequestError{422}; }
+            else if (key == "catchAllAddress")
+            {
+               const auto address = MailAddress(fields, "catchAllAddress", true);
+               if (!address.IsEmpty())
+               {
+                  auto recipient = std::make_shared<Account>();
+                  if (!PersistentAccount::ReadObject(recipient, address) || recipient->GetDomainID() != id || !recipient->GetActive()) throw RequestError{422};
+                  if (!server && recipient->GetAdminLevel() == Account::ServerAdmin) throw RequestError{403};
+               }
+            }
+            else if (key == "plusAddressingCharacter")
+            {
+               const auto character = Text(fields, "plusAddressingCharacter", 1);
+               // One unambiguous ASCII separator; empty is permitted only when disabled.
+               if (!character.empty() && std::string("+-.=_").find(character[0]) == std::string::npos) throw RequestError{422};
+            }
+            else if (key == "signaturePlainText" || key == "signatureHtml")
+            {
+               const auto text = Text(fields, std::string(key).c_str(), 16000);
+               Wide(field.value());
+               for (const unsigned char character : text)
+                  if ((character < 32 && character != '\r' && character != '\n' && character != '\t') || character == 127) throw RequestError{422};
+            }
+            else throw RequestError{422};
+         }
+         const auto current = DomainSettingsView(*domain);
+         const auto effective = [&](const char *key) -> const json::value & {
+            const auto *field = fields.if_contains(key); return field ? *field : current.at(key);
+         };
+         if (effective("plusAddressingEnabled").as_bool() && effective("plusAddressingCharacter").as_string().empty()) throw RequestError{422};
+         if (fields.if_contains("catchAllAddress")) domain->SetPostmaster(Wide(fields.at("catchAllAddress")));
+         if (fields.if_contains("plusAddressingEnabled")) domain->SetUsePlusAddressing(fields.at("plusAddressingEnabled").as_bool());
+         if (fields.if_contains("plusAddressingCharacter")) domain->SetPlusAddressingChar(Wide(fields.at("plusAddressingCharacter")));
+         if (fields.if_contains("greylistingEnabled")) domain->SetASUseGreyListing(fields.at("greylistingEnabled").as_bool());
+         if (fields.if_contains("signatureEnabled")) domain->SetEnableSignature(fields.at("signatureEnabled").as_bool());
+         if (fields.if_contains("signaturePlainText")) domain->SetSignaturePlainText(Wide(fields.at("signaturePlainText")));
+         if (fields.if_contains("signatureHtml")) domain->SetSignatureHTML(Wide(fields.at("signatureHtml")));
+         if (fields.if_contains("signatureMethod")) domain->SetSignatureMethod(static_cast<Domain::DomainSignatureMethod>(Number(fields, "signatureMethod", 3)));
+         if (fields.if_contains("signaturesOnReplies")) domain->SetAddSignaturesToReplies(fields.at("signaturesOnReplies").as_bool());
+         if (fields.if_contains("signaturesOnLocalMail")) domain->SetAddSignaturesToLocalMail(fields.at("signaturesOnLocalMail").as_bool());
+         if (fields.if_contains("maxAccounts")) { const auto count = static_cast<int>(Number(fields, "maxAccounts", 2147483647)); domain->SetMaxNoOfAccounts(count); domain->SetMaxNoOfAccountsEnabled(count != 0); }
+         if (fields.if_contains("maxAliases")) { const auto count = static_cast<int>(Number(fields, "maxAliases", 2147483647)); domain->SetMaxNoOfAliases(count); domain->SetMaxNoOfAliasesEnabled(count != 0); }
+         if (fields.if_contains("maxLists")) { const auto count = static_cast<int>(Number(fields, "maxLists", 2147483647)); domain->SetMaxNoOfDistributionLists(count); domain->SetMaxNoOfDistributionListsEnabled(count != 0); }
+         String error;
+         if (!PersistentDomain::SaveObject(domain, error, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+         return DomainSettingsView(*domain);
+      }
+      json::object DomainAliasView(const DomainAlias &alias)
+      { return {{"id", alias.GetID()}, {"domainId", alias.GetDomainID()}, {"name", Utf8(alias.GetName())}}; }
+      json::value ManageDomainAliases(const std::string &operation, const json::object &arguments, const Account &actor)
+      {
+         if (actor.GetAdminLevel() == Account::NormalUser) throw RequestError{403};
+         const auto domainId = Number(arguments, "domainId", 9223372036854775807LL);
+         if (!domainId) throw RequestError{422};
+         const bool server = actor.GetAdminLevel() == Account::ServerAdmin;
+         if (!server && domainId != actor.GetDomainID()) throw RequestError{403};
+         if (operation != "domainaliases.list" && operation != "domainaliases.read" && operation != "domainaliases.create" && operation != "domainaliases.delete") throw RequestError{404};
+         if (!server && (operation == "domainaliases.create" || operation == "domainaliases.delete")) throw RequestError{403};
+         auto domain = std::make_shared<Domain>();
+         if (!PersistentDomain::ReadObject(domain, domainId)) throw RequestError{404};
+         DomainAliases aliases(domainId); aliases.Refresh();
+         if (operation == "domainaliases.list") return Page(aliases.GetVector(), arguments, DomainAliasView);
+         if (operation == "domainaliases.read" || operation == "domainaliases.delete")
+         {
+            auto alias = aliases.GetItemByDBID(Id(arguments));
+            if (!alias) throw RequestError{404};
+            if (operation == "domainaliases.read") return DomainAliasView(*alias);
+            if (!PersistentDomainAlias::DeleteObject(alias)) throw RequestError{503};
+            return json::object{{"deleted", true}};
+         }
+         const auto *value = arguments.if_contains("fields");
+         if (!value || !value->is_object() || value->as_object().size() != 1 || !value->as_object().if_contains("name")) throw RequestError{422};
+         const auto name = Text(value->as_object(), "name", 253);
+         for (const unsigned char character : name)
+            if (!((character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z')
+                  || (character >= '0' && character <= '9') || character == '-' || character == '.')) throw RequestError{422};
+         for (size_t start = 0; start < name.size();)
+         {
+            auto end = name.find('.', start); if (end == std::string::npos) end = name.size();
+            if (end == start || end - start > 63 || name[start] == '-' || name[end - 1] == '-') throw RequestError{422};
+            start = end + 1;
+         }
+         if (!name.empty() && name.back() == '.') throw RequestError{422};
+         String wide = Wide(value->as_object().at("name")); wide.ToLower();
+         if (wide.IsEmpty() || !StringParser::IsValidDomainName(wide)) throw RequestError{422};
+         auto alias = std::make_shared<DomainAlias>(); alias->SetDomainID(domainId); alias->SetAlias(wide);
+         String error;
+         const bool saved = PersistentDomainAlias::SaveObject(alias, error, PersistenceModeNormal);
+         // Legacy persistence can report true on an insert failure; a fresh object must get an ID.
+         if (!saved || alias->GetID() <= 0) throw RequestError{error.IsEmpty() ? 503 : 422};
+         return DomainAliasView(*alias);
       }
       json::object AliasView(const Alias &alias)
       {
@@ -571,7 +723,9 @@ namespace HM
          if (!argumentValue || !argumentValue->is_object()) throw RequestError{422};
          auto &arguments = argumentValue->as_object();
          if (operation == "authenticate") return User(*account);
-         if (operation.rfind("accounts.behavior.", 0) == 0 || operation.rfind("accounts.signature.", 0) == 0)
+         if (operation.rfind("domains.settings.", 0) == 0) return ManageDomainSettings(operation, arguments, *account);
+         if (operation.rfind("domainaliases.", 0) == 0) return ManageDomainAliases(operation, arguments, *account);
+         if (operation.rfind("accounts.behavior.", 0) == 0 || operation.rfind("accounts.signature.", 0) == 0 || operation.rfind("accounts.profile.", 0) == 0)
             return ManageMailboxSettings(operation, arguments, *account);
          if (operation.rfind("aliases.", 0) == 0 || operation.rfind("lists.", 0) == 0 || operation.rfind("members.", 0) == 0)
             return ManageAddressing(operation, arguments, *account);

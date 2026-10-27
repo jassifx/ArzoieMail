@@ -93,6 +93,7 @@ if (args.Contains("--live"))
     await AddressingTests.Run(native, name, password, Check);
     await MailboxBehaviorTests.Run(native, name, password, Check);
     await SignatureTests.Run(native, name, password, Check);
+    await AdvancedAdministrationTests.Run(native, name, password, Check);
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
     // Real native persistence/authorization coverage runs on every CI database backend.
     async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>
@@ -303,6 +304,22 @@ try
     await Send("/domains/5/accounts/7/signature", HttpMethod.Patch, new { signatureEnabled = true }, token, 403, "https://evil.example");
     await Send("/domains/5/accounts/7/signature", HttpMethod.Patch, new { signatureEnabled = true }, token);
     Check(fake.LastOperation == "accounts.signature.update" && fake.LastArguments.GetProperty("fields").GetProperty("signatureEnabled").GetBoolean(), "Signature updates use the explicit native command.");
+    foreach (var resource in new[] { ("domains.settings", "/domains/5/settings"), ("accounts.profile", "/domains/5/accounts/7/profile") })
+    {
+        await Send(resource.Item2, HttpMethod.Get);
+        Check(fake.LastOperation == resource.Item1 + ".read" && fake.LastArguments.GetProperty("id").GetInt64() == (resource.Item1 == "domains.settings" ? 5 : 7), "Advanced read preserves route identity.");
+        await Send(resource.Item2, HttpMethod.Patch, new { }, "wrong", 403);
+        await Send(resource.Item2, HttpMethod.Patch, new { }, token, 403, "https://evil.example");
+        await Send(resource.Item2, HttpMethod.Patch, new { firstName = "test" }, token);
+        Check(fake.LastOperation == resource.Item1 + ".update", "Advanced update uses explicit native operation.");
+    }
+    foreach (var action in new[] { (HttpMethod.Get, "", "list"), (HttpMethod.Post, "", "create"), (HttpMethod.Get, "/9", "read"), (HttpMethod.Delete, "/9", "delete") })
+    {
+        await Send("/domains/5/names" + action.Item2, action.Item1, action.Item1 == HttpMethod.Get ? null : new { name = "alias.test" }, token);
+        Check(fake.LastOperation == "domainaliases." + action.Item3 && fake.LastArguments.GetProperty("domainId").GetInt64() == 5, "Alternate name routes preserve parent ownership.");
+    }
+    await Send("/domains/5/names?limit=101", HttpMethod.Get, status: 422);
+    await Send("/domains/5/names", HttpMethod.Post, new { name = "alias.test" }, "wrong", 403);
     foreach (var resource in new[] { ("aliases", "/domains/5/aliases"), ("lists", "/domains/5/lists"), ("members", "/domains/5/lists/8/members") })
     {
         foreach (var action in new[] { ("list", HttpMethod.Get, "?search=test&limit=1"), ("create", HttpMethod.Post, ""),

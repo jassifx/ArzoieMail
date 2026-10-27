@@ -76,7 +76,7 @@ static class MailboxBehaviorTests
         finally { await Send("domains.delete", new { id = domainId }); }
     }
 
-    internal static async Task Submit(string sender, string recipient, string marker, string? contentType = null, string? body = null)
+    internal static async Task Submit(string sender, string recipient, string marker, string? contentType = null, string? body = null, string? inReplyTo = null)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         using var client = new TcpClient(); await client.ConnectAsync("127.0.0.1", 25, timeout.Token);
@@ -94,6 +94,7 @@ static class MailboxBehaviorTests
         { await writer.WriteLineAsync(command); await Expect(250); }
         await writer.WriteLineAsync("DATA"); await Expect(354);
         string mimeHeader = contentType is null ? "" : $"MIME-Version: 1.0\r\nContent-Type: {contentType}\r\n";
+        if (inReplyTo is not null) mimeHeader += $"In-Reply-To: {inReplyTo}\r\n";
         await writer.WriteLineAsync($"From: {sender}\r\nTo: {recipient}\r\nSubject: {marker}\r\n{mimeHeader}\r\n{body ?? marker}\r\n."); await Expect(250);
         await writer.WriteLineAsync("QUIT"); await Expect(221);
     }
