@@ -84,6 +84,14 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 
 ## Agent sessions
 
+- **Keep disposable mail-data paths short.** A deep temporary folder plus a long mailbox name
+  and message GUID can exceed legacy Windows path handling. The long-address regression then
+  cannot move messages and leaves queued mail that fails the following cache test. Re-run from
+  the clean checkpoint with a short isolated data path; do not exclude either test.
+- **Authentication challenges may have an empty body.** The panel must handle an HTTP 401
+  without JSON and bootstrap a fresh anonymous CSRF token before the next login. Password,
+  active-state and domain changes can revoke a session immediately.
+
 - **Inno's Ready-page handler precedes PrepareToInstall.** Keep service shutdown in
   PrepareToInstall after prerequisite checks, rather than NextButtonClick(wpReady); otherwise
   an upgrade can stop a working service and then refuse to install. The VM preflight regression

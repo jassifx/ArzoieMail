@@ -79,7 +79,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#33 merged; SQL Express modernization delivered; administration parity remains |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#34 merged; domain/mailbox management in progress; administration parity remains |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols** | SMTP, IMAP and authentication extensions; MTA-STS, DANE, DKIM Ed25519 | 📋 | |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -285,13 +285,17 @@ Requirements documented in an open PR do not mean the functionality is implement
 records certificate, PHP-retirement and Defender requirements; it does not implement them.
 The maintainer authorized continued Phase 1b work with SQL Server Express modernization on
 2026-10-27. The database slice was merged as #33 with all four database jobs green. The
-maintainer then requested the CI inventory/documentation refresh before domain/account code.
+maintainer then requested the CI inventory/documentation refresh before domain/account code;
+that work merged as #34. The maintainer subsequently authorized beginning the domain/mailbox
+slice with “begin phase 1b”. Deliver this slice in one PR, monitor/fix CI and wait for explicit
+confirmation before the next task. A green PR does not authorize merging.
 
 | Item | Status | Evidence or remaining acceptance |
 |---|---|---|
 | Native management boundary, REST/session security and modern panel foundation | ✅ Done | #31 merged; VM and CI checks passed. This is a foundation, not full administration parity. |
 | SQL Server Express modernization | ✅ Done | #33 merged; OLE DB 19, required TLS/certificate validation, migration diagnostics and SQL Server 2025 Express VM/CI coverage passed. Other engine versions and workload capacity still need separate validation; see [SQL Server guide](docs/sql-server.md). |
-| Remaining domain/account and advanced administration | 🔜 Next proposed | Explicit native/API operations, complete panel workflows and permission regression tests; implementation waits for maintainer confirmation. |
+| Basic domain/mailbox administration | 🔄 In progress / review | Native CRUD, write-only password resets, roles/quotas, bounded list responses and responsive panel workflows. Native permissions protect cross-domain access and persisted server-admin accounts. See [REST contract](hmailserver/source/Management/README.md#rest-v1-contract); VM/CI acceptance is required before merge. |
+| Remaining advanced administration | 📋 Planned | Advanced mailbox/domain settings, aliases, lists, queue, rules and listener/TLS parity. Separate confirmation after the current PR; no production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
 | Guided TLS certificate installation and renewal | 📋 Planned | Import/issuance wizard, listener assignment, validation, renewal, safe activation and rollback. |
