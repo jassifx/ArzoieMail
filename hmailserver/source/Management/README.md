@@ -63,6 +63,7 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | GET / POST | `/api/v1/domains/{domainId}/accounts` | Paginated list/create; server administrator or administrator of that domain |
 | GET / PATCH / DELETE | `/api/v1/domains/{domainId}/accounts/{id}` | Read/update/delete; owning domain must match, server administrator accounts require server administrator |
 | GET / PATCH | `/api/v1/domains/{domainId}/accounts/{id}/behavior` | Forwarding/automatic replies; owning domain must match, server administrator accounts require server administrator |
+| GET / PATCH | `/api/v1/domains/{domainId}/accounts/{id}/signature` | Mailbox signature; same administrator, owning-domain and protected-target checks |
 | GET / POST | `/api/v1/domains/{domainId}/aliases` | Paginated list/create; server administrator or administrator of that domain |
 | GET / PATCH / DELETE | `/api/v1/domains/{domainId}/aliases/{id}` | Read/update/delete within the owning domain |
 | GET / POST | `/api/v1/domains/{domainId}/lists` | Paginated list/create distribution lists within the owning domain |
@@ -134,6 +135,25 @@ disabling follows existing BO behavior even if the subsequent persistence operat
 The panel confirms active forwarding/reply changes and warns about external destinations,
 storage and client-visible semantics. Existing spam-abort flags and mail-engine suppression
 remain authoritative; these controls do not add a new forwarding policy or vacation scheduler.
+
+Mailbox signature GET/PATCH accepts `signatureEnabled` (boolean), `signaturePlainText` and
+`signatureHtml` (strings). Only server administrators or the owning domain's administrator may
+use it; protected server-administrator accounts require server administrator. Ordinary mailbox
+self-service remains planned. Settings are fetched separately and excluded from basic mailbox
+views. Omitted fields retain their values; blank formats explicitly clear them. Disabling keeps
+both formats. Unknown fields, wrong types, NUL/other ASCII controls except CR/LF/tab, or more
+than 16,000 UTF-8 bytes per format return 422 before writes. The 16 KiB HTTP request and native
+frame limits also apply; the panel submits changed fields and checks serialized request size.
+Unchanged formats retain their stored line endings when toggling the enabled flag. Plain-text
+edits from the browser use CRLF so the existing HTML fallback recognizes their line breaks;
+REST input is otherwise preserved as supplied.
+
+The panel edits HTML as inert textarea source, never as a live preview; it does not sanitize
+email HTML or remove markup on save. Domain policy can append/override account signatures or
+omit them for local mail/replies, and large/header-only messages can skip signature addition.
+Existing `%User.FirstName%`, `%User.LastName%`, `%User.Address%` macros, MIME-part handling and
+plain-to-HTML fallback are preserved. These controls do not change domain signature policy or
+the native mail engine. Existing persistence invalidates the sender-account cache after saving.
 
 Aliases, lists and members use the same `search`/`offset`/`limit` contract. Server administrators
 can manage every domain; domain administrators can manage only their own; ordinary mailbox

@@ -76,7 +76,7 @@ static class MailboxBehaviorTests
         finally { await Send("domains.delete", new { id = domainId }); }
     }
 
-    private static async Task Submit(string sender, string recipient, string marker)
+    internal static async Task Submit(string sender, string recipient, string marker, string? contentType = null, string? body = null)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
         using var client = new TcpClient(); await client.ConnectAsync("127.0.0.1", 25, timeout.Token);
@@ -93,11 +93,12 @@ static class MailboxBehaviorTests
         foreach (string command in new[] { "EHLO behavior.test", $"MAIL FROM:<{sender}>", $"RCPT TO:<{recipient}>" })
         { await writer.WriteLineAsync(command); await Expect(250); }
         await writer.WriteLineAsync("DATA"); await Expect(354);
-        await writer.WriteLineAsync($"From: {sender}\r\nTo: {recipient}\r\nSubject: {marker}\r\n\r\n{marker}\r\n."); await Expect(250);
+        string mimeHeader = contentType is null ? "" : $"MIME-Version: 1.0\r\nContent-Type: {contentType}\r\n";
+        await writer.WriteLineAsync($"From: {sender}\r\nTo: {recipient}\r\nSubject: {marker}\r\n{mimeHeader}\r\n{body ?? marker}\r\n."); await Expect(250);
         await writer.WriteLineAsync("QUIT"); await Expect(221);
     }
 
-    private static async Task WaitFor(string address, string password, int count)
+    internal static async Task WaitFor(string address, string password, int count)
     {
         // Forward-only work can wait for the existing delivery manager's one-minute poll;
         // unlike an automatic reply, forwarding does not explicitly wake that manager.
@@ -107,7 +108,7 @@ static class MailboxBehaviorTests
         // A mailbox delivery can precede completion of generated local forward/reply work.
         await Task.Delay(300, timeout.Token);
     }
-    private static async Task<List<string>> Read(string address, string password)
+    internal static async Task<List<string>> Read(string address, string password)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var client = new TcpClient(); await client.ConnectAsync("127.0.0.1", 110, timeout.Token);
