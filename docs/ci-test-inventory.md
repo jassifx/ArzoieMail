@@ -1,7 +1,7 @@
 # CI test inventory
 
-This describes the workflows and test entry points delivered through merged PR #33, plus the
-authorized domain/mailbox management coverage added in the current Phase 1b PR. Update
+This describes the workflows and test entry points delivered through merged PR #35, plus the
+authorized alias/list/member coverage in the current Phase 1b slice. Update
 this inventory and ROADMAP's baseline when coverage or test counts change. Counts below are
 a verified snapshot, not a promise that a future commit has passed.
 
@@ -43,12 +43,12 @@ The native class suite is invoked from NUnit, including SQL connection-policy va
 `API/SqlServer.cs` additionally verifies encryption of native mail-service SQL sessions in the
 Express fixture. That database-specific test is explicitly skipped on the other three backends.
 
-### Verified baseline after PR #33
+### Verified baseline after PR #35
 
 Verified on **2026-10-27 (Asia/Colombo)** from the successful logs for tested head
-`0bbc486c704f4f446c304fa1ad20e735a8a685a6`, merged by
-[PR #33](https://github.com/jassifx/ArzoieMail/pull/33) as
-`f0283c184cef230df3f8f76bd8bc4fb27bbb7527`:
+`7fa4f1375a799faae27dcb8fa5ab9ee8a619a0e1`, merged by
+[PR #35](https://github.com/jassifx/ArzoieMail/pull/35) as
+`7d00d2d8b3794aaf2ae8bad3c5e35b5625bd68f0`. NUnit totals match #33:
 
 | Backend | Total | Passed | Failed | Warnings | Inconclusive | Skipped |
 |---|---:|---:|---:|---:|---:|---:|
@@ -70,15 +70,15 @@ Each database job runs the `Test the native management API` step after NUnit:
 | Entry point | Verified coverage | Boundary |
 |---|---|---|
 | [test-management.ps1](../build/test-management.ps1) | 26 deterministic DNS assertions covering shared-provider SPF, syntax, includes/redirects, cycles/lookup limits, DKIM and DMARC publication advice. | Uses DNS fixtures; does not prove live DNS-provider configuration or message-level authentication. |
-| Same executable, default mode | 83 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions, CRUD route/ID mapping, pagination and security behavior. |
-| [test-management-browser.ps1](../build/test-management-browser.ps1) and [browser.py](../hmailserver/test/RegressionTests/Management/browser.py) | Navigation, repeated domain/mailbox CRUD, deletion confirmation/cancellation, write-only password controls, responsive layout, DNSBL mutations, SpamAssassin feedback, DNS advice and logout. | Playwright uses explicit API response fixtures. It verifies the UI workflow, not an end-to-end browser-to-database mutation. |
-| [test-management-live.ps1](../build/test-management-live.ps1) | 69 live native transport/parser/authorization/persistence assertions, including domain/mailbox CRUD, quotas, duplicate/address validation, paging/search, cross-domain/role boundaries and immediate credential revocation. | Uses the installed service and its selected database. COM is used only to prepare/clean fixtures; the management channel itself is native, without COM. |
+| Same executable, default mode | 132 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions, CRUD route/parent-ID mapping, pagination and security behavior. |
+| [test-management-browser.ps1](../build/test-management-browser.ps1) and [browser.py](../hmailserver/test/RegressionTests/Management/browser.py) | Domain/mailbox/alias/list/member CRUD, posting-policy and deletion confirmation/cancellation, password controls, session recovery, responsive layout, DNSBL mutations, SpamAssassin feedback and DNS advice. | Playwright uses explicit API response fixtures. It verifies UI workflows, not an end-to-end browser-to-database mutation. |
+| [test-management-live.ps1](../build/test-management-live.ps1) | 152 live native transport/parser/authorization/persistence assertions, including CRUD, quotas, address validation, parent/role boundaries and credential revocation. [AddressingTests.cs](../hmailserver/test/RegressionTests/Management/AddressingTests.cs) adds alias/list/member checks and real SMTP RCPT probes for routing, posting modes/authentication and cache invalidation. | Uses the installed service and its selected database. SMTP probes issue no DATA, queue no messages and perform no external delivery. COM is used only to prepare/clean fixtures; management commands are native. |
 
-The deterministic/HTTP/HTTPS/live groups now total **180 assertions per database job**, independently
+The deterministic/HTTP/HTTPS/live groups now total **312 assertions per database job**, independently
 of NUnit totals; browser checks are separate. Do not report the manually exercised pipe-squatting
-checks as part of that automated total. The merged #33 baseline was 100 (26/54/2/18);
-the expanded 26/83/2/69 counts require the current PR's VM/CI acceptance and do not retroactively
-change the historical four-backend baseline above.
+checks as part of that automated total. Merged #33 passed 100 (26/54/2/18) and #35 passed
+180 (26/83/2/69). The expanded 26/132/2/152 counts require the current PR's VM/CI acceptance
+and do not retroactively change the historical four-backend baseline above.
 
 ## SQL Express-specific checks
 

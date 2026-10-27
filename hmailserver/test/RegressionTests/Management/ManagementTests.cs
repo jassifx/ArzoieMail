@@ -90,6 +90,7 @@ if (args.Contains("--live"))
         try { await native.SendAsync("domain", ordinaryUser, password, new { id = ownDomain }, CancellationToken.None); throw new Exception("Account user may not inspect domain DNS."); }
         catch (ManagementError e) { Check(e.Status == 403, "Native ordinary-user restrictions."); }
     }
+    await AddressingTests.Run(native, name, password, Check);
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
     // Real native persistence/authorization coverage runs on every CI database backend.
     async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>
@@ -286,6 +287,20 @@ try
     Check(fake.LastOperation == "accounts.update" && fake.LastArguments.GetProperty("id").GetInt64() == 7, "Account update preserves both route IDs.");
     await Send("/domains/5/accounts/7", HttpMethod.Delete, new { }, token);
     Check(fake.LastOperation == "accounts.delete", "Account deletion uses dedicated native operation.");
+    foreach (var resource in new[] { ("aliases", "/domains/5/aliases"), ("lists", "/domains/5/lists"), ("members", "/domains/5/lists/8/members") })
+    {
+        foreach (var action in new[] { ("list", HttpMethod.Get, "?search=test&limit=1"), ("create", HttpMethod.Post, ""),
+                     ("read", HttpMethod.Get, "/9"), ("update", HttpMethod.Patch, "/9"), ("delete", HttpMethod.Delete, "/9") })
+        {
+            await Send(resource.Item2 + action.Item3, action.Item2, action.Item2 == HttpMethod.Get ? null : new { address = "test@example.test" }, token);
+            Check(fake.LastOperation == resource.Item1 + "." + action.Item1
+                  && fake.LastArguments.GetProperty("domainId").GetInt64() == 5
+                  && (resource.Item1 != "members" || fake.LastArguments.GetProperty("listId").GetInt64() == 8)
+                  && (!action.Item3.StartsWith('/') || fake.LastArguments.GetProperty("id").GetInt64() == 9), "Address-management routes preserve their command and parent IDs.");
+        }
+    }
+    await Send("/domains/5/lists/8/members?limit=101", HttpMethod.Get, status: 422);
+    await Send("/domains/5/aliases", HttpMethod.Post, new { address = "test@example.test", target = "other@example.test" }, "wrong", 403);
     fake.Level = 1;
     var current = await Send("/session", HttpMethod.Get);
     Check(current.GetProperty("user").GetProperty("level").GetInt32() == 1, "Refresh roles from the native service.");

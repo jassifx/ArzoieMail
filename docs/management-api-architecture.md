@@ -88,14 +88,17 @@ matrix passing. It changes native database connectivity, not the panel's no-SQL/
 The [documentation status](documentation-status.md) and ROADMAP track remaining feature guides,
 manual technical review and publication; a prose rebrand does not complete panel migration.
 
-The next authorized slice adds domain/mailbox CRUD, bounded list responses and panel workflows
+Merged PR #35 adds domain/mailbox CRUD, bounded list responses and panel workflows
 on this same native boundary. See the [REST contract](../hmailserver/source/Management/README.md#rest-v1-contract)
 for fields, units and the role matrix. Native commands load request-local business objects and
 use existing persistence validation/cache invalidation. Persisted server-administrator roles
 are checked before requested changes, preventing a domain administrator from demoting an account
 and then replacing its password. No new schema, COM dependency or direct web SQL is introduced.
-This slice remains under review until its PR is accepted; advanced account settings and full
-administration parity are separate remaining work.
+The next authorized slice adds aliases, distribution lists and recipients through the same
+boundary. It validates domain/list/object ownership before writes and uses existing persistence
+and cache invalidation. New lists default disabled, members-only and SMTP-authenticated; posting
+modes retain the native engine's envelope-sender semantics. Advanced account settings and full
+administration parity remain separate work.
 
 ## Antivirus lifecycle and high-load boundary
 

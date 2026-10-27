@@ -84,6 +84,12 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 
 ## Agent sessions
 
+- **Address validation differs by business object.** Alias/list persistence checks domain and
+  duplicates, but does not fully validate target/member syntax. Native management commands must
+  reject malformed single addresses and all ASCII control characters before saving. Use the
+  email-address parser for aliases/lists; the account parser additionally excludes filesystem
+  characters such as `/`, which existing aliases legitimately support.
+
 - **Keep disposable mail-data paths short.** A deep temporary folder plus a long mailbox name
   and message GUID can exceed legacy Windows path handling. The long-address regression then
   cannot move messages and leaves queued mail that fails the following cache test. Re-run from

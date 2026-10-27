@@ -29,8 +29,8 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-Verified after merged PR #33, using its tested head
-`0bbc486c704f4f446c304fa1ad20e735a8a685a6` on 2026-10-27 (Asia/Colombo):
+Verified after merged PR #35, using its tested head
+`7fa4f1375a799faae27dcb8fa5ab9ee8a619a0e1` on 2026-10-27 (Asia/Colombo):
 
 | Backend | Total | Passed | Failed | Inconclusive | Skipped |
 |---|---:|---:|---:|---:|---:|
@@ -42,7 +42,7 @@ Verified after merged PR #33, using its tested head
 Warnings were zero on all four jobs. The extra non-MSSQL skip is the SQL-session encryption
 test. Explicit/environment-dependent outcomes remain expected; investigate unexplained changes.
 The [CI inventory](docs/ci-test-inventory.md) distinguishes these NUnit totals from the separate
-100 management assertions per job, browser checks and manual-only coverage. The earlier Phase 1
+180 management assertions per job at #35 (312 targeted by the current slice), browser checks and manual-only coverage. The earlier Phase 1
 baseline was 1313 tests, 1204 passed, zero failed, 34 inconclusive and 75 skipped on three backends.
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
@@ -79,7 +79,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#34 merged; domain/mailbox management in progress; administration parity remains |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#35 merged; aliases/lists in progress; administration parity remains |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols** | SMTP, IMAP and authentication extensions; MTA-STS, DANE, DKIM Ed25519 | 📋 | |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -288,14 +288,17 @@ The maintainer authorized continued Phase 1b work with SQL Server Express modern
 maintainer then requested the CI inventory/documentation refresh before domain/account code;
 that work merged as #34. The maintainer subsequently authorized beginning the domain/mailbox
 slice with “begin phase 1b”. Deliver this slice in one PR, monitor/fix CI and wait for explicit
-confirmation before the next task. A green PR does not authorize merging.
+confirmation before the next task. A green PR does not authorize merging. PR #35 was merged as
+`7d00d2d8b3794aaf2ae8bad3c5e35b5625bd68f0` after all required checks passed. The maintainer's
+subsequent “continue” authorizes the alias/distribution-list/member slice as the next single PR.
 
 | Item | Status | Evidence or remaining acceptance |
 |---|---|---|
 | Native management boundary, REST/session security and modern panel foundation | ✅ Done | #31 merged; VM and CI checks passed. This is a foundation, not full administration parity. |
 | SQL Server Express modernization | ✅ Done | #33 merged; OLE DB 19, required TLS/certificate validation, migration diagnostics and SQL Server 2025 Express VM/CI coverage passed. Other engine versions and workload capacity still need separate validation; see [SQL Server guide](docs/sql-server.md). |
-| Basic domain/mailbox administration | 🔄 [PR #35](https://github.com/jassifx/ArzoieMail/pull/35) in review | Native CRUD, write-only password resets, roles/quotas, bounded list responses and responsive panel workflows. Native permissions protect cross-domain access and persisted server-admin accounts. VM management/browser checks passed; see [REST contract](hmailserver/source/Management/README.md#rest-v1-contract). All required CI must pass before merge. |
-| Remaining advanced administration | 📋 Planned | Advanced mailbox/domain settings, aliases, lists, queue, rules and listener/TLS parity. Separate confirmation after the current PR; no production PHP cutover yet. |
+| Basic domain/mailbox administration | ✅ Done | [PR #35](https://github.com/jassifx/ArzoieMail/pull/35) merged; native CRUD, password resets, roles/quotas, bounded responses and responsive panel passed VM/CI acceptance. |
+| Aliases, distribution lists and member administration | 🔄 In progress | Scoped native/REST CRUD, posting modes/authentication, searchable lists, explicit activation and panel confirmations. New aliases/lists default disabled; lists default members-only with required SMTP authentication. See [REST contract](hmailserver/source/Management/README.md#rest-v1-contract); VM and four-backend CI acceptance required. |
+| Remaining advanced administration | 📋 Planned | Advanced mailbox/domain settings, queue, rules, routing and listener/TLS parity. Separate confirmation after the current PR; no production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
 | Guided TLS certificate installation and renewal | 📋 Planned | Import/issuance wizard, listener assignment, validation, renewal, safe activation and rollback. |

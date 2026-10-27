@@ -80,16 +80,17 @@
     root.append(metrics);
     const c = card('A stronger foundation for your mail'); c.outer.classList.add('section-gap');
     c.body.append(el('p', 'Manage spam protection, choose your blocklist providers, and inspect SPF, DKIM and DMARC from one workspace.', 'text-secondary'));
-    c.body.append(el('p', 'Preview scope: domain and mailbox management, DNS inspection, spam settings and DNSBL management. Other administration functions are still being migrated.', 'help'));
+    c.body.append(el('p', 'Preview scope: domains, mailboxes, aliases, distribution lists, DNS inspection, spam settings and DNSBL management. Other administration functions are still being migrated.', 'help'));
     root.append(c.outer);
   }
   function inputField(name, value, help = '') {
     const wrap = el('div'); const label = el('label', name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
-    const input = el(name === 'level' ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
-    if (name === 'level') {
+    const input = el(['level', 'mode'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
+    if (name === 'level' || name === 'mode') {
       input.className = 'form-select';
-      ['Mailbox user', 'Domain administrator', 'Server administrator'].forEach((title, level) => {
-        if (level > (user.level === 2 ? 2 : 1)) return;
+      const choices = name === 'mode' ? ['Anyone (public)', 'List members', 'Specified sender (announcements)', 'Domain senders'] : ['Mailbox user', 'Domain administrator', 'Server administrator'];
+      choices.forEach((title, level) => {
+        if (name === 'level' && level > (user.level === 2 ? 2 : 1)) return;
         const option = el('option', title); option.value = String(level); input.append(option);
       }); input.value = String(value); wrap.append(label, input);
       return { wrap, input };
@@ -260,6 +261,53 @@
     if (!result.items.length) c.body.append(el('p', 'No matching mailboxes.', 'help'));
     pager(c.body, result, offset, next => reload(next)); editor.append(c.outer, detail);
   }
+  async function addressing(editor, domain, kind, parent = null, offset = 0, search = '') {
+    const singular = { aliases: 'alias', lists: 'distribution list', members: 'member' }[kind];
+    const title = { aliases: 'Aliases', lists: 'Distribution lists', members: 'List members' }[kind];
+    const path = `/domains/${domain.id}/${kind === 'members' ? `lists/${parent.id}/members` : kind}`;
+    const result = await request(`${path}?limit=50&offset=${offset}&search=${encodeURIComponent(search)}`);
+    const c = card(`${title} · ${parent?.address || domain.name}`); const detail = el('div', null, 'section-gap');
+    const reload = (next = offset, filter = search) => addressing(editor, domain, kind, parent, next, filter);
+    if (kind === 'aliases') c.body.append(el('p', 'Forward a local address to one local or external recipient. New aliases start disabled. Review external destinations before enabling forwarding.', 'help'));
+    if (kind === 'lists') c.body.append(el('p', 'New lists start disabled, require SMTP authentication and accept member senders only. Posting modes check the SMTP envelope sender; they do not bind that address to the authenticated identity. Configure sender policy accordingly.', 'help'));
+    if (kind === 'members') c.body.append(el('p', 'Each entry receives list mail and may post when members-only mode is selected. Local and external recipients are supported. Edit one address per entry.', 'help'));
+    searchForm(c.body, search, filter => reload(0, filter));
+    const edit = item => {
+      detail.replaceChildren(); const create = !item; const formCard = card(create ? `New ${singular}` : `Edit ${singular} · ${item.address}`);
+      let values;
+      if (kind === 'members') values = { address: item?.address || '' };
+      else if (kind === 'aliases') values = create ? { address: `@${domain.name}`, target: '', active: false } : { target: item.target, active: item.active };
+      else values = create ? { address: `@${domain.name}`, active: false, mode: 1, requireAuth: true, requireAddress: '' }
+        : { active: item.active, mode: item.mode, requireAuth: item.requireAuth, requireAddress: item.requireAddress };
+      if (kind === 'lists') formCard.body.append(el('p', 'Anyone (public): any envelope sender. List members: addresses in this list. Specified sender: the announcement sender below. Domain senders: envelope addresses in this domain, including nonexistent mailboxes. Require Auth additionally requires SMTP authentication.', 'help'));
+      const form = editForm(values, async fields => {
+        if (kind === 'lists' && fields.active && (fields.mode === 0 || !fields.requireAuth)
+            && !confirm('Save this active list with public posting or without SMTP authentication? Review its members, sender policy and exposure before proceeding.')) return;
+        await request(`${path}${create ? '' : `/${item.id}`}`, create ? 'POST' : 'PATCH', fields);
+        await reload(create ? 0 : offset); notify(`${singular[0].toUpperCase() + singular.slice(1)} saved.`);
+      }, { requireAddress: 'Required for announcements. Leave empty for other modes if unused.' });
+      for (const name of ['address', 'target', 'requireAddress']) {
+        const field = form.querySelector(`[name=${name}]`);
+        if (field) { field.type = 'email'; field.maxLength = 255; field.required = name !== 'requireAddress'; }
+      }
+      formCard.body.append(form, button('Cancel', () => detail.replaceChildren())); detail.append(formCard.outer);
+    };
+    c.body.append(button(`New ${singular}`, () => edit(null), 'btn btn-primary btn-sm'));
+    for (const item of result.items) {
+      const row = el('div', null, 'domain-row'); const text = el('div'); text.append(el('strong', item.address));
+      if (kind === 'aliases') text.append(el('p', `Forwards to ${item.target}`, 'help'));
+      if (kind === 'lists') text.append(el('p', `${['Public', 'Members only', 'Announcements', 'Domain senders'][item.mode] || 'Unknown mode'} · SMTP authentication ${item.requireAuth ? 'required' : 'not required'}`, 'help'));
+      row.append(text); if (kind !== 'members') row.append(pill(item.active ? 'Active' : 'Inactive', item.active ? '' : 'warning'));
+      if (kind === 'lists') row.append(button('Members', () => addressing(detail, domain, 'members', item)));
+      row.append(button(`Edit ${singular}`, () => edit(item)), button(`Delete ${singular}`, async () => {
+        const impact = kind === 'lists' ? ' and all its member entries' : kind === 'aliases' ? ' and stop forwarding at this address' : ' from this list';
+        if (!confirm(`Delete ${item.address}${impact}? This cannot be undone.`)) return;
+        await request(`${path}/${item.id}`, 'DELETE'); await reload(0); notify(`${singular[0].toUpperCase() + singular.slice(1)} deleted.`);
+      }, 'btn btn-outline-danger btn-sm')); c.body.append(row);
+    }
+    if (!result.items.length) c.body.append(el('p', `No matching ${title.toLowerCase()}.`, 'help'));
+    pager(c.body, result, offset, next => reload(next)); editor.replaceChildren(c.outer, detail);
+  }
   async function domains(root, offset = 0, search = '') {
     const result = await request(`/domains?limit=50&offset=${offset}&search=${encodeURIComponent(search)}`); const { items } = result;
     const list = card('Configured domains'); const editor = el('div', null, 'section-gap');
@@ -277,6 +325,8 @@
       row.append(text, pill(domain.active ? 'Active' : 'Inactive', domain.active ? '' : 'warning'));
       if (user.level >= 1) {
         row.append(button('Mailboxes', () => accounts(editor, domain)));
+        row.append(button('Aliases', () => addressing(editor, domain, 'aliases')));
+        row.append(button('Distribution lists', () => addressing(editor, domain, 'lists')));
         row.append(button('Edit domain', () => {
           editor.replaceChildren(); const c = card(`Domain settings · ${domain.name}`);
           const values = { active: domain.active };
