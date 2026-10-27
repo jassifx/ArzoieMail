@@ -171,6 +171,12 @@ public static class ManagementHost
         api.MapGet("/domains/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "domain", false, id));
         api.MapPatch("/domains/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.update", true, id));
         api.MapDelete("/domains/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.delete", false, id));
+        api.MapGet("/domains/{id:long:min(1)}/settings", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.settings.read", false, id));
+        api.MapPatch("/domains/{id:long:min(1)}/settings", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.settings.update", true, id));
+        api.MapGet("/domains/{domainId:long:min(1)}/names", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domainaliases.list", domainId: domainId));
+        api.MapPost("/domains/{domainId:long:min(1)}/names", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domainaliases.create", true, domainId: domainId));
+        api.MapGet("/domains/{domainId:long:min(1)}/names/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domainaliases.read", false, id, domainId));
+        api.MapDelete("/domains/{domainId:long:min(1)}/names/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domainaliases.delete", false, id, domainId));
         api.MapGet("/domains/{domainId:long:min(1)}/accounts", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.list", domainId: domainId));
         api.MapPost("/domains/{domainId:long:min(1)}/accounts", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.create", true, domainId: domainId));
         api.MapGet("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.read", false, id, domainId));
@@ -180,6 +186,8 @@ public static class ManagementHost
         api.MapPatch("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/behavior", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.behavior.update", true, id, domainId));
         api.MapGet("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/signature", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.signature.read", false, id, domainId));
         api.MapPatch("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/signature", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.signature.update", true, id, domainId));
+        api.MapGet("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/profile", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.profile.read", false, id, domainId));
+        api.MapPatch("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/profile", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.profile.update", true, id, domainId));
         foreach (string resource in new[] { "aliases", "lists" })
         {
             string command = resource;

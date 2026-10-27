@@ -17,6 +17,10 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 - **One change, one pull request** to `master`. `master` is protected: it takes a pull request
   with passing CI checks. Merged branches are deleted.
+- **Larger coherent Phase 1b bundles**, requested on 2026-10-27: combine related settings and
+  workflows across native/REST/panel, regressions and documentation. The earlier 18–22 tiny-slice
+  estimate is superseded by this grouping preference; it is not a fixed remaining PR count.
+  Submit one bundle, monitor/fix its CI and wait for maintainer review before the next bundle.
 - **Every bug fix and every feature has a regression test** (see AGENTS.md). For a bug fix the
   test is written first and seen to fail.
 - **Branch names decide whether CI runs.** The workflows run for `master`, `claude/**`,
@@ -29,8 +33,8 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-Verified after merged PR #39, using its tested head
-`99e0948261efad10279fc34f257d9b6efeca3374` on 2026-10-27 (Asia/Colombo):
+Verified after merged PR #40, using its tested head
+`f9a94491d2f122fdf981aeb0be612136d2267dcd` on 2026-10-27 (Asia/Colombo):
 
 | Backend | Total | Passed | Failed | Inconclusive | Skipped |
 |---|---:|---:|---:|---:|---:|
@@ -42,7 +46,7 @@ Verified after merged PR #39, using its tested head
 Warnings were zero on all four jobs. The extra non-MSSQL skip is the SQL-session encryption
 test. Explicit/environment-dependent outcomes remain expected; investigate unexplained changes.
 The [CI inventory](docs/ci-test-inventory.md) distinguishes these NUnit totals from the separate
-358 management assertions per job at #39, browser checks and manual-only coverage. The earlier Phase 1
+404 management assertions per job at #40, browser checks and manual-only coverage. The earlier Phase 1
 baseline was 1313 tests, 1204 passed, zero failed, 34 inconclusive and 75 skipped on three backends.
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
@@ -79,7 +83,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#39 merged; domain/mailbox/alias/list and forwarding/reply controls delivered; mailbox signatures in progress, advanced parity remains |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#40 merged; current larger advanced domain/mailbox bundle is VM-validated, awaiting PR review/merge; advanced parity remains |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols and data integrity** | Safe UID allocation/generation renewal, identifier boundaries, SMTP/IMAP/authentication extensions, MTA-STS, DANE, DKIM Ed25519 | 📋 | UID plan added; implementation not started |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -302,7 +306,8 @@ actual SignPath certificate signing remains a separate master-only manual valida
 | Basic domain/mailbox administration | ✅ Done | [PR #35](https://github.com/jassifx/ArzoieMail/pull/35) merged; native CRUD, password resets, roles/quotas, bounded responses and responsive panel passed VM/CI acceptance. |
 | Aliases, distribution lists and member administration | ✅ Done | [PR #36](https://github.com/jassifx/ArzoieMail/pull/36) merged; scoped native/REST CRUD, posting controls, members, search and panel confirmations passed VM/four-backend CI. New aliases/lists default disabled; lists default members-only with SMTP authentication required. |
 | Mailbox forwarding and automatic replies | ✅ Done | #39 merged; native/REST/panel controls, domain/target-role checks, validation and local SMTP/POP3 coverage passed VM and all four CI backends. 358 management assertions per backend, browser checks and separate VM pipe-identity checks passed. Mailbox-user self-service remains planned. |
-| Mailbox signatures | 🔄 In progress | Implemented and VM-validated on `feature/webadmin-mailbox-signatures`, awaiting PR review/merge. Scoped native/REST controls, source-only text/HTML editor, domain policy preserved, SMTP/MIME and browser safety/newline tests passed. VM: 26 DNS + 152 HTTP + 2 HTTPS + 224 native = 404 assertions, browser checks and 2 separate pipe checks. Verify all four backend CI jobs before merge; wait for review before further work. |
+| Mailbox signatures | ✅ Done | #40 merged; scoped native/REST controls, inert source editor, SMTP/MIME and browser safety/newline tests passed VM and all four CI backends (404 management assertions per backend). |
+| Advanced domain/mailbox administration bundle | 🔄 In progress | `feature/webadmin-advanced-domain-mailbox`: profiles; catch-all/plus addressing/greylisting; object limits; domain signature formats/policy; alternate domain list/create/delete. Implemented and VM-validated: 26 DNS + 188 HTTP + 2 HTTPS + 312 native = 528 assertions, browser workflows and 2 separate pipe checks. Awaiting PR review/merge and required four-backend CI. Object limits and alternate-name writes require server admin. |
 | Remaining advanced administration | 📋 Planned | Advanced mailbox/domain settings, queue, rules, routing and listener/TLS parity. Separate confirmation after the current PR; no production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |

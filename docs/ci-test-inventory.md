@@ -1,13 +1,22 @@
 # CI test inventory
 
-Mailbox signatures are the current authorized slice after merged PR #39. `SignatureTests.cs`
+Current larger bundle after merged #40: `AdvancedAdministrationTests.cs` covers profiles,
+domain routing/limits/signature policy, alternate names, permission boundaries and live local
+SMTP/POP3 delivery. HTTP routing/security and browser fixtures cover the same controls,
+confirmation/cancellation, source safety, role restrictions and mobile layout. VM acceptance
+passed **26 DNS + 188 HTTP + 2 HTTPS + 312 native = 528 assertions**, plus browser workflows
+and 2 separate pipe checks. Native delivery probes cover alternate names and domain signature
+replace/append/fallback/HTML/local/reply/disable policies, with profile macros and cache changes.
+Check exact-head four-backend CI in the feature PR; earlier results below remain historical.
+
+Mailbox signatures merged in #40. `SignatureTests.cs`
 adds native scope/type/size/persistence checks and local SMTP/POP3 plain, HTML, multipart and
 disabled-signature probes. HTTP and browser coverage includes scoped routes, CSRF/origin,
 confirmation, literal HTML source, omission/newline preservation, UTF-8/request limits and
 mobile layout. VM validation passed **26 DNS + 152 HTTP + 2 HTTPS + 224 native = 404 assertions**,
 plus browser workflows and 2 separate pipe-identity checks. The CRLF omission regression failed
-before the panel fix and passed afterward. Verify exact-head four-backend CI in the feature PR;
-the merged baseline below remains historical evidence.
+before the panel fix and passed afterward. All four backend CI jobs passed these counts on
+`f9a94491d2f122fdf981aeb0be612136d2267dcd`, merged as `589001f49f89dec62a390d78dbf4eecccaeeaf1d`.
 
 Mailbox forwarding/automatic replies merged in PR #39.
 `MailboxBehaviorTests.cs` adds native permission/input/persistence coverage and local-only
@@ -18,10 +27,10 @@ SMTP DATA and verify POP3 delivery, forward-only/retained copies, deactivation, 
 expiry and re-enabling; none attempts external delivery. Native delivery waits account for the
 existing one-minute queue poll. All four backend jobs passed these 358 assertions on tested
 head `99e0948261efad10279fc34f257d9b6efeca3374`, merged as `c9bcd51861f22cf83a7e4be6fd0531c0e410fb28`.
-Verify the new signature feature head independently; earlier green CI is historical.
+Verify the new administration-bundle head independently; earlier green CI is historical.
 
-This describes the workflows and test entry points delivered through merged PR #39, including
-forwarding/reply coverage. CI dependency updates were separately validated in #37. Update
+This describes the workflows and test entry points delivered through merged PR #40, including
+mailbox signature coverage. CI dependency updates were separately validated in #37. Update
 this inventory and ROADMAP's baseline when coverage or test counts change. Counts below are
 a verified snapshot, not a promise that a future commit has passed.
 
@@ -63,12 +72,12 @@ The native class suite is invoked from NUnit, including SQL connection-policy va
 `API/SqlServer.cs` additionally verifies encryption of native mail-service SQL sessions in the
 Express fixture. That database-specific test is explicitly skipped on the other three backends.
 
-### Verified baseline after PR #39
+### Verified baseline after PR #40
 
 Verified on **2026-10-27 (Asia/Colombo)** from the successful logs for tested head
-`99e0948261efad10279fc34f257d9b6efeca3374`, merged by
-[PR #39](https://github.com/jassifx/ArzoieMail/pull/39) as
-`c9bcd51861f22cf83a7e4be6fd0531c0e410fb28`. NUnit totals match #33/#35/#36:
+`f9a94491d2f122fdf981aeb0be612136d2267dcd`, merged by
+[PR #40](https://github.com/jassifx/ArzoieMail/pull/40) as
+`589001f49f89dec62a390d78dbf4eecccaeeaf1d`. NUnit totals match #33/#35/#36/#39:
 
 | Backend | Total | Passed | Failed | Warnings | Inconclusive | Skipped |
 |---|---:|---:|---:|---:|---:|---:|
@@ -90,16 +99,16 @@ Each database job runs the `Test the native management API` step after NUnit:
 | Entry point | Verified coverage | Boundary |
 |---|---|---|
 | [test-management.ps1](../build/test-management.ps1) | 26 deterministic DNS assertions covering shared-provider SPF, syntax, includes/redirects, cycles/lookup limits, DKIM and DMARC publication advice. | Uses DNS fixtures; does not prove live DNS-provider configuration or message-level authentication. |
-| Same executable, default mode | 142 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions at #39. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions, CRUD route/parent-ID mapping, pagination and security behavior. |
+| Same executable, default mode | 152 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions at #40. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions, CRUD route/parent-ID mapping, pagination and security behavior. |
 | [test-management-browser.ps1](../build/test-management-browser.ps1) and [browser.py](../hmailserver/test/RegressionTests/Management/browser.py) | Domain/mailbox/alias/list/member CRUD, posting-policy and deletion confirmation/cancellation, password controls, session recovery, responsive layout, DNSBL mutations, SpamAssassin feedback and DNS advice. | Playwright uses explicit API response fixtures. It verifies UI workflows, not an end-to-end browser-to-database mutation. |
-| [test-management-live.ps1](../build/test-management-live.ps1) | 188 live native transport/parser/authorization/persistence assertions at #39, including CRUD, quotas, address validation, parent/role boundaries, credential revocation and forwarding/replies. [AddressingTests.cs](../hmailserver/test/RegressionTests/Management/AddressingTests.cs) adds SMTP RCPT routing/policy probes; [MailboxBehaviorTests.cs](../hmailserver/test/RegressionTests/Management/MailboxBehaviorTests.cs) adds local SMTP DATA and POP3 delivery checks. | Uses the installed service/database. Alias/list probes issue no DATA; forwarding/reply probes deliver only to disposable local mailboxes. No external delivery is attempted. COM is used only to prepare/clean fixtures; management commands are native. |
+| [test-management-live.ps1](../build/test-management-live.ps1) | 224 live native transport/parser/authorization/persistence assertions at #40, including CRUD, quotas, address validation, parent/role boundaries, credential revocation, forwarding/replies and signatures. [AddressingTests.cs](../hmailserver/test/RegressionTests/Management/AddressingTests.cs) adds SMTP RCPT routing/policy probes; [MailboxBehaviorTests.cs](../hmailserver/test/RegressionTests/Management/MailboxBehaviorTests.cs) and [SignatureTests.cs](../hmailserver/test/RegressionTests/Management/SignatureTests.cs) add local SMTP DATA/POP3 delivery checks. | Uses the installed service/database. Alias/list probes issue no DATA; delivery probes use only disposable local mailboxes. No external delivery is attempted. COM is used only to prepare/clean fixtures; management commands are native. |
 
-The deterministic/HTTP/HTTPS/live groups total **358 assertions per database job at merged #39**, independently
+The deterministic/HTTP/HTTPS/live groups total **404 assertions per database job at merged #40**, independently
 of NUnit totals; browser checks are separate. Do not report the manually exercised pipe-squatting
 checks as part of that automated total. Merged #33 passed 100 (26/54/2/18) and #35 passed
 180 (26/83/2/69). The expanded 26/132/2/152 counts passed VM and all four CI backend jobs
-in #36; #39 passed 26/142/2/188 on all four backends. These are verified historical results,
-not proof that a later signature-feature head has passed.
+in #36; #39 passed 26/142/2/188 and #40 passed 26/152/2/224 on all four backends. These are
+verified historical results, not proof that a later administration-bundle head has passed.
 
 The [UID lifecycle plan](imap-uid-modernization.md#validation-and-completion-gate) adds future
 boundary, concurrency, generation-renewal, crash/restore and client-interoperability acceptance.

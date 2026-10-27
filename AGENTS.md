@@ -55,8 +55,9 @@ retaining compatibility identifiers, original authorship and historical routes. 
 [documentation status](docs/documentation-status.md) for remaining technical/website work;
 a naming refresh does not establish that every inherited recipe has been validated.
 Honor the maintainer's PR review gate and VM/CI-only runtime-testing rule; check live PR/CI state.
-PR #38's identifier/UID roadmap plan and #39's forwarding/automatic replies are merged.
-The next authorized Phase 1b slice is mailbox signatures (implemented and VM-validated on the feature branch); follow the
+PR #38's identifier/UID roadmap plan, #39's forwarding/replies and #40's mailbox signatures are merged.
+The current authorized Phase 1b bundle combines advanced domain settings, mailbox profiles,
+domain signature policy and alternate domain names; use larger coherent PRs as requested. Follow the
 current handoff for the branch and live PR state. UID implementation remains a later item.
 
 ---

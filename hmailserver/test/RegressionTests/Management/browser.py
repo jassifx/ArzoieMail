@@ -21,6 +21,11 @@ behavior = {"forwardEnabled": False, "forwardAddress": "", "forwardKeepOriginal"
             "autoReplyEnabled": False, "autoReplySubject": "", "autoReplyBody": "", "autoReplyExpires": False,
             "autoReplyExpiresDate": "", "autoReplyAbortSpamFlagged": True}
 signature = {"signatureEnabled": False, "signaturePlainText": "", "signatureHtml": ""}
+profile = {"firstName": "", "lastName": "", "directoryBacked": False, "lastLogon": "2026-10-27 12:00:00"}
+domain_settings = {"catchAllAddress": "", "plusAddressingEnabled": False, "plusAddressingCharacter": "+", "greylistingEnabled": True,
+                   "maxAccounts": 0, "maxAliases": 0, "maxLists": 0, "signatureEnabled": False,
+                   "signaturePlainText": "", "signatureHtml": "", "signatureMethod": 1, "signaturesOnReplies": False, "signaturesOnLocalMail": True}
+domain_names = []
 revoked = False
 
 
@@ -68,6 +73,23 @@ def api(route):
             items = [v for v in domains if query.get('search', [''])[0].lower() in v['name'].lower()]
             offset = int(query.get('offset', [0])[0])
             data = {"items": items[offset:offset + 50], "total": len(items)}
+    elif path.endswith('/settings'):
+        domain_settings.update(body)
+        data = domain_settings
+    elif '/names' in path:
+        if path.endswith('/names'):
+            if request.method == 'POST':
+                data = {"id": 30, "domainId": 5, **body}
+                domain_names.append(data)
+            else:
+                data = {"items": domain_names, "total": len(domain_names)}
+        else:
+            item = next(v for v in domain_names if v['id'] == int(path.rsplit('/', 1)[1]))
+            domain_names.remove(item)
+            data = {"deleted": True}
+    elif path.endswith('/profile'):
+        profile.update(body)
+        data = profile
     elif path.endswith('/signature'):
         signature.update(body)
         data = signature
@@ -170,6 +192,50 @@ with sync_playwright() as p:
     page.get_by_role('button', name='Save changes', exact=True).click()
     page.get_by_text('Domain saved.', exact=True).wait_for()
     assert domains[0]['maxAccountSizeMB'] == 100
+    page.get_by_role('button', name='Advanced settings', exact=True).first.click()
+    page.get_by_label('catch All Address', exact=True).fill('archive@example.com')
+    page.get_by_label('plus Addressing Enabled', exact=True).check()
+    page.get_by_label('max Accounts', exact=True).fill('100')
+    page.get_by_label('signature Enabled', exact=True).check()
+    page.get_by_label('signature Method', exact=True).select_option('3')
+    page.get_by_label('signature Plain Text', exact=True).fill('Company\n%User.FirstName%')
+    markup = '</textarea><img src=x onerror="window.domainMarkupExecuted=true">'
+    page.get_by_label('signature Html', exact=True).fill(markup)
+    before = len(requests)
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    assert len(requests) == before, 'Cancelling domain-wide changes must not submit.'
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.screenshot(path=str(output / 'advanced-domain-mobile.png'), full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Advanced settings overflow on mobile.'
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Advanced domain settings saved.', exact=True).wait_for()
+    assert domain_settings['signatureMethod'] == 3 and domain_settings['maxAccounts'] == 100
+    assert domain_settings['signaturePlainText'] == 'Company\r\n%User.FirstName%'
+    assert 'greylistingEnabled' not in requests[-1][2], 'Omitted domain settings must be preserved.'
+    page.get_by_role('button', name='Advanced settings', exact=True).first.click()
+    assert page.get_by_label('signature Html', exact=True).input_value() == markup
+    assert page.evaluate('typeof window.domainMarkupExecuted') == 'undefined'
+    assert page.locator('img[src="x"]').count() == 0, 'Domain HTML source must not become DOM elements.'
+    page.get_by_role('button', name='Cancel', exact=True).click()
+    page.get_by_role('button', name='Alternate domains', exact=True).first.click()
+    page.get_by_label('name', exact=True).fill('alternate.test')
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    assert not domain_names, 'Cancelling alternate-domain activation must preserve the namespace.'
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Alternate domain added.', exact=True).wait_for()
+    assert domain_names[0]['name'] == 'alternate.test'
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Remove alternate domain', exact=True).click()
+    assert len(domain_names) == 1
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Remove alternate domain', exact=True).click()
+    page.get_by_text('Alternate domain removed.', exact=True).wait_for()
+    assert not domain_names
     page.get_by_role('button', name='Mailboxes', exact=True).first.click()
     page.get_by_role('button', name='New mailbox', exact=True).click()
     page.get_by_label('address', exact=True).fill('new@example.com')
@@ -183,6 +249,14 @@ with sync_playwright() as p:
     page.get_by_text('Mailbox saved.', exact=True).wait_for()
     assert mailboxes[0]['maxSizeMB'] == 50
     assert 'password' not in requests[-2][2], 'Blank edit password must not replace existing credentials.'
+    page.get_by_role('button', name='Profile', exact=True).click()
+    assert page.get_by_label('directory Backed', exact=True).count() == 0, 'Directory state must be read-only.'
+    page.get_by_label('first Name', exact=True).fill('Ada')
+    page.get_by_label('last Name', exact=True).fill('Team')
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Profile saved.', exact=True).wait_for()
+    assert profile['firstName'] == 'Ada' and profile['lastName'] == 'Team'
+    assert set(requests[-1][2]) == {'firstName', 'lastName'}
     page.get_by_role('button', name='Signature', exact=True).click()
     page.get_by_label('signature Enabled', exact=True).check()
     page.get_by_label('signature Plain Text', exact=True).fill('Regards\n%User.Address%')
@@ -341,10 +415,16 @@ with sync_playwright() as p:
     assert page.get_by_role('button', name='Delete domain', exact=True).count() == 0
     page.get_by_role('button', name='Edit domain', exact=True).click()
     assert page.get_by_label('max Account Size MB', exact=True).count() == 0
+    page.get_by_role('button', name='Advanced settings', exact=True).click()
+    assert page.get_by_label('max Accounts', exact=True).count() == 0, 'Only server administrators may set object limits.'
+    page.get_by_role('button', name='Cancel', exact=True).click()
+    page.get_by_role('button', name='Alternate domains', exact=True).click()
+    assert page.get_by_label('name', exact=True).count() == 0, 'Domain administrators cannot claim global names.'
     page.get_by_role('button', name='Mailboxes', exact=True).click()
     page.get_by_text('server@example.com', exact=True).wait_for()
     assert page.get_by_role('button', name='Edit mailbox', exact=True).count() == 0
     assert page.get_by_role('button', name='Signature', exact=True).count() == 0
+    assert page.get_by_role('button', name='Profile', exact=True).count() == 0
     assert page.get_by_role('button', name='Delete mailbox', exact=True).count() == 0
     page.get_by_role('button', name='New mailbox', exact=True).click()
     assert page.get_by_label('level', exact=True).locator('option[value="2"]').count() == 0
@@ -363,4 +443,4 @@ with sync_playwright() as p:
     assert requests[-1][0:2] == ('GET', '/session'), 'Revocation must obtain a fresh anonymous CSRF token.'
     assert not errors, errors
     browser.close()
-    print('Passed browser navigation, domain/mailbox/alias/list/member CRUD, forwarding/replies, signature source safety and confirmation, posting-policy confirmation, password handling, DNSBL mutation, SpamAssassin test, DNS guidance, session recovery and mobile layout checks.')
+    print('Passed browser navigation, advanced domain policies, alternate names, mailbox profiles, domain/mailbox/alias/list/member CRUD, forwarding/replies, signature source safety and confirmation, posting-policy confirmation, password handling, DNSBL mutation, SpamAssassin test, DNS guidance, session recovery and mobile layout checks.')

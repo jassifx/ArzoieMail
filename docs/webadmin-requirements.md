@@ -16,9 +16,11 @@ Keep end-user guidance aligned with [documentation status](documentation-status.
 manual naming updates do not imply that these requirements have been implemented.
 
 Mailbox forwarding and automatic replies merged in #39 with VM/four-backend CI acceptance.
-Mailbox signatures are implemented and VM-validated on the feature branch: plain-text and HTML source settings,
-native/REST/panel controls, safe browser handling and SMTP/MIME regressions. Existing domain
-policy/macros remain authoritative; PR review/merge and its required CI gate remain. Mailbox-user self-service remains
+Mailbox signatures merged in #40. The current authorized larger bundle combines mailbox
+profiles, domain catch-all/plus addressing/greylisting, server-defined object limits, domain
+signature policy/formats and alternate domain-name management, with native/REST/panel controls
+and regressions. VM acceptance passed; verify required CI and PR review/merge. Global-name writes and object limits require server
+administrator. Existing engine policy/macros remain authoritative. Mailbox-user self-service remains
 planned. Future UID capacity/maintenance controls belong to the
 [identifier lifecycle plan](imap-uid-modernization.md); documenting them does not implement them.
 
