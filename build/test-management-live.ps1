@@ -10,6 +10,7 @@ if ((Get-CimInstance Win32_ComputerSystem).Model -ne 'Virtual Machine') {
     throw 'Live management tests run only inside a disposable VM or CI runner.'
 }
 $repo = Split-Path $PSScriptRoot -Parent
+$originalContentRoot = $env:ASPNETCORE_CONTENTROOT
 if (-not $EvidenceDirectory) { $EvidenceDirectory = Join-Path $repo 'out\management-evidence' }
 New-Item -ItemType Directory -Force $EvidenceDirectory | Out-Null
 function Invoke-ManagementMode([string]$Mode) {
@@ -89,11 +90,13 @@ try {
         Start-Sleep -Milliseconds 500
     }
     if (-not $ready) { throw 'The native management endpoint did not become ready.' }
+    $env:ASPNETCORE_CONTENTROOT = if ($PublishedApi) { $PublishedApi } else { Join-Path $repo 'hmailserver\source\Management\Api' }
     Invoke-ManagementMode '--live'
     Invoke-ManagementMode '--live-http'
     Invoke-ManagementMode '--tls-native'
     if ($PublishedApi) { & "$PSScriptRoot\test-management-browser.ps1" -PublishedApi $PublishedApi -Python $Python }
 } finally {
+    $env:ASPNETCORE_CONTENTROOT = $originalContentRoot
     foreach ($item in @($objects) + @($app)) { if ($null -ne $item -and [Runtime.InteropServices.Marshal]::IsComObject($item)) { try { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($item) } catch { } } }
     Stop-TestService
     [IO.File]::WriteAllBytes($iniPath, $originalIni)

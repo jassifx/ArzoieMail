@@ -33,6 +33,10 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 - **Desktop Runtime is not ASP.NET Core Runtime.** The self-contained test runner may work in
   a VM whose framework-dependent published API cannot start. Verify the actual ASP.NET Core 10
   runtime before published-browser smoke; keep runtime provisioning inside the VM/checkpoint.
+- **Live REST integration needs an explicit content root.** CI starts its driver at repository
+  root; a VM helper may already have ASPNETCORE_CONTENTROOT set. The live driver must set it to
+  the published API (or source API for a non-published run) and restore its caller's value.
+  Otherwise native requests pass but the panel/asset assertion correctly fails with wwwroot 404.
 
 - **`Formatter::Format` takes at most five arguments**; split longer messages.
 - `AnsiString::operator[]` is ambiguous; index through a `const std::string&`.
