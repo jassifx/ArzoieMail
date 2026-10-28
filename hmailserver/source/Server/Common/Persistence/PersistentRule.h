@@ -19,6 +19,10 @@ namespace HM
 
       static bool SaveObject(std::shared_ptr<Rule> pRule, String &errorMessage, PersistenceMode mode);
       static bool SaveObject(std::shared_ptr<Rule> pRule);
+      // Management edits are fail-closed: persist inactive first, check every child write,
+      // and only activate after the complete definition succeeds. No rollback is implied.
+      static bool SaveCheckedObject(std::shared_ptr<Rule> rule, bool replaceCriteria, bool replaceActions);
+      static bool DeleteCheckedObject(std::shared_ptr<Rule> rule);
       static bool DeleteObject(std::shared_ptr<Rule> pRule);
 
       static void DeleteByAccountID(__int64 ID);

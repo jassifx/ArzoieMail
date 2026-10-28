@@ -1,10 +1,23 @@
 param(
     [Parameter(Mandatory=$true)][pscredential]$AdministratorCredential,
-    [string]$TestExecutable = (Join-Path $PSScriptRoot '..\hmailserver\source\Management\Tests\bin\Release\net10.0\ArzoieMail.Management.Tests.dll')
+    [string]$TestExecutable = (Join-Path $PSScriptRoot '..\hmailserver\source\Management\Tests\bin\Release\net10.0\ArzoieMail.Management.Tests.dll'),
+    [string]$PublishedApi,
+    [string]$Python = 'python',
+    [string]$EvidenceDirectory
 )
 $ErrorActionPreference = 'Stop'
 if ((Get-CimInstance Win32_ComputerSystem).Model -ne 'Virtual Machine') {
     throw 'Live management tests run only inside a disposable VM or CI runner.'
+}
+$repo = Split-Path $PSScriptRoot -Parent
+$originalContentRoot = $env:ASPNETCORE_CONTENTROOT
+if (-not $EvidenceDirectory) { $EvidenceDirectory = Join-Path $repo 'out\management-evidence' }
+New-Item -ItemType Directory -Force $EvidenceDirectory | Out-Null
+function Invoke-ManagementMode([string]$Mode) {
+    $log = Join-Path $EvidenceDirectory ($Mode.TrimStart('-') + '.log')
+    if ([IO.Path]::GetExtension($TestExecutable) -eq '.dll') { & dotnet $TestExecutable $Mode | Tee-Object -FilePath $log }
+    else { & $TestExecutable $Mode | Tee-Object -FilePath $log }
+    if ($LASTEXITCODE -ne 0) { throw "Management regression mode $Mode failed." }
 }
 $serviceKey = 'HKLM:\SYSTEM\CurrentControlSet\Services\hMailServer'
 $service = Get-CimInstance Win32_Service -Filter "Name='hMailServer'"
@@ -36,6 +49,7 @@ try {
     $domain.Save()
     $fixtureDomainId = $domain.ID
     $password = [Convert]::ToBase64String([Guid]::NewGuid().ToByteArray()) + '!aA1'
+    if ($env:GITHUB_ACTIONS -eq 'true') { Write-Output "::add-mask::$password" }
     foreach ($role in @(@('server',2),@('domain',1),@('user',0))) {
         $account = $domain.Accounts.Add()
         $objects += $account
@@ -45,7 +59,14 @@ try {
         $account.AdminLevel = [int]$role[1]
         $account.Save()
         switch ($role[0]) {
-            'server' { $env:ARZOIEMAIL_TEST_USERNAME = $account.Address }
+            'server' {
+                $env:ARZOIEMAIL_TEST_USERNAME = $account.Address
+                # Fixture only: prove queue operations cannot reach stored mailbox data.
+                $folder = $account.IMAPFolders.ItemByName('INBOX'); $objects += $folder
+                $stored = $folder.Messages.Add(); $objects += $stored
+                $stored.Subject = 'Stored queue-boundary fixture'; $stored.Body = 'Preserve this mailbox message.'; $stored.Save()
+                $env:ARZOIEMAIL_TEST_STORED_ID = [string]$stored.ID
+            }
             'domain' { $env:ARZOIEMAIL_TEST_DOMAIN_USERNAME = $account.Address }
             'user' { $env:ARZOIEMAIL_TEST_USER_USERNAME = $account.Address }
         }
@@ -69,10 +90,13 @@ try {
         Start-Sleep -Milliseconds 500
     }
     if (-not $ready) { throw 'The native management endpoint did not become ready.' }
-    if ([IO.Path]::GetExtension($TestExecutable) -eq '.dll') { & dotnet $TestExecutable --live }
-    else { & $TestExecutable --live }
-    if ($LASTEXITCODE -ne 0) { throw 'Native management regression tests failed.' }
+    $env:ASPNETCORE_CONTENTROOT = if ($PublishedApi) { $PublishedApi } else { Join-Path $repo 'hmailserver\source\Management\Api' }
+    Invoke-ManagementMode '--live'
+    Invoke-ManagementMode '--live-http'
+    Invoke-ManagementMode '--tls-native'
+    if ($PublishedApi) { & "$PSScriptRoot\test-management-browser.ps1" -PublishedApi $PublishedApi -Python $Python }
 } finally {
+    $env:ASPNETCORE_CONTENTROOT = $originalContentRoot
     foreach ($item in @($objects) + @($app)) { if ($null -ne $item -and [Runtime.InteropServices.Marshal]::IsComObject($item)) { try { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($item) } catch { } } }
     Stop-TestService
     [IO.File]::WriteAllBytes($iniPath, $originalIni)
@@ -84,4 +108,5 @@ try {
     if ($null -ne $cleanup.Authenticate($AdministratorCredential.UserName, $adminPassword) -and $null -ne $fixtureDomainId) { $cleanup.Domains.DeleteByDBID($fixtureDomainId) }
     $env:ARZOIEMAIL_TEST_USERNAME = $null; $env:ARZOIEMAIL_TEST_PASSWORD = $null
     $env:ARZOIEMAIL_TEST_DOMAIN_USERNAME = $null; $env:ARZOIEMAIL_TEST_USER_USERNAME = $null
+    $env:ARZOIEMAIL_TEST_STORED_ID = $null
 }

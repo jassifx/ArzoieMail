@@ -680,6 +680,36 @@ namespace HM
       return bRetVal;
    }
 
+   namespace
+   {
+      PersistentMessage::QueueItem QueueItemFromRow(std::shared_ptr<DALRecordset> row)
+      {
+         PersistentMessage::QueueItem item;
+         item.id = row->GetInt64Value("messageid"); item.sender = row->GetStringValue("messagefrom");
+         item.created = row->GetStringValue("messagecreatetime"); item.nextTry = row->GetStringValue("messagenexttrytime");
+         item.size = row->GetLongValue("messagesize"); item.retries = row->GetLongValue("messagecurnooftries");
+         item.state = row->GetLongValue("messagetype"); item.locked = row->GetLongValue("messagelocked") != 0;
+         return item;
+      }
+   }
+   bool PersistentMessage::ReadQueue(std::vector<QueueItem> &items)
+   {
+      SQLCommand command("select messageid,messagefrom,messagecreatetime,messagenexttrytime,messagesize,messagecurnooftries,messagetype,messagelocked from hm_messages where messageaccountid = 0 and messagetype in (1,3) order by messageid");
+      auto row = Application::Instance()->GetDBManager()->OpenRecordset(command);
+      if (!row) return false;
+      items.clear();
+      while (!row->IsEOF()) { items.push_back(QueueItemFromRow(row)); row->MoveNext(); }
+      return true;
+   }
+   bool PersistentMessage::ReadQueueItem(__int64 id, QueueItem &item)
+   {
+      SQLCommand command("select messageid,messagefrom,messagecreatetime,messagenexttrytime,messagesize,messagecurnooftries,messagetype,messagelocked from hm_messages where messageid = @ID and messageaccountid = 0 and messagetype in (1,3)");
+      command.AddParameter("@ID", id);
+      auto row = Application::Instance()->GetDBManager()->OpenRecordset(command);
+      if (!row) return false;
+      item = row->IsEOF() ? QueueItem{} : QueueItemFromRow(row);
+      return true;
+   }
    bool
    PersistentMessage::SetNextTryTime(__int64 iMessageID, bool bUpdateNoOfTries, long lNoOfMinutes)
    {

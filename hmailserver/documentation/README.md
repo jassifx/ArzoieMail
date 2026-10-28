@@ -12,6 +12,9 @@ readers to the ArzoieMail documentation site; that is not evidence these edits a
 
 ## Start here
 
+- [ArzoieMail 6 release/version policy](../../docs/release-versioning.md): the independent next
+  release target is 6.0.0; historical hMailServer version references below retain their provenance.
+
 - [Documentation status and remaining work](../../docs/documentation-status.md)
 - [Project roadmap](../../ROADMAP.md) and [CI coverage](../../docs/ci-test-inventory.md)
 - [System requirements](book_installation/system_requirements.md)

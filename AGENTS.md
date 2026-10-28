@@ -2,6 +2,12 @@
 
 ArzoieMail is a free, open-source email server for Microsoft Windows, licensed under AGPLv3. It carries on hMailServer 5.7.2 as a project of its own. It implements SMTP, IMAP, and POP3, and runs as a Windows service. The codebase is written primarily in C++ (server core) and C# (admin tools), targeting C++20 with the Visual Studio 2026 v145 toolset, with 64-bit Windows builds.
 
+**Release target: ArzoieMail 6.0.0**, independently versioned from hMailServer; the former
+5.8.0 target is superseded by the maintainer's 2026-10-28 instruction. Read [VERSION](VERSION)
+and [release versioning](docs/release-versioning.md). Product major, build number, schema 5714,
+assembly identities and historical upgrade mappings are separate. Do not globally rename old
+versions or compatibility identifiers, or publish a release without explicit authorization.
+
 **Names that stay hMailServer.** The product is ArzoieMail in everything users read. Some identifiers keep the
 hMailServer name on purpose, because existing installations, scripts and the web admin depend on them, or so that
 the installer upgrades an hMailServer installation in place. Don't rename them without a decision to do so:
@@ -20,7 +26,7 @@ many places; that is renamed gradually, never in the identifiers above.
 
 ## Repository Layout
 
-The repository root contains two top-level directories plus a handful of config files:
+The repository root contains source, dependencies, build scripts, documentation and config files:
 
 ```
 hmailserver/          # All source code, tools, tests, installation scripts
@@ -36,13 +42,24 @@ README.md             # What the project is: roadmap, design decisions, getting 
 ROADMAP.md            # Engineering roadmap: decisions, what each phase changed, lessons, what is next
 ```
 
-Everything of substance lives under `hmailserver/`.
+Product source lives under `hmailserver/`; root documents and `docs/` hold the shared engineering
+record, `build/` the build/test procedures and `libraries/` the dependency sources/build scripts.
 
 Agents picking up work: start with `docs/agents/README.md`, which gives the reading order and links the
 newest session handoff. Before starting roadmap work, read `ROADMAP.md`: it records the settled decisions, the state of each
 phase, and lessons learned. A pull request that finishes or changes a roadmap item updates it.
 
-Current plan/status handoff: [2026-10-27](docs/agents/handoffs/2026-10-27.md). Phase 1b's
+The [documentation authority index](docs/README.md) defines ownership and evidence rules for the
+shared project record. Keep the [detailed Phase 1b ledger](docs/phase-1b-status.md), its legacy
+surface inventories, requirements, REST contract, CI inventory and latest handoff aligned with
+the roadmap and README. Record missing/partial/unverified work explicitly. Check documentation
+links and inventory coverage with `python docs/agents/tools/check-docs.py` (static inspection).
+Root `global.json` keeps the SDK on stable .NET 10. The [CI acceptance matrix](docs/ci-acceptance-matrix.md)
+defines current runtime, real REST/native/HTTPS, published-browser and per-backend gates plus
+unimplemented acceptance work. Keep every newly exposed control covered at native, REST and
+browser boundaries. Do not count mocks, manual checks or future scanner capacity as live CI proof.
+
+Current plan/status handoff: [2026-10-28](docs/agents/handoffs/2026-10-28.md). Phase 1b's
 native/.NET API foundation is merged in #31; complete PHP retirement, guided certificate
 management and optional high-pressure Defender scanning remain delivery requirements, not
 completed functionality. Read the [Phase 1b tracker](ROADMAP.md#phase-1b-delivery-tracker)
@@ -55,9 +72,11 @@ retaining compatibility identifiers, original authorship and historical routes. 
 [documentation status](docs/documentation-status.md) for remaining technical/website work;
 a naming refresh does not establish that every inherited recipe has been validated.
 Honor the maintainer's PR review gate and VM/CI-only runtime-testing rule; check live PR/CI state.
-PR #38's identifier/UID roadmap plan, #39's forwarding/replies and #40's mailbox signatures are merged.
-The current authorized Phase 1b bundle combines advanced domain settings, mailbox profiles,
-domain signature policy and alternate domain names; use larger coherent PRs as requested. Follow the
+PR #38's identifier/UID roadmap plan, #39's forwarding/replies, #40's mailbox signatures and #41's
+advanced domain/mailbox bundle are merged. The current authorized Phase 1b bundle combines
+queue operations, routes/allowed recipients and global/mailbox rules in unmerged #42. Its
+application/test head passed all CI; documentation reconciliation is now authorized in the
+same PR. No subsequent feature bundle or merge is authorized. Use larger coherent PRs. Follow the
 current handoff for the branch and live PR state. UID implementation remains a later item.
 
 ---

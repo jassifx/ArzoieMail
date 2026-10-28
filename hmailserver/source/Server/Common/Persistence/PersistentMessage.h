@@ -48,6 +48,15 @@ namespace HM
       static bool ReadObject(std::shared_ptr<Message> pMessage, const SQLCommand &command);
 
       static bool SetNextTryTime(__int64 iMessageID, bool bUpdateNoOfTries, long lNoOfMinutes);
+      struct QueueItem
+      {
+         __int64 id = 0;
+         String sender, created, nextTry;
+         int size = 0, retries = 0, state = 0;
+         bool locked = false;
+      };
+      static bool ReadQueue(std::vector<QueueItem> &items);
+      static bool ReadQueueItem(__int64 id, QueueItem &item);
       static void EnsureFileExistance(std::shared_ptr<const Account> account, std::shared_ptr<Message> pMessage);
       
       static bool MoveFileToPublicFolder(const String &sourceLocation, std::shared_ptr<Message> pMessage);

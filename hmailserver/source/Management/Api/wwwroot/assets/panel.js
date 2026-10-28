@@ -8,6 +8,9 @@
     antispam: ['Spam protection', 'Fine-tune filtering, authentication checks, and your SpamAssassin connection.'],
     dnsbl: ['DNS blocklists', 'Your providers. Your policy. Manage multiple lists without vendor restrictions.'],
     diagnostics: ['Diagnostics', 'Check the administration runtime and deployment configuration.'],
+    queue: ['Delivery queue', 'Inspect pending mail and request a retry or removal.'],
+    routes: ['Routing', 'Manage next-hop delivery and allowed recipients.'],
+    rules: ['Global rules', 'Build disabled drafts, then validate and enable processing rules.'],
   };
   function el(tag, text, className) {
     const node = document.createElement(tag);
@@ -85,10 +88,10 @@
   }
   function inputField(name, value, help = '') {
     const wrap = el('div'); const label = el('label', name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
-    const input = el(['autoReplyBody', 'signaturePlainText', 'signatureHtml'].includes(name) ? 'textarea' : ['level', 'mode', 'signatureMethod'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
-    if (name === 'level' || name === 'mode' || name === 'signatureMethod') {
+    const input = el(['autoReplyBody', 'signaturePlainText', 'signatureHtml'].includes(name) ? 'textarea' : ['level', 'mode', 'signatureMethod', 'security'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
+    if (['level', 'mode', 'signatureMethod', 'security'].includes(name)) {
       input.className = 'form-select';
-      const choices = name === 'signatureMethod' ? ['Use domain format when mailbox format is empty', 'Replace mailbox signature', 'Append to mailbox signature'] : name === 'mode' ? ['Anyone (public)', 'List members', 'Specified sender (announcements)', 'Domain senders'] : ['Mailbox user', 'Domain administrator', 'Server administrator'];
+      const choices = name === 'security' ? ['Plaintext', 'Implicit TLS', 'STARTTLS optional', 'STARTTLS required'] : name === 'signatureMethod' ? ['Use domain format when mailbox format is empty', 'Replace mailbox signature', 'Append to mailbox signature'] : name === 'mode' ? ['Anyone (public)', 'List members', 'Specified sender (announcements)', 'Domain senders'] : ['Mailbox user', 'Domain administrator', 'Server administrator'];
       choices.forEach((title, level) => {
         if (name === 'level' && level > (user.level === 2 ? 2 : 1)) return;
         const option = el('option', title); option.value = String(level + (name === 'signatureMethod' ? 1 : 0)); input.append(option);
@@ -255,6 +258,7 @@
         row.append(button('Forwarding and replies', () => mailboxBehavior(detail, domain, account)));
         row.append(button('Signature', () => mailboxSignature(detail, domain, account)));
         row.append(button('Profile', () => mailboxProfile(detail, domain, account)));
+        row.append(button('Rules', () => ruleList(detail, `/domains/${domain.id}/accounts/${account.id}/rules`, account.address)));
         if (account.id !== user.accountId) row.append(button('Delete mailbox', async () => {
           if (!confirm(`Permanently delete ${account.address} and all its messages? This cannot be undone.`)) return;
           await request(`/domains/${domain.id}/accounts/${account.id}`, 'DELETE'); await reload(0); notify('Mailbox deleted.');
@@ -264,6 +268,142 @@
     }
     if (!result.items.length) c.body.append(el('p', 'No matching mailboxes.', 'help'));
     pager(c.body, result, offset, next => reload(next)); editor.append(c.outer, detail);
+  }
+  function choiceField(name, value, choices) {
+    const wrap = el('div'); const label = el('label', name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
+    const input = el('select', null, 'form-select'); input.name = name; input.id = `choice-${++fieldSequence}`; label.htmlFor = input.id;
+    for (const [id, title] of choices) { const option = el('option', title); option.value = String(id); input.append(option); }
+    input.value = String(value); wrap.append(label, input); return { wrap, input };
+  }
+  async function queue(root, offset = 0, search = '') {
+    const result = await request(`/queue?limit=50&offset=${offset}&search=${encodeURIComponent(search)}`);
+    const c = card('Pending and held messages'); const detail = el('div', null, 'section-gap');
+    const reload = (next = offset, filter = search) => queue(root, next, filter);
+    c.body.append(el('p', 'Search sender or message ID. This is a snapshot: delivery may finish before an action. Busy messages cannot be changed; refresh and retry after delivery releases them. Removal is permanent. Retrying can release held mail.', 'help'));
+    searchForm(c.body, search, filter => reload(0, filter));
+    c.body.append(button('Check for due mail', async () => { await request('/queue/wake', 'POST'); notify('Delivery check requested.'); }));
+    for (const item of result.items) {
+      const row = el('div', null, 'domain-row'); row.append(el('strong', item.sender || 'Empty envelope sender'), el('span', `#${item.id} · ${item.size} bytes · ${item.attempts} attempts · next ${item.nextTry}`, 'help'), pill(item.busy ? 'Busy' : item.held ? 'Held' : 'Pending', item.busy || item.held ? 'warning' : ''));
+      row.append(button('Inspect message', async () => {
+        const message = await request(`/queue/${item.id}`); detail.replaceChildren(); const d = card(`Queue message ${message.id}`);
+        d.body.append(el('p', `Created ${message.created} · ${message.recipientCount} recipients`, 'help'));
+        for (const recipient of message.recipients) d.body.append(el('p', recipient));
+        if (message.recipientCount > message.recipients.length) d.body.append(el('p', 'Only the first 100 recipients are shown.', 'help')); detail.append(d.outer);
+      }));
+      const retry = button('Retry message', async () => { if (!confirm(`Request delivery retry for message ${item.id}?`)) return; await request(`/queue/${item.id}/retry`, 'POST'); await reload(); notify('Message retry requested.'); });
+      const remove = button('Remove message', async () => { if (!confirm(`Permanently remove queued message ${item.id}? It will not be delivered and cannot be recovered here.`)) return; await request(`/queue/${item.id}`, 'DELETE'); await reload(0); notify('Queue message removed.'); }, 'btn btn-outline-danger btn-sm');
+      retry.disabled = remove.disabled = item.busy; row.append(retry, remove); c.body.append(row);
+    }
+    if (!result.items.length) c.body.append(el('p', 'No matching queued messages.', 'help'));
+    pager(c.body, result, offset, next => reload(next)); root.replaceChildren(c.outer, detail);
+  }
+  async function routes(root, offset = 0, search = '') {
+    const result = await request(`/routes?limit=50&offset=${offset}&search=${encodeURIComponent(search)}`); const c = card('Delivery routes'); const detail = el('div', null, 'section-gap');
+    const reload = (next = offset, filter = search) => routes(root, next, filter);
+    searchForm(c.body, search, filter => reload(0, filter));
+    const edit = route => {
+      detail.replaceChildren(); const create = !route; const d = card(create ? 'New route' : route.domain);
+      d.body.append(el('p', 'Routes affect delivery immediately. Exact domains, *.domain and * are supported; broad patterns affect many destinations. New routes require STARTTLS and accept only listed recipients until All Addresses is enabled. Local sender/recipient classification changes relay policy; review it carefully.', 'help'));
+      const values = create ? { domain: '', description: '', host: '', port: 25, tries: 4, retryMinutes: 60, allAddresses: false, recipientLocal: false, senderLocal: false, security: 3, requiresAuth: false, username: '', password: '', clearPassword: false }
+        : Object.fromEntries(Object.entries({ ...route, password: '', clearPassword: false }).filter(([key]) => !['id', 'domain', 'passwordConfigured'].includes(key)));
+      const form = editForm(values, async fields => {
+        if (!fields.password && !fields.clearPassword) delete fields.password; delete fields.clearPassword;
+        if (!create) fields = Object.fromEntries(Object.entries(fields).filter(([key, value]) => key === 'password' || value !== values[key]));
+        if (!Object.keys(fields).length) { notify('No route changes.'); return; }
+        if (!confirm(`Apply routing changes for ${route?.domain || fields.domain}? These affect delivery and SMTP policy immediately.`)) return;
+        await request(`/routes${create ? '' : `/${route.id}`}`, create ? 'POST' : 'PATCH', fields);
+        form.querySelector('[name=password]').value = ''; await reload(); notify('Route saved.');
+      });
+      const password = form.querySelector('[name=password]'); password.type = 'password'; password.maxLength = 1024; password.autocomplete = 'new-password';
+      form.querySelector('[name=port]').max = '65535'; form.querySelector('[name=port]').min = '1'; form.querySelector('[name=tries]').min = route?.tries === 0 ? '0' : '1'; form.querySelector('[name=tries]').max = '1000'; form.querySelector('[name=retryMinutes]').min = route?.retryMinutes === 0 ? '0' : '1'; form.querySelector('[name=retryMinutes]').max = '10080';
+      d.body.append(el('p', `${route?.passwordConfigured ? 'A password is configured.' : 'No saved password.'} Leave blank to preserve it, or select Clear Password. Authentication requires implicit TLS or required STARTTLS.`, 'help'), form, button('Cancel', () => detail.replaceChildren())); detail.append(d.outer);
+    };
+    c.body.append(button('New route', () => edit(null), 'btn btn-primary btn-sm'));
+    for (const route of result.items) {
+      const row = el('div', null, 'domain-row'); row.append(el('strong', route.domain), el('span', `${route.host}:${route.port} · ${route.allAddresses ? 'All recipients' : 'Listed recipients'}`, 'help'));
+      row.append(button('Edit route', () => edit(route)), button('Route recipients', () => routeRecipients(detail, route)), button('Delete route', async () => {
+        if (!confirm(`Delete route ${route.domain} and its recipient list? Check rules referencing this route first.`)) return;
+        await request(`/routes/${route.id}`, 'DELETE'); await reload(0); notify('Route deleted.');
+      }, 'btn btn-outline-danger btn-sm')); c.body.append(row);
+    }
+    if (!result.items.length) c.body.append(el('p', 'No matching routes.', 'help'));
+    pager(c.body, result, offset, next => reload(next)); root.replaceChildren(c.outer, detail);
+  }
+  async function routeRecipients(root, route, offset = 0, search = '') {
+    const path = `/routes/${route.id}/addresses`; const result = await request(`${path}?limit=50&offset=${offset}&search=${encodeURIComponent(search)}`); const c = card(`Allowed recipients · ${route.domain}`);
+    const reload = (next = offset, filter = search) => routeRecipients(root, route, next, filter); searchForm(c.body, search, filter => reload(0, filter));
+    c.body.append(el('p', 'These entries apply when All Addresses is disabled. Changes take effect immediately. Each entry is one full local or external email address.', 'help'));
+    const form = editForm({ address: '' }, async fields => { if (!confirm(`Allow ${fields.address} through this route?`)) return; await request(path, 'POST', fields); await routeRecipients(root, route); notify('Route recipient added.'); });
+    form.querySelector('[name=address]').type = 'email'; form.querySelector('[name=address]').required = true; c.body.append(form);
+    for (const item of result.items) {
+      const row = el('div', null, 'domain-row'); row.append(el('strong', item.address), button('Remove route recipient', async () => { if (!confirm(`Remove ${item.address} from this route?`)) return; await request(`${path}/${item.id}`, 'DELETE'); await routeRecipients(root, route); notify('Route recipient removed.'); })); c.body.append(row);
+    }
+    pager(c.body, result, offset, next => reload(next));
+    root.replaceChildren(c.outer);
+  }
+  const ruleFields = [[0, 'Custom header'], [1, 'From'], [2, 'To'], [3, 'Cc'], [4, 'Subject'], [5, 'Body'], [6, 'Size in bytes'], [7, 'Recipient list'], [8, 'Delivery attempts']];
+  const ruleMatches = [[1, 'Equals'], [2, 'Contains'], [3, 'Less than'], [4, 'Greater than'], [6, 'Does not contain'], [7, 'Does not equal'], [8, 'Wildcard']];
+  const ruleActions = [[1, 'Delete message'], [2, 'Forward'], [3, 'Reply'], [4, 'Move to IMAP folder'], [6, 'Stop processing'], [7, 'Set header'], [8, 'Send using route'], [9, 'Create copy']];
+  async function rules(root) { return ruleList(root, '/rules', 'Global rules'); }
+  async function ruleList(root, path, title, offset = 0, search = '') {
+    const result = await request(`${path}?limit=50&offset=${offset}&search=${encodeURIComponent(search)}`); const c = card(title); const detail = el('div', null, 'section-gap');
+    const reload = (next = offset, filter = search) => ruleList(root, path, title, next, filter);
+    c.body.append(el('p', 'Lower sort order runs first. New rules are disabled drafts. Disable a rule before changing its definition, then enable it separately. Already-processing mail can complete using its earlier rule snapshot.', 'help'));
+    searchForm(c.body, search, filter => reload(0, filter)); c.body.append(button('New rule', () => ruleEditor(detail, path, title, null, reload), 'btn btn-primary btn-sm'));
+    for (const rule of result.items) {
+      const row = el('div', null, 'domain-row'); row.append(el('strong', rule.name), pill(rule.active ? 'Enabled' : 'Draft', rule.active ? '' : 'warning'), el('span', `Order ${rule.sortOrder} · ${rule.useAnd ? 'All conditions' : 'Any condition'}`, 'help'));
+      if (!rule.active) row.append(button('Edit rule', async () => ruleEditor(detail, path, title, await request(`${path}/${rule.id}`), reload)));
+      row.append(button(rule.active ? 'Disable rule' : 'Enable rule', async () => { if (!confirm(`${rule.active ? 'Disable' : 'Enable'} ${rule.name}? Active rules can delete, forward or change mail.`)) return; await request(`${path}/${rule.id}`, 'PATCH', { active: !rule.active }); await reload(); notify('Rule activation saved.'); }));
+      row.append(button('Delete rule', async () => { if (!confirm(`Delete ${rule.name} and its criteria/actions?`)) return; await request(`${path}/${rule.id}`, 'DELETE'); await reload(0); notify('Rule deleted.'); }, 'btn btn-outline-danger btn-sm')); c.body.append(row);
+    }
+    if (!result.items.length) c.body.append(el('p', 'No matching rules.', 'help'));
+    pager(c.body, result, offset, next => reload(next)); root.replaceChildren(c.outer, detail);
+  }
+  function ruleEditor(root, path, title, rule, saved) {
+    root.replaceChildren(); const c = card(rule ? `Edit draft · ${rule.name}` : `New draft · ${title}`); const form = el('form');
+    const name = inputField('name', rule?.name || ''); name.input.required = true;
+    const useAnd = inputField('useAnd', rule?.useAnd ?? true); const order = inputField('sortOrder', rule?.sortOrder ?? 0);
+    form.append(name.wrap, useAnd.wrap); if (rule) form.append(order.wrap);
+    c.body.append(el('p', 'Up to 20 conditions and 20 ordered actions. Regex and legacy scripting/local-binding actions are unavailable here. Replies use the mailbox sender for mailbox rules. Engine/security headers cannot be overwritten. Failed persistence leaves a disabled draft for inspection and repair.', 'help'));
+    const criteria = []; const actions = []; const criterionRoot = el('div'); const actionRoot = el('div');
+    function criterionRow(value = { field: 4, header: '', match: 2, value: '' }) {
+      if (criteria.length >= 20) { notify('A rule supports at most 20 conditions.', true); return; }
+      const row = el('fieldset', null, 'card card-body section-gap'); row.append(el('legend', 'Condition', 'h6'));
+      const field = choiceField('field', value.field, ruleFields), match = choiceField('match', value.match, ruleMatches), header = inputField('header', value.header || ''), text = inputField('value', value.value);
+      const item = { row, read: () => ({ field: Number(field.input.value), header: header.input.value, match: Number(match.input.value), value: text.input.value }) }; criteria.push(item);
+      row.append(field.wrap, match.wrap, header.wrap, text.wrap, button('Remove condition', () => { criteria.splice(criteria.indexOf(item), 1); row.remove(); })); criterionRoot.append(row);
+    }
+    function actionRow(value = { type: 6 }) {
+      if (actions.length >= 20) { notify('A rule supports at most 20 actions.', true); return; }
+      const row = el('fieldset', null, 'card card-body section-gap'); row.append(el('legend', 'Action', 'h6'));
+      const choices = user.level === 2 ? ruleActions : ruleActions.filter(([id]) => id !== 8);
+      const kind = choiceField('type', value.type, choices); const detail = el('div'); const item = { row, read: null }; actions.push(item);
+      function fields() {
+        detail.replaceChildren(); const type = Number(kind.input.value); const values = type === 2 ? { to: value.to || '', abortSpam: value.abortSpam ?? true }
+          : type === 3 ? { fromAddress: value.fromAddress || (path === '/rules' ? '' : title), fromName: value.fromName || '', subject: value.subject || '', body: value.body || '', abortSpam: value.abortSpam ?? true }
+          : type === 4 ? { folder: value.folder || 'INBOX' } : type === 7 ? { header: value.header || 'X-Processed', value: value.value || '' } : type === 8 ? { routeId: value.routeId || 1 } : {};
+        const controls = {}; for (const [key, v] of Object.entries(values)) {
+          const field = inputField(key, v); if (key === 'body') { const area = el('textarea', null, 'form-control'); area.id = field.input.id; area.name = key; area.rows = 4; area.maxLength = 8000; area.value = v; field.input.replaceWith(area); field.input = area; }
+          controls[key] = field.input; detail.append(field.wrap);
+        }
+        item.read = () => ({ type, ...Object.fromEntries(Object.entries(values).map(([key, v]) => [key, typeof v === 'boolean' ? controls[key].checked : typeof v === 'number' ? Number(controls[key].value) : controls[key].value])) });
+      }
+      kind.input.addEventListener('change', fields); fields();
+      row.append(kind.wrap, detail, button('Move action up', () => { const index = actions.indexOf(item); if (index > 0) { row.parentNode.insertBefore(row, actions[index-1].row); [actions[index-1], actions[index]] = [actions[index], actions[index-1]]; } }), button('Remove action', () => { actions.splice(actions.indexOf(item), 1); row.remove(); })); actionRoot.append(row);
+    }
+    form.append(el('h3', 'Conditions', 'h5 mt-4'), criterionRoot, button('Add condition', () => criterionRow()), el('h3', 'Actions', 'h5 mt-4'), actionRoot, button('Add action', () => actionRow()));
+    (rule?.criteria || []).forEach(criterionRow); (rule?.actions || []).forEach(actionRow);
+    if (!rule) { criterionRow(); actionRow(); }
+    const submit = el('button', 'Save draft', 'btn btn-primary'); submit.type = 'submit'; form.append(el('div', null, 'section-gap'), submit);
+    form.addEventListener('submit', async event => {
+      event.preventDefault(); submit.disabled = true;
+      try {
+        const fields = { name: name.input.value, active: false, useAnd: useAnd.input.checked, criteria: criteria.map(item => item.read()), actions: actions.map(item => item.read()) };
+        if (rule) fields.sortOrder = Number(order.input.value);
+        if (new TextEncoder().encode(JSON.stringify(fields)).length > 16384) throw new Error('This draft exceeds the 16 KiB request limit. Reduce its text or number of entries.');
+        await request(`${path}${rule ? `/${rule.id}` : ''}`, rule ? 'PATCH' : 'POST', fields); await saved(); notify('Rule draft saved. Enable it separately when ready.');
+      } catch (error) { notify(error.message, true); } finally { submit.disabled = false; }
+    }); c.body.append(form, button('Cancel', () => root.replaceChildren())); root.append(c.outer);
   }
   async function mailboxProfile(editor, domain, account) {
     const path = `/domains/${domain.id}/accounts/${account.id}/profile`; const profile = await request(path);
@@ -482,7 +622,7 @@
     $('content').setAttribute('aria-busy', 'true'); $('content').replaceChildren(el('p', 'Loading…', 'help'));
     const container = el('div');
     try {
-      await ({ overview, domains, antispam, dnsbl, diagnostics })[page](container);
+      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules })[page](container);
       if (run === generation) $('content').replaceChildren(container);
     } catch (error) { if (run === generation) { $('content').replaceChildren(); notify(error.message, true); } }
     finally { if (run === generation) $('content').setAttribute('aria-busy', 'false'); }

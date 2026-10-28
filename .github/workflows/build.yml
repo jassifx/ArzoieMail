@@ -179,7 +179,7 @@ jobs:
           # back into the range TeamCity already published.
           if ([int]$build -le [int]$env:BUILD_NUMBER_FLOOR) { throw "The build number must continue the series after $env:BUILD_NUMBER_FLOOR, was $build. Check BUILD_NUMBER_OFFSET." }
 
-          "Building hMailServer $version-B$build"
+          "Building ArzoieMail $version-B$build"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "version=$version"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "build=$build"
 

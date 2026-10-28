@@ -22,6 +22,37 @@ namespace HM
 {
 
    bool DeliveryQueue::is_clearing_ = false;
+   boost::recursive_mutex &DeliveryQueue::MutationMutex()
+   { static boost::recursive_mutex mutex; return mutex; }
+   bool DeliveryQueue::IsClearing()
+   { boost::lock_guard<boost::recursive_mutex> guard(MutationMutex()); return is_clearing_; }
+   DeliveryQueue::MutationResult DeliveryQueue::TryRemove(__int64 id)
+   {
+      boost::lock_guard<boost::recursive_mutex> guard(MutationMutex());
+      if (is_clearing_) return MutationResult::Busy;
+      PersistentMessage::QueueItem item;
+      if (!PersistentMessage::ReadQueueItem(id, item)) return MutationResult::Failed;
+      if (!item.id) return MutationResult::Missing;
+      if (item.locked) return MutationResult::Busy;
+      auto message = std::make_shared<Message>(false);
+      if (!PersistentMessage::ReadObject(message, id)) return MutationResult::Missing;
+      if (message->GetAccountID() != 0 || (message->GetState() != Message::Delivering && static_cast<int>(message->GetState()) != 3)) return MutationResult::Missing;
+      if (!PersistentMessage::DeleteObject(message)) return MutationResult::Failed;
+      if (auto manager = Application::Instance()->GetSMTPDeliveryManager()) manager->UncachePendingMessages();
+      return MutationResult::Success;
+   }
+   DeliveryQueue::MutationResult DeliveryQueue::TryRetry(__int64 id)
+   {
+      boost::lock_guard<boost::recursive_mutex> guard(MutationMutex());
+      if (is_clearing_) return MutationResult::Busy;
+      PersistentMessage::QueueItem item;
+      if (!PersistentMessage::ReadQueueItem(id, item)) return MutationResult::Failed;
+      if (!item.id) return MutationResult::Missing;
+      if (item.locked) return MutationResult::Busy;
+      if (!PersistentMessage::SetNextTryTime(id, false, -1)) return MutationResult::Failed;
+      if (auto manager = Application::Instance()->GetSMTPDeliveryManager()) manager->UncachePendingMessages();
+      StartDelivery(); return MutationResult::Success;
+   }
 
    DeliveryQueueClearer::DeliveryQueueClearer(void) :
        Task("DeliveryQueueClearer")
@@ -47,6 +78,7 @@ namespace HM
       if (!pWQ)
       {
          ErrorManager::Instance()->ReportError(ErrorManager::Medium, 4210, "DeliveryQueueClearer::DoWork", "Could not fetch SMTP delivery queue.");
+         DeliveryQueue::OnDeliveryQueueCleared();
 
          return;
       }
@@ -92,6 +124,7 @@ namespace HM
    void
    DeliveryQueue::Clear()
    {
+      boost::lock_guard<boost::recursive_mutex> guard(MutationMutex());
       if (is_clearing_)
          return;
 
@@ -117,30 +150,23 @@ namespace HM
    void 
    DeliveryQueue::ResetDeliveryTime(__int64 iMessageID)
    {
-      PersistentMessage::SetNextTryTime(iMessageID, false, -1);
+      TryRetry(iMessageID);
    }
 
 
    void 
    DeliveryQueue::Remove(__int64 iMessageID)
    {
-      std::shared_ptr<Message> pMessage = std::shared_ptr<Message>(new Message());
-      if (!PersistentMessage::ReadObject(pMessage, iMessageID))
-         return;
-
-      // Lock the message before trying to delete it.
-      if (!PersistentMessage::LockObject(pMessage))
-         return;
-
-      // Managed to lock it. Delete it now.
-      PersistentMessage::DeleteObject(pMessage);
+      TryRemove(iMessageID);
    }
 
 
    void 
    DeliveryQueue::OnDeliveryQueueCleared()
    {
+      boost::lock_guard<boost::recursive_mutex> guard(MutationMutex());
       is_clearing_ = false;
+      StartDelivery();
    }
 
    void 

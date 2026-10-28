@@ -48,6 +48,12 @@ tooling - while every existing installation keeps working.
 It is a project of its own, with its own roadmap, tests and releases, maintained by
 Jaspreet Singh in Delhi, India. The name honours Arzoie, the maintainer's daughter.
 
+**The next release target is ArzoieMail 6.0.0.** ArzoieMail follows its own release line rather
+than a hMailServer 5.8 target. [VERSION](VERSION) owns the product target; the
+[release/version policy](docs/release-versioning.md) explains build metadata, compatibility,
+schema independence and release gates. Version 6 remains in development; this is not a release
+announcement or a claim that unfinished roadmap work has shipped.
+
 ## What is different
 
 **Tested on every change, on every database.** Each push builds the server, installs it on a
@@ -116,6 +122,10 @@ ArzoieMail is modernised phase by phase, each change as its own reviewed and tes
 [ROADMAP.md](ROADMAP.md) has the details: the decisions and why they were made, what each change did,
 and the plan for the phases ahead.
 
+The [documentation authority index](docs/README.md) defines the shared project record and update
+rules. The [detailed Phase 1b ledger](docs/phase-1b-status.md) lists implemented capabilities,
+remaining work, acceptance gates and every legacy PHP/desktop main-pane migration owner.
+
 | Phase | Scope | Status |
 |---|---|---|
 | **0 · Foundation** | Visual Studio 2026 and C++20, hardening flags, Windows 10 minimum, Inno Setup 6.7, .NET 10 tools and tests, NUnit 5 | ✅ Done |
@@ -135,9 +145,15 @@ search in merged PR #35. PR #36 adds aliases, distribution lists, posting settin
 management to the native API and responsive panel. See the
 [REST contract](hmailserver/source/Management/README.md#rest-v1-contract) for the supported
 fields and permissions. Mailbox forwarding and automatic replies merged in #39 after VM and
-four-backend CI acceptance. Mailbox signatures merged in #40. The current larger bundle combines
-mailbox profiles, domain routing/limits/signatures and alternate domain names;
-advanced administration and production cutover remain unfinished. Implementation still requires
+four-backend CI acceptance. Mailbox signatures merged in #40; profiles, advanced domain policies,
+object limits, domain signatures and alternate names merged in #41. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
+adds queue inspection/retry/removal, routes/allowed recipients and global/mailbox rule builders.
+Its application/test head passed VM and all four CI backends: 1,317 total NUnit cases and 734 separate
+management assertions per backend, plus browser checks. It remains unmerged, awaiting review;
+the latest CI expansion requires its own acceptance. It adds actual .NET 10/runtime/publish,
+REST/native and HTTPS/native checks plus a published browser suite on every backend; the
+[acceptance matrix](docs/ci-acceptance-matrix.md) records current and future coverage. Full advanced administration and production
+cutover remain unfinished. Implementation still requires
 the maintainer's confirmation after each PR review. Related Phase 1b capabilities are now grouped
 into larger coherent PRs; the VM/CI and review gates remain in force.
 

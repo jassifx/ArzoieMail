@@ -4,6 +4,9 @@ Requirements agreed with the maintainer on 2026-10-26 and subsequently revised t
 COM from the replacement panel/backend. Phase 1b implementation is now authorized and in progress;
 requirements below are not claims of completed features. See
 [management architecture](management-api-architecture.md) for the design and delivery status.
+The [authority index](README.md) defines document ownership. The [Phase 1b ledger](phase-1b-status.md)
+maps these obligations to delivered/partial/missing capabilities and legacy migration owners;
+use its completion gates before claiming full parity or finishing this phase.
 
 The API/panel foundation is merged in PR #31 and SQL Express modernization in PR #33. Full
 administration parity, certificate lifecycle, Defender scanning and PHP retirement remain pending.
@@ -16,13 +19,24 @@ Keep end-user guidance aligned with [documentation status](documentation-status.
 manual naming updates do not imply that these requirements have been implemented.
 
 Mailbox forwarding and automatic replies merged in #39 with VM/four-backend CI acceptance.
-Mailbox signatures merged in #40. The current authorized larger bundle combines mailbox
+Mailbox signatures merged in #40. Merged #41 combines mailbox
 profiles, domain catch-all/plus addressing/greylisting, server-defined object limits, domain
 signature policy/formats and alternate domain-name management, with native/REST/panel controls
-and regressions. VM acceptance passed; verify required CI and PR review/merge. Global-name writes and object limits require server
+and regressions, accepted in the VM and all four CI backends. Global-name writes and object limits require server
 administrator. Existing engine policy/macros remain authoritative. Mailbox-user self-service remains
 planned. Future UID capacity/maintenance controls belong to the
 [identifier lifecycle plan](imap-uid-modernization.md); documenting them does not implement them.
+
+[PR #42](https://github.com/jassifx/ArzoieMail/pull/42), verified but unmerged, adds queue metadata/recipient inspection and guarded
+retry/removal, route and allowed-recipient management, and global/scoped mailbox rule builders.
+Queue/routes/global rules require server administrator; mailbox rules preserve domain and
+protected-account boundaries. Busy/stored mail cannot be mutated as queue items. Route passwords
+are write-only and SMTP authentication requires encrypted transport. Rules start disabled;
+editing and activation are separate operations, with bounded conditions/actions and no exposed
+regex, scripting or local-binding actions. See the REST contract for limits and partial-write
+recovery. This bundle does not establish full parity, throughput capacity or production cutover.
+Its recorded application/test head passed all four backend jobs and other checks; later
+documentation heads require independent CI verification. Review/merge remains a maintainer gate.
 
 ## Modern administration
 

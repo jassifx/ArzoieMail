@@ -5,6 +5,11 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 
 ## Editing files
 
+- **Browser notices can outlive the operation being tested.** A repeated "saved" notice may
+  already be visible when a later save starts. Wait for the exact mutation response and inspect
+  that request's body; do not infer completion from an old notice or `requests[-2]`. PR #42's
+  route-password omission check passed in the VM but exposed this timing race on CI.
+
 - **Shell quoting mangles Windows paths and C++.** Bash heredocs and `-c` strings ate
   backslashes and `$(...)`; JSON with Windows paths failed to parse. Write edit scripts, commit
   messages and PR bodies to files and run or pass the file. For replacements, a Python file of
@@ -18,6 +23,20 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 - `sed` patterns with backslashes are fragile on these files; prefer Python.
 
 ## Building
+
+- **Real HTTPS tests on Windows need a Schannel-usable server key.** A generated leaf attached
+  with CopyWithPrivateKey can leave an ephemeral key that causes TLS EOF during the handshake.
+  The CI fixture imports its generated PFX into a Windows user-key context, disposes it and
+  clears the PFX bytes. Trust only the private fixture CA in the client chain policy; never
+  install it globally or bypass chain/name validation. A valid TLS SNI/name and a forged HTTP
+  Host must be tested independently, since HttpClient may derive TLS identity from Host.
+- **Desktop Runtime is not ASP.NET Core Runtime.** The self-contained test runner may work in
+  a VM whose framework-dependent published API cannot start. Verify the actual ASP.NET Core 10
+  runtime before published-browser smoke; keep runtime provisioning inside the VM/checkpoint.
+- **Live REST integration needs an explicit content root.** CI starts its driver at repository
+  root; a VM helper may already have ASPNETCORE_CONTENTROOT set. The live driver must set it to
+  the published API (or source API for a non-published run) and restore its caller's value.
+  Otherwise native requests pass but the panel/asset assertion correctly fails with wwwroot 404.
 
 - **`Formatter::Format` takes at most five arguments**; split longer messages.
 - `AnsiString::operator[]` is ambiguous; index through a `const std::string&`.

@@ -93,11 +93,9 @@ jobs:
             exit 1
           fi
 
-          # 5.7.0 is called 5.7 in the title, as in earlier releases.
-          title_version="$VERSION"
-          if [[ "$VERSION" =~ ^([0-9]+\.[0-9]+)\.0$ ]]; then title_version="${BASH_REMATCH[1]}"; fi
+          # Keep ArzoieMail's full independent major.minor.patch release version.
           gh release create "$tag" release/* \
             --draft \
             --target "$SHA" \
-            --title "ArzoieMail $title_version, build $BUILD" \
+            --title "ArzoieMail $VERSION, build $BUILD" \
             --notes ""

@@ -22,20 +22,29 @@ DB setup and scripts to the new API must precede any eventual removal of COM reg
 
 ## Boundaries
 
-Mailbox forwarding and automatic replies merged in PR #39 with VM/four-backend CI acceptance.
-Mailbox signatures merged in PR #40 with VM/four-backend CI acceptance. The current larger
-bundle on `feature/webadmin-advanced-domain-mailbox` is implemented and VM-validated, awaiting
-PR review/merge and its required CI gate. It adds mailbox profile read/update, domain
-settings read/update and alternate domain-name list/create/read/delete. All use explicit native
-operations with scoped parent/role checks. Alternate names reserve global namespace, so writes
-require server administrator; object limits do too. Own-domain administrators can manage the
-other domain settings and non-protected mailbox profiles. Directory backing and last-logon
-state are read-only, with no credentials or directory bindings exposed.
-The panel edits HTML as inert source without evaluating or sanitizing it. Both operations use
-existing persistence/cache invalidation and mail-engine policy. Settings are fetched separately from collection summaries.
-No COM, SQL, schema migration or mailbox-user self-service is introduced. See the
-[REST contract](../hmailserver/source/Management/README.md#rest-v1-contract) for limits and
-expiry/suppression and signature semantics. Verify current-head VM/CI acceptance in the feature PR.
+The [Phase 1b ledger](phase-1b-status.md) owns granular delivery/parity status and migration
+gates; [the authority index](README.md) defines documentation ownership. The mail-operations
+application/test head in #42 passed VM and four-backend CI and remains unmerged awaiting review.
+Use its PR validation record for subsequent documentation heads; no next bundle is authorized.
+
+Mailbox forwarding/replies, mailbox signatures and advanced domain/mailbox administration
+merged in #39?#41 with VM/four-backend CI acceptance. Global-name writes and object limits
+require server administrator; other settings retain owning-domain/protected-target checks.
+Directory backing and last-logon state are read-only. HTML is edited as inert source.
+
+The authorized mail-operations bundle adds queue inspection/retry/removal, routes/recipients
+and global/scoped mailbox rules. Queue mutations share a reservation guard with the delivery
+manager, exclude stored/busy items and invalidate pending snapshots. Routes use request-local
+business objects, validate persisted fields before refresh and keep passwords write-only.
+SMTP authentication requires implicit TLS or required STARTTLS. Rule edits save disabled first,
+check every child write and activate separately only after validation. Persistence is not
+transactional: infrastructure failure can leave a disabled partial draft requiring repair.
+Regex, script and local-binding actions are excluded from the new boundary. Queue listing
+scans metadata in memory; indexed paging and measured capacity remain follow-ups.
+
+No COM dependency, web SQL, schema migration or mailbox-user self-service is introduced. See
+the [REST contract](../hmailserver/source/Management/README.md#rest-v1-contract) for fields,
+limits, permissions and recovery. Verify the current feature PR's VM/CI acceptance.
 
 ```text
 Browser -> HTTPS REST /api/v1 -> ASP.NET Core administration process

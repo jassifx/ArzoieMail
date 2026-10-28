@@ -1,7 +1,7 @@
 [Setup]
-OutputBaseFilename=ArzoieMail-1.0.0-B0-x64
-AppVerName=ArzoieMail 1.0.0-B0-x64
+OutputBaseFilename=ArzoieMail-6.0.0-B0-x64
+AppVerName=ArzoieMail 6.0.0-B0-x64
 ArchitecturesInstallIn64BitMode=x64compatible
 ArchitecturesAllowed=x64compatible
-AppVersion=1.0.0
-VersionInfoVersion=1.0.0
+AppVersion=6.0.0.0
+VersionInfoVersion=6.0.0.0

@@ -26,6 +26,11 @@ domain_settings = {"catchAllAddress": "", "plusAddressingEnabled": False, "plusA
                    "maxAccounts": 0, "maxAliases": 0, "maxLists": 0, "signatureEnabled": False,
                    "signaturePlainText": "", "signatureHtml": "", "signatureMethod": 1, "signaturesOnReplies": False, "signaturesOnLocalMail": True}
 domain_names = []
+queue_items = [{"id": "9007199254740993", "sender": "sender@example.com", "size": 100, "attempts": 1, "nextTry": "2026-10-28 12:00:00", "created": "2026-10-28 11:00:00", "busy": False, "held": True, "recipientCount": 1, "recipients": ["recipient@example.net"]},
+               {"id": "9007199254740994", "sender": "busy@example.com", "size": 200, "attempts": 0, "nextTry": "now", "busy": True, "held": False}]
+routes = []
+route_addresses = []
+rules = {}
 revoked = False
 
 
@@ -47,7 +52,7 @@ def api(route):
             user = None
         data = {"user": user, "csrf": "browser-fixture-token"}
     elif path == '/status':
-        data = {"version": "5.7.2", "state": 3, "domains": 2}
+        data = {"version": "6.0.0", "state": 3, "domains": 2}
     elif path == '/dnsbl':
         if request.method == 'POST':
             providers.append({"id": len(providers) + 1, **body})
@@ -96,6 +101,54 @@ def api(route):
     elif path.endswith('/behavior'):
         behavior.update(body)
         data = behavior
+    elif path == '/queue/wake':
+        data = {"requested": True}
+    elif path == '/queue':
+        data = {"items": queue_items, "total": len(queue_items)}
+    elif path.startswith('/queue/'):
+        item = next(v for v in queue_items if v['id'] == path.split('/')[2])
+        if request.method == 'DELETE':
+            queue_items.remove(item)
+            data = {"requested": True}
+        else:
+            data = item
+    elif '/rules' in path:
+        collection_path = path.split('/rules')[0] + '/rules'
+        collection = rules.setdefault(collection_path, [])
+        if path == collection_path:
+            if request.method == 'POST':
+                data = {"id": 40, "sortOrder": 1, **body}
+                collection.append(data)
+            else:
+                data = {"items": collection, "total": len(collection)}
+        else:
+            item = next(v for v in collection if v['id'] == int(path.rsplit('/', 1)[1]))
+            if request.method == 'DELETE':
+                collection.remove(item)
+                data = {"deleted": True}
+            else:
+                item.update(body)
+                data = item
+    elif path.startswith('/routes'):
+        collection = route_addresses if '/addresses' in path else routes
+        if path.endswith('/routes') or path.endswith('/addresses'):
+            if request.method == 'POST':
+                data = {"id": 35, **{k: v for k, v in body.items() if k != 'password'}}
+                if collection is routes:
+                    data['passwordConfigured'] = bool(body.get('password'))
+                collection.append(data)
+            else:
+                data = {"items": collection, "total": len(collection)}
+        else:
+            item = next(v for v in collection if v['id'] == int(path.rsplit('/', 1)[1]))
+            if request.method == 'DELETE':
+                collection.remove(item)
+                data = {"deleted": True}
+            else:
+                item.update({k: v for k, v in body.items() if k != 'password'})
+                if 'password' in body:
+                    item['passwordConfigured'] = bool(body['password'])
+                data = item
     elif '/accounts' in path:
         if path.endswith('/accounts'):
             if request.method == 'POST':
@@ -322,6 +375,16 @@ with sync_playwright() as p:
     page.screenshot(path=str(output / 'mailboxes-mobile.png'), full_page=True)
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mailbox controls overflow on mobile.'
     page.set_viewport_size({"width": 1440, "height": 1000})
+    page.get_by_role('button', name='Rules', exact=True).click()
+    page.get_by_role('button', name='New rule', exact=True).click()
+    page.get_by_label('name', exact=True).fill('Mailbox draft')
+    page.get_by_label('value', exact=True).fill('mailbox-subject')
+    page.get_by_role('button', name='Save draft', exact=True).click()
+    page.get_by_text('Rule draft saved. Enable it separately when ready.', exact=True).wait_for()
+    assert '/domains/5/accounts/10/rules' in rules, 'Mailbox rule requests must retain the parent route.'
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Delete rule', exact=True).click()
+    page.get_by_text('Rule deleted.', exact=True).wait_for()
     page.once('dialog', lambda dialog: dialog.dismiss())
     page.get_by_role('button', name='Delete mailbox', exact=True).click()
     assert len(mailboxes) == 1, 'Cancelling deletion must preserve the mailbox.'
@@ -407,10 +470,99 @@ with sync_playwright() as p:
     page.set_viewport_size({"width": 390, "height": 844})
     page.screenshot(path=str(output / 'dns-mobile.png'), full_page=True)
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mobile page overflows horizontally.'
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.get_by_role('link', name='Delivery queue').click()
+    page.get_by_role('button', name='Inspect message', exact=True).first.click()
+    page.get_by_text('recipient@example.net', exact=True).wait_for()
+    assert page.get_by_role('button', name='Retry message', exact=True).nth(1).is_disabled()
+    assert page.get_by_role('button', name='Remove message', exact=True).nth(1).is_disabled()
+    before = len(requests)
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Remove message', exact=True).first.click()
+    assert len(requests) == before, 'Cancelling queue removal must not write.'
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Retry message', exact=True).first.click()
+    page.get_by_text('Message retry requested.', exact=True).wait_for()
+    assert requests[-2][1] == '/queue/9007199254740993/retry', 'Queue IDs must retain every digit in browser requests.'
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Remove message', exact=True).first.click()
+    page.get_by_text('Queue message removed.', exact=True).wait_for()
+    assert len(queue_items) == 1
+    page.get_by_role('button', name='Check for due mail', exact=True).click()
+    page.get_by_text('Delivery check requested.', exact=True).wait_for()
+    page.get_by_role('link', name='Routing').click()
+    page.get_by_role('button', name='New route', exact=True).click()
+    assert page.get_by_label('security', exact=True).input_value() == '3'
+    assert not page.get_by_label('all Addresses', exact=True).is_checked()
+    page.get_by_label('domain', exact=True).fill('relay.example.net')
+    page.get_by_label('host', exact=True).fill('smtp.example.net')
+    page.get_by_label('requires Auth', exact=True).check()
+    page.get_by_label('username', exact=True).fill('relay-user')
+    page.get_by_label('password', exact=True).fill('write-only-fixture')
+    assert page.get_by_label('password', exact=True).get_attribute('type') == 'password'
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Route saved.', exact=True).wait_for()
+    page.get_by_role('button', name='Edit route', exact=True).click()
+    assert page.get_by_label('password', exact=True).input_value() == ''
+    page.get_by_label('description', exact=True).fill('Updated relay')
+    page.once('dialog', lambda dialog: dialog.accept())
+    with page.expect_response(lambda response: urlsplit(response.url).path == '/api/v1/routes/35' and response.request.method == 'PATCH') as route_update:
+        page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Route saved.', exact=True).wait_for()
+    assert route_update.value.request.post_data_json == {'description': 'Updated relay'}, 'Unchanged route credentials and TLS must be omitted.'
+    page.get_by_role('button', name='Route recipients', exact=True).click()
+    page.get_by_label('address', exact=True).fill('allowed@example.net')
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Route recipient added.', exact=True).wait_for()
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Remove route recipient', exact=True).click()
+    page.get_by_text('Route recipient removed.', exact=True).wait_for()
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Delete route', exact=True).click()
+    page.get_by_text('Route deleted.', exact=True).wait_for()
+    page.get_by_role('link', name='Global rules').click()
+    page.get_by_role('button', name='New rule', exact=True).click()
+    page.get_by_label('name', exact=True).fill('Controlled rule')
+    page.get_by_label('value', exact=True).fill('subject-fixture')
+    page.get_by_label('type', exact=True).select_option('7')
+    page.get_by_label('header', exact=True).last.fill('X-Processed')
+    literal_rule = '<img src=x onerror="window.ruleExecuted=true">'
+    page.get_by_label('value', exact=True).last.fill(literal_rule)
+    page.get_by_role('button', name='Add action', exact=True).click()
+    page.get_by_role('button', name='Move action up', exact=True).last.click()
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.screenshot(path=str(output / 'rule-builder-mobile.png'), full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Rule builder overflows on mobile.'
+    page.get_by_role('button', name='Save draft', exact=True).click()
+    page.get_by_text('Rule draft saved. Enable it separately when ready.', exact=True).wait_for()
+    assert rules['/rules'][0]['active'] is False
+    assert [v['type'] for v in rules['/rules'][0]['actions']] == [6, 7]
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Enable rule', exact=True).click()
+    assert not rules['/rules'][0]['active']
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Enable rule', exact=True).click()
+    page.get_by_role('button', name='Disable rule', exact=True).wait_for()
+    assert page.get_by_role('button', name='Edit rule', exact=True).count() == 0
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Disable rule', exact=True).click()
+    page.get_by_role('button', name='Edit rule', exact=True).click()
+    assert page.get_by_label('value', exact=True).last.input_value() == literal_rule
+    assert page.evaluate('typeof window.ruleExecuted') == 'undefined'
+    page.get_by_role('button', name='Cancel', exact=True).click()
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Delete rule', exact=True).click()
+    page.get_by_text('Rule deleted.', exact=True).wait_for()
+    page.get_by_role('link', name='Domains & DNS').click()
+    page.get_by_role('button', name='Mailboxes', exact=True).wait_for()
     user = {"address": "manager@example.com", "level": 1, "domainId": 5, "accountId": 11}
     mailboxes.append({"id": 12, "domainId": 5, "address": "server@example.com", "active": True, "maxSizeMB": 10, "level": 2})
     page.reload()
     page.get_by_role('button', name='Mailboxes', exact=True).wait_for()
+    for title in ['Delivery queue', 'Routing', 'Global rules']:
+        assert not page.get_by_role('link', name=title).is_visible(), 'Server operations must be hidden from domain administrators.'
     assert page.get_by_role('button', name='New domain', exact=True).count() == 0
     assert page.get_by_role('button', name='Delete domain', exact=True).count() == 0
     page.get_by_role('button', name='Edit domain', exact=True).click()
@@ -425,6 +577,7 @@ with sync_playwright() as p:
     assert page.get_by_role('button', name='Edit mailbox', exact=True).count() == 0
     assert page.get_by_role('button', name='Signature', exact=True).count() == 0
     assert page.get_by_role('button', name='Profile', exact=True).count() == 0
+    assert page.get_by_role('button', name='Rules', exact=True).count() == 0
     assert page.get_by_role('button', name='Delete mailbox', exact=True).count() == 0
     page.get_by_role('button', name='New mailbox', exact=True).click()
     assert page.get_by_label('level', exact=True).locator('option[value="2"]').count() == 0
@@ -443,4 +596,4 @@ with sync_playwright() as p:
     assert requests[-1][0:2] == ('GET', '/session'), 'Revocation must obtain a fresh anonymous CSRF token.'
     assert not errors, errors
     browser.close()
-    print('Passed browser navigation, advanced domain policies, alternate names, mailbox profiles, domain/mailbox/alias/list/member CRUD, forwarding/replies, signature source safety and confirmation, posting-policy confirmation, password handling, DNSBL mutation, SpamAssassin test, DNS guidance, session recovery and mobile layout checks.')
+    print('Passed browser queue precision/busy/confirmation, routing secrets/recipients, rule drafts/order/activation/source safety, role controls, navigation, domain/mailbox/alias/list/member CRUD, forwarding/replies, signatures, DNSBL, SpamAssassin, DNS guidance, session recovery and mobile layout checks.')

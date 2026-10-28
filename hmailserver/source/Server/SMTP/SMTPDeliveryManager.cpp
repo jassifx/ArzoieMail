@@ -6,6 +6,7 @@
 #include "SMTPConfiguration.h"
 
 #include "DeliveryTask.h"
+#include "DeliveryQueue.h"
 
 #include "../Common/Application/IniFileSettings.h"
 #include "../Common/Application/Property.h"
@@ -85,8 +86,14 @@ namespace HM
       {
          // Deliver all pending messages
          std::shared_ptr<Message> pMessage;
-         while (pMessage = GetNextMessage_())
+         while (true)
          {
+            // Serialize reservation with native queue mutations. Removing a pending item
+            // invalidates this manager's snapshot before another item can be reserved.
+            boost::lock_guard<boost::recursive_mutex> guard(DeliveryQueue::MutationMutex());
+            if (DeliveryQueue::IsClearing()) break;
+            pMessage = GetNextMessage_();
+            if (!pMessage) break;
             boost::this_thread::interruption_point();
 
             // Lock this message

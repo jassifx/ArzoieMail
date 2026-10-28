@@ -8,10 +8,43 @@ using ArzoieMail.Management;
 using Microsoft.Extensions.DependencyInjection;
 
 int assertions = 0;
+string[] modes = ["--runtime", "--live-http", "--tls", "--tls-native", "--browser-host", "--squatting", "--live"];
+if (args.Length > 1 || args.Any(argument => !modes.Contains(argument)))
+    throw new ArgumentException("Select exactly one supported management-test mode, or omit it for deterministic HTTP/DNS tests.");
 void Check(bool condition, string message)
 {
     ++assertions;
     if (!condition) throw new Exception(message);
+}
+
+if (args.Contains("--runtime"))
+{
+    var api = typeof(ManagementHost).Assembly;
+    Check(Environment.Version.Major == 10, "Management tests must execute on .NET 10, not just compile for it.");
+    Check(System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.X64, "Management runtime must be x64.");
+    Check(OperatingSystem.IsWindows(), "Native management integration requires Windows.");
+    Check(System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>(api)?.FrameworkName == ".NETCoreApp,Version=v10.0", "API targets .NET 10.");
+    Check(typeof(Microsoft.AspNetCore.Http.HttpContext).Assembly.GetName().Version?.Major == 10, "ASP.NET Core 10 must be loaded.");
+    Check(System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(api)?.InformationalVersion.StartsWith("6.", StringComparison.Ordinal) == true, "API product metadata follows ArzoieMail 6.");
+    Check(api.GetReferencedAssemblies().All(reference => !reference.Name!.StartsWith("Interop.hMailServer", StringComparison.OrdinalIgnoreCase)
+        && reference.Name is not ("Microsoft.Data.SqlClient" or "System.Data.SqlClient" or "Npgsql" or "MySql.Data" or "MySqlConnector")), "The replacement API must not reference the legacy COM interop or database drivers.");
+    Console.WriteLine($"Passed {assertions} .NET 10 runtime/product boundary assertions.");
+    return;
+}
+
+if (args.Contains("--live-http"))
+{
+    await LiveRestTests.Run(Check);
+    Console.WriteLine($"Passed {assertions} live HTTP/native integration assertions.");
+    return;
+}
+
+if (args.Contains("--tls") || args.Contains("--tls-native"))
+{
+    bool liveNative = args.Contains("--tls-native");
+    await ProductionTlsTests.Run(Check, liveNative);
+    Console.WriteLine($"Passed {assertions} production TLS/cookie/trust assertions{(liveNative ? " with the real native service" : "")}.");
+    return;
 }
 
 if (args.Contains("--browser-host"))
@@ -94,6 +127,7 @@ if (args.Contains("--live"))
     await MailboxBehaviorTests.Run(native, name, password, Check);
     await SignatureTests.Run(native, name, password, Check);
     await AdvancedAdministrationTests.Run(native, name, password, Check);
+    await MailOperationsTests.Run(native, name, password, Check);
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
     // Real native persistence/authorization coverage runs on every CI database backend.
     async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>
@@ -334,6 +368,37 @@ try
     }
     await Send("/domains/5/lists/8/members?limit=101", HttpMethod.Get, status: 422);
     await Send("/domains/5/aliases", HttpMethod.Post, new { address = "test@example.test", target = "other@example.test" }, "wrong", 403);
+    foreach (var resource in new[] { ("routes", "/routes"), ("rules", "/rules"), ("rules", "/domains/5/accounts/7/rules"), ("routeaddresses", "/routes/8/addresses") })
+    {
+        foreach (var action in new[] { (HttpMethod.Get, "", "list"), (HttpMethod.Post, "", "create"), (HttpMethod.Get, "/9", "read"), (HttpMethod.Delete, "/9", "delete") })
+        {
+            await Send(resource.Item2 + action.Item2, action.Item1, action.Item1 == HttpMethod.Get ? null : new { name = "draft" }, token);
+            Check(fake.LastOperation == resource.Item1 + "." + action.Item3, "Mail operation maps its explicit native command.");
+            if (resource.Item2.Contains("accounts")) Check(fake.LastArguments.GetProperty("domainId").GetInt64() == 5 && fake.LastArguments.GetProperty("accountId").GetInt64() == 7, "Mailbox rules retain both parent IDs.");
+            if (resource.Item1 == "routeaddresses") Check(fake.LastArguments.GetProperty("routeId").GetInt64() == 8, "Route recipients retain their parent ID.");
+        }
+        await Send(resource.Item2 + "?limit=101", HttpMethod.Get, status: 422);
+        await Send(resource.Item2, HttpMethod.Post, new { }, "wrong", 403);
+        if (resource.Item1 != "routeaddresses")
+        {
+            await Send(resource.Item2 + "/9", HttpMethod.Patch, new { active = false }, token);
+            Check(fake.LastOperation == resource.Item1 + ".update", "Mail-operation changes use PATCH.");
+            await Send(resource.Item2 + "/9", HttpMethod.Patch, new { }, token, 403, "https://evil.example");
+        }
+    }
+    const long exactQueueId = 9007199254740993;
+    await Send("/queue?search=sender&offset=1&limit=10", HttpMethod.Get);
+    Check(fake.LastOperation == "queue.list" && fake.LastArguments.GetProperty("offset").GetInt64() == 1, "Queue paging is explicit.");
+    await Send("/queue?limit=101", HttpMethod.Get, status: 422);
+    await Send($"/queue/{exactQueueId}", HttpMethod.Get);
+    Check(fake.LastOperation == "queue.read" && fake.LastArguments.GetProperty("id").GetInt64() == exactQueueId, "Queue identity keeps all 64-bit digits.");
+    foreach (var action in new[] { (HttpMethod.Post, $"/queue/{exactQueueId}/retry", "queue.retry"), (HttpMethod.Delete, $"/queue/{exactQueueId}", "queue.delete"), (HttpMethod.Post, "/queue/wake", "queue.wake") })
+    {
+        await Send(action.Item2, action.Item1, new { }, "wrong", 403);
+        await Send(action.Item2, action.Item1, new { }, token, 403, "https://evil.example");
+        await Send(action.Item2, action.Item1, new { }, token);
+        Check(fake.LastOperation == action.Item3, "Queue mutation requires CSRF and its explicit command.");
+    }
     fake.Level = 1;
     var current = await Send("/session", HttpMethod.Get);
     Check(current.GetProperty("user").GetProperty("level").GetInt32() == 1, "Refresh roles from the native service.");
@@ -382,6 +447,7 @@ try
     using var client = new HttpClient();
     using var request = new HttpRequestMessage(HttpMethod.Get, production.Urls.Single() + "/api/v1/session");
     request.Headers.Host = "admin.example";
+    request.Headers.Add("X-Forwarded-Proto", "https");
     using var response = await client.SendAsync(request);
     Check(response.StatusCode == HttpStatusCode.BadRequest, "Production must refuse unencrypted HTTP.");
     Check(!response.Headers.Contains("Set-Cookie"), "Do not issue session cookies over unencrypted production connections.");

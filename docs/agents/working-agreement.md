@@ -34,6 +34,10 @@ unless the maintainer says otherwise for a specific task.
   `clang`, but the maintainer's account can bypass it, so **a merge through the API goes through
   even while checks are still running**. Check first; if checks are unfinished, say so, and report
   their result when they finish.
+  This was rechecked on 2026-10-28 against [ruleset 25743689](https://github.com/jassifx/ArzoieMail/rules/25743689).
+  PostgreSQL/MySQL/Express, CodeQL and publication are additional project acceptance gates;
+  they are not all currently configured as branch-protection required contexts. Verify live
+  rules again before merging; the four-backend maintainer requirement still applies.
 
 ## Phases and scope
 
@@ -54,7 +58,22 @@ unless the maintainer says otherwise for a specific task.
   **CI runs them**, on the built-in database, PostgreSQL, MySQL and SQL Server Express. A change
   is ready when all four are green. The Hyper-V VM runs them against a real installer.
 
+- **Expanded modern-stack CI is required**, requested on 2026-10-28: every database job runs
+  stable .NET 10 SDK/runtime validation, published web-admin checks, deterministic security/UI,
+  native pipe identity/framing, actual REST/native and HTTPS/native integration, native feature
+  behavior, published live browser roles/persistence and documentation checks. Follow the
+  [acceptance matrix](../ci-acceptance-matrix.md); retain separate planned/manual/capacity gates.
+  Upload redacted manifests/logs/screenshots per backend, never credentials/private keys/HAR.
+
 ## Reporting
+
+- **Documentation is the shared project record**, explicitly reinforced on 2026-10-28. Follow
+  [document ownership](../README.md), keep detailed delivered/remaining/partial/unverified
+  status, exact test evidence and resumption instructions, and reconcile the Phase 1b legacy
+  inventories. Do not require chat history or ignored local files to reconstruct the plan.
+  Historical manuals and old handoffs must not override current verified guidance. Treat code,
+  observed defects and live GitHub state as evidence; record discrepancies instead of inventing
+  completion. Run the static documentation checker before committing changes.
 
 - Treat repository documentation as shared project memory. When the maintainer changes scope
   or asks to save context, update the latest handoff and relevant tracker/requirements, commit
