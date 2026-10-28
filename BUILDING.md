@@ -5,6 +5,17 @@ How to build ArzoieMail from source, run it under the debugger, test it and rele
 what the project is and where it is going, see the [README](README.md).
 
 
+## 6.0 migration and release policy
+
+The commands below describe current code, including COM registration/interop not yet removed.
+The [approved scope](docs/version-6-scope.md) requires all phases, complete COM retirement and
+API migration of tools/tests before the integrated validation baseline. Runtime execution
+stays VM/CI-only. CI test installers remain allowed; no development previews before feature
+completion. Official production releases require explicit approval, Authenticode-signed shipped
+executables/setup, checksums and provenance verification. SQLite will replace Compact in normal
+regression lanes; retain separate Compact migration/recovery checks. See the [migration register](docs/breaking-changes-6.0.md).
+
+
 Branches
 --------
 
@@ -23,7 +34,7 @@ Product version and release identity
 
 The next release target is **ArzoieMail 6.0.0**, independently versioned from hMailServer.
 [VERSION](VERSION) is canonical. [Release versioning](docs/release-versioning.md) documents
-the server/tool/installer stamp, API metadata, build numbering, retained assembly/COM identities
+the server/tool/installer stamp, API metadata, build numbering, current assembly/COM identities (COM retires under the approved 6.0 migration)
 and schema independence. Development metadata is `6.0.0` with build zero; CI stamps its unique
 build. To refresh development metadata before compiling, without running the product:
 
@@ -325,6 +336,7 @@ Then create the release from the GitHub Actions build of the commit being releas
 Release workflow (`.github/workflows/release.yml`) with its build number. It attaches the
 installer and the symbols to a draft GitHub release, which is reviewed, given release notes and
 published by hand.
+
 
 ## SQL Server / Express validation
 

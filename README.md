@@ -27,7 +27,8 @@ ArzoieMail runs your organisation's email on hardware you control: as many domai
 each with its own accounts, aliases, distribution lists, limits and DKIM key, filtered against
 spam (SPF, DKIM, DMARC, DNS blacklists, SURBL, greylisting) and viruses (ClamAV), with TLS
 throughout. It stores its data in a built-in database, or in MySQL, MariaDB, SQL Server or
-PostgreSQL, and everything it does can be scripted through its COM API.
+PostgreSQL. Current legacy automation uses COM. The secured management API is replacing that interface;
+6.0 will remove COM completely after supported consumers migrate.
 
 It is free for everyone under the [GNU AGPLv3](LICENSE): no paid editions, no locked features,
 and **no telemetry, ever**.
@@ -43,7 +44,7 @@ libraries from years ago, a database engine Microsoft stopped supporting in 2021
 language Microsoft is phasing out of Windows, and secrets protected by a key printed in the source
 code.
 ArzoieMail exists to modernise it end to end - toolchain, libraries, security, protocols and
-tooling - while every existing installation keeps working.
+tooling - with tested, data-preserving migrations and explicit guidance for intentional breaks.
 
 It is a project of its own, with its own roadmap, tests and releases, maintained by
 Jaspreet Singh in Delhi, India. The name honours Arzoie, the maintainer's daughter.
@@ -53,6 +54,30 @@ than a hMailServer 5.8 target. [VERSION](VERSION) owns the product target; the
 [release/version policy](docs/release-versioning.md) explains build metadata, compatibility,
 schema independence and release gates. Version 6 remains in development; this is not a release
 announcement or a claim that unfinished roadmap work has shipped.
+
+## Our vision: Windows-native, modular and maintainable
+
+ArzoieMail 6.0 aims to provide a long-lived foundation for Windows email hosting, with a C++
+mail engine and a separate ASP.NET Core management application. A practical single-machine
+installation remains the priority; external databases, spam engines and scanners are selectable.
+A ten-year architectural horizon means continuing security fixes and tested dependency/LTS
+transitions, not ten years without maintenance or a vendor-support guarantee.
+
+**All current roadmap phases are mandatory for the 6.0 integrated validation baseline.** The
+[dated scope checklist](docs/version-6-scope.md) freezes those requirements; later additions
+need explicit maintainer approval. PowerShell, protocol/UID modernization, SQLite, defined
+code-quality work, Sieve, DMARC reports, ARC and optional existing open-source webmail are
+included. PHP is permitted for optional webmail; PHPWebAdmin and the COM API will be removed.
+[Breaking changes](docs/breaking-changes-6.0.md) records affected users, migration and recovery.
+Mail preservation is the objective, not an untested promise that every integration stays unchanged.
+
+Migration, recovery, security and load testing run during relevant phases and comprehensively
+on the frozen integrated baseline. CI installers are development-test artifacts; no development
+previews are released before feature completion. Public releases require explicit approval;
+official production executables/setup require signing, checksums and provenance verification.
+Planned capabilities, including Defender, are not completed or production-validated features.
+Minimum technical compatibility is distinct from production support, which requires applicable
+vendor security updates and project validation. CalDAV/CardDAV are only uncommitted 6.1 ideas.
 
 ## What is different
 
@@ -88,12 +113,13 @@ broke installations on machines without Visual C++ installed was found and fixed
 **Current, supported foundations.** C++20 on Visual Studio 2026, OpenSSL 3.5 LTS, Boost 1.92,
 PostgreSQL 18's libpq, MariaDB Connector/C 3.4, and administration tools on .NET 10 LTS.
 
-**A drop-in upgrade.** Run the installer over hMailServer 5.x and it upgrades the installation and
-its database in place. The names existing setups depend on are kept on purpose: the
-`hMailServer` Windows service, the `hMailServer.Application` COM API, `hMailServer.exe` and
-`hMailServer.ini`. Existing scripts, legacy PHPWebAdmin and other tools retain compatibility during migration.
-The replacement web admin uses .NET 10; PHPWebAdmin will be retired after migration validation. (Back up first:
-the database upgrade cannot be undone.)
+**Data-preserving migration, with documented breaking changes.** Existing development builds
+retain legacy identifiers and COM consumers. The 6.0 target retains `hMailServer.exe`,
+`hMailAdmin.exe`, service/INI names and installer identity, but completely removes COM,
+PHPWebAdmin and legacy event scripting after replacement acceptance. Existing custom scripts
+and integrations need the [migration register](docs/breaking-changes-6.0.md); no unconditional
+drop-in compatibility or schema downgrade is promised. Back up before upgrading.
+
 Full SQL Server upgrades require the OLE DB 19, engine-version and trusted-TLS preparation in
 the [SQL Server guide](docs/sql-server.md); the installer blocks missing-driver or legacy-provider
 configurations before interrupting the existing service. Compact is a separate backend.
@@ -101,7 +127,7 @@ configurations before interrupting the existing service. Compact is a separate b
 ## Why things were replaced
 
 Modernising means retiring things that still work today but will not tomorrow. Each replacement
-below has a reason, and each keeps existing installations working.
+below has a reason, and each requires tested compatibility or documented migration/recovery.
 
 | Was | Is (or will be) | Why |
 |---|---|---|
@@ -113,6 +139,7 @@ below has a reason, and each keeps existing installations working.
 | Blowfish with a fixed key | AES-256-GCM with a per-installation key protected by Windows DPAPI, exportable with a passphrase | The old key is published in the source code, so anyone with an `hMailServer.ini` or a backup could decrypt the passwords in it |
 | A hard-coded key for the Administrator's saved passwords | Windows DPAPI for the current user | A key in the source code protects nothing |
 | Secrets written into backups as they were stored | An encrypted archive under the backup's own passphrase, or secrets protected under the installation's key | A backup is a copy of every secret on the server, and is often kept somewhere less protected |
+| COM administration and automation | Secured management API for all supported tools/tests/automation *(planned)* | Explicit least-privilege contracts; complete COM retirement before the 6.0 integrated baseline |
 | VBScript / JScript event scripts | A PowerShell event host, out of process *(planned)* | Microsoft has deprecated VBScript and is phasing it out of Windows, and a crashing script should never take the mail server down with it |
 | SQL Server Compact 4.0 | SQLite, with automatic migration *(planned)* | SQL Server Compact has been out of support since 2021 |
 
@@ -147,15 +174,13 @@ management to the native API and responsive panel. See the
 fields and permissions. Mailbox forwarding and automatic replies merged in #39 after VM and
 four-backend CI acceptance. Mailbox signatures merged in #40; profiles, advanced domain policies,
 object limits, domain signatures and alternate names merged in #41. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
-adds queue inspection/retry/removal, routes/allowed recipients and global/mailbox rule builders.
-Its application/test head passed VM and all four CI backends: 1,317 total NUnit cases and 734 separate
-management assertions per backend, plus browser checks. It remains unmerged, awaiting review;
-the latest CI expansion requires its own acceptance. It adds actual .NET 10/runtime/publish,
-REST/native and HTTPS/native checks plus a published browser suite on every backend; the
-[acceptance matrix](docs/ci-acceptance-matrix.md) records current and future coverage. Full advanced administration and production
-cutover remain unfinished. Implementation still requires
-the maintainer's confirmation after each PR review. Related Phase 1b capabilities are now grouped
-into larger coherent PRs; the VM/CI and review gates remain in force.
+merged queue inspection/retry/removal, routes/allowed recipients, global/mailbox rule builders,
+independent version-6 metadata and expanded full-stack CI. Tested head `28dd3df` passed all four
+backends: 1317 NUnit cases with zero failures, 897 management assertions and both browser suites.
+Merge commit: `74eecc017`. See the CI inventory for skips, inconclusive cases and exact evidence.
+The [CI acceptance matrix](docs/ci-acceptance-matrix.md) tracks implemented checks and future
+production/capacity gates. Full administration and production cutover remain unfinished;
+new implementation bundles require explicit authorization after each PR review.
 
 The [identifier and IMAP UID lifecycle plan](docs/imap-uid-modernization.md) tracks boundary
 fixes, checked allocation, controlled generation renewal and panel capacity monitoring. It is
@@ -174,6 +199,10 @@ while preserving compatibility identifiers and historical upstream references. T
 new screenshots, website rendering/publication and guides for unfinished Phase 1b features.
 
 ## Getting started
+
+Version 6.0 has not been released. Current CI installers are for disposable development testing;
+the links below are project entry points, not a 6.0 production recommendation. Official 6.0
+executables and setup must be signed before production publication.
 
 1. Check the [system requirements](https://www.arzoie.in/docs/system_requirements): 64-bit
    Windows 10 or 11, or Windows Server 2016 to 2025.

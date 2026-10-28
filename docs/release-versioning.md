@@ -6,6 +6,19 @@ The implementation and architecture have diverged; upstream hMailServer numberin
 defines ArzoieMail's new releases. This is a development target, not a release announcement,
 publication instruction or claim that Phase 1b/other roadmap requirements are complete.
 
+## Scope, validation and publication
+
+The maintainer approved the [frozen full-roadmap 6.0 scope](version-6-scope.md) on 2026-10-28.
+All current phases, complete COM retirement and supported API consumer migration are mandatory
+for the **6.0 integrated validation baseline**. Later scope changes require explicit approval.
+No development previews before feature completion; CI installers remain development-test artifacts.
+Public preview/production releases require explicit authorization. Official production binaries
+and setup require Authenticode signing, checksums and provenance verification. Traceable source,
+pinned dependencies, recorded toolchains and verifiable artifacts are required; bit-for-bit
+reproducibility is a separate future goal. See the scope owner for continuous/final validation,
+independent review, platform support, optional PHP webmail and candidate acceptance.
+The [breaking-change register](breaking-changes-6.0.md) records migration/recovery obligations.
+
 ## Version ownership and generated metadata
 
 | Value | Owner / format | Meaning |
@@ -16,8 +29,8 @@ publication instruction or claim that Phase 1b/other roadmap requirements are co
 | Installer filename | `ArzoieMail-6.0.0-B<build>-x64.exe` | Product/version/build/architecture identity; existing installer AppId remains stable |
 | Installer display and version properties | `ArzoieMail 6.0.0-B<build>-x64`, numeric `6.0.0.<build>` | Installer/Windows version metadata; not the database schema version |
 | Release tag/title | `ArzoieMail-6.0.0-b<build>` / `ArzoieMail 6.0.0, build <build>` | Full three-part ArzoieMail version; manual release workflow creates a draft only when explicitly requested |
-| Management API product metadata | VersionPrefix read from `VERSION` | SDK-generated file/product metadata follows the product target; preview default build component is zero |
-| .NET assembly identity / COM typelib | Existing identity versions retained | Internal compatibility/binding contracts; a 1.x/5.x assembly identity is not a 5.x product-release target |
+| Management API product metadata | VersionPrefix read from `VERSION` | SDK-generated file/product metadata follows the product target; development default build component is zero |
+| .NET assembly identity / COM typelib | Current identity versions retained pending migration | Current binding contracts; COM identity is removed under V6-COM, not renumbered. A 1.x/5.x assembly identity is not a product-release target |
 | Database schema | `REQUIRED_DB_VERSION`, currently **5714** | Independent migration sequence; do not change it merely because product major becomes 6 |
 
 [Set-Version.ps1](../build/Set-Version.ps1) stamps the native header, shipped desktop-tool
@@ -47,7 +60,7 @@ ignored outputs and include tracked/nonignored new sources.
 3. Review generated diffs. Do not change assembly/COM identity, installer AppId, service names,
    schema numbers or historical SQL filenames as a side effect. API metadata derives its prefix
    directly from VERSION; production API build-number/signing integration belongs to hosting/
-   installer delivery and must be specified there rather than inferred from the preview.
+   installer delivery and must be specified there rather than inferred from development hosting.
 4. Compile on the host with service hooks disabled. Run executables, installer/upgrade tests,
    previews and regressions only in the disposable VM or CI. Verify reported/PE versions,
    displayed installer/tool versions, database-upgrade labels and existing-install compatibility.
@@ -63,7 +76,7 @@ roadmap. Branch names and release tags must keep the workflow's supported syntax
 ## Compatibility and provenance
 
 - Preserve the identifiers listed in [AGENTS](../AGENTS.md): `hMailServer.exe`, service name,
-  COM ProgID/type library, INI, installer AppId, database tables, backup names, headers and
+  INI, installer AppId, database tables, backup names, headers and
   source/project filenames. The major-version decision does not authorize renaming them.
 - Preserve historical hMailServer release/schema mappings, SQL upgrade chains, original
   authorship and AGPLv3/license notices. ArzoieMail remains derived from that code; independent
@@ -72,5 +85,7 @@ roadmap. Branch names and release tags must keep the workflow's supported syntax
   `hMailServer 5.8 (5713)` label is a legacy mapping, not the current product target.
 - Keep older handoffs, test logs, manual examples and third-party dependency versions factual.
   Do not globally replace `5.8`: it can occur in historical data or unrelated library versions.
-- The roadmap still owns phase order. This version decision does not automatically schedule
-  every future phase into 6.0.0 or waive Phase 1b migration, security and capacity gates.
+- The frozen scope now requires every current phase for 6.0, superseding the former flexible
+  scheduling interpretation. It does not waive migration/security/capacity gates or authorize
+  automatically starting later phases. COM ProgID/type library/registration are explicitly
+  retired after consumer migration; non-COM compatibility identifiers remain unchanged.

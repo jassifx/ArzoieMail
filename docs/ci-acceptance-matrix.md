@@ -11,11 +11,14 @@ features from requirements. A planned feature must not receive a fabricated pass
 
 ## Required checks for the current implementation
 
-"New" below means added in the current #42 CI expansion; final-head acceptance must be verified
-in that PR. Tests execute only in disposable VM/CI. Host compilation/static inspection is allowed.
-The exact tracked driver passed all expanded layers in the VM (897 assertions plus live browser
-and selected product-identity regression). Earlier four-backend CI at the version-6 baseline
-passed 1317 NUnit cases and 734 management assertions. The new final head needs its own CI.
+"New" below identifies checks introduced by merged #42. Final head `28dd3df` passed all four
+backends with 1317 NUnit cases (not all passed; see inconclusive/skips in the inventory),
+897 assertions and both browser suites. Runtime execution stays VM/CI-only; host compilation
+and static inspection are allowed. New documentation revisions need their own final-head checks.
+
+The approved [6.0 scope](version-6-scope.md) requires continuous migration/recovery/security/load
+validation as each phase lands, followed by comprehensive validation of an immutable integrated
+baseline. Existing code still uses COM and Compact; future obligations below do not claim removal.
 
 | ID | Technology / boundary | Coverage and evidence | Execution |
 |---|---|---|---|
@@ -80,7 +83,7 @@ fixtures and failure-path tests together when the owning feature is delivered.
 | E04-E06 Defender | Clean/EICAR/decoded MIME/archive/encrypted/unsupported content, permissions/signatures/health, timeout/engine outage, safe staging/cleanup, each receive/send/fetch/APPEND/draft/import path, changed-content re-scan and mitigation | Disposable malware-test VM; deterministic CI subset only after a safe adapter exists |
 | E05-E06 durable pressure | At least 10000 queued/in-flight mixed messages, fairness/backpressure/verdict gates, crash/restart/outage/soak, retry exhaustion/quarantine consistency, no duplicate release, measured throughput/p95/p99/resource headroom | Dedicated opt-in VM capacity lane with defined hardware/message mix and numeric targets |
 | A01-A20 parity | Every newly exposed field/action needs role/parent/validation/persistence/cache/failure/concurrency tests and browser acceptance; legacy restrictions need approved migration decisions | Per-backend CI as capabilities land; destructive maintenance/restore in isolated VM |
-| E08 PHP retirement | Upgrade disables old URL, source/assets/packaging/runtime removal, supported user-role migration, no active fallback and unaffected independent COM consumers/unrelated PHP apps | New-install/upgrade VM lane before cutover |
+| E08 PHP retirement | Upgrade disables old URL, source/assets/packaging/runtime removal, supported user-role migration, no active fallback and migrated supported API consumers and unaffected unrelated PHP apps (optional webmail PHP is permitted) | New-install/upgrade VM lane before cutover |
 | E09 publication/docs | Actual screenshots, inherited recipe review, front matter/HTML rendering, navigation/routes/images/redirects and deployed-site checks | Static/rendering CI once website build/hosting is established; current checker covers local engineering links/inventories |
 | Queue/database capacity | Indexed paging behavior, representative large queues/collections, concurrency/reservation races, restart and measured resource/latency envelope | Deterministic regression plus dedicated capacity VM; current paging bounds responses only |
 | Signing/release path | SignPath/manual release credentials and policy, binary/installer signature verification, exact version/artifact/tag/title and draft review | Explicitly authorized master-only manual release lane; not executed merely to test release wording |
@@ -90,3 +93,22 @@ The dedicated capacity/security/release lanes must record exact build, OS, engin
 message mix, limits and outcomes. Ordinary green PR CI must not be presented as proof of those
 unimplemented or manual scenarios. Deferred CodeQL observations remain governed by the
 maintainer's modernization-end audit decision.
+
+## Mandatory 6.0 acceptance additions (planned, not current green checks)
+
+| Scope | Required acceptance before the integrated baseline / release | Evidence lane |
+|---|---|---|
+| V6-COM / E10 | Inventory all interfaces/callbacks/utilities and supported tools, DB/bootstrap/recovery workflows, scripts, regression/volume/VM fixtures and registration/packaging. Migrate to authenticated/authorized APIs without dropping assertions; prove no COM activation, registration, type-library or interop dependency on clean and upgraded installs; preserve unrelated registrations and non-COM identities | Per-consumer API regression, least-privilege bootstrap/automation and installer migration VM lanes |
+| V6-02 | Event/argument compatibility, conversion examples, timeouts/cancellation, concurrency, process crash/restart, privilege isolation and rule-script interactions | Deterministic host/protocol suites and VM failure injection |
+| V6-03A/B | Exact UID boundaries/transactional allocation/generation recovery, protocol extensions, authentication, DNS/TLS policy, downgrade/failure and real client interoperability | Per-backend tests plus controlled DNS/client/transport VM lanes; do not rely solely on live public DNS |
+| V6-04 | SQLite/MySQL/PostgreSQL/Express normal regressions; separate supported Compact-source migration, interrupted conversion, integrity, retry/restore and old-install upgrade | Normal four-backend CI after implementation; isolated retained Compact migration fixtures |
+| V6-05 | Accepted module/refactor inventory, /W4 baseline/reviewed exceptions, analyzers, portable MIME/SMTP/IMAP/DKIM parsing and fuzzing alongside SPF; defined smoke/campaign budgets and findings disposition | Static/portable/fuzz CI plus recorded longer VM/CI campaigns; finalize finite checklist before closure |
+| V6-06 | Sieve, DMARC reports and ARC trust/privacy/resource/error/interoperability checks; selected optional existing webmail's license/update model, authentication/session/HTML/attachment protections and independent lifecycle | Feature regressions plus real browser/installer/security VM lanes; PHP dependency allowed for optional webmail only |
+| V6-REL operations | Phase-level and final migration, recovery, security and load tests; synthetic internet mail, concurrency/queues, process/storage/database faults and quantified latency/backlog/recovery targets | Disposable VM and explicitly authorized controlled cloud environment; no production customer mail as initial test workload |
+| V6-REL assurance | Independent reviewer/test design roles, specialist human review for specified critical areas when available, recorded review gaps and maintainer disposition; modernization-end CodeQL #1-#3 re-audit | Review reports, dependency findings, regression/remediation retests on exact candidate revisions |
+| V6-REL official release | Supported OS/security-update arrangements and database matrix, real offline install/upgrade/uninstall, signed shipped executables/setup with verified Authenticode chain/timestamp, checksums and provenance, recorded source/dependency/toolchain identity | Release-gate VM/CI checks and explicit maintainer sign-off; CI artifacts remain development-only, no automatic public release |
+
+Tests for future features become required executable lanes as those features land. Do not stub
+acceptance with always-passing placeholders. Bit-for-bit reproducibility is a separate future
+goal; traceability and artifact verification are mandatory. Freeze candidate SHA/build/dependency
+identity; fixes create a new candidate and require affected retests rather than replacing artifacts.

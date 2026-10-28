@@ -12,6 +12,8 @@ competing plans.
 |---|---|---|
 | Product overview and entry points | [Root README](../README.md) | Accurate public summary, current phase, review state and links to the detailed records |
 | Engineering decisions, phase sequence and historical delivery | [ROADMAP](../ROADMAP.md) | Settled decisions, merged PRs, active proposals, dependencies, future phases and open follow-ups |
+| Frozen 6.0 scope and validation contract | [6.0 scope](version-6-scope.md) | Dated mandatory Phase 0-6 checklist, complete COM removal, optional webmail, dependencies, validation/publication/platform/maintenance policy |
+| Compatibility transitions and operator impact | [6.0 breaking changes](breaking-changes-6.0.md) | Affected users, API/script/data migration, recovery, evidence, status and release-note obligations |
 | Release identity and numbering | [VERSION](../VERSION), [release policy](release-versioning.md) | Independent ArzoieMail 6.0.0 target, generated metadata, compatibility/schema separation and publication gates |
 | Detailed Phase 1b capability and migration status | [Phase 1b ledger](phase-1b-status.md) | Delivered versus missing controls, legacy surface inventory, restrictions, acceptance and PHP cutover gates |
 | Agreed web administration requirements | [Requirements](webadmin-requirements.md) | Product and security obligations, certificate and Defender requirements; requirements are not completion evidence |

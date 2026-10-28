@@ -12,20 +12,29 @@ and deployment requirements; do not remove unrelated PHP applications from admin
 
 COM is not inherently insecure, and replacing it alone does not establish security. The goal
 is an explicit, testable management boundary with limited operations and least privilege.
-Retain the existing COM API separately for the Administrator, DBSetup, scripts and upgrade
-compatibility. Removing those consumers and COM registration is a separate migration; this
-change must not break them or silently expose them to the web application.
+The maintainer superseded COM retention on **2026-10-28**: **6.0 completely removes the COM
+API**. Current desktop/DB tools, tests and scripts still use it; migration and removal are not
+implemented. E10 in the [ledger](phase-1b-status.md), V6-COM in the [scope](version-6-scope.md)
+and [BC-007](breaking-changes-6.0.md) require supported consumers to use secured management
+API contracts, with tested bootstrap/recovery, identity/role handling and script examples.
+Complete interface/callback/utility/build/packaging inventory precedes deletion. The current
+local pipe trusts a configured host SID: multi-user desktop/remote automation must not simply
+be granted that SID or local administrator privileges. Specify and test per-client transport,
+HTTPS/API authentication, privilege separation and credential lifecycle before migration.
+No arbitrary object reflection or COM-like traversal replaces the explicit command allowlist.
 
-Keeping COM for compatibility retains that existing attack surface. Do not grant the API
-identity DCOM access; audit legacy activation permissions independently. Migrating desktop tools,
-DB setup and scripts to the new API must precede any eventual removal of COM registration.
+Until removal, retain current tests/consumers, keep DCOM unavailable to the web identity and
+audit activation permissions. This is an intermediate development state, not 6.0 compatibility.
+The final installer must remove obsolete COM registration/type libraries safely and verify
+activation fails on fresh/upgraded installs without affecting unrelated COM registrations.
 
 ## Boundaries
 
 The [Phase 1b ledger](phase-1b-status.md) owns granular delivery/parity status and migration
 gates; [the authority index](README.md) defines documentation ownership. The mail-operations
-application/test head in #42 passed VM and four-backend CI and remains unmerged awaiting review.
-Use its PR validation record for subsequent documentation heads; no next bundle is authorized.
+final head `28dd3df` in #42 passed VM and four-backend CI (897 assertions plus browser suites),
+merged as `74eecc017`. The current follow-up is documentation-only; no next implementation
+bundle or production cutover is authorized.
 
 Mailbox forwarding/replies, mailbox signatures and advanced domain/mailbox administration
 merged in #39?#41 with VM/four-backend CI acceptance. Global-name writes and object limits
@@ -55,7 +64,9 @@ Browser -> HTTPS REST /api/v1 -> ASP.NET Core administration process
                                      |
                          C++ business / persistence layer
 
-Existing desktop tools / scripts -> existing COM API -> same business layer
+Current desktop tools / scripts -> existing COM API -> same business layer
+6.0 target: supported tools / automation -> secured management API -> native business layer
+           COM API / registration / interop removed after accepted migration
 ```
 
 - Host the API with its own restricted Windows identity. It must not run as LocalSystem or
@@ -157,5 +168,6 @@ Defender throughput and the necessary scheduling changes are not implemented by 
 5. Switch the installer and end-user documentation only after parity, upgrade, security and
    supported-database acceptance tests pass. Retire the legacy PHP panel through that migration;
    remove PHP source, packaging and runtime requirements from administration delivery and verify
-   that upgrades disable the old endpoint. Keep COM compatibility independent until its consumers
-   have a supported replacement.
+   that upgrades disable the old endpoint. Migrate supported desktop/DB tools, fixtures and
+   automation to the secured API under E10; coordinate script conversion with Phase 2, then
+   remove COM implementations/type libraries/registration/interop before the 6.0 baseline.

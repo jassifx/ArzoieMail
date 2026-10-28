@@ -16,13 +16,26 @@ the installer upgrades an hMailServer installation in place. Don't rename them w
   `hMailServer Tools.sln`, `hMailServer Tests.sln`, `hMailServer64.iss`), and the `%hMailServerLibs%` variable;
 - `hMailServer.exe`, `hMailServer.ini`, `hMailAdmin.exe`, the Windows service name `hMailServer` (its display name is ArzoieMail) and
   `NT SERVICE\hMailServer`;
-- the `hMailServer.Application` COM API, its type library and the registry keys;
+- non-COM registry identities needed for install/upgrade discovery; the COM API, type library
+  and activation/registration are explicitly scheduled for removal in 6.0 after consumer migration;
 - the installer's AppId, the `X-hMailServer-*` message headers, the `hm_` database tables, and `hMailServerBackup.xml`
   inside backups.
 
 Fresh installations go to `Program Files\ArzoieMail` and `ProgramData\ArzoieMail`; the server and the installer still
 find `ProgramData\hMailServer` in an upgraded installation. The source code and its comments still say hMailServer in
-many places; that is renamed gradually, never in the identifiers above.
+many places; that is renamed gradually. Retained identifiers are not renamed incidentally;
+retiring COM may remove COM-only assets such as its IDL rather than preserving them indefinitely.
+
+## Mandatory 6.0 scope and COM retirement
+
+The [dated scope checklist](docs/version-6-scope.md) and [breaking-change register](docs/breaking-changes-6.0.md)
+own the 2026-10-28 decisions: all current phases are mandatory, COM is completely removed
+after supported desktop/DB/maintenance tools, test fixtures and automation migrate to secured
+management APIs. Current COM code/tests still exist; do not remove consumers or coverage early
+or add new COM features. Retain non-COM executable/service/INI/installer identities. PHP may
+be used for optional existing open-source webmail, not the replacement administration panel.
+CI test artifacts remain allowed; no development previews before feature completion. Runtime
+execution remains VM/CI-only and every new implementation bundle needs authorization.
 
 ## Repository Layout
 
@@ -73,11 +86,12 @@ retaining compatibility identifiers, original authorship and historical routes. 
 a naming refresh does not establish that every inherited recipe has been validated.
 Honor the maintainer's PR review gate and VM/CI-only runtime-testing rule; check live PR/CI state.
 PR #38's identifier/UID roadmap plan, #39's forwarding/replies, #40's mailbox signatures and #41's
-advanced domain/mailbox bundle are merged. The current authorized Phase 1b bundle combines
-queue operations, routes/allowed recipients and global/mailbox rules in unmerged #42. Its
-application/test head passed all CI; documentation reconciliation is now authorized in the
-same PR. No subsequent feature bundle or merge is authorized. Use larger coherent PRs. Follow the
-current handoff for the branch and live PR state. UID implementation remains a later item.
+advanced domain/mailbox bundle are merged. The merged #42 bundle combines
+queue operations, routes/allowed recipients and global/mailbox rules. Its final
+head `28dd3df` passed 1317 NUnit cases, 897 management assertions and both browser suites per
+backend; merge `74eecc017`. Consult the CI inventory for inconclusive/skipped outcomes.
+The current authorization is a documentation-only PR for the approved 6.0 scope and COM
+retirement plan. Follow the latest handoff for branch/review state; do not start implementation.
 
 ---
 
@@ -129,7 +143,7 @@ Server/
 Defines the legacy compatibility API, `hMailServer.Application` (the `.idl` file lives here).
 The existing Administrator GUI, DBSetup and legacy scripts use it. New replacement-panel
 capabilities belong in the native management dispatcher and versioned REST API, with permission
-checks at both boundaries. Extend COM only when a compatibility consumer explicitly requires it;
+checks at both boundaries. Do not extend COM; migrate supported consumers to secured management APIs;
 do not route the replacement panel through this layer.
 
 ### `Server/Common/`
@@ -269,7 +283,7 @@ Vendored third-party C++ libraries checked directly into the repository. Large e
 ## Key Architectural Patterns
 
 **Management boundaries.** Existing desktop tools, regression tests and scripts use the COM API
-in `Server/COM/`, which remains a compatibility interface. The replacement panel uses the .NET 10
+in `Server/COM/`, which remains only in intermediate development code pending mandatory 6.0 removal. The replacement panel uses the .NET 10
 REST API in `source/Management/Api`, communicating directly with the native business layer through
 `Server/Common/Management`; it must not use COM or direct SQL. Enforce permissions in the native
 dispatcher as well as HTTP handlers. See `docs/management-api-architecture.md` for the revised

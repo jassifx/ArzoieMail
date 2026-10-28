@@ -46,6 +46,28 @@ unless the maintainer says otherwise for a specific task.
 - Decisions recorded in ROADMAP.md §2 are settled; don't reopen them without a new reason.
 - Some names stay hMailServer on purpose (AGENTS.md lists them). Don't rename them.
 
+## Approved 6.0 scope (2026-10-28)
+
+- The [dated scope checklist](../version-6-scope.md) requires all current roadmap phases before
+  the **6.0 integrated validation baseline**. Later additions/removals/deferrals require an
+  explicit dated maintainer decision; phase starts and per-PR review gates remain separate.
+- Remove COM completely after supported desktop/DB/maintenance tools, test fixtures and
+  automation migrate to secured management APIs. Retain non-COM executable/service/INI/installer
+  identities. Current COM code is an intermediate state, not a 6.0 compatibility promise.
+- Integrate an existing maintained open-source webmail, optional to install; PHP is permitted
+  for webmail. The base installation works independently; external integrations are selectable.
+- Run migration/recovery/security/load tests during relevant phases and comprehensively on
+  the frozen integrated baseline. Independent review/test design is defined by roles/evidence,
+  not a fixed number of agents; specify specialist human review areas when available and record gaps.
+- CI development-test installers remain allowed. No development previews before feature
+  completion; public preview/production release requires explicit authorization. Official
+  production executables/setup need Authenticode signing, checksums and provenance verification.
+- Require source/dependency/toolchain traceability and verifiable artifacts; bit-for-bit
+  reproducibility is a separate future goal. Distinguish technical minimum from production
+  support, which requires applicable vendor security updates and project validation.
+- CalDAV/CardDAV are outside 6.0, only uncommitted 6.1 ideas. Review the
+  [breaking-change register](../breaking-changes-6.0.md) before migration work.
+
 ## Tests
 
 - **Runtime tests and browser previews run only in the disposable VM or CI.** The development
