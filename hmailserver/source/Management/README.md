@@ -58,6 +58,18 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | POST | `/api/v1/session` | Sign in with username/password; rate limited |
 | DELETE | `/api/v1/session` | Sign out |
 | GET | `/api/v1/status` | Server administrator |
+| GET | `/api/v1/queue` | Server administrator; pending/held metadata, searchable sender or ID |
+| GET / DELETE | `/api/v1/queue/{id}` | Inspect recipients or permanently remove an idle queued item; stored mail is excluded |
+| POST | `/api/v1/queue/{id}/retry` | Server administrator; request retry of an idle queued item |
+| POST | `/api/v1/queue/wake` | Server administrator; request a check for due mail, empty JSON object |
+| GET / POST | `/api/v1/routes` | Server administrator; list/create delivery routes |
+| GET / PATCH / DELETE | `/api/v1/routes/{id}` | Server administrator; inspect/change/remove a route |
+| GET / POST | `/api/v1/routes/{routeId}/addresses` | Server administrator; list/add explicitly allowed recipients |
+| GET / DELETE | `/api/v1/routes/{routeId}/addresses/{id}` | Server administrator; exact-parent recipient inspection/removal |
+| GET / POST | `/api/v1/rules` | Server administrator; list/create global disabled rule drafts |
+| GET / PATCH / DELETE | `/api/v1/rules/{id}` | Server administrator; read/edit/activate/remove global rules |
+| GET / POST | `/api/v1/domains/{domainId}/accounts/{accountId}/rules` | Owning-domain/server administrator; protected mailbox checks apply |
+| GET / PATCH / DELETE | `/api/v1/domains/{domainId}/accounts/{accountId}/rules/{id}` | Exact mailbox/parent scope; read/edit/activate/remove mailbox rules |
 | GET / POST | `/api/v1/domains` | Paginated list (server/all or domain administrator/own); create requires server administrator |
 | GET / PATCH / DELETE | `/api/v1/domains/{id}` | Read/update own domain for domain administrator; server administrator for creation, limits and deletion |
 | GET / PATCH | `/api/v1/domains/{id}/settings` | Advanced policies/signatures; own domain administrator or server administrator, object limits require server administrator |
@@ -86,6 +98,64 @@ and `limit` (default 50, maximum 100). Responses contain `items`, `total`, `offs
 Unknown/duplicate HTTP filters and out-of-range native pagination are rejected. Collections are
 loaded using existing business objects and filtered in memory; pagination bounds the response,
 not database work. Indexed database-side paging remains a capacity follow-up.
+
+### Queue, routing and rules
+
+The mail-operations bundle adds the endpoints above; VM acceptance passed. Check its PR for required CI and review.
+Queue `id` values in responses are **decimal strings**, preserving all signed 64-bit digits in
+JavaScript. Keep them as strings when constructing URLs. Queue summaries include sender,
+created/next-try timestamps, size, attempts, busy and held state. Detail adds recipient count
+and the first 100 recipients; bodies and storage paths are never returned. Reads are snapshots.
+Missing, completed or stored-mail IDs return 404; busy delivery or bulk clearing returns 409
+for mutations. Retry can release held mail and only requests future delivery; wake does not
+override next-try timestamps. Removal is permanent. Reservation and mutation share a native
+guard and invalidate pending delivery snapshots. Legacy COM single-item queue operations use
+the same stored-mail/busy guards. Bulk queue clearing is not exposed through REST.
+Queue listing reads all queue metadata before filtering/paging; this is not a large-queue
+capacity guarantee. Database-side paging and measured workload acceptance remain follow-ups.
+
+Routes accept `domain` (required on creation, immutable), `host` (required), `description`,
+`port` (1–65535), `tries` (1–1000), `retryMinutes` (1–10080), `allAddresses`, `recipientLocal`,
+`senderLocal`, `security`, `requiresAuth`, `username` and write-only `password`. Exact domains,
+`*.domain` and `*` are allowed; host is a DNS name or IP address, never a URL. Defaults are
+port 25, four attempts, 60 minutes, listed recipients only, external sender/recipient
+classification, no authentication and **required STARTTLS**. Security values: 0 plaintext,
+1 implicit TLS, 2 optional STARTTLS, 3 required STARTTLS. Authentication requires 1 or 3,
+a username and a password. Omit password to retain it; an explicit empty password clears it
+only with authentication disabled. Responses return only `passwordConfigured`. Omitted legacy
+zero attempts/delay values are preserved; new writes require the stated positive bounds.
+Allowed recipient entries accept one full `address`, are case-insensitively unique per route,
+and have no PATCH operation. Route changes affect delivery immediately; review wildcard and
+local-classification settings carefully. Inspect rules before deleting a referenced route.
+
+Rules accept `name` (nonempty, 255 UTF-8 bytes), `useAnd`, nonnegative `sortOrder`, `active`,
+`criteria` and ordered `actions`. New rules are disabled and append after the last sort order;
+explicit sort orders cannot collide in the same scope. Disable an active rule with only
+`{"active":false}` before editing it. Enable separately with only `{"active":true}`; activation
+revalidates a nonempty definition. Editing an active definition returns 409. Each array is
+limited to 20 entries. Lower rule sort order runs first; already-processing mail can finish
+using an earlier cached definition.
+
+Conditions use `field`, `header`, `match`, `value`. Fields: 0 custom header, 1 From, 2 To,
+3 Cc, 4 Subject, 5 body, 6 size, 7 recipient list, 8 delivery attempts. Matches: 1 equals,
+2 contains, 3 less than, 4 greater than, 6 does not contain, 7 does not equal, 8 wildcard.
+Regex (5) is unavailable. Header names must be valid tokens, up to 78 bytes; values are at
+most 255 bytes. Size/attempt values must be nonnegative 32-bit decimal integers.
+
+Actions use `type`: 1 delete, 2 forward (`to`, `abortSpam`), 3 reply (`fromAddress`,
+`fromName`, `subject`, `body`, `abortSpam`), 4 move (`folder`), 6 stop processing,
+7 set header (`header`, `value`), 8 send using route (`routeId`, server administrator only),
+9 create copy. Forward targets cannot equal the scoped mailbox; mailbox reply senders must
+equal that mailbox. Reply body is limited to 8000 UTF-8 bytes; names/subject/folder/header
+values to 255. Spam-abort defaults true. Engine, authentication and MIME structural headers
+cannot be overwritten. Script (5) and local-binding (10) actions are unavailable. Existing
+unsupported rules can be read, disabled or deleted; rebuild a supported draft before activation.
+
+Definition validation completes before writes. Persistence saves the rule disabled first,
+checks every child write, then enables only after success. This is **not a transaction**:
+a database error can leave a disabled partial draft. A 503 requires reading the draft and
+repairing or deleting it before enabling. Failed deletion can also need child cleanup; retry
+or inspect through supported maintenance tools. There is no SQL or file editor in the panel.
 
 Domain POST accepts `name` (required), `active`, `maxMessageSizeKB`, `maxSizeMB`,
 `maxAccountSizeMB`. PATCH accepts the same fields except `name`; domain administrators may

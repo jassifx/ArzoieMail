@@ -14,6 +14,22 @@ namespace RegressionTests.API
    public class UtilitiesTests : TestFixtureBase
    {
       [Test]
+      public void DeliveryQueueMustNotDeleteOrRetryStoredMailboxMessages()
+      {
+         var account = SingletonProvider<TestSetup>.Instance.AddAccount(_domain, "queue-safety@example.test", "test");
+         var folder = account.IMAPFolders.get_ItemByName("INBOX");
+         var message = folder.Messages.Add();
+         message.Subject = "Stored mailbox fixture"; message.Body = "Must remain stored."; message.Save();
+         long id = message.ID;
+         string filename = message.Filename;
+         Assert.That(File.Exists(filename), Is.True, "The stored-mail fixture must exist before the queue commands.");
+         _application.GlobalObjects.DeliveryQueue.Remove(id);
+         _application.GlobalObjects.DeliveryQueue.ResetDeliveryTime(id);
+         Assert.That(File.Exists(filename), Is.True, "Queue operations must not delete stored-mail files.");
+         Assert.That(folder.Messages.Count, Is.EqualTo(1), "Queue operations must not remove stored mailbox messages.");
+         Assert.That(folder.Messages.get_ItemByDBID(id).Subject, Is.EqualTo("Stored mailbox fixture"));
+      }
+      [Test]
       [Description("Import the same message twice.")]
       public void TestImportDuplicateMessage()
       {

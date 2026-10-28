@@ -32,6 +32,11 @@ namespace HM
       static void StartDelivery();
 
       static void OnDeliveryQueueCleared();
+      enum class MutationResult { Success, Missing, Busy, Failed };
+      static MutationResult TryRemove(__int64 id);
+      static MutationResult TryRetry(__int64 id);
+      static boost::recursive_mutex &MutationMutex();
+      static bool IsClearing();
    private:
 
       static bool is_clearing_;

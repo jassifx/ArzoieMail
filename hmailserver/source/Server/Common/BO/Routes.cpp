@@ -35,8 +35,9 @@ namespace HM
    std::shared_ptr<Route> 
    Routes::GetItemByNameWithWildcardMatch(const String &domainName)
    {
-      auto iter = vecObjects.begin();
-      auto iterEnd = vecObjects.end();
+      const auto snapshot = GetSnapshot();
+      auto iter = snapshot.begin();
+      auto iterEnd = snapshot.end();
 
       for (; iter != iterEnd; iter++)
       {

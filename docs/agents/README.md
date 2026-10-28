@@ -6,11 +6,10 @@ traps found along the way, and where the last session left off.
 
 ## Read in this order
 
-Current handoff: [2026-10-27](handoffs/2026-10-27.md). It records merged SQL Express PR #33,
-its green four-backend baseline, merged administration/CI PRs through #37, the requested UID
-lifecycle roadmap update in merged #38, the deferred CodeQL re-audit and the authorized
-merged forwarding/reply and signature slices (#39/#40), and the larger advanced domain/mailbox
-bundle now in progress. The maintainer prefers grouped Phase 1b capabilities over tiny PRs.
+Current handoff: [2026-10-28](handoffs/2026-10-28.md). It records merged work through #41,
+the authorized queue/routing/rules bundle, validation evidence, remaining delivery and the
+deferred CodeQL re-audit. The previous handoff retains historical baselines and environment
+lessons. The maintainer prefers grouped Phase 1b capabilities over tiny PRs.
 The [CI inventory](../ci-test-inventory.md) separates automated checks from manual/planned
 coverage. Verify live PR/CI state before continuing; planned features are not implemented.
 The [documentation status](../documentation-status.md) records the manual rebrand, refreshed

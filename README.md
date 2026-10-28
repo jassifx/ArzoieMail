@@ -135,8 +135,9 @@ search in merged PR #35. PR #36 adds aliases, distribution lists, posting settin
 management to the native API and responsive panel. See the
 [REST contract](hmailserver/source/Management/README.md#rest-v1-contract) for the supported
 fields and permissions. Mailbox forwarding and automatic replies merged in #39 after VM and
-four-backend CI acceptance. Mailbox signatures merged in #40. The current larger bundle combines
-mailbox profiles, domain routing/limits/signatures and alternate domain names;
+four-backend CI acceptance. Mailbox signatures merged in #40; profiles, advanced domain policies,
+object limits, domain signatures and alternate names merged in #41. The current larger bundle
+adds queue inspection/retry/removal, routes/allowed recipients and global/mailbox rule builders;
 advanced administration and production cutover remain unfinished. Implementation still requires
 the maintainer's confirmation after each PR review. Related Phase 1b capabilities are now grouped
 into larger coherent PRs; the VM/CI and review gates remain in force.

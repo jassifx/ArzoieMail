@@ -16,13 +16,22 @@ Keep end-user guidance aligned with [documentation status](documentation-status.
 manual naming updates do not imply that these requirements have been implemented.
 
 Mailbox forwarding and automatic replies merged in #39 with VM/four-backend CI acceptance.
-Mailbox signatures merged in #40. The current authorized larger bundle combines mailbox
+Mailbox signatures merged in #40. Merged #41 combines mailbox
 profiles, domain catch-all/plus addressing/greylisting, server-defined object limits, domain
 signature policy/formats and alternate domain-name management, with native/REST/panel controls
-and regressions. VM acceptance passed; verify required CI and PR review/merge. Global-name writes and object limits require server
+and regressions, accepted in the VM and all four CI backends. Global-name writes and object limits require server
 administrator. Existing engine policy/macros remain authoritative. Mailbox-user self-service remains
 planned. Future UID capacity/maintenance controls belong to the
 [identifier lifecycle plan](imap-uid-modernization.md); documenting them does not implement them.
+
+The next authorized larger bundle adds queue metadata/recipient inspection and guarded
+retry/removal, route and allowed-recipient management, and global/scoped mailbox rule builders.
+Queue/routes/global rules require server administrator; mailbox rules preserve domain and
+protected-account boundaries. Busy/stored mail cannot be mutated as queue items. Route passwords
+are write-only and SMTP authentication requires encrypted transport. Rules start disabled;
+editing and activation are separate operations, with bounded conditions/actions and no exposed
+regex, scripting or local-binding actions. See the REST contract for limits and partial-write
+recovery. This bundle does not establish full parity, throughput capacity or production cutover.
 
 ## Modern administration
 

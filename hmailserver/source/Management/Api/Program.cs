@@ -166,6 +166,24 @@ public static class ManagementHost
         });
         var api = app.MapGroup("/api/v1").RequireAuthorization();
         api.MapGet("/status", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "status"));
+        api.MapGet("/queue", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "queue.list"));
+        api.MapGet("/queue/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "queue.read", id: id));
+        api.MapPost("/queue/{id:long:min(1)}/retry", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "queue.retry", id: id));
+        api.MapDelete("/queue/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "queue.delete", id: id));
+        api.MapPost("/queue/wake", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "queue.wake", true));
+        foreach (var resource in new[] { ("routes", "routes"), ("rules", "rules") })
+        {
+            string command = resource.Item1; var group = api.MapGroup("/" + resource.Item2);
+            group.MapGet("", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".list"));
+            group.MapPost("", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".create", true));
+            group.MapGet("/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".read", id: id));
+            group.MapPatch("/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".update", true, id));
+            group.MapDelete("/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, command + ".delete", id: id));
+        }
+        api.MapGet("/routes/{routeId:long:min(1)}/addresses", (long routeId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "routeaddresses.list", routeId: routeId));
+        api.MapPost("/routes/{routeId:long:min(1)}/addresses", (long routeId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "routeaddresses.create", true, routeId: routeId));
+        api.MapGet("/routes/{routeId:long:min(1)}/addresses/{id:long:min(1)}", (long routeId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "routeaddresses.read", id: id, routeId: routeId));
+        api.MapDelete("/routes/{routeId:long:min(1)}/addresses/{id:long:min(1)}", (long routeId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "routeaddresses.delete", id: id, routeId: routeId));
         api.MapGet("/domains", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.list"));
         api.MapPost("/domains", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "domains.create", true));
         api.MapGet("/domains/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "domain", false, id));
@@ -188,6 +206,12 @@ public static class ManagementHost
         api.MapPatch("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/signature", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.signature.update", true, id, domainId));
         api.MapGet("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/profile", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.profile.read", false, id, domainId));
         api.MapPatch("/domains/{domainId:long:min(1)}/accounts/{id:long:min(1)}/profile", (long domainId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "accounts.profile.update", true, id, domainId));
+        var mailboxRules = api.MapGroup("/domains/{domainId:long:min(1)}/accounts/{accountId:long:min(1)}/rules");
+        mailboxRules.MapGet("", (long domainId, long accountId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "rules.list", domainId: domainId, accountId: accountId));
+        mailboxRules.MapPost("", (long domainId, long accountId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "rules.create", true, domainId: domainId, accountId: accountId));
+        mailboxRules.MapGet("/{id:long:min(1)}", (long domainId, long accountId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "rules.read", id: id, domainId: domainId, accountId: accountId));
+        mailboxRules.MapPatch("/{id:long:min(1)}", (long domainId, long accountId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "rules.update", true, id, domainId, accountId: accountId));
+        mailboxRules.MapDelete("/{id:long:min(1)}", (long domainId, long accountId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "rules.delete", id: id, domainId: domainId, accountId: accountId));
         foreach (string resource in new[] { "aliases", "lists" })
         {
             string command = resource;
@@ -236,12 +260,14 @@ public static class ManagementHost
 
     private static IResult Data(object data) => Results.Json(new { data });
     private static async Task<IResult> Objects(HttpContext context, CredentialVault vault, IManagementChannel channel,
-        string operation, bool readBody = false, long? id = null, long? domainId = null, long? listId = null)
+        string operation, bool readBody = false, long? id = null, long? domainId = null, long? listId = null, long? routeId = null, long? accountId = null)
     {
         var arguments = new Dictionary<string, object?>();
         if (id.HasValue) arguments["id"] = id.Value;
         if (domainId.HasValue) arguments["domainId"] = domainId.Value;
         if (listId.HasValue) arguments["listId"] = listId.Value;
+        if (routeId.HasValue) arguments["routeId"] = routeId.Value;
+        if (accountId.HasValue) arguments["accountId"] = accountId.Value;
         if (operation.EndsWith(".list", StringComparison.Ordinal))
         {
             foreach (string key in context.Request.Query.Keys)

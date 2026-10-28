@@ -94,6 +94,7 @@ if (args.Contains("--live"))
     await MailboxBehaviorTests.Run(native, name, password, Check);
     await SignatureTests.Run(native, name, password, Check);
     await AdvancedAdministrationTests.Run(native, name, password, Check);
+    await MailOperationsTests.Run(native, name, password, Check);
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
     // Real native persistence/authorization coverage runs on every CI database backend.
     async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>
@@ -334,6 +335,37 @@ try
     }
     await Send("/domains/5/lists/8/members?limit=101", HttpMethod.Get, status: 422);
     await Send("/domains/5/aliases", HttpMethod.Post, new { address = "test@example.test", target = "other@example.test" }, "wrong", 403);
+    foreach (var resource in new[] { ("routes", "/routes"), ("rules", "/rules"), ("rules", "/domains/5/accounts/7/rules"), ("routeaddresses", "/routes/8/addresses") })
+    {
+        foreach (var action in new[] { (HttpMethod.Get, "", "list"), (HttpMethod.Post, "", "create"), (HttpMethod.Get, "/9", "read"), (HttpMethod.Delete, "/9", "delete") })
+        {
+            await Send(resource.Item2 + action.Item2, action.Item1, action.Item1 == HttpMethod.Get ? null : new { name = "draft" }, token);
+            Check(fake.LastOperation == resource.Item1 + "." + action.Item3, "Mail operation maps its explicit native command.");
+            if (resource.Item2.Contains("accounts")) Check(fake.LastArguments.GetProperty("domainId").GetInt64() == 5 && fake.LastArguments.GetProperty("accountId").GetInt64() == 7, "Mailbox rules retain both parent IDs.");
+            if (resource.Item1 == "routeaddresses") Check(fake.LastArguments.GetProperty("routeId").GetInt64() == 8, "Route recipients retain their parent ID.");
+        }
+        await Send(resource.Item2 + "?limit=101", HttpMethod.Get, status: 422);
+        await Send(resource.Item2, HttpMethod.Post, new { }, "wrong", 403);
+        if (resource.Item1 != "routeaddresses")
+        {
+            await Send(resource.Item2 + "/9", HttpMethod.Patch, new { active = false }, token);
+            Check(fake.LastOperation == resource.Item1 + ".update", "Mail-operation changes use PATCH.");
+            await Send(resource.Item2 + "/9", HttpMethod.Patch, new { }, token, 403, "https://evil.example");
+        }
+    }
+    const long exactQueueId = 9007199254740993;
+    await Send("/queue?search=sender&offset=1&limit=10", HttpMethod.Get);
+    Check(fake.LastOperation == "queue.list" && fake.LastArguments.GetProperty("offset").GetInt64() == 1, "Queue paging is explicit.");
+    await Send("/queue?limit=101", HttpMethod.Get, status: 422);
+    await Send($"/queue/{exactQueueId}", HttpMethod.Get);
+    Check(fake.LastOperation == "queue.read" && fake.LastArguments.GetProperty("id").GetInt64() == exactQueueId, "Queue identity keeps all 64-bit digits.");
+    foreach (var action in new[] { (HttpMethod.Post, $"/queue/{exactQueueId}/retry", "queue.retry"), (HttpMethod.Delete, $"/queue/{exactQueueId}", "queue.delete"), (HttpMethod.Post, "/queue/wake", "queue.wake") })
+    {
+        await Send(action.Item2, action.Item1, new { }, "wrong", 403);
+        await Send(action.Item2, action.Item1, new { }, token, 403, "https://evil.example");
+        await Send(action.Item2, action.Item1, new { }, token);
+        Check(fake.LastOperation == action.Item3, "Queue mutation requires CSRF and its explicit command.");
+    }
     fake.Level = 1;
     var current = await Send("/session", HttpMethod.Get);
     Check(current.GetProperty("user").GetProperty("level").GetInt32() == 1, "Refresh roles from the native service.");

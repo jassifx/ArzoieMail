@@ -45,7 +45,14 @@ try {
         $account.AdminLevel = [int]$role[1]
         $account.Save()
         switch ($role[0]) {
-            'server' { $env:ARZOIEMAIL_TEST_USERNAME = $account.Address }
+            'server' {
+                $env:ARZOIEMAIL_TEST_USERNAME = $account.Address
+                # Fixture only: prove queue operations cannot reach stored mailbox data.
+                $folder = $account.IMAPFolders.ItemByName('INBOX'); $objects += $folder
+                $stored = $folder.Messages.Add(); $objects += $stored
+                $stored.Subject = 'Stored queue-boundary fixture'; $stored.Body = 'Preserve this mailbox message.'; $stored.Save()
+                $env:ARZOIEMAIL_TEST_STORED_ID = [string]$stored.ID
+            }
             'domain' { $env:ARZOIEMAIL_TEST_DOMAIN_USERNAME = $account.Address }
             'user' { $env:ARZOIEMAIL_TEST_USER_USERNAME = $account.Address }
         }
@@ -84,4 +91,5 @@ try {
     if ($null -ne $cleanup.Authenticate($AdministratorCredential.UserName, $adminPassword) -and $null -ne $fixtureDomainId) { $cleanup.Domains.DeleteByDBID($fixtureDomainId) }
     $env:ARZOIEMAIL_TEST_USERNAME = $null; $env:ARZOIEMAIL_TEST_PASSWORD = $null
     $env:ARZOIEMAIL_TEST_DOMAIN_USERNAME = $null; $env:ARZOIEMAIL_TEST_USER_USERNAME = $null
+    $env:ARZOIEMAIL_TEST_STORED_ID = $null
 }

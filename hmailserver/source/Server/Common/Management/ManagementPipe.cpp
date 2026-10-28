@@ -4,6 +4,19 @@
 #include "../BO/Account.h"
 #include "../BO/Accounts.h"
 #include "../BO/DomainAliases.h"
+#include "../BO/Routes.h"
+#include "../BO/RouteAddresses.h"
+#include "../BO/Rules.h"
+#include "../BO/RuleCriterias.h"
+#include "../BO/RuleActions.h"
+#include "../BO/MessageRecipients.h"
+#include "../BO/Message.h"
+#include "../Persistence/PersistentMessage.h"
+#include "../BO/MessageRecipient.h"
+#include "../../SMTP/DeliveryQueue.h"
+#include "../../SMTP/SMTPDeliveryManager.h"
+#include "../../SMTP/SMTPConfiguration.h"
+#include <boost/asio/ip/address.hpp>
 #include "../BO/Aliases.h"
 #include "../BO/DistributionLists.h"
 #include "../BO/DistributionListRecipients.h"
@@ -621,6 +634,7 @@ namespace HM
          if (!success) throw RequestError{error.IsEmpty() ? 503 : 422};
          return memberOperation ? MemberView(*member) : aliasOperation ? AliasView(*alias) : ListView(*list);
       }
+      #include "MailOperations.inc"
       json::object DnsblView(DNSBlackList &item)
       {
          return {{"id", item.GetID()}, {"Active", item.GetIsActive()}, {"DNSHost", Utf8(item.GetDNSHost())},
@@ -723,6 +737,9 @@ namespace HM
          if (!argumentValue || !argumentValue->is_object()) throw RequestError{422};
          auto &arguments = argumentValue->as_object();
          if (operation == "authenticate") return User(*account);
+         if (operation.rfind("queue.", 0) == 0) return ManageQueue(operation, arguments, *account);
+         if (operation.rfind("routes.", 0) == 0 || operation.rfind("routeaddresses.", 0) == 0) return ManageRoutes(operation, arguments, *account);
+         if (operation.rfind("rules.", 0) == 0) return ManageRules(operation, arguments, *account);
          if (operation.rfind("domains.settings.", 0) == 0) return ManageDomainSettings(operation, arguments, *account);
          if (operation.rfind("domainaliases.", 0) == 0) return ManageDomainAliases(operation, arguments, *account);
          if (operation.rfind("accounts.behavior.", 0) == 0 || operation.rfind("accounts.signature.", 0) == 0 || operation.rfind("accounts.profile.", 0) == 0)

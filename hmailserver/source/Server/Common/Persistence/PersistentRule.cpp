@@ -142,6 +142,49 @@ namespace HM
 
    }
 
+   bool PersistentRule::SaveCheckedObject(std::shared_ptr<Rule> rule, bool replaceCriteria, bool replaceActions)
+   {
+      SQLStatement statement;
+      statement.SetTable("hm_rules");
+      const bool create = rule->GetID() == 0;
+      statement.SetStatementType(create ? SQLStatement::STInsert : SQLStatement::STUpdate);
+      if (create) statement.SetIdentityColumn("ruleid");
+      else
+      {
+         String where; where.Format(_T("ruleid = %I64d"), rule->GetID()); statement.SetWhereClause(where);
+      }
+      statement.AddColumnInt64("ruleaccountid", rule->GetAccountID());
+      statement.AddColumn("rulename", rule->GetName()); statement.AddColumn("ruleactive", false);
+      statement.AddColumn("ruleuseand", rule->GetUseAND()); statement.AddColumn("rulesortorder", rule->GetSortOrder());
+      __int64 id = 0;
+      if (!Application::Instance()->GetDBManager()->Execute(statement, create ? &id : nullptr)) return false;
+      if (create) rule->SetID(id);
+      const auto fail = [&]() { rule->SetActive(false); NotifyReload_(rule); return false; };
+      if (replaceCriteria && !PersistentRuleCriteria::DeleteObjects(rule->GetID())) return fail();
+      if (replaceActions && !PersistentRuleAction::DeleteObjects(rule->GetID())) return fail();
+      for (const auto &criterion : rule->GetCriterias()->GetSnapshot())
+      {
+         criterion->SetRuleID(rule->GetID());
+         if (!PersistentRuleCriteria::SaveObject(criterion)) return fail();
+      }
+      for (const auto &action : rule->GetActions()->GetSnapshot())
+      {
+         action->SetRuleID(rule->GetID());
+         if (!PersistentRuleAction::SaveObject(action)) return fail();
+      }
+      SQLCommand enable("update hm_rules set ruleactive = @ACTIVE where ruleid = @ID");
+      enable.AddParameter("@ACTIVE", rule->GetActive()); enable.AddParameter("@ID", rule->GetID());
+      if (!Application::Instance()->GetDBManager()->Execute(enable)) return fail();
+      NotifyReload_(rule); return true;
+   }
+   bool PersistentRule::DeleteCheckedObject(std::shared_ptr<Rule> rule)
+   {
+      SQLCommand command("delete from hm_rules where ruleid = @ID"); command.AddParameter("@ID", rule->GetID());
+      if (!Application::Instance()->GetDBManager()->Execute(command)) return false;
+      const bool actions = PersistentRuleAction::DeleteObjects(rule->GetID());
+      const bool criteria = PersistentRuleCriteria::DeleteObjects(rule->GetID());
+      NotifyReload_(rule); return actions && criteria;
+   }
    void
    PersistentRule::DeleteByAccountID(__int64 iAccountID)
    {

@@ -42,7 +42,7 @@ Agents picking up work: start with `docs/agents/README.md`, which gives the read
 newest session handoff. Before starting roadmap work, read `ROADMAP.md`: it records the settled decisions, the state of each
 phase, and lessons learned. A pull request that finishes or changes a roadmap item updates it.
 
-Current plan/status handoff: [2026-10-27](docs/agents/handoffs/2026-10-27.md). Phase 1b's
+Current plan/status handoff: [2026-10-28](docs/agents/handoffs/2026-10-28.md). Phase 1b's
 native/.NET API foundation is merged in #31; complete PHP retirement, guided certificate
 management and optional high-pressure Defender scanning remain delivery requirements, not
 completed functionality. Read the [Phase 1b tracker](ROADMAP.md#phase-1b-delivery-tracker)
@@ -55,9 +55,9 @@ retaining compatibility identifiers, original authorship and historical routes. 
 [documentation status](docs/documentation-status.md) for remaining technical/website work;
 a naming refresh does not establish that every inherited recipe has been validated.
 Honor the maintainer's PR review gate and VM/CI-only runtime-testing rule; check live PR/CI state.
-PR #38's identifier/UID roadmap plan, #39's forwarding/replies and #40's mailbox signatures are merged.
-The current authorized Phase 1b bundle combines advanced domain settings, mailbox profiles,
-domain signature policy and alternate domain names; use larger coherent PRs as requested. Follow the
+PR #38's identifier/UID roadmap plan, #39's forwarding/replies, #40's mailbox signatures and #41's
+advanced domain/mailbox bundle are merged. The current authorized Phase 1b bundle combines
+queue operations, routes/allowed recipients and global/mailbox rules; use larger coherent PRs. Follow the
 current handoff for the branch and live PR state. UID implementation remains a later item.
 
 ---
