@@ -1,0 +1,2607 @@
+{
+  "format": "ArzoieMail pre-detachment historical GitHub PR snapshot v1",
+  "repository": "jassifx/ArzoieMail",
+  "baseline": "92ac28dea6fe2b136b7e57fc3cc69ced6fd80b34",
+  "original_url": "https://github.com/jassifx/ArzoieMail/pull/5",
+  "pr": {
+    "url": "https://api.github.com/repos/jassifx/ArzoieMail/pulls/5",
+    "id": 4989235436,
+    "node_id": "PR_kwDONyQbpc8AAAABKWGw7A",
+    "html_url": "https://github.com/jassifx/ArzoieMail/pull/5",
+    "diff_url": "https://github.com/jassifx/ArzoieMail/pull/5.diff",
+    "patch_url": "https://github.com/jassifx/ArzoieMail/pull/5.patch",
+    "issue_url": "https://api.github.com/repos/jassifx/ArzoieMail/issues/5",
+    "commits_url": "https://api.github.com/repos/jassifx/ArzoieMail/pulls/5/commits",
+    "review_comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/pulls/5/comments",
+    "review_comment_url": "https://api.github.com/repos/jassifx/ArzoieMail/pulls/comments{/number}",
+    "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/issues/5/comments",
+    "statuses_url": "https://api.github.com/repos/jassifx/ArzoieMail/statuses/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+    "number": 5,
+    "state": "closed",
+    "locked": false,
+    "title": "Build the server with the VS2026 v145 toolset as C++20 with /permissive-",
+    "user": {
+      "login": "jassifx",
+      "id": 156990848,
+      "node_id": "U_kgDOCVt9gA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/jassifx",
+      "html_url": "https://github.com/jassifx",
+      "followers_url": "https://api.github.com/users/jassifx/followers",
+      "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+      "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+      "organizations_url": "https://api.github.com/users/jassifx/orgs",
+      "repos_url": "https://api.github.com/users/jassifx/repos",
+      "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/jassifx/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "## Summary\n\nPhase 0b of the modernization roadmap. The server moves from the Visual Studio 2019 v142 compiler to the **Visual Studio 2026 v145 compiler**, compiled as **C++20** with **standard conformance (`/permissive-`)**.\n\n## Build changes\n\n| | Before | After |\n|---|---|---|\n| Toolset | v142 (14.29) | **v145** (VS2026 default, 14.5x) |\n| Language | default (C++14) | **C++20** |\n| Conformance | `/permissive` | **`/permissive-`** |\n| Windows target | `_WIN32_WINNT 0x0600` (Vista) | **`0x0A00` (Windows 10)**, matching the installer |\n| Boost | built with `msvc-14.2` (`vc142`) | `msvc-14.5` (`vc145`) |\n| CI | installs and caches ATL and the 14.29 redist for v142 | **nothing to install**: the image has ATL and the Spectre libraries for v145; the workflow just checks they're there |\n| Portable core (GCC/Clang) | C++17 | C++20 |\n\n`IntDir` is pinned to the old default. VS2026 adds `$(ProjectName)\\`, which moved `hMailServer.tlb` away from where the tools, installer and post-build expect it.\n\n## Code fixes (C++20 and `/permissive-`)\n\nThe fixes are small and don't change behavior, with two exceptions noted below.\n- `std::binary_function`, `std::unary_function` and `std::bind2nd` (removed in C++17) are replaced in `StdString.h`.\n- `long` overloads for `IntToString`, `AddParameter` and `FormatArgument`, which were ambiguous between `int` and `__int64`.\n- Pointer comparisons like `> 0` / `< 0` are written as the null checks they are.\n- `typename`, `this->`, unqualified member declarations, and destructor names.\n- Non-const reference default arguments, ambiguous `?:` results, `CComQIPtr` direct initialization, and `const_cast` for Windows API string fields.\n- `SQLCEConnection.cpp` alone gets `/Zc:strictStrings-`, because Microsoft's vendored `sqlce_sync.h` defaults a `BSTR` to `L\"\"`.\n- **`stdafx.h` hard-coded `BOOST_USE_WINAPI_VERSION 0x0600`.** Boost 1.92's Atomic uses `WaitOnAddress` (Windows 8+), so that override is removed.\n\n**Latent bugs found along the way:**\n- `XMLite.cpp` `GetText()` streamed `wchar_t*` into a narrow stream. That printed the **pointer address** instead of the text. It now writes the text.\n- `SynchronousConnection.cpp` had a global `using namespace boost::system;`. It's removed and the names are qualified.\n\n## Tests\n\n✅ CI [Build run](https://github.com/jassifx/arzoiemail/actions/runs/40022193881):\n- Server, tools and installer built.\n- Regression suite: **1,168 passed, 0 failed** (same 34 inconclusive and 75 skipped as before). That's the previous baseline of 1,165 plus the 3 `InstallationLayout` tests.\n- `InstallationLayout` now requires a runtime of **14.50 or later**.\n\n## Not in this PR\n\nThe hardening flags (`/sdl`, `/guard:cf`, `/Qspectre`, `/CETCOMPAT`) come next, as their own PR.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+    "labels": [],
+    "milestone": null,
+    "active_lock_reason": null,
+    "created_at": "2026-10-23T21:04:06Z",
+    "updated_at": "2026-10-23T21:08:39Z",
+    "closed_at": "2026-10-23T21:06:44Z",
+    "merged_at": "2026-10-23T21:06:44Z",
+    "merge_commit_sha": "9005fed0553318341944dbc203162bea2016b151",
+    "assignee": null,
+    "assignees": [],
+    "requested_reviewers": [],
+    "requested_teams": [],
+    "head": {
+      "label": "jassifx:techdebt/msvc-v145-cpp20",
+      "ref": "techdebt/msvc-v145-cpp20",
+      "repo": {
+        "id": 925113253,
+        "node_id": "R_kgDONyQbpQ",
+        "name": "ArzoieMail",
+        "full_name": "jassifx/ArzoieMail",
+        "owner": {
+          "login": "jassifx",
+          "id": 156990848,
+          "node_id": "U_kgDOCVt9gA",
+          "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/jassifx",
+          "html_url": "https://github.com/jassifx",
+          "followers_url": "https://api.github.com/users/jassifx/followers",
+          "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+          "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+          "organizations_url": "https://api.github.com/users/jassifx/orgs",
+          "repos_url": "https://api.github.com/users/jassifx/repos",
+          "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/jassifx/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "private": false,
+        "fork": true,
+        "archived": false,
+        "disabled": false,
+        "description": "ArzoieMail is a free, open-source email server for Windows, forked from hMailServer. It supports SMTP, IMAP and POP3, plus anti-spam, anti-virus, DKIM, SSL/TLS, backups, scripting and a COM API. Named after my daughter Arzoie and maintained in Delhi, India.",
+        "homepage": "https://www.arzoie.in",
+        "language": "C++",
+        "visibility": "public",
+        "is_template": false,
+        "topics": [
+          "antispam",
+          "cpp",
+          "csharp",
+          "dkim",
+          "email-server",
+          "hmailserver",
+          "imap",
+          "imap-server",
+          "mail-server",
+          "open-source",
+          "php",
+          "pop3",
+          "pop3-server",
+          "powershell",
+          "self-hosted",
+          "smtp",
+          "smtp-server",
+          "webmail",
+          "windows"
+        ],
+        "forks_count": 0,
+        "forks": 0,
+        "stargazers_count": 0,
+        "watchers_count": 0,
+        "watchers": 0,
+        "open_issues_count": 0,
+        "open_issues": 0,
+        "size": 149329,
+        "default_branch": "master",
+        "has_issues": true,
+        "has_projects": true,
+        "has_wiki": false,
+        "has_pages": false,
+        "has_downloads": false,
+        "has_discussions": true,
+        "has_pull_requests": true,
+        "pushed_at": "2026-10-28T14:20:03Z",
+        "created_at": "2025-01-31T08:56:59Z",
+        "updated_at": "2026-10-28T12:29:10Z",
+        "allow_forking": true,
+        "web_commit_signoff_required": false,
+        "pull_request_creation_policy": "collaborators_only",
+        "license": {
+          "key": "agpl-3.0",
+          "name": "GNU Affero General Public License v3.0",
+          "url": "https://api.github.com/licenses/agpl-3.0",
+          "spdx_id": "AGPL-3.0",
+          "node_id": "MDc6TGljZW5zZTE="
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail",
+        "html_url": "https://github.com/jassifx/ArzoieMail",
+        "archive_url": "https://api.github.com/repos/jassifx/ArzoieMail/{archive_format}{/ref}",
+        "assignees_url": "https://api.github.com/repos/jassifx/ArzoieMail/assignees{/user}",
+        "blobs_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/blobs{/sha}",
+        "branches_url": "https://api.github.com/repos/jassifx/ArzoieMail/branches{/branch}",
+        "collaborators_url": "https://api.github.com/repos/jassifx/ArzoieMail/collaborators{/collaborator}",
+        "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/comments{/number}",
+        "commits_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits{/sha}",
+        "compare_url": "https://api.github.com/repos/jassifx/ArzoieMail/compare/{base}...{head}",
+        "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/{+path}",
+        "contributors_url": "https://api.github.com/repos/jassifx/ArzoieMail/contributors",
+        "deployments_url": "https://api.github.com/repos/jassifx/ArzoieMail/deployments",
+        "downloads_url": "https://api.github.com/repos/jassifx/ArzoieMail/downloads",
+        "events_url": "https://api.github.com/repos/jassifx/ArzoieMail/events",
+        "forks_url": "https://api.github.com/repos/jassifx/ArzoieMail/forks",
+        "git_commits_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits{/sha}",
+        "git_refs_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/refs{/sha}",
+        "git_tags_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/tags{/sha}",
+        "git_url": "git://github.com/jassifx/ArzoieMail.git",
+        "issue_comment_url": "https://api.github.com/repos/jassifx/ArzoieMail/issues/comments{/number}",
+        "issue_events_url": "https://api.github.com/repos/jassifx/ArzoieMail/issues/events{/number}",
+        "issues_url": "https://api.github.com/repos/jassifx/ArzoieMail/issues{/number}",
+        "keys_url": "https://api.github.com/repos/jassifx/ArzoieMail/keys{/key_id}",
+        "labels_url": "https://api.github.com/repos/jassifx/ArzoieMail/labels{/name}",
+        "languages_url": "https://api.github.com/repos/jassifx/ArzoieMail/languages",
+        "merges_url": "https://api.github.com/repos/jassifx/ArzoieMail/merges",
+        "milestones_url": "https://api.github.com/repos/jassifx/ArzoieMail/milestones{/number}",
+        "notifications_url": "https://api.github.com/repos/jassifx/ArzoieMail/notifications{?since,all,participating}",
+        "pulls_url": "https://api.github.com/repos/jassifx/ArzoieMail/pulls{/number}",
+        "releases_url": "https://api.github.com/repos/jassifx/ArzoieMail/releases{/id}",
+        "ssh_url": "git@github.com:jassifx/ArzoieMail.git",
+        "stargazers_url": "https://api.github.com/repos/jassifx/ArzoieMail/stargazers",
+        "statuses_url": "https://api.github.com/repos/jassifx/ArzoieMail/statuses/{sha}",
+        "subscribers_url": "https://api.github.com/repos/jassifx/ArzoieMail/subscribers",
+        "subscription_url": "https://api.github.com/repos/jassifx/ArzoieMail/subscription",
+        "tags_url": "https://api.github.com/repos/jassifx/ArzoieMail/tags",
+        "teams_url": "https://api.github.com/repos/jassifx/ArzoieMail/teams",
+        "trees_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees{/sha}",
+        "clone_url": "https://github.com/jassifx/ArzoieMail.git",
+        "mirror_url": null,
+        "hooks_url": "https://api.github.com/repos/jassifx/ArzoieMail/hooks",
+        "svn_url": "https://github.com/jassifx/ArzoieMail"
+      },
+      "sha": "78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "user": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      }
+    },
+    "base": {
+      "label": "jassifx:master",
+      "ref": "master",
+      "repo": {
+        "id": 925113253,
+        "node_id": "R_kgDONyQbpQ",
+        "name": "ArzoieMail",
+        "full_name": "jassifx/ArzoieMail",
+        "owner": {
+          "login": "jassifx",
+          "id": 156990848,
+          "node_id": "U_kgDOCVt9gA",
+          "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/jassifx",
+          "html_url": "https://github.com/jassifx",
+          "followers_url": "https://api.github.com/users/jassifx/followers",
+          "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+          "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+          "organizations_url": "https://api.github.com/users/jassifx/orgs",
+          "repos_url": "https://api.github.com/users/jassifx/repos",
+          "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/jassifx/received_events",
+          "type": "User",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "private": false,
+        "fork": true,
+        "archived": false,
+        "disabled": false,
+        "description": "ArzoieMail is a free, open-source email server for Windows, forked from hMailServer. It supports SMTP, IMAP and POP3, plus anti-spam, anti-virus, DKIM, SSL/TLS, backups, scripting and a COM API. Named after my daughter Arzoie and maintained in Delhi, India.",
+        "homepage": "https://www.arzoie.in",
+        "language": "C++",
+        "visibility": "public",
+        "is_template": false,
+        "topics": [
+          "antispam",
+          "cpp",
+          "csharp",
+          "dkim",
+          "email-server",
+          "hmailserver",
+          "imap",
+          "imap-server",
+          "mail-server",
+          "open-source",
+          "php",
+          "pop3",
+          "pop3-server",
+          "powershell",
+          "self-hosted",
+          "smtp",
+          "smtp-server",
+          "webmail",
+          "windows"
+        ],
+        "forks_count": 0,
+        "forks": 0,
+        "stargazers_count": 0,
+        "watchers_count": 0,
+        "watchers": 0,
+        "open_issues_count": 0,
+        "open_issues": 0,
+        "size": 149329,
+        "default_branch": "master",
+        "has_issues": true,
+        "has_projects": true,
+        "has_wiki": false,
+        "has_pages": false,
+        "has_downloads": false,
+        "has_discussions": true,
+        "has_pull_requests": true,
+        "pushed_at": "2026-10-28T14:20:03Z",
+        "created_at": "2025-01-31T08:56:59Z",
+        "updated_at": "2026-10-28T12:29:10Z",
+        "allow_forking": true,
+        "web_commit_signoff_required": false,
+        "pull_request_creation_policy": "collaborators_only",
+        "license": {
+          "key": "agpl-3.0",
+          "name": "GNU Affero General Public License v3.0",
+          "url": "https://api.github.com/licenses/agpl-3.0",
+          "spdx_id": "AGPL-3.0",
+          "node_id": "MDc6TGljZW5zZTE="
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail",
+        "html_url": "https://github.com/jassifx/ArzoieMail",
+        "archive_url": "https://api.github.com/repos/jassifx/ArzoieMail/{archive_format}{/ref}",
+        "assignees_url": "https://api.github.com/repos/jassifx/ArzoieMail/assignees{/user}",
+        "blobs_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/blobs{/sha}",
+        "branches_url": "https://api.github.com/repos/jassifx/ArzoieMail/branches{/branch}",
+        "collaborators_url": "https://api.github.com/repos/jassifx/ArzoieMail/collaborators{/collaborator}",
+        "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/comments{/number}",
+        "commits_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits{/sha}",
+        "compare_url": "https://api.github.com/repos/jassifx/ArzoieMail/compare/{base}...{head}",
+        "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/{+path}",
+        "contributors_url": "https://api.github.com/repos/jassifx/ArzoieMail/contributors",
+        "deployments_url": "https://api.github.com/repos/jassifx/ArzoieMail/deployments",
+        "downloads_url": "https://api.github.com/repos/jassifx/ArzoieMail/downloads",
+        "events_url": "https://api.github.com/repos/jassifx/ArzoieMail/events",
+        "forks_url": "https://api.github.com/repos/jassifx/ArzoieMail/forks",
+        "git_commits_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits{/sha}",
+        "git_refs_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/refs{/sha}",
+        "git_tags_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/tags{/sha}",
+        "git_url": "git://github.com/jassifx/ArzoieMail.git",
+        "issue_comment_url": "https://api.github.com/repos/jassifx/ArzoieMail/issues/comments{/number}",
+        "issue_events_url": "https://api.github.com/repos/jassifx/ArzoieMail/issues/events{/number}",
+        "issues_url": "https://api.github.com/repos/jassifx/ArzoieMail/issues{/number}",
+        "keys_url": "https://api.github.com/repos/jassifx/ArzoieMail/keys{/key_id}",
+        "labels_url": "https://api.github.com/repos/jassifx/ArzoieMail/labels{/name}",
+        "languages_url": "https://api.github.com/repos/jassifx/ArzoieMail/languages",
+        "merges_url": "https://api.github.com/repos/jassifx/ArzoieMail/merges",
+        "milestones_url": "https://api.github.com/repos/jassifx/ArzoieMail/milestones{/number}",
+        "notifications_url": "https://api.github.com/repos/jassifx/ArzoieMail/notifications{?since,all,participating}",
+        "pulls_url": "https://api.github.com/repos/jassifx/ArzoieMail/pulls{/number}",
+        "releases_url": "https://api.github.com/repos/jassifx/ArzoieMail/releases{/id}",
+        "ssh_url": "git@github.com:jassifx/ArzoieMail.git",
+        "stargazers_url": "https://api.github.com/repos/jassifx/ArzoieMail/stargazers",
+        "statuses_url": "https://api.github.com/repos/jassifx/ArzoieMail/statuses/{sha}",
+        "subscribers_url": "https://api.github.com/repos/jassifx/ArzoieMail/subscribers",
+        "subscription_url": "https://api.github.com/repos/jassifx/ArzoieMail/subscription",
+        "tags_url": "https://api.github.com/repos/jassifx/ArzoieMail/tags",
+        "teams_url": "https://api.github.com/repos/jassifx/ArzoieMail/teams",
+        "trees_url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees{/sha}",
+        "clone_url": "https://github.com/jassifx/ArzoieMail.git",
+        "mirror_url": null,
+        "hooks_url": "https://api.github.com/repos/jassifx/ArzoieMail/hooks",
+        "svn_url": "https://github.com/jassifx/ArzoieMail"
+      },
+      "sha": "fced23e8216cf4f456eb2df9806588d9e021e362",
+      "user": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      }
+    },
+    "_links": {
+      "comments": {
+        "href": "https://api.github.com/repos/jassifx/ArzoieMail/issues/5/comments"
+      },
+      "commits": {
+        "href": "https://api.github.com/repos/jassifx/ArzoieMail/pulls/5/commits"
+      },
+      "statuses": {
+        "href": "https://api.github.com/repos/jassifx/ArzoieMail/statuses/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0"
+      },
+      "html": {
+        "href": "https://github.com/jassifx/ArzoieMail/pull/5"
+      },
+      "issue": {
+        "href": "https://api.github.com/repos/jassifx/ArzoieMail/issues/5"
+      },
+      "review_comments": {
+        "href": "https://api.github.com/repos/jassifx/ArzoieMail/pulls/5/comments"
+      },
+      "review_comment": {
+        "href": "https://api.github.com/repos/jassifx/ArzoieMail/pulls/comments{/number}"
+      },
+      "self": {
+        "href": "https://api.github.com/repos/jassifx/ArzoieMail/pulls/5"
+      }
+    },
+    "author_association": "OWNER",
+    "auto_merge": null,
+    "draft": false,
+    "merged": true,
+    "mergeable": true,
+    "rebaseable": false,
+    "mergeable_state": "blocked",
+    "merged_by": {
+      "login": "jassifx",
+      "id": 156990848,
+      "node_id": "U_kgDOCVt9gA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/jassifx",
+      "html_url": "https://github.com/jassifx",
+      "followers_url": "https://api.github.com/users/jassifx/followers",
+      "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+      "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+      "organizations_url": "https://api.github.com/users/jassifx/orgs",
+      "repos_url": "https://api.github.com/users/jassifx/repos",
+      "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/jassifx/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "comments": 0,
+    "review_comments": 0,
+    "maintainer_can_modify": false,
+    "commits": 9,
+    "additions": 164,
+    "deletions": 268,
+    "changed_files": 36
+  },
+  "issue_comments": [],
+  "review_comments": [],
+  "reviews": [],
+  "files": [
+    {
+      "sha": "5a031d03977086091a3cff5278f4711d7576501b",
+      "filename": ".claude/skills/upgrade-boost/SKILL.md",
+      "status": "modified",
+      "additions": 6,
+      "deletions": 7,
+      "changes": 13,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/.claude%2Fskills%2Fupgrade-boost%2FSKILL.md",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/.claude%2Fskills%2Fupgrade-boost%2FSKILL.md",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/.claude%2Fskills%2Fupgrade-boost%2FSKILL.md?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -33,9 +33,8 @@ There are two reasons to run it:\n   time and there is **no Boost DLL** to copy in `post-build.bat` or ship in the installer —\n   that is why Boost, unlike OpenSSL/libpq, has no touch points in `post-build.bat`,\n   `section_files_64.iss`, or `hMailServer64.iss`.\n-- The compiled libs are built with the **msvc-14.2** toolset (v142 - VS2019, or VS2022 with the\n-  \"MSVC v142 build tools\" component), matching the\n-  rest of hMailServer. Updating any CI/CD-built copy of Boost is out of scope, but the README\n+- The compiled libs are built with the **msvc-14.5** toolset (v145, the Visual Studio 2026\n+  default compiler), matching the rest of hMailServer. Updating any CI/CD-built copy of Boost is out of scope, but the README\n   build instructions must stay accurate.\n \n ## Steps\n@@ -54,14 +53,14 @@ There are two reasons to run it:\n \n ### 2. Build Boost\n \n-Invoke the build script (prerequisites — `%hMailServerLibs%`, VS2019/VS2022 x64 tools — are validated\n+Invoke the build script (prerequisites — `%hMailServerLibs%`, VS2026 x64 tools — are validated\n inside it; surface its error message if it fails):\n \n ```\n powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\\build-boost.ps1 -Version <target>\n ```\n \n-Pass `-Toolset <name>` to override the default `msvc-14.2`, or `-Jobs <n>` to change the\n+Pass `-Toolset <name>` to override the default `msvc-14.5`, or `-Jobs <n>` to change the\n parallelism (defaults to the number of logical processors).\n \n **Run this through the native PowerShell tool, NOT the Bash tool.** The Bash tool prepends\n@@ -79,7 +78,7 @@ captured console output.\n \n On success it produces `%hMailServerLibs%\\boost_<underscored-target>` with the Boost headers\n under `boost\\` and the staged static libs under `stage\\lib` (e.g.\n-`libboost_thread-vc142-mt-x64-1_90.lib`). Only proceed if the script exits 0.\n+`libboost_thread-vc145-mt-x64-1_92.lib`). Only proceed if the script exits 0.\n \n ### 3. Rewrite the pinned version references\n \n@@ -132,5 +131,5 @@ installer changes are involved.\n \n ## Note\n \n-The script's own end-to-end run needs the Boost source download and the VS2019/VS2022 x64 toolchain\n+The script's own end-to-end run needs the Boost source download and the VS2026 x64 toolchain\n present; it validates those prerequisites and fails early with a clear message if any is missing."
+    },
+    {
+      "sha": "2bc1d5a0f91b7975c924703725572f3cd63c69df",
+      "filename": ".github/workflows/build.yml",
+      "status": "modified",
+      "additions": 29,
+      "deletions": 153,
+      "changes": 182,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/.github%2Fworkflows%2Fbuild.yml",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/.github%2Fworkflows%2Fbuild.yml",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/.github%2Fworkflows%2Fbuild.yml?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -15,12 +15,10 @@\n # %hMailServerLibs%, keyed on the version the repository pins plus the script that builds it,\n # so a normal run restores them and only compiles hMailServer.\n #\n-# About the runner: windows-2025-vs2026 ships Visual Studio 2026 (18.x). It still carries the\n-# v142 compiler hMailServer's projects are pinned to, as the \"MSVC v142 build tools\"\n-# component group, but not ATL for v142 - which the ATL-static projects need - and not the\n-# Windows 10 SDK the installer takes its Universal CRT from. The workflow installs those two\n-# when they are missing (~5 minutes together) and caches what they produce, so a normal run\n-# copies the files back in instead.\n+# About the runner: windows-2025-vs2026 ships Visual Studio 2026 (18.x), whose default\n+# compiler (v145) hMailServer's projects are built with, together with the ATL and the\n+# Spectre-mitigated libraries for it that the projects need. Nothing has to be installed into\n+# Visual Studio; the workflow only checks that they are there.\n name: Build\n \n on:\n@@ -67,15 +65,9 @@ env:\n   # Where the library build scripts download and build into. Anywhere outside the working\n   # directory will do; the build scripts and hMailServer.vcxproj both read this variable.\n   hMailServerLibs: C:\\hMailLibs\n-  # \"C++ v14.29 (16.11) ATL for v142 build tools (x86 & x64)\" in the Visual Studio installer.\n-  ATL_COMPONENT: Microsoft.VisualStudio.Component.VC.14.29.16.11.ATL\n-  # \"MSVC v142 - VS 2019 C++ x64/x86 build tools (v14.29-16.11)\", which also carries the\n-  # 14.29 redistributable. The image installs the v142 compiler; this is the fallback for\n-  # when it stops doing so.\n-  V142_COMPONENT: Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64\n-  # The v142 toolset the projects are pinned to, and so the oldest C++ runtime the installer\n-  # may ship. A later one is fine - the 14.x runtimes are backwards compatible.\n-  REDIST_MIN_VERSION: '14.29'\n+  # The v145 toolset the projects are built with (14.5x), and so the oldest C++ runtime the\n+  # installer may ship. A later one is fine - the 14.x runtimes are backwards compatible.\n+  REDIST_MIN_VERSION: '14.50'\n   # Inno Setup, taken from its GitHub release rather than Chocolatey, which lags behind it.\n   # The download is checked against the SHA-256 GitHub publishes for the release asset.\n   INNOSETUP_VERSION: 6.7.3\n@@ -134,152 +126,36 @@ jobs:\n       - name: Create the library folder\n         run: New-Item -ItemType Directory -Force -Path $env:hMailServerLibs | Out-Null\n \n-      # Locating the toolset is separate from installing into it: the cache key below has to\n-      # name the exact 14.29 toolset the ATL payload belongs to, so a servicing bump to the\n-      # toolset cannot restore the previous toolset's atlmfc into it.\n-      - name: Locate the Visual Studio instance and the v142 toolset\n+      # The projects use PlatformToolset v145, the default compiler of Visual Studio 2026,\n+      # with ATL linked statically and the Spectre-mitigated runtime libraries. All three come\n+      # with the image; this fails early, with the reason, if an image update drops one.\n+      - name: Locate Visual Studio and the v145 toolset\n         id: vs\n         run: |\n           $vswhere = \"${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vswhere.exe\"\n           $instance = (& $vswhere -products '*' -version '[18.0,19.0)' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -format json | Out-String | ConvertFrom-Json) | Select-Object -First 1\n           if (-not $instance) { throw \"No Visual Studio 2026 with the x64 C++ toolchain was found.\" }\n           \"Building with $($instance.displayName) $($instance.installationVersion)\"\n \n-          # hMailServer's projects are pinned to PlatformToolset v142, so the 14.29 compiler\n-          # has to be there. The image ships it as the \"MSVC v142 build tools\" component\n-          # group; nothing here silently falls back to a newer toolset if it is not.\n-          $toolset = Get-ChildItem (Join-Path $instance.installationPath 'VC\\Tools\\MSVC') -Directory -Filter '14.29.*' |\n-              Where-Object { Test-Path (Join-Path $_.FullName 'bin\\Hostx64\\x64\\cl.exe') } |\n-              Select-Object -First 1\n-          if (-not $toolset) {\n-              $present = (Get-ChildItem (Join-Path $instance.installationPath 'VC\\Tools\\MSVC') -Directory -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }) -join ', '\n-              throw \"The v142 (14.29) toolset is not installed in $($instance.installationPath) - the toolsets found there are: $present. Add the Microsoft.VisualStudio.ComponentGroup.VC.Tools.142.x86.x64 component group to the image or the installation.\"\n+          # The version MSBuild selects for the default toolset of this Visual Studio.\n+          $defaultFile = Join-Path $instance.installationPath 'VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt'\n+          $version = (Get-Content $defaultFile -Raw).Trim()\n+          if (-not $version.StartsWith('14.5')) { throw \"The default MSVC toolset of $($instance.installationPath) is $version, not a 14.5x (v145) one.\" }\n+          $toolset = Join-Path $instance.installationPath \"VC\\Tools\\MSVC\\$version\"\n+          \"v145 toolset: $version\"\n+\n+          $required = [ordered]@{\n+              'the x64 compiler'                  = 'bin\\Hostx64\\x64\\cl.exe'\n+              'ATL (UseOfAtl=Static)'             = 'atlmfc\\lib\\x64\\atls.lib'\n+              'the Spectre-mitigated runtime'     = 'lib\\spectre\\x64\\libcmt.lib'\n+              'the Spectre-mitigated ATL'         = 'atlmfc\\lib\\spectre\\x64\\atls.lib'\n           }\n-          \"v142 toolset: $($toolset.Name)\"\n-\n-          \"install-path=$($instance.installationPath)\" >> $env:GITHUB_OUTPUT\n-          \"product-id=$($instance.productId)\" >> $env:GITHUB_OUTPUT\n-          \"channel-id=$($instance.channelId)\" >> $env:GITHUB_OUTPUT\n-          \"toolset-path=$($toolset.FullName)\" >> $env:GITHUB_OUTPUT\n-          \"toolset-version=$($toolset.Name)\" >> $env:GITHUB_OUTPUT\n-\n-      # ATL for v142 is missing from the image and takes around five minutes to install, so\n-      # its payload is cached instead: 8 MB of headers and libraries inside the toolset, with\n-      # no installer-registered state behind it, which is why copying the directory back is\n-      # equivalent to installing the component. The 14.29 redistributable is handled the same\n-      # way, for the run where the image stops carrying it. Both are staged outside Program\n-      # Files, so the cache action never writes there. The key names the runner image as well\n-      # as the toolset, since what the image is missing is what ends up in the payload.\n-      - name: Cache the v142 ATL and redistributable payload\n-        id: cache-v142\n-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0\n-        with:\n-          path: ${{ env.hMailServerLibs }}\\vs142\n-          key: v142-${{ matrix.image }}-${{ steps.vs.outputs.toolset-version }}-${{ env.ATL_COMPONENT }}-${{ env.V142_COMPONENT }}\n-\n-      # Deliberately not conditioned on the cache: every branch below decides by looking for\n-      # the files, so an empty or half-restored cache falls back to a real install instead of\n-      # failing later in the build.\n-      - name: Make sure the v142 ATL and redistributable are installed\n-        env:\n-          TOOLSET_PATH: ${{ steps.vs.outputs.toolset-path }}\n-          VS_INSTALL_PATH: ${{ steps.vs.outputs.install-path }}\n-          VS_PRODUCT_ID: ${{ steps.vs.outputs.product-id }}\n-          VS_CHANNEL_ID: ${{ steps.vs.outputs.channel-id }}\n-        run: |\n-          # robocopy reports success with exit codes below 8, which the shell would otherwise\n-          # turn into a failed step.\n-          $PSNativeCommandUseErrorActionPreference = $false\n-\n-          . build\\Get-VCRedistPath.ps1\n-\n-          $atl = Join-Path $env:TOOLSET_PATH 'atlmfc'\n-          $staging = Join-Path $env:hMailServerLibs 'vs142'\n-          $atlStaging = Join-Path $staging 'atlmfc'\n-          $redistStaging = Join-Path $staging 'redist'\n-\n-          # hMailServer.vcxproj needs ATL because it is UseOfAtl=Static; without it the compile\n-          # fails with C1083 on atlbase.h.\n-          function Test-Atl {\n-              (Test-Path (Join-Path $env:TOOLSET_PATH 'atlmfc\\include\\atlbase.h')) -and\n-              (Test-Path (Join-Path $env:TOOLSET_PATH 'atlmfc\\lib\\x64\\atls.lib'))\n-          }\n-\n-          # The redistributable the installer ships beside hMailServer.exe. Only one matching\n-          # the pinned toolset counts here; Get-VCRedistPath itself accepts newer ones too.\n-          function Get-Redist {\n-              $path = Get-VCRedistPath -MinimumVersion $env:REDIST_MIN_VERSION\n-              if ($path -and (Split-Path (Split-Path (Split-Path $path -Parent) -Parent) -Leaf).StartsWith(\"$env:REDIST_MIN_VERSION.\")) { $path } else { $null }\n-          }\n-\n-          function Copy-Tree($source, $target) {\n-              robocopy $source $target /e /njh /njs /ndl /nc /ns /np | Out-Null\n-              if ($LASTEXITCODE -ge 8) { throw \"Copying $source to $target failed with robocopy exit code $LASTEXITCODE.\" }\n-              # The shell exits the step with the last exit code, and robocopy's is not zero.\n-              $global:LASTEXITCODE = 0\n-          }\n-\n-          if (-not (Test-Atl) -and (Test-Path (Join-Path $atlStaging 'include\\atlbase.h'))) {\n-              \"Restoring ATL from the cache into $atl\"\n-              Copy-Tree $atlStaging $atl\n-          }\n-\n-          if (-not (Get-Redist) -and (Test-Path $redistStaging)) {\n-              foreach ($version in Get-ChildItem $redistStaging -Directory) {\n-                  \"Restoring the $($version.Name) redistributable from the cache\"\n-                  Copy-Tree $version.FullName (Join-Path $env:VS_INSTALL_PATH \"VC\\Redist\\MSVC\\$($version.Name)\")\n+          foreach ($item in $required.GetEnumerator()) {\n+              if (-not (Test-Path (Join-Path $toolset $item.Value))) {\n+                  throw \"$($item.Key) is missing from $toolset ($($item.Value)). The image needs the VC.ATL, VC.Runtimes.x86.x64.Spectre and VC.ATL.Spectre components of Visual Studio 2026.\"\n               }\n           }\n \n-          $missing = @()\n-          if (-not (Test-Atl)) { $missing += $env:ATL_COMPONENT }\n-          if (-not (Get-Redist)) { $missing += $env:V142_COMPONENT }\n-\n-          if ($missing) {\n-              \"Installing the missing v142 components: $($missing -join ', ')\"\n-              $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()\n-              $installer = \"${env:ProgramFiles(x86)}\\Microsoft Visual Studio\\Installer\\vs_installer.exe\"\n-\n-              # & with splatting, not Start-Process -ArgumentList: the install path contains a\n-              # space, and -ArgumentList would hand the installer \"--installPath C:\\Program\".\n-              $installerArgs = @(\n-                  'modify',\n-                  '--installPath', $env:VS_INSTALL_PATH,\n-                  '--productId', $env:VS_PRODUCT_ID,\n-                  '--channelId', $env:VS_CHANNEL_ID\n-              )\n-              foreach ($component in $missing) { $installerArgs += @('--add', $component) }\n-              $installerArgs += @('--quiet', '--norestart')\n-\n-              & $installer @installerArgs\n-              \"vs_installer exit code: $LASTEXITCODE\"\n-\n-              # vs_installer.exe delegates to background setup processes and returns before they\n-              # finish, so wait for them to drain before checking the result.\n-              $deadline = (Get-Date).AddMinutes(30)\n-              while ((Get-Date) -lt $deadline) {\n-                  $running = Get-Process -Name 'vs_installer', 'vs_installershell', 'vs_installerservice', 'setup' -ErrorAction SilentlyContinue\n-                  if (-not $running) { break }\n-                  Start-Sleep -Seconds 10\n-              }\n-              $stopwatch.Stop()\n-              \"Installed in {0:F1} minutes\" -f $stopwatch.Elapsed.TotalMinutes\n-          } else {\n-              \"ATL and the $env:REDIST_MIN_VERSION redistributable are already in place - nothing to install.\"\n-          }\n-\n-          if (-not (Test-Atl)) { throw \"Neither the cache nor $env:ATL_COMPONENT produced atlmfc under $env:TOOLSET_PATH.\" }\n-          $redist = Get-Redist\n-          if (-not $redist) { throw \"Neither the cache nor $env:V142_COMPONENT produced a $env:REDIST_MIN_VERSION redistributable; the newest one found is $(Get-VCRedistPath -MinimumVersion $env:REDIST_MIN_VERSION).\" }\n-          \"v142 redistributable: $redist\"\n-\n-          # Stage whatever this run had to install, so the cache saved at the end of the job\n-          # carries it and the next run copies it in instead.\n-          if (-not (Test-Path (Join-Path $atlStaging 'include\\atlbase.h'))) { Copy-Tree $atl $atlStaging }\n-          $redistVersion = Split-Path (Split-Path $redist -Parent) -Parent\n-          $redistTarget = Join-Path $redistStaging (Split-Path $redistVersion -Leaf)\n-          if (-not (Test-Path $redistTarget)) { Copy-Tree $redistVersion $redistTarget }\n-\n       - name: Read the pinned library versions\n         id: versions\n         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\\Get-LibraryVersions.ps1\n@@ -359,7 +235,7 @@ jobs:\n         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0\n         with:\n           path: ${{ env.hMailServerLibs }}\\${{ steps.versions.outputs.boost_dir }}\n-          key: boost-${{ steps.versions.outputs.boost }}-msvc14.2-${{ matrix.image }}-${{ hashFiles('libraries/build-boost.ps1', 'libraries/build-common.ps1') }}\n+          key: boost-${{ steps.versions.outputs.boost }}-msvc14.5-${{ matrix.image }}-${{ hashFiles('libraries/build-boost.ps1', 'libraries/build-common.ps1') }}\n \n       - name: Restore PostgreSQL (libpq)\n         id: cache-pgsql\n@@ -428,7 +304,7 @@ jobs:\n           $root = Join-Path $env:hMailServerLibs $env:LIB_DIR\n           Get-ChildItem $root -Force | Where-Object { $_.Name -notin @('boost', 'stage') } | Remove-Item -Recurse -Force\n           if (-not (Test-Path (Join-Path $root 'boost\\version.hpp'))) { throw \"Pruning removed the Boost headers.\" }\n-          if (-not (Get-ChildItem (Join-Path $root 'stage\\lib') -Filter '*vc142*.lib')) { throw \"No vc142-tagged libraries in stage\\lib - Boost was built with the wrong toolset.\" }\n+          if (-not (Get-ChildItem (Join-Path $root 'stage\\lib') -Filter '*vc145*.lib')) { throw \"No vc145-tagged libraries in stage\\lib - Boost was built with the wrong toolset.\" }\n \n       - name: Save Boost\n         if: success() && steps.cache-boost.outputs.cache-hit != 'true'\n@@ -636,7 +512,7 @@ jobs:\n           )\n \n           # Named one by one rather than globbed: these folders also hold PDBs for things the\n-          # installer does not ship - openssl.exe, and the vc142.pdb the compiler leaves behind.\n+          # installer does not ship - openssl.exe, and the vc145.pdb the compiler leaves behind.\n           $libraryPdbs = @(\n               \"$env:OPENSSL_DIR\\out64\\bin\\libcrypto-3-x64.pdb\",\n               \"$env:OPENSSL_DIR\\out64\\bin\\libssl-3-x64.pdb\","
+    },
+    {
+      "sha": "605459a9873dacb4708bad582e2e5829e2526a65",
+      "filename": "AGENTS.md",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/AGENTS.md",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/AGENTS.md",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/AGENTS.md?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -1,6 +1,6 @@\n # hMailServer — Codebase Guide for Agents\n \n-hMailServer is a free, open-source email server for Microsoft Windows, licensed under AGPLv3. It implements SMTP, IMAP, and POP3, and runs as a Windows service. The codebase is written primarily in C++ (server core) and C# (admin tools), targeting the Visual Studio v142 toolset (VS2026 with the v142 build tools installed) with 64-bit Windows builds.\n+hMailServer is a free, open-source email server for Microsoft Windows, licensed under AGPLv3. It implements SMTP, IMAP, and POP3, and runs as a Windows service. The codebase is written primarily in C++ (server core) and C# (admin tools), targeting C++20 with the Visual Studio 2026 v145 toolset, with 64-bit Windows builds.\n \n ## Repository Layout\n "
+    },
+    {
+      "sha": "ab60d9ed9e969e61f01d9c209cd8d483f7400d7c",
+      "filename": "CMakeLists.txt",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/CMakeLists.txt",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/CMakeLists.txt",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/CMakeLists.txt?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -17,7 +17,7 @@ cmake_minimum_required(VERSION 3.16)\n \n project(hmailserver-core LANGUAGES CXX)\n \n-set(CMAKE_CXX_STANDARD 17)\n+set(CMAKE_CXX_STANDARD 20)\n set(CMAKE_CXX_STANDARD_REQUIRED ON)\n set(CMAKE_CXX_EXTENSIONS OFF)\n "
+    },
+    {
+      "sha": "8cd4dabfe54d6b1e323d242e36e4cc60ebde3a64",
+      "filename": "README.md",
+      "status": "modified",
+      "additions": 13,
+      "deletions": 11,
+      "changes": 24,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/README.md",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/README.md",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/README.md?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -35,7 +35,8 @@ Environment set up\n \n **Required software**\n \n-   * Visual Studio 2026 Community edition with the v142 (VS2019) build tools\n+   * Visual Studio 2026 Community edition with the C++ desktop workload, ATL and the\n+     Spectre-mitigated libraries (see below)\n    * Inno Setup 6.7.3 (https://github.com/jrsoftware/issrc/releases/tag/is-6_7_3)\n    * Perl 5 (https://strawberryperl.com/) - required by the OpenSSL and PostgreSQL library builds\n    * Python 3 (https://www.python.org/downloads/) - required by the PostgreSQL library build\n@@ -53,8 +54,9 @@ production version.\n Installing Visual Studio\n ------------------------\n \n-ArzoieMail's C++ projects are built with the v142 platform toolset. Visual Studio 2026\n-provides it as an optional component, so it has to be selected during installation.\n+ArzoieMail's C++ projects are built as C++20 with the v145 platform toolset, the default\n+compiler of Visual Studio 2026. They link ATL statically and are compiled with Spectre\n+mitigations, so ATL and the Spectre-mitigated libraries have to be selected during installation.\n \n **Visual Studio 2026**\n \n@@ -63,11 +65,11 @@ provides it as an optional component, so it has to be selected during installati\n   * .NET desktop development\n   * Desktop development with C++\n 3. Select the following _Individual components_\n-  * MSVC v142 - VS 2019 C++ x64/x86 build tools\n-  * C++ v14.29 (16.11) ATL for v142 build tools (x86 & x64)\n+  * C++ ATL for latest v145 build tools (x86 & x64)\n+  * MSVC v145 - C++ x64/x86 Spectre-mitigated libs (Latest)\n+  * C++ ATL for latest v145 build tools with Spectre Mitigations (x86 & x64)\n \n-The build scripts locate the installed Visual Studio automatically and select the v142\n-compiler out of it.\n+The build scripts locate the installed Visual Studio automatically.\n \n 3rd party libraries\n -------------------\n@@ -166,17 +168,17 @@ bootstraps `b2`, and builds the static, multithreaded x64 libraries into `stage\\\n \n Prerequisites:\n - The environment variable hMailServerLibs (see above).\n-- Visual Studio 2026 with the \"MSVC v142 build tools\" component (the\n-  script locates vcvars64.bat automatically and drives `b2` with the msvc-14.2 toolset, which is\n-  the toolset ArzoieMail itself is built with).\n+- Visual Studio 2026 with the x64 C++ build tools (the script locates vcvars64.bat\n+  automatically and drives `b2` with the msvc-14.5 toolset, which is the toolset ArzoieMail\n+  itself is built with).\n \n Run, from the repository root:\n \n    <pre>\n    powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\\build-boost.ps1 -Version 1.92.0\n    </pre>\n \n-Pass `-Toolset &lt;name&gt;` to override the default `msvc-14.2`, or `-Jobs &lt;n&gt;` to change the\n+Pass `-Toolset &lt;name&gt;` to override the default `msvc-14.5`, or `-Jobs &lt;n&gt;` to change the\n number of parallel compilations (defaults to the number of logical processors). Only Boost 1.x is\n supported.\n "
+    },
+    {
+      "sha": "302078314ada5fb1ce431e911994a7a13aa74397",
+      "filename": "build/Find-MsBuild.ps1",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 3,
+      "changes": 5,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/build%2FFind-MsBuild.ps1",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/build%2FFind-MsBuild.ps1",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/build%2FFind-MsBuild.ps1?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -1,9 +1,8 @@\n function Find-MsBuild {\n     # The range covers VS2019 through VS2026, and -latest picks the newest installed, so a\n     # machine with several Visual Studios uses the same one the build server does: VS2026 on\n-    # windows-2025-vs2026, with the v142 build tools beside it. MSBuild 17 and 18 build the\n-    # v142 projects hMailServer uses just as well as MSBuild 16 does, provided the v142\n-    # toolset is installed.\n+    # windows-2025-vs2026. The C++ projects use the v145 toolset, which only VS2026 provides;\n+    # the C# projects build with any of them.\n     param(\n         [string]$VsWhereMinVersion = '[16.0,19.0)'\n     )"
+    },
+    {
+      "sha": "de602a0977b82dca79aef480fc88fca2cc11b03b",
+      "filename": "build/Get-VCRedistPath.ps1",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/build%2FGet-VCRedistPath.ps1",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/build%2FGet-VCRedistPath.ps1",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/build%2FGet-VCRedistPath.ps1?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -17,7 +17,7 @@ function Get-VCRedistPath {\n     #             is to use the latest available runtime, and every 14.x runtime runs on the\n     #             Windows 10 and later the installer requires.\n     param(\n-        [string]$MinimumVersion = '14.29',\n+        [string]$MinimumVersion = '14.50',\n         [switch]$Newest\n     )\n "
+    },
+    {
+      "sha": "a2001bdbfd0d6dd16764cb92c123d73143963f47",
+      "filename": "hmailserver/source/Server/Common/AntiSpam/SURBL.cpp",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FAntiSpam%2FSURBL.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FAntiSpam%2FSURBL.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FAntiSpam%2FSURBL.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -59,7 +59,7 @@ namespace HM\n                break;\n             }\n \n-            String sURL = matches[1];\n+            String sURL = matches[1].str().c_str();\n \n             // Clean the URL from linefeeds\n             CleanURL_(sURL);"
+    },
+    {
+      "sha": "15eb6d5d3763554358be06ea0ebd560e656c08b2",
+      "filename": "hmailserver/source/Server/Common/BO/BusinessObject.h",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FBO%2FBusinessObject.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FBO%2FBusinessObject.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FBO%2FBusinessObject.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -9,8 +9,8 @@ namespace HM\n    class BusinessObject\n    {\n    public:\n-      BusinessObject<T>::BusinessObject();\n-      virtual ~BusinessObject<T>() {};\n+      BusinessObject();\n+      virtual ~BusinessObject() {};\n \n \t\t__int64 GetID() const;\n \t\tvoid SetID(__int64 iNewVal);"
+    },
+    {
+      "sha": "0582c96c8caa74fccc655a0c22e2c2542f0407da",
+      "filename": "hmailserver/source/Server/Common/BO/Collection.h",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FBO%2FCollection.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FBO%2FCollection.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FBO%2FCollection.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -252,7 +252,7 @@ namespace HM\n    {\n       boost::lock_guard<boost::recursive_mutex> guard(_mutex);\n \n-      std::vector<std::shared_ptr<T> >::const_iterator iter = vecObjects.begin();\n+      typename std::vector<std::shared_ptr<T> >::const_iterator iter = vecObjects.begin();\n       \n       for(std::shared_ptr<T> pObject : vecObjects)\n       {"
+    },
+    {
+      "sha": "c49819dd48c036a29df956fc5e1f3b76b7af985d",
+      "filename": "hmailserver/source/Server/Common/Cache/CachedObject.h",
+      "status": "modified",
+      "additions": 3,
+      "deletions": 3,
+      "changes": 6,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FCache%2FCachedObject.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FCache%2FCachedObject.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FCache%2FCachedObject.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -21,7 +21,7 @@ namespace HM\n       }\n \n       int\n-      CachedObject::SecondsOld()\n+      SecondsOld()\n       {\n          int iCurrentTime = GetTickCount();\n \n@@ -35,13 +35,13 @@ namespace HM\n       }\n \n       void\n-      CachedObject::SetEstimatedSize()\n+      SetEstimatedSize()\n       {\n          estimated_size_ = object_->GetEstimatedCachingSize();\n       }\n \n       size_t\n-      CachedObject::GetEstimatedSize()\n+      GetEstimatedSize()\n       {\n          return estimated_size_;\n       }"
+    },
+    {
+      "sha": "6418cdcd80ccb3c3afd8bc3eee64bab46b0b76df",
+      "filename": "hmailserver/source/Server/Common/Persistence/PersistentMessage.cpp",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FPersistence%2FPersistentMessage.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FPersistence%2FPersistentMessage.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FPersistence%2FPersistentMessage.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -976,7 +976,7 @@ namespace HM\n          NULL // file template\n          );\n \n-      if (handleFile == INVALID_HANDLE_VALUE || handleFile < 0)\n+      if (handleFile == INVALID_HANDLE_VALUE || handleFile == nullptr)\n       {\n          if (reportError)\n          {\n@@ -1052,7 +1052,7 @@ namespace HM\n          NULL // file template\n          );\n \n-      if (handleFile == INVALID_HANDLE_VALUE || handleFile < 0) \n+      if (handleFile == INVALID_HANDLE_VALUE || handleFile == nullptr)\n       {\n          ErrorManager::Instance()->ReportError(ErrorManager::Medium, 4403, \"PersistentMessage::LoadBody\", \"Could not read the message body, since the file was not available. File: \" + fileName);\n          return \"\";"
+    },
+    {
+      "sha": "3fd77ed0e1882d1326ea8d72e791d07505f977a6",
+      "filename": "hmailserver/source/Server/Common/SQL/ADOConnection.cpp",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FADOConnection.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FADOConnection.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FADOConnection.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -247,7 +247,7 @@ namespace HM\n          // Check what unique ID we got back (if we're interested).\n          _RecordsetPtr pIdentityRS;\n          BSTR bsIdentity;\n-         if (iInsertID > 0)\n+         if (iInsertID != nullptr)\n          {\n             pIdentityRS.CreateInstance(__uuidof(Recordset));\n             pIdentityRS->PutCursorLocation(adUseClient);"
+    },
+    {
+      "sha": "4eb3daae6e7bd5005278cc2fb1774d1814b1cd4f",
+      "filename": "hmailserver/source/Server/Common/SQL/DatabaseConnectionManager.h",
+      "status": "modified",
+      "additions": 14,
+      "deletions": 2,
+      "changes": 16,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FDatabaseConnectionManager.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FDatabaseConnectionManager.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FDatabaseConnectionManager.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -19,8 +19,20 @@ namespace HM\n       \n       void Disconnect();\n \n-      bool Execute(const SQLStatement &statement, __int64 *iInsertID = 0, int iIgnoreErrors = 0, String &sErrorMessage = String(_T(\"\")));\n-      bool Execute(const SQLCommand &command, __int64 *iInsertID = 0, int iIgnoreErrors = 0, String &sErrorMessage = String(_T(\"\")));\n+      bool Execute(const SQLStatement &statement, __int64 *iInsertID, int iIgnoreErrors, String &sErrorMessage);\n+      bool Execute(const SQLCommand &command, __int64 *iInsertID, int iIgnoreErrors, String &sErrorMessage);\n+\n+      bool Execute(const SQLStatement &statement, __int64 *iInsertID = 0, int iIgnoreErrors = 0)\n+      {\n+         String sErrorMessage;\n+         return Execute(statement, iInsertID, iIgnoreErrors, sErrorMessage);\n+      }\n+\n+      bool Execute(const SQLCommand &command, __int64 *iInsertID = 0, int iIgnoreErrors = 0)\n+      {\n+         String sErrorMessage;\n+         return Execute(command, iInsertID, iIgnoreErrors, sErrorMessage);\n+      }\n       \n       std::shared_ptr<DALRecordset> OpenRecordset(const SQLStatement &statement);\n       std::shared_ptr<DALRecordset> OpenRecordset(const SQLCommand &command);"
+    },
+    {
+      "sha": "7a7a84a79966702cce24d0dddc742187493c946f",
+      "filename": "hmailserver/source/Server/Common/SQL/MySQLConnection.cpp",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FMySQLConnection.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FMySQLConnection.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FMySQLConnection.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -200,7 +200,7 @@ namespace HM\n             MySQLInterface::Instance()->p_mysql_free_result(pRes);\n \n          // Fetch insert id.\n-         if (iInsertID > 0)\n+         if (iInsertID != nullptr)\n          {\n             *iInsertID = MySQLInterface::Instance()->p_mysql_insert_id(dbconn_);\n          }"
+    },
+    {
+      "sha": "1c3a5c9114d1f2d3107d1e214607be63f6175093",
+      "filename": "hmailserver/source/Server/Common/SQL/MySQLInterface.cpp",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FMySQLInterface.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FMySQLInterface.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FMySQLInterface.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -132,7 +132,7 @@ namespace HM\n    bool\n    MySQLInterface::IsLoaded()\n    {\n-      if (library_instance_ > 0)\n+      if (library_instance_ != nullptr)\n          return true;\n       else\n          return false;"
+    },
+    {
+      "sha": "203f97bee5c25a5eba9225e469660b7b07e5ef1a",
+      "filename": "hmailserver/source/Server/Common/SQL/PGConnection.cpp",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FPGConnection.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FPGConnection.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FPGConnection.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -129,7 +129,7 @@ namespace HM\n          \n          // Check if a value has been returned. Will only occur if we've\n          // inserted a value.\n-         if (iInsertID > 0 && iExecResult == PGRES_TUPLES_OK)\n+         if (iInsertID != nullptr && iExecResult == PGRES_TUPLES_OK)\n          {\n             // pick the ID from the first row.\n             char *pRetVal = PQgetvalue(pResult, 0, 0);"
+    },
+    {
+      "sha": "5c9bdd832154bcc209636d5651fdcacabcb2902e",
+      "filename": "hmailserver/source/Server/Common/SQL/SQLCEConnection.cpp",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FSQLCEConnection.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FSQLCEConnection.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FSQLCEConnection.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -262,7 +262,7 @@ namespace HM\n          adoCommand->Execute(NULL, NULL, adCmdText);\n          adoCommand->ActiveConnection = NULL;\n \n-         if (iInsertID > 0)\n+         if (iInsertID != nullptr)\n          {\n             _RecordsetPtr pIdentityRS;\n             BSTR bsIdentity;"
+    },
+    {
+      "sha": "43a1524ed728f77cab5c12d0e428bb1f5e3cd7be",
+      "filename": "hmailserver/source/Server/Common/SQL/SQLCommand.h",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "changes": 1,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FSQLCommand.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FSQLCommand.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FSQL%2FSQLCommand.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -23,6 +23,7 @@ namespace HM\n       void AddParameter(const AnsiString &name, const __int64 &value);\n       void AddParameter(const AnsiString &name, const String& value);\n       void AddParameter(const AnsiString &name, unsigned int value);\n+      void AddParameter(const AnsiString &name, long value) { AddParameter(name, static_cast<int>(value)); }\n       \n \n    private:"
+    },
+    {
+      "sha": "129f474f802e97ec369f01111758262f1000ed7a",
+      "filename": "hmailserver/source/Server/Common/Scripting/ScriptSite.h",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 5,
+      "changes": 10,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FScripting%2FScriptSite.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FScripting%2FScriptSite.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FScripting%2FScriptSite.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -68,14 +68,14 @@ class ATL_NO_VTABLE IActiveScriptSiteImpl : public IActiveScriptSite\n \n       if(dwMask & SCRIPTINFO_ITYPEINFO) {\n          CComPtr<ITypeInfo> spTI;\n-         CComQIPtr<IProvideClassInfo> spPCI = spUnk;\n+         CComQIPtr<IProvideClassInfo> spPCI(spUnk);\n          if(!!spPCI) {\n             // Got IProvideClassInfo interface so use it\n             HR(spPCI->GetClassInfo(&spTI));\n             spPCI.Release();\n          } else {\n             // Try for IDispatch::GetTypeInfo\n-            CComQIPtr<IDispatch> spDisp = spUnk;\n+            CComQIPtr<IDispatch> spDisp(spUnk);\n             if(!!spDisp) {\n                HR(spDisp->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&spTI));\n                spDisp.Release();\n@@ -97,7 +97,7 @@ class ATL_NO_VTABLE IActiveScriptSiteImpl : public IActiveScriptSite\n       if(pbstrversionString==NULL)\n          return E_POINTER;\n       USES_CONVERSION;\n-      *pbstrversionString = ::SysAllocString(T2OLE(SCRIPTSITE_APPNAME));\n+      *pbstrversionString = ::SysAllocString(SCRIPTSITE_APPNAME);\n       return NOERROR;\n    };\n \n@@ -270,7 +270,7 @@ class ATL_NO_VTABLE CScriptSiteImpl : public IActiveScriptSiteImpl, public IActi\n       // Attach to site\n       HR(engine_->SetScriptSite(static_cast<IActiveScriptSite*>(this)));\n \n-      CComQIPtr<IActiveScriptParse> spParse = engine_;\n+      CComQIPtr<IActiveScriptParse> spParse(engine_);\n       if(!spParse) return E_NOINTERFACE;\n       HR(spParse->InitNew());\n \n@@ -344,7 +344,7 @@ class ATL_NO_VTABLE CScriptSiteImpl : public IActiveScriptSiteImpl, public IActi\n    {\n       if(!init_) return E_FAIL;\n \n-      CComQIPtr<IActiveScriptParse> spParse = engine_;\n+      CComQIPtr<IActiveScriptParse> spParse(engine_);\n       if(!spParse) return E_NOINTERFACE;\n \n       USES_CONVERSION;"
+    },
+    {
+      "sha": "c9c638b5b4f592f834871e21cf0873bdc3fe29c9",
+      "filename": "hmailserver/source/Server/Common/TCPIP/CertificateVerifier.cpp",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FTCPIP%2FCertificateVerifier.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FTCPIP%2FCertificateVerifier.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FTCPIP%2FCertificateVerifier.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -26,7 +26,7 @@ namespace HM\n    {\n       windows_error_code = 0;\n \n-      LPSTR usage_identifier[] = { szOID_PKIX_KP_SERVER_AUTH, szOID_SERVER_GATED_CRYPTO, szOID_SGC_NETSCAPE };\n+      LPSTR usage_identifier[] = { const_cast<LPSTR>(szOID_PKIX_KP_SERVER_AUTH), const_cast<LPSTR>(szOID_SERVER_GATED_CRYPTO), const_cast<LPSTR>(szOID_SGC_NETSCAPE) };\n \n       CERT_CHAIN_PARA params = { sizeof( params ) };\n       params.RequestedUsage.dwType = USAGE_MATCH_TYPE_OR;"
+    },
+    {
+      "sha": "74a9fdc61936723ec238d42d005beadbcab8a9c0",
+      "filename": "hmailserver/source/Server/Common/TCPIP/SynchronousConnection.cpp",
+      "status": "modified",
+      "additions": 4,
+      "deletions": 6,
+      "changes": 10,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FTCPIP%2FSynchronousConnection.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FTCPIP%2FSynchronousConnection.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FTCPIP%2FSynchronousConnection.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -8,8 +8,6 @@\n #include <Boost/optional.hpp>\n #include <Boost/system/error_code.hpp>\n \n-using namespace boost::system;\n-\n #ifdef _DEBUG\n #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)\n #define new DEBUG_NEW\n@@ -82,7 +80,7 @@ namespace HM\n    {\n       try\n       {\n-         boost::optional<error_code> timer_result; \n+         boost::optional<boost::system::error_code> timer_result; \n \n          // Create the timeout timer.\n          boost::asio::steady_timer timer(io_context_);\n@@ -91,7 +89,7 @@ namespace HM\n \n          // Start an asynchronous write.\n          boost::asio::streambuf readBuffer;\n-         boost::optional<error_code> write_result; \n+         boost::optional<boost::system::error_code> write_result; \n          async_write(socket_, boost::asio::buffer(buf, bufSize), std::bind(set_result, &write_result, std::placeholders::_1));\n          io_context_.restart();\n \n@@ -121,7 +119,7 @@ namespace HM\n \n       try\n       {\n-         boost::optional<error_code> timer_result; \n+         boost::optional<boost::system::error_code> timer_result; \n          \n          // Create the timeout timer.\n          boost::asio::steady_timer timer(io_context_);\n@@ -130,7 +128,7 @@ namespace HM\n \n          // Start an asynchronous read.\n          boost::asio::streambuf readBuffer;\n-         boost::optional<error_code> read_result; \n+         boost::optional<boost::system::error_code> read_result; \n          async_read_until(socket_, readBuffer, delimiter, std::bind(set_result, &read_result, std::placeholders::_1));\n          io_context_.restart();\n "
+    },
+    {
+      "sha": "7648c05adf3a9c7873e933ed01621e302241047f",
+      "filename": "hmailserver/source/Server/Common/Threading/WorkQueue.h",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FThreading%2FWorkQueue.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FThreading%2FWorkQueue.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FThreading%2FWorkQueue.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -32,7 +32,7 @@ namespace HM\n \n    private:\n \n-      void WorkQueue::RemoveRunningTask_(std::shared_ptr<Task> task);\n+      void RemoveRunningTask_(std::shared_ptr<Task> task);\n \n       void IoServiceRunWorker();\n       void ExecuteTask(std::shared_ptr<Task> pTask);"
+    },
+    {
+      "sha": "3a9e717053b23f1d7e5e47fedd3d13a5f03ae9ff",
+      "filename": "hmailserver/source/Server/Common/Util/Parsing/StringParser.h",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "changes": 1,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FParsing%2FStringParser.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FParsing%2FStringParser.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FParsing%2FStringParser.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -25,6 +25,7 @@ namespace HM\n       static String IntToString(int lTheInt);\n       static String IntToString(unsigned int lTheInt);\n       static String IntToString(__int64 lTheInt);\n+      static String IntToString(long lTheInt) { return IntToString(static_cast<int>(lTheInt)); }\n \n       static bool TryParseInt(const std::string &str, int &value);\n "
+    },
+    {
+      "sha": "67e7be3f7a577071faa47d6198dc6d84950b9768",
+      "filename": "hmailserver/source/Server/Common/Util/Singleton.h",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FSingleton.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FSingleton.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FSingleton.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -8,7 +8,7 @@ class Singleton\n {\n public:\n \n-   virtual ~Singleton<T>()\n+   virtual ~Singleton()\n    {\n \n    }"
+    },
+    {
+      "sha": "4950143f536cceb2c57ff2c9c74c45d2771d3799",
+      "filename": "hmailserver/source/Server/Common/Util/StdString.h",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 9,
+      "changes": 14,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FStdString.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FStdString.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FStdString.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -1817,15 +1817,15 @@ inline int sscpy(CT1* pDst, const std::basic_string<CT2>& sSrc)\n // -----------------------------------------------------------------------------\n \n template<typename CT>\n-struct SSToUpper : public std::binary_function<CT, std::locale, CT>\n+struct SSToUpper\n {\n     inline CT operator()(const CT& t, const std::locale& loc) const\n     {\n \t    return sstoupper<CT>(t, loc);\n     }\n };\n template<typename CT>\n-struct SSToLower : public std::binary_function<CT, std::locale, CT>\n+struct SSToLower\n {\n     inline CT operator()(const CT& t, const std::locale& loc) const\n     {\n@@ -1842,7 +1842,7 @@ struct SSToLower : public std::binary_function<CT, std::locale, CT>\n //\tinline bool operator() (CT t) { return !std::isspace(t, loc); }\n //};\n template<typename CT>\n-struct NotSpace : public std::unary_function<CT, bool>\n+struct NotSpace\n {\n \t// DINKUMWARE BUG:\n \t// Note -- using std::isspace in a COM DLL gives us access violations\n@@ -2233,7 +2233,7 @@ class CStdStr : public std::basic_string<CT>\n \t\tstd::transform(this->begin(),\n \t\t\t\t\t   this->end(),\n \t\t\t\t\t   this->begin(),\n-\t\t\t\t\t   std::bind2nd(SSToUpper<CT>(), loc));\n+\t\t\t\t\t   [&loc](const CT& t) { return SSToUpper<CT>()(t, loc); });\n \n \t\t// ...but if it were, this would probably work better.  Also, this way\n \t\t// seems to be a bit faster when anything other then the \"C\" locale is\n@@ -3593,7 +3593,7 @@ class CStdStr : public std::basic_string<CT>\n \t\t{\n \t\t\tTRACE(_T(\"StreamSave: Cannot write control header, ERR=0x%X\\n\"),hr);\n \t\t}\n-\t\telse if ( empty() )\n+\t\telse if ( this->empty() )\n \t\t{\n \t\t\t;\t\t// nothing to write\n \t\t}\n@@ -3942,28 +3942,24 @@ typedef CStdStringW\t\t\t\tCStdString;\n #endif\n \n struct StdStringLessNoCaseW\n-\t: std::binary_function<CStdStringW, CStdStringW, bool>\n {\n \tinline\n \tbool operator()(const CStdStringW& sLeft, const CStdStringW& sRight) const\n \t{ return ssicmp(sLeft.c_str(), sRight.c_str()) < 0; }\n };\n struct StdStringEqualsNoCaseW\n-\t: std::binary_function<CStdStringW, CStdStringW, bool>\n {\n \tinline\n \tbool operator()(const CStdStringW& sLeft, const CStdStringW& sRight) const\n \t{ return ssicmp(sLeft.c_str(), sRight.c_str()) == 0; }\n };\n struct StdStringLessNoCaseA\n-\t: std::binary_function<CStdStringA, CStdStringA, bool>\n {\n \tinline\n \tbool operator()(const CStdStringA& sLeft, const CStdStringA& sRight) const\n \t{ return ssicmp(sLeft.c_str(), sRight.c_str()) < 0; }\n };\n struct StdStringEqualsNoCaseA\n-\t: std::binary_function<CStdStringA, CStdStringA, bool>\n {\n \tinline\n \tbool operator()(const CStdStringA& sLeft, const CStdStringA& sRight) const"
+    },
+    {
+      "sha": "6a2ef1c1fe352b8f4f1f99f9c3167c4a3000ecc7",
+      "filename": "hmailserver/source/Server/Common/Util/Strings/FormatArgument.h",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 0,
+      "changes": 1,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FStrings%2FFormatArgument.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FStrings%2FFormatArgument.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FStrings%2FFormatArgument.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -11,6 +11,7 @@ namespace HM\n       FormatArgument(const String &value);\n       FormatArgument(const AnsiString &value);\n       FormatArgument(const int &value);\n+      FormatArgument(const long &value) : FormatArgument(static_cast<int>(value)) {}\n       FormatArgument(const unsigned int &value);\n       FormatArgument(const __int64 &value);\n       FormatArgument(const unsigned __int64 &value);"
+    },
+    {
+      "sha": "207396e9b5908c13410236db427948eaed3f7361",
+      "filename": "hmailserver/source/Server/Common/Util/XMLite.cpp",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FXMLite.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FXMLite.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FCommon%2FUtil%2FXMLite.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -1174,7 +1174,7 @@ HM::String _tagXMLNode::GetXML( LPDISP_OPT opt /*= &optDefault*/ )\n //========================================================\n HM::String _tagXMLNode::GetText( LPDISP_OPT opt /*= &optDefault*/ )\n {\n-\tstd::ostringstream os;\n+\tstd::basic_ostringstream<TCHAR> os;\n \n \tif( type == XNODE_DOC )\n \t{\n@@ -1379,7 +1379,7 @@ LPCTSTR\t_tagXMLNode::GetChildValue( LPCTSTR name )\n HM::String\t_tagXMLNode::GetChildText( LPCTSTR name, LPDISP_OPT opt /*= &optDefault*/ )\n {\n \tLPXNode node = GetChild( name );\n-\treturn (node != NULL)? node->GetText(opt) : _T(\"\");\n+\treturn (node != NULL)? node->GetText(opt) : HM::String();\n }\n \n LPXAttr _tagXMLNode::GetChildAttr( LPCTSTR name, LPCTSTR attrname )"
+    },
+    {
+      "sha": "90331d1fcc0818e256fbfeb8cafd6d8e2972784e",
+      "filename": "hmailserver/source/Server/SMTP/SMTPConnection.cpp",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FSMTP%2FSMTPConnection.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FSMTP%2FSMTPConnection.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FSMTP%2FSMTPConnection.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -2598,7 +2598,7 @@ namespace HM\n \n       address = mailFrom.Left(emailAddressEndPosition);\n \n-      parameters = parameterStartPosition > 0 ? mailFrom.Mid(parameterStartPosition) : _T(\"\");\n+      parameters = parameterStartPosition > 0 ? mailFrom.Mid(parameterStartPosition) : String();\n \n       if (address.StartsWith(_T(\"<\")))\n       {"
+    },
+    {
+      "sha": "e78cafe47618c5b956d7fa1aa50f83275de7ba78",
+      "filename": "hmailserver/source/Server/hMailServer.Minidump/hMailServer.Minidump.vcxproj",
+      "status": "modified",
+      "additions": 6,
+      "deletions": 2,
+      "changes": 8,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FhMailServer.Minidump%2FhMailServer.Minidump.vcxproj",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FhMailServer.Minidump%2FhMailServer.Minidump.vcxproj",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FhMailServer.Minidump%2FhMailServer.Minidump.vcxproj?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -19,13 +19,13 @@\n   <Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.Default.props\" />\n   <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\" Label=\"Configuration\">\n     <ConfigurationType>Application</ConfigurationType>\n-    <PlatformToolset>v142</PlatformToolset>\n+    <PlatformToolset>v145</PlatformToolset>\n     <CharacterSet>MultiByte</CharacterSet>\n     <WholeProgramOptimization>true</WholeProgramOptimization>\n   </PropertyGroup>\n   <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\" Label=\"Configuration\">\n     <ConfigurationType>Application</ConfigurationType>\n-    <PlatformToolset>v142</PlatformToolset>\n+    <PlatformToolset>v145</PlatformToolset>\n     <CharacterSet>MultiByte</CharacterSet>\n   </PropertyGroup>\n   <Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.props\" />\n@@ -50,6 +50,8 @@\n   </PropertyGroup>\n   <ItemDefinitionGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">\n     <ClCompile>\n+      <LanguageStandard>stdcpp20</LanguageStandard>\n+      <ConformanceMode>true</ConformanceMode>\n       <Optimization>Disabled</Optimization>\n       <AdditionalIncludeDirectories>$(hMailServerLibs)\\boost_1_92_0;$(BOOST_INCLUDE_PATH);$(OPENSSL_INCLUDE_PATH);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>\n@@ -69,6 +71,8 @@\n   </ItemDefinitionGroup>\n   <ItemDefinitionGroup Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">\n     <ClCompile>\n+      <LanguageStandard>stdcpp20</LanguageStandard>\n+      <ConformanceMode>true</ConformanceMode>\n       <Optimization>MaxSpeed</Optimization>\n       <IntrinsicFunctions>true</IntrinsicFunctions>\n       <AdditionalIncludeDirectories>$(hMailServerLibs)\\boost_1_92_0;$(BOOST_INCLUDE_PATH);$(OPENSSL_INCLUDE_PATH);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>"
+    },
+    {
+      "sha": "5723a777bbb354d3729018bd6c927a44a3803d7e",
+      "filename": "hmailserver/source/Server/hMailServer/hMailServer.cpp",
+      "status": "modified",
+      "additions": 1,
+      "deletions": 1,
+      "changes": 2,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FhMailServer%2FhMailServer.cpp",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FhMailServer%2FhMailServer.cpp",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FhMailServer%2FhMailServer.cpp?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -318,7 +318,7 @@ DWORD WINAPI StartServiceInitialization(LPVOID vd)\n \n    SERVICE_TABLE_ENTRY   DispatchTable[] = \n    { \n-      { _T(\"hMailServer\"), ServiceMain }, \n+      { const_cast<LPTSTR>(_T(\"hMailServer\")), ServiceMain }, \n       { NULL,          NULL        } \n    }; \n "
+    },
+    {
+      "sha": "55f998484d1e675d47e37f1ace67f3b992dd93b3",
+      "filename": "hmailserver/source/Server/hMailServer/hMailServer.vcxproj",
+      "status": "modified",
+      "additions": 14,
+      "deletions": 3,
+      "changes": 17,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FhMailServer%2FhMailServer.vcxproj",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FhMailServer%2FhMailServer.vcxproj",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FhMailServer%2FhMailServer.vcxproj?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -19,14 +19,14 @@\n   <Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.Default.props\" />\n   <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\" Label=\"Configuration\">\n     <ConfigurationType>Application</ConfigurationType>\n-    <PlatformToolset>v142</PlatformToolset>\n+    <PlatformToolset>v145</PlatformToolset>\n     <UseOfAtl>Static</UseOfAtl>\n     <CharacterSet>MultiByte</CharacterSet>\n     <CLRSupport>false</CLRSupport>\n   </PropertyGroup>\n   <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\" Label=\"Configuration\">\n     <ConfigurationType>Application</ConfigurationType>\n-    <PlatformToolset>v142</PlatformToolset>\n+    <PlatformToolset>v145</PlatformToolset>\n     <UseOfAtl>Static</UseOfAtl>\n     <CharacterSet>MultiByte</CharacterSet>\n     <CLRSupport>false</CLRSupport>\n@@ -48,10 +48,14 @@\n   </PropertyGroup>\n   <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">\n     <IgnoreImportLibrary>true</IgnoreImportLibrary>\n+    <!-- The VS2026 default adds $(ProjectName); hMailServer.tlb must stay beside hMailServer.exe. -->\n+    <IntDir>$(Platform)\\$(Configuration)\\</IntDir>\n     <LinkIncremental>true</LinkIncremental>\n   </PropertyGroup>\n   <PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">\n     <IgnoreImportLibrary>true</IgnoreImportLibrary>\n+    <!-- The VS2026 default adds $(ProjectName); hMailServer.tlb must stay beside hMailServer.exe. -->\n+    <IntDir>$(Platform)\\$(Configuration)\\</IntDir>\n     <LinkIncremental>false</LinkIncremental>\n   </PropertyGroup>\n   <ItemDefinitionGroup Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">\n@@ -72,6 +76,8 @@ EXIT 0\n       <ProxyFileName>hMailServer_p.c</ProxyFileName>\n     </Midl>\n     <ClCompile>\n+      <LanguageStandard>stdcpp20</LanguageStandard>\n+      <ConformanceMode>true</ConformanceMode>\n       <Optimization>Disabled</Optimization>\n       <AdditionalIncludeDirectories>$(hMailServerLibs)\\boost_1_92_0;..\\..\\..\\..\\Libraries\\mssqlce4.0;$(hMailServerLibs)\\openssl-3.5.9\\out64\\include;$(hMailServerLibs)\\postgresql-18.6\\src\\interfaces\\libpq;$(BOOST_INCLUDE_PATH);$(OPENSSL_INCLUDE_PATH);$(ProjectDir);$(hMailServerLibs)\\postgresql-18.6\\src\\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;UNICODE;_UNICODE;BOOST_DATE_TIME_NO_LIB;_SCL_SECURE_NO_WARNINGS;OPENSSL_API_COMPAT=30500;OPENSSL_NO_DEPRECATED;%(PreprocessorDefinitions)</PreprocessorDefinitions>\n@@ -127,6 +133,8 @@ EXIT 0\n       <ProxyFileName>hMailServer_p.c</ProxyFileName>\n     </Midl>\n     <ClCompile>\n+      <LanguageStandard>stdcpp20</LanguageStandard>\n+      <ConformanceMode>true</ConformanceMode>\n       <AdditionalIncludeDirectories>$(hMailServerLibs)\\boost_1_92_0;..\\..\\..\\..\\Libraries\\mssqlce4.0;$(hMailServerLibs)\\openssl-3.5.9\\out64\\include;$(hMailServerLibs)\\postgresql-18.6\\src\\interfaces\\libpq;$(BOOST_INCLUDE_PATH);$(OPENSSL_INCLUDE_PATH);$(ProjectDir);$(hMailServerLibs)\\postgresql-18.6\\src\\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n       <PreprocessorDefinitions>WIN32;_WINDOWS;UNICODE;_UNICODE;NDEBUG;BOOST_DATE_TIME_NO_LIB;_SCL_SECURE_NO_WARNINGS;OPENSSL_API_COMPAT=30500;OPENSSL_NO_DEPRECATED;%(PreprocessorDefinitions)</PreprocessorDefinitions>\n       <ExceptionHandling>Async</ExceptionHandling>\n@@ -376,7 +384,10 @@ EXIT 0\n     <ClCompile Include=\"..\\Common\\SQL\\PGRecordset.cpp\" />\n     <ClCompile Include=\"..\\Common\\SQL\\Prerequisites\\PreReqNoDuplicateFolders.cpp\" />\n     <ClCompile Include=\"..\\Common\\SQL\\Prerequisites\\PrerequisiteList.cpp\" />\n-    <ClCompile Include=\"..\\Common\\SQL\\SQLCEConnection.cpp\" />\n+    <ClCompile Include=\"..\\Common\\SQL\\SQLCEConnection.cpp\">\n+      <!-- sqlce_sync.h, vendored unchanged from SQL Server Compact, defaults a BSTR to L\"\". -->\n+      <AdditionalOptions>/Zc:strictStrings- %(AdditionalOptions)</AdditionalOptions>\n+    </ClCompile>\n     <ClCompile Include=\"..\\Common\\SQL\\SQLCERecordset.cpp\" />\n     <ClCompile Include=\"..\\Common\\SQL\\SQLCommand.cpp\" />\n     <ClCompile Include=\"..\\Common\\SQL\\SQLParameter.cpp\" />"
+    },
+    {
+      "sha": "ec85ead1ab2f4203acd23222723e2c3fd7ef10c4",
+      "filename": "hmailserver/source/Server/hMailServer/stdafx.h",
+      "status": "modified",
+      "additions": 5,
+      "deletions": 4,
+      "changes": 9,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FhMailServer%2Fstdafx.h",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Fsource%2FServer%2FhMailServer%2Fstdafx.h",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Fsource%2FServer%2FhMailServer%2Fstdafx.h?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -24,9 +24,9 @@\n // Modify the following defines if you have to target a platform prior to the ones specified below.\n // Refer to MSDN for the latest info on corresponding values for different platforms.\n \n-#define WINVER 0x0600\n-#define _WIN32_WINNT 0x0600\n-#define _WIN32_WINDOWS 0x0600\n+#define WINVER 0x0A00\n+#define _WIN32_WINNT 0x0A00\n+#define _WIN32_WINDOWS 0x0A00\n \n // START: ATL settings\n \t#define _ATL_FREE_THREADEDLPCWSTR\n@@ -71,7 +71,8 @@\n //\n // BOOST INCLUDES\n //\n-#define BOOST_USE_WINAPI_VERSION 0x0600\n+// Boost.WinAPI takes its target version from _WIN32_WINNT above (Windows 10). Boost.Atomic\n+// needs at least Windows 8, for WaitOnAddress.\n #include <boost/winapi/config.hpp>\n #include <boost/bind/bind.hpp>\n #include <boost/thread.hpp>"
+    },
+    {
+      "sha": "f9da65bcd566521af1cfd9ba9c570f993acadb78",
+      "filename": "hmailserver/test/RegressionTests/Infrastructure/InstallationLayout.cs",
+      "status": "modified",
+      "additions": 2,
+      "deletions": 2,
+      "changes": 4,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Ftest%2FRegressionTests%2FInfrastructure%2FInstallationLayout.cs",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/hmailserver%2Ftest%2FRegressionTests%2FInfrastructure%2FInstallationLayout.cs",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/hmailserver%2Ftest%2FRegressionTests%2FInfrastructure%2FInstallationLayout.cs?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -33,13 +33,13 @@ public void VisualCppRuntimeShouldBeInstalled()\n       }\n \n       [Test]\n-      [Description(\"The runtime is not older than the 14.29 toolset that compiles hMailServer.exe\")]\n+      [Description(\"The runtime is not older than the 14.50 (v145) toolset that compiles hMailServer.exe\")]\n       public void VisualCppRuntimeShouldNotBeOlderThanTheToolset()\n       {\n          var versionInfo = FileVersionInfo.GetVersionInfo(Path.Combine(GetBinDirectory(), \"vcruntime140.dll\"));\n          var version = new Version(versionInfo.FileMajorPart, versionInfo.FileMinorPart);\n \n-         Assert.GreaterOrEqual(version, new Version(14, 29));\n+         Assert.GreaterOrEqual(version, new Version(14, 50));\n       }\n \n       [Test]"
+    },
+    {
+      "sha": "2a937c56c8c4b783af7c95e7fd48a06bcd57b350",
+      "filename": "libraries/build-boost.ps1",
+      "status": "modified",
+      "additions": 19,
+      "deletions": 18,
+      "changes": 37,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/libraries%2Fbuild-boost.ps1",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/libraries%2Fbuild-boost.ps1",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/libraries%2Fbuild-boost.ps1?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -15,18 +15,18 @@\n \n     Prerequisites (must be on PATH / installed):\n       - The environment variable hMailServerLibs, pointing at your library folder.\n-      - Visual Studio 2019 with the x64 build tools, or Visual Studio 2022/2026 with the\n-        \"MSVC v142 build tools\" component (vcvars64.bat is located automatically via\n-        vswhere). b2 is driven with the msvc-14.2 toolset, which hMailServer's own\n-        projects are built with.\n+      - Visual Studio 2026 with the x64 build tools (vcvars64.bat is located\n+        automatically via vswhere). b2 is driven with the msvc-14.5 toolset, the\n+        Visual Studio 2026 default that hMailServer's own projects are built with.\n \n .PARAMETER Version\n     The Boost version to build, e.g. 1.90.0. Must match 1.x.y.\n \n .PARAMETER Toolset\n-    The b2 toolset to build with. Defaults to msvc-14.2, the v142 toolset\n-    hMailServer's project files expect. It is provided by Visual Studio 2019, and by\n-    Visual Studio 2022 and 2026 with the \"MSVC v142 build tools\" component.\n+    The b2 toolset to build with. Defaults to msvc-14.5, the v145 toolset\n+    hMailServer's project files expect, which is the default compiler of Visual\n+    Studio 2026. msvc-14.2 (v142, from the optional \"MSVC v142 build tools\"\n+    component) and msvc-14.3 are still accepted for building older branches.\n \n .PARAMETER Jobs\n     Number of parallel compilations (b2 -j). Defaults to the number of logical\n@@ -42,7 +42,7 @@ param(\n     [string]$Version,\n \n     [Parameter(Mandatory = $false)]\n-    [string]$Toolset = \"msvc-14.2\",\n+    [string]$Toolset = \"msvc-14.5\",\n \n     [Parameter(Mandatory = $false)]\n     [int]$Jobs = [int]$env:NUMBER_OF_PROCESSORS\n@@ -88,15 +88,16 @@ if ($Jobs -lt 1)\n # Boost must be compiled with the requested toolset, not simply the newest compiler\n # installed (see Resolve-VcVars64 for why -latest is wrong): its static libraries end up\n # inside hMailServer.exe, and the auto-linking pragma encodes the toolset in the library\n-# name (libboost_thread-vc142-mt-s-x64-1_92.lib).\n+# name (libboost_thread-vc145-mt-s-x64-1_92.lib).\n #\n-# msvc-14.2 (v142) is available two ways: from VS2026 and VS2022, where it is the optional\n-# \"MSVC v142 build tools\" component selected with -vcvars_ver=14.29, and from VS2019, where it\n-# is the default compiler. Accept all three, newest first: VS2026 is what the README asks a\n+# msvc-14.5 (v145) is the default compiler of VS2026, which is what the README asks a\n # developer to install and the only Visual Studio on the GitHub Actions windows-2025-vs2026\n-# image. A custom/unknown toolset falls back to -latest ($null ranges).\n+# image. The older toolsets are optional components of it, selected with -vcvars_ver, and\n+# msvc-14.2 is also the default of VS2019. A custom/unknown toolset falls back to -latest\n+# ($null ranges).\n $vsVersionRanges = switch -Regex ($Toolset)\n {\n+    '^msvc-14\\.5$' { @('[18.0,19.0)'); break }                                # VS2026\n     '^msvc-14\\.2$' { @('[18.0,19.0)', '[17.0,18.0)', '[16.0,17.0)'); break }  # VS2026/VS2022 + v142, or VS2019\n     '^msvc-14\\.3$' { @('[18.0,19.0)', '[17.0,18.0)'); break }                 # VS2026 + v143, or VS2022\n     default        { $null }                                                  # custom/unknown toolset\n@@ -106,7 +107,7 @@ $vsVersionRanges = switch -Regex ($Toolset)\n # Import-VsEnvironment applies this only on VS2022 and newer.\n $vcVarsToolsetVersion = switch -Regex ($Toolset)\n {\n-    '^msvc-14\\.2$' { $script:HMailServerVcToolsetVersion; break }  # 14.29\n+    '^msvc-14\\.2$' { '14.29'; break }\n     default        { $null }\n }\n \n@@ -125,9 +126,9 @@ Import-VsEnvironment -VsInstall $vsInstall -ToolsetVersion $vcVarsToolsetVersion\n # VS2022 or VS2026 - b2 cannot auto-configure it: Boost.Build looks for a VS2019 installation to satisfy\n # --toolset=msvc-14.2 and finds none. Point it at the compiler vcvars just put on PATH with a\n # generated user-config.jam, which also keeps the library name tag at vc142 (the tag comes\n-# from the declared version, and hMailServer's auto-linking pragma expects\n-# libboost_thread-vc142-mt-s-x64-...). On VS2019 nothing is generated and b2 auto-configures\n-# exactly as before.\n+# from the declared version, and the auto-linking pragma of a v142 build expects\n+# libboost_thread-vc142-mt-s-x64-...). For the default msvc-14.5 nothing is generated and b2\n+# auto-configures from VS2026.\n $userConfigArgument = $null\n if ($vcVarsToolsetVersion -and $vsInstall.MajorVersion -ge 17)\n {\n@@ -212,7 +213,7 @@ if (!(Test-Path $stageLib))\n     Throw \"Build completed but the staged library folder was missing: $stageLib\"\n }\n \n-# The staged libs are named like libboost_thread-vc142-mt[-s]-x64-1_90.lib. Confirm\n+# The staged libs are named like libboost_thread-vc145-mt[-s]-x64-1_92.lib. Confirm\n # each requested compiled library produced at least one .lib. Boost.System is fully\n # header-only as of Boost 1.92 (its compiled library was removed), so --with-system\n # stages no .lib and it is not listed among the expected compiled libraries."
+    },
+    {
+      "sha": "ac7b8fc49251e5ac99b5609567c531fcf1322d76",
+      "filename": "libraries/build-common.ps1",
+      "status": "modified",
+      "additions": 13,
+      "deletions": 19,
+      "changes": 32,
+      "blob_url": "https://github.com/jassifx/ArzoieMail/blob/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/libraries%2Fbuild-common.ps1",
+      "raw_url": "https://github.com/jassifx/ArzoieMail/raw/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/libraries%2Fbuild-common.ps1",
+      "contents_url": "https://api.github.com/repos/jassifx/ArzoieMail/contents/libraries%2Fbuild-common.ps1?ref=78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "patch": "@@ -133,25 +133,20 @@ function Resolve-HMailServerLibs\n     return $libsPath\n }\n \n-# The MSVC toolset hMailServer's own projects are compiled with: PlatformToolset v142,\n-# which is the 14.2x compiler. Visual Studio 2019 provides it by default; Visual Studio\n-# 2022 and 2026 provide it as the optional \"MSVC v142 build tools\" component, selected\n-# with 'vcvars64.bat -vcvars_ver=14.29'.\n-$script:HMailServerVcToolsetVersion = '14.29'\n-\n # Locate a Visual Studio installation with the x64 C++ toolchain and return what the callers\n # need from it: the vcvars64.bat path, the installation path and its version.\n #\n # We do NOT simply take 'vswhere -latest'. The Visual Studio in use decides which STL/CRT the\n-# libraries are compiled against, and Boost in particular must match hMailServer's own v142\n-# toolset: a newer STL emits vectorized-algorithm symbols (e.g. __std_find_last_trivial_2)\n-# that the v142 runtime hMailServer links against does not provide, producing LNK2019\n-# unresolved externals at link time. So the caller states which Visual Studio versions are\n-# acceptable, in preference order, and the first one installed wins.\n+# libraries are compiled against, and Boost in particular must match hMailServer's own v145\n+# toolset: a different STL emits or expects different vectorized-algorithm symbols (e.g.\n+# __std_find_last_trivial_2), producing LNK2019 unresolved externals at link time. So the\n+# caller states which Visual Studio versions are acceptable, in preference order, and the\n+# first one installed wins.\n #\n-# The default order prefers VS2026 - what the README asks a developer to install, and the only\n-# Visual Studio on the GitHub Actions windows-2025-vs2026 image - and falls back to VS2022 and\n-# then VS2019. On VS2026 and VS2022, callers that need the v142 compiler ask\n+# The default order prefers VS2026 - what the README asks a developer to install, the only\n+# Visual Studio on the GitHub Actions windows-2025-vs2026 image, and the one whose default\n+# compiler (v145) hMailServer is built with - and falls back to VS2022 and then VS2019 for\n+# the C libraries, which do not care. Callers that need an older compiler ask\n # Import-VsEnvironment for it; see the comment there for which libraries actually care.\n #\n # Pass $null or an empty array to fall back to 'vswhere -latest'.\n@@ -232,12 +227,11 @@ function Resolve-VcVars64\n # succeeded.\n #\n # -ToolsetVersion pins the MSVC compiler vcvars selects (vcvars64.bat -vcvars_ver=14.29). It\n-# is applied only on VS2022 and newer, whose default compiler is 14.4x or 14.5x rather than the 14.2x\n-# (v142) toolset hMailServer is built with; on VS2019 the default is already the right one and\n-# older 16.x installs may not even carry 14.29.\n+# is applied only on VS2022 and newer. hMailServer itself is built with the VS2026 default\n+# (v145), so this is only needed to build Boost for an older toolset.\n #\n-# Only Boost needs this. It is C++, linked statically into hMailServer, and its auto-linking\n-# pragma encodes the toolset in the library name (libboost_thread-vc142-...). OpenSSL, libpq\n+# Only Boost cares. It is C++, linked statically into hMailServer, and its auto-linking\n+# pragma encodes the toolset in the library name (libboost_thread-vc145-...). OpenSSL, libpq\n # and libmariadb are C libraries consumed through an import library and a DLL, so their C ABI\n # is toolset-independent and they build fine with whatever compiler the resolved Visual Studio\n # defaults to."
+    }
+  ],
+  "commits": [
+    {
+      "sha": "e2d69d53de31e600f6c6368445647010916f813e",
+      "node_id": "C_kwDONyQbpdoAKGUyZDY5ZDUzZGUzMWU2MDBmNmM2MzY4NDQ1NjQ3MDEwOTE2ZjgxM2U",
+      "commit": {
+        "author": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T19:20:03Z"
+        },
+        "committer": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T19:20:03Z"
+        },
+        "message": "Build the server with the VS2026 v145 toolset as C++20\n\n- PlatformToolset v142 -> v145 (the Visual Studio 2026 default compiler) for\n  hMailServer and hMailServer.Minidump, with LanguageStandard stdcpp20. C++20 turns\n  /permissive- on; ConformanceMode stays off for now so that strict conformance is\n  its own change.\n- Boost is built with msvc-14.5 (libboost_*-vc145-*), matching the projects; the\n  cache key and the staged-library check follow. msvc-14.2 stays available as an\n  option of build-boost.ps1.\n- CI no longer installs and caches ATL and the 14.29 redistributable for v142: the\n  image carries ATL and the Spectre-mitigated libraries for v145. The workflow now\n  checks that the default toolset is 14.5x and has them.\n- The oldest runtime the installer may ship is now 14.50; the InstallationLayout\n  test follows.\n- The portable core builds as C++20 too.\n- README, AGENTS.md and the upgrade-boost skill describe the new toolset.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "tree": {
+          "sha": "d2bf3e99c57a02a3679002375739a156cb5c34ec",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/d2bf3e99c57a02a3679002375739a156cb5c34ec"
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/e2d69d53de31e600f6c6368445647010916f813e",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/e2d69d53de31e600f6c6368445647010916f813e",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/e2d69d53de31e600f6c6368445647010916f813e",
+      "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/e2d69d53de31e600f6c6368445647010916f813e/comments",
+      "author": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "ef6db466e3575952701f9309467b3e1fb5d7594f",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/ef6db466e3575952701f9309467b3e1fb5d7594f",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/ef6db466e3575952701f9309467b3e1fb5d7594f"
+        }
+      ]
+    },
+    {
+      "sha": "824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+      "node_id": "C_kwDONyQbpdoAKDgyNGI4ZjZlMTljMDYxY2YxYjQ2ZjZhZmZjYmY5ZDEyMmEzYTkyZDU",
+      "commit": {
+        "author": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T19:57:56Z"
+        },
+        "committer": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T19:57:56Z"
+        },
+        "message": "StdString.h: drop std::unary_function, std::binary_function and std::bind2nd\n\nC++17 removed them and MSVC no longer declares them under /std:c++20. The base\nclasses only supplied argument and result typedefs that nothing uses; the one\nstd::bind2nd becomes a lambda.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "tree": {
+          "sha": "4204176184c63c7c0b369392749991983fd2abf3",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/4204176184c63c7c0b369392749991983fd2abf3"
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+      "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5/comments",
+      "author": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "e2d69d53de31e600f6c6368445647010916f813e",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/e2d69d53de31e600f6c6368445647010916f813e",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/e2d69d53de31e600f6c6368445647010916f813e"
+        }
+      ]
+    },
+    {
+      "sha": "a14eb2a7235306a0ba581748271cab08e0ec92bf",
+      "node_id": "C_kwDONyQbpdoAKGExNGViMmE3MjM1MzA2YTBiYTU4MTc0ODI3MWNhYjA4ZTBlYzkyYmY",
+      "commit": {
+        "author": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:07:33Z"
+        },
+        "committer": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:07:33Z"
+        },
+        "message": "Fix the remaining C++20 compile errors\n\n- XMLite.cpp: GetText() streamed LPCTSTR (wchar_t*, since UNICODE is defined) into a\n  narrow std::ostringstream. Before C++20 that resolved to operator<<(const void*) and\n  wrote the pointer's address instead of the text; C++20 deletes the overload. Use a\n  TCHAR stream, so it writes the text.\n- SynchronousConnection.cpp: drop the global 'using namespace boost::system'. Under\n  /permissive, without two-phase lookup, it made boost::system's operator== overloads\n  visible inside Boost.Asio's executor concept checks, which C++20's rewritten\n  comparison candidates then broke - so tcp::resolver could no longer be constructed\n  from an io_context. The four unqualified error_code uses are now qualified.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "tree": {
+          "sha": "f6c5679473319f1cdb56ea9f4867bb71071e8642",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/f6c5679473319f1cdb56ea9f4867bb71071e8642"
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/a14eb2a7235306a0ba581748271cab08e0ec92bf",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/a14eb2a7235306a0ba581748271cab08e0ec92bf",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/a14eb2a7235306a0ba581748271cab08e0ec92bf",
+      "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/a14eb2a7235306a0ba581748271cab08e0ec92bf/comments",
+      "author": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5"
+        }
+      ]
+    },
+    {
+      "sha": "dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+      "node_id": "C_kwDONyQbpdoAKGRmYWM0MWE1YTYzMGU4ZjlmMTViNmE1NzA0NWY2M2NkOWMwZTYyNzQ",
+      "commit": {
+        "author": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:16:50Z"
+        },
+        "committer": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:16:50Z"
+        },
+        "message": "Compile the server with standard conformance (/permissive-)\n\nConformanceMode was left off for the C++20 move, but /permissive turns off two-phase\nname lookup, and Boost.Asio's C++20 executor constraints are not evaluated correctly\nwithout it: constructing an ip::tcp::resolver from an io_context failed to find an\nany_io_executor constructor. C++20 is meant to be compiled with /permissive-, which is\nalso what the C++20 default is, so turn it on.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "tree": {
+          "sha": "7ed187a8a8f5660d642b8692605dbfcc82efe547",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/7ed187a8a8f5660d642b8692605dbfcc82efe547"
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+      "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274/comments",
+      "author": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "a14eb2a7235306a0ba581748271cab08e0ec92bf",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/a14eb2a7235306a0ba581748271cab08e0ec92bf",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/a14eb2a7235306a0ba581748271cab08e0ec92bf"
+        }
+      ]
+    },
+    {
+      "sha": "3fbed50be067d786dc3daa9ca0f4861034718af0",
+      "node_id": "C_kwDONyQbpdoAKDNmYmVkNTBiZTA2N2Q3ODZkYzNkYWE5Y2EwZjQ4NjEwMzQ3MThhZjA",
+      "commit": {
+        "author": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:20:37Z"
+        },
+        "committer": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:20:37Z"
+        },
+        "message": "Fix the code /permissive- rejects\n\n- StdString.h: name the dependent base member through this-> (empty()).\n- DatabaseConnectionManager.h: a default argument cannot bind a temporary String to a\n  non-const reference. The error-message overloads take it explicitly; overloads\n  without it supply a local.\n- BusinessObject.h, WorkQueue.h: declare members with their plain names inside the\n  class, not BusinessObject<T>::BusinessObject / WorkQueue::RemoveRunningTask_.\n- BusinessObject.h, Singleton.h: C++20 does not allow a template-id as a destructor\n  name (~Singleton<T>).\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "tree": {
+          "sha": "ddf93f5801c13d0fab3874cffe3d3911a8162b14",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/ddf93f5801c13d0fab3874cffe3d3911a8162b14"
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/3fbed50be067d786dc3daa9ca0f4861034718af0",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/3fbed50be067d786dc3daa9ca0f4861034718af0",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/3fbed50be067d786dc3daa9ca0f4861034718af0",
+      "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/3fbed50be067d786dc3daa9ca0f4861034718af0/comments",
+      "author": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274"
+        }
+      ]
+    },
+    {
+      "sha": "b414ee3f9a153900d190a65b46b4b0ee43090433",
+      "node_id": "C_kwDONyQbpdoAKGI0MTRlZTNmOWExNTM5MDBkMTkwYTY1YjQ2YjRiMGVlNDMwOTA0MzM",
+      "commit": {
+        "author": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:27:58Z"
+        },
+        "committer": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:27:58Z"
+        },
+        "message": "Fix the rest of the code C++20 and /permissive- reject\n\n- stdafx.h: target Windows 10 (_WIN32_WINNT 0x0A00) instead of Vista, as the installer\n  does. Boost.Atomic uses WaitOnAddress, which needs at least Windows 8.\n- Add long overloads to StringParser::IntToString, SQLCommand::AddParameter and\n  FormatArgument. long matched the int, unsigned int and __int64 overloads equally well;\n  it is 32 bits on Windows, so the new overloads forward to int.\n- Ordered comparisons of pointers with 0 (iInsertID > 0, library_instance_ > 0,\n  handleFile < 0) were null checks; write them as such.\n- Collection.h: typename for a dependent type. CachedObject.h: plain member names.\n- ScriptSite.h: direct-initialize CComQIPtr from another interface pointer; pass the\n  application name to SysAllocString without T2OLE.\n- SURBL.cpp: convert the regex sub_match to a string explicitly.\n- XMLite.cpp, SMTPConnection.cpp: give both branches of ?: the same type.\n- CertificateVerifier.cpp, hMailServer.cpp: const_cast literals into the non-const string\n  members of CERT_ENHKEY_USAGE and SERVICE_TABLE_ENTRY, which Windows only reads.\n- SQLCEConnection.cpp: compile with /Zc:strictStrings-, because sqlce_sync.h - vendored\n  unchanged from SQL Server Compact - defaults a BSTR parameter to L\"\".\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "tree": {
+          "sha": "3106a0408d9117b7d8144fb1d805f887a4568650",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/3106a0408d9117b7d8144fb1d805f887a4568650"
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/b414ee3f9a153900d190a65b46b4b0ee43090433",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/b414ee3f9a153900d190a65b46b4b0ee43090433",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/b414ee3f9a153900d190a65b46b4b0ee43090433",
+      "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/b414ee3f9a153900d190a65b46b4b0ee43090433/comments",
+      "author": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "3fbed50be067d786dc3daa9ca0f4861034718af0",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/3fbed50be067d786dc3daa9ca0f4861034718af0",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/3fbed50be067d786dc3daa9ca0f4861034718af0"
+        }
+      ]
+    },
+    {
+      "sha": "2864f53c4f8122156ebc03141f1a848765d5d1e4",
+      "node_id": "C_kwDONyQbpdoAKDI4NjRmNTNjNGY4MTIyMTU2ZWJjMDMxNDFmMWE4NDg3NjVkNWQxZTQ",
+      "commit": {
+        "author": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:38:26Z"
+        },
+        "committer": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:38:26Z"
+        },
+        "message": "Pin the Windows API version project-wide; temporarily print what Boost.WinAPI sees\n\nBoost 1.92's Atomic always uses WaitOnAddress on Windows, which Boost.WinAPI only\ndeclares for Windows 8 and later. Define WINVER, _WIN32_WINNT and\nBOOST_USE_WINAPI_VERSION (0x0A00, Windows 10) for the whole project, so no header can\nsee a different value. The #pragma message lines are a temporary diagnostic and will\nbe removed before this is merged.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "tree": {
+          "sha": "17f28f0ebae9e076ba59e2e4a2d79b50c6061b4b",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/17f28f0ebae9e076ba59e2e4a2d79b50c6061b4b"
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/2864f53c4f8122156ebc03141f1a848765d5d1e4",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/2864f53c4f8122156ebc03141f1a848765d5d1e4",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/2864f53c4f8122156ebc03141f1a848765d5d1e4",
+      "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/2864f53c4f8122156ebc03141f1a848765d5d1e4/comments",
+      "author": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "b414ee3f9a153900d190a65b46b4b0ee43090433",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/b414ee3f9a153900d190a65b46b4b0ee43090433",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/b414ee3f9a153900d190a65b46b4b0ee43090433"
+        }
+      ]
+    },
+    {
+      "sha": "f40a81f078ef74b39f856c2040a8d439d6219a01",
+      "node_id": "C_kwDONyQbpdoAKGY0MGE4MWYwNzhlZjc0YjM5Zjg1NmMyMDQwYThkNDM5ZDYyMTlhMDE",
+      "commit": {
+        "author": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:41:39Z"
+        },
+        "committer": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:41:39Z"
+        },
+        "message": "Let Boost.WinAPI target Windows 10, as the rest of the server does\n\nstdafx.h hard-coded BOOST_USE_WINAPI_VERSION to 0x0600 (Vista), so Boost.WinAPI did not\ndeclare WaitOnAddress, which Boost 1.92's Atomic uses on Windows. Under /permissive-\nits templates are parsed where they are defined, so every file that includes\nboost/atomic.hpp failed. Remove the override, so Boost takes the version from\n_WIN32_WINNT (0x0A00), and drop the previous commit's diagnostics and project-wide\ndefines.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "tree": {
+          "sha": "f9e0891aad4a0ec3b2568cc5dff573fa88cabc38",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/f9e0891aad4a0ec3b2568cc5dff573fa88cabc38"
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/f40a81f078ef74b39f856c2040a8d439d6219a01",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/f40a81f078ef74b39f856c2040a8d439d6219a01",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/f40a81f078ef74b39f856c2040a8d439d6219a01",
+      "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/f40a81f078ef74b39f856c2040a8d439d6219a01/comments",
+      "author": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "2864f53c4f8122156ebc03141f1a848765d5d1e4",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/2864f53c4f8122156ebc03141f1a848765d5d1e4",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/2864f53c4f8122156ebc03141f1a848765d5d1e4"
+        }
+      ]
+    },
+    {
+      "sha": "78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "node_id": "C_kwDONyQbpdoAKDc4YTQ5ZWUwZWQ5ZTRiN2FlNGM5ZGIzYTIyMGNjYzk1NTU1ZDJiZDA",
+      "commit": {
+        "author": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:49:02Z"
+        },
+        "committer": {
+          "name": "Jaspreet Singh",
+          "email": "jassi@homenode.in",
+          "date": "2026-10-23T20:49:29Z"
+        },
+        "message": "Keep the server's intermediate directory where VS2022 put it\n\nVisual Studio 2026 defaults IntDir to $(ProjectName)\\$(Platform)\\$(Configuration)\\, which\nmoved the MIDL-generated hMailServer.tlb out of x64\\Release beside hMailServer.exe, where\nthe tools' interop build, the installer and post-build read it. Pin IntDir to the\nprevious default, $(Platform)\\$(Configuration)\\.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "tree": {
+          "sha": "aef5c5232e73898ea518badb66c09d23a99c62d5",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/aef5c5232e73898ea518badb66c09d23a99c62d5"
+        },
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+        "comment_count": 0,
+        "verification": {
+          "verified": false,
+          "reason": "unsigned",
+          "signature": null,
+          "payload": null,
+          "verified_at": null
+        }
+      },
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "comments_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0/comments",
+      "author": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "committer": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "parents": [
+        {
+          "sha": "f40a81f078ef74b39f856c2040a8d439d6219a01",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/f40a81f078ef74b39f856c2040a8d439d6219a01",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/f40a81f078ef74b39f856c2040a8d439d6219a01"
+        }
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "sha": "e2d69d53de31e600f6c6368445647010916f813e",
+      "node_id": "C_kwDONyQbpdoAKGUyZDY5ZDUzZGUzMWU2MDBmNmM2MzY4NDQ1NjQ3MDEwOTE2ZjgxM2U",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/e2d69d53de31e600f6c6368445647010916f813e",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/e2d69d53de31e600f6c6368445647010916f813e",
+      "author": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T19:20:03Z"
+      },
+      "committer": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T19:20:03Z"
+      },
+      "tree": {
+        "sha": "d2bf3e99c57a02a3679002375739a156cb5c34ec",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/d2bf3e99c57a02a3679002375739a156cb5c34ec"
+      },
+      "message": "Build the server with the VS2026 v145 toolset as C++20\n\n- PlatformToolset v142 -> v145 (the Visual Studio 2026 default compiler) for\n  hMailServer and hMailServer.Minidump, with LanguageStandard stdcpp20. C++20 turns\n  /permissive- on; ConformanceMode stays off for now so that strict conformance is\n  its own change.\n- Boost is built with msvc-14.5 (libboost_*-vc145-*), matching the projects; the\n  cache key and the staged-library check follow. msvc-14.2 stays available as an\n  option of build-boost.ps1.\n- CI no longer installs and caches ATL and the 14.29 redistributable for v142: the\n  image carries ATL and the Spectre-mitigated libraries for v145. The workflow now\n  checks that the default toolset is 14.5x and has them.\n- The oldest runtime the installer may ship is now 14.50; the InstallationLayout\n  test follows.\n- The portable core builds as C++20 too.\n- README, AGENTS.md and the upgrade-boost skill describe the new toolset.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+      "parents": [
+        {
+          "sha": "ef6db466e3575952701f9309467b3e1fb5d7594f",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/ef6db466e3575952701f9309467b3e1fb5d7594f",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/ef6db466e3575952701f9309467b3e1fb5d7594f"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      },
+      "event": "committed"
+    },
+    {
+      "sha": "824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+      "node_id": "C_kwDONyQbpdoAKDgyNGI4ZjZlMTljMDYxY2YxYjQ2ZjZhZmZjYmY5ZDEyMmEzYTkyZDU",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+      "author": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T19:57:56Z"
+      },
+      "committer": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T19:57:56Z"
+      },
+      "tree": {
+        "sha": "4204176184c63c7c0b369392749991983fd2abf3",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/4204176184c63c7c0b369392749991983fd2abf3"
+      },
+      "message": "StdString.h: drop std::unary_function, std::binary_function and std::bind2nd\n\nC++17 removed them and MSVC no longer declares them under /std:c++20. The base\nclasses only supplied argument and result typedefs that nothing uses; the one\nstd::bind2nd becomes a lambda.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+      "parents": [
+        {
+          "sha": "e2d69d53de31e600f6c6368445647010916f813e",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/e2d69d53de31e600f6c6368445647010916f813e",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/e2d69d53de31e600f6c6368445647010916f813e"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      },
+      "event": "committed"
+    },
+    {
+      "sha": "a14eb2a7235306a0ba581748271cab08e0ec92bf",
+      "node_id": "C_kwDONyQbpdoAKGExNGViMmE3MjM1MzA2YTBiYTU4MTc0ODI3MWNhYjA4ZTBlYzkyYmY",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/a14eb2a7235306a0ba581748271cab08e0ec92bf",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/a14eb2a7235306a0ba581748271cab08e0ec92bf",
+      "author": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:07:33Z"
+      },
+      "committer": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:07:33Z"
+      },
+      "tree": {
+        "sha": "f6c5679473319f1cdb56ea9f4867bb71071e8642",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/f6c5679473319f1cdb56ea9f4867bb71071e8642"
+      },
+      "message": "Fix the remaining C++20 compile errors\n\n- XMLite.cpp: GetText() streamed LPCTSTR (wchar_t*, since UNICODE is defined) into a\n  narrow std::ostringstream. Before C++20 that resolved to operator<<(const void*) and\n  wrote the pointer's address instead of the text; C++20 deletes the overload. Use a\n  TCHAR stream, so it writes the text.\n- SynchronousConnection.cpp: drop the global 'using namespace boost::system'. Under\n  /permissive, without two-phase lookup, it made boost::system's operator== overloads\n  visible inside Boost.Asio's executor concept checks, which C++20's rewritten\n  comparison candidates then broke - so tcp::resolver could no longer be constructed\n  from an io_context. The four unqualified error_code uses are now qualified.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+      "parents": [
+        {
+          "sha": "824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/824b8f6e19c061cf1b46f6affcbf9d122a3a92d5"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      },
+      "event": "committed"
+    },
+    {
+      "sha": "dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+      "node_id": "C_kwDONyQbpdoAKGRmYWM0MWE1YTYzMGU4ZjlmMTViNmE1NzA0NWY2M2NkOWMwZTYyNzQ",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+      "author": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:16:50Z"
+      },
+      "committer": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:16:50Z"
+      },
+      "tree": {
+        "sha": "7ed187a8a8f5660d642b8692605dbfcc82efe547",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/7ed187a8a8f5660d642b8692605dbfcc82efe547"
+      },
+      "message": "Compile the server with standard conformance (/permissive-)\n\nConformanceMode was left off for the C++20 move, but /permissive turns off two-phase\nname lookup, and Boost.Asio's C++20 executor constraints are not evaluated correctly\nwithout it: constructing an ip::tcp::resolver from an io_context failed to find an\nany_io_executor constructor. C++20 is meant to be compiled with /permissive-, which is\nalso what the C++20 default is, so turn it on.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+      "parents": [
+        {
+          "sha": "a14eb2a7235306a0ba581748271cab08e0ec92bf",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/a14eb2a7235306a0ba581748271cab08e0ec92bf",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/a14eb2a7235306a0ba581748271cab08e0ec92bf"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      },
+      "event": "committed"
+    },
+    {
+      "sha": "3fbed50be067d786dc3daa9ca0f4861034718af0",
+      "node_id": "C_kwDONyQbpdoAKDNmYmVkNTBiZTA2N2Q3ODZkYzNkYWE5Y2EwZjQ4NjEwMzQ3MThhZjA",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/3fbed50be067d786dc3daa9ca0f4861034718af0",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/3fbed50be067d786dc3daa9ca0f4861034718af0",
+      "author": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:20:37Z"
+      },
+      "committer": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:20:37Z"
+      },
+      "tree": {
+        "sha": "ddf93f5801c13d0fab3874cffe3d3911a8162b14",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/ddf93f5801c13d0fab3874cffe3d3911a8162b14"
+      },
+      "message": "Fix the code /permissive- rejects\n\n- StdString.h: name the dependent base member through this-> (empty()).\n- DatabaseConnectionManager.h: a default argument cannot bind a temporary String to a\n  non-const reference. The error-message overloads take it explicitly; overloads\n  without it supply a local.\n- BusinessObject.h, WorkQueue.h: declare members with their plain names inside the\n  class, not BusinessObject<T>::BusinessObject / WorkQueue::RemoveRunningTask_.\n- BusinessObject.h, Singleton.h: C++20 does not allow a template-id as a destructor\n  name (~Singleton<T>).\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+      "parents": [
+        {
+          "sha": "dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/dfac41a5a630e8f9f15b6a57045f63cd9c0e6274"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      },
+      "event": "committed"
+    },
+    {
+      "sha": "b414ee3f9a153900d190a65b46b4b0ee43090433",
+      "node_id": "C_kwDONyQbpdoAKGI0MTRlZTNmOWExNTM5MDBkMTkwYTY1YjQ2YjRiMGVlNDMwOTA0MzM",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/b414ee3f9a153900d190a65b46b4b0ee43090433",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/b414ee3f9a153900d190a65b46b4b0ee43090433",
+      "author": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:27:58Z"
+      },
+      "committer": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:27:58Z"
+      },
+      "tree": {
+        "sha": "3106a0408d9117b7d8144fb1d805f887a4568650",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/3106a0408d9117b7d8144fb1d805f887a4568650"
+      },
+      "message": "Fix the rest of the code C++20 and /permissive- reject\n\n- stdafx.h: target Windows 10 (_WIN32_WINNT 0x0A00) instead of Vista, as the installer\n  does. Boost.Atomic uses WaitOnAddress, which needs at least Windows 8.\n- Add long overloads to StringParser::IntToString, SQLCommand::AddParameter and\n  FormatArgument. long matched the int, unsigned int and __int64 overloads equally well;\n  it is 32 bits on Windows, so the new overloads forward to int.\n- Ordered comparisons of pointers with 0 (iInsertID > 0, library_instance_ > 0,\n  handleFile < 0) were null checks; write them as such.\n- Collection.h: typename for a dependent type. CachedObject.h: plain member names.\n- ScriptSite.h: direct-initialize CComQIPtr from another interface pointer; pass the\n  application name to SysAllocString without T2OLE.\n- SURBL.cpp: convert the regex sub_match to a string explicitly.\n- XMLite.cpp, SMTPConnection.cpp: give both branches of ?: the same type.\n- CertificateVerifier.cpp, hMailServer.cpp: const_cast literals into the non-const string\n  members of CERT_ENHKEY_USAGE and SERVICE_TABLE_ENTRY, which Windows only reads.\n- SQLCEConnection.cpp: compile with /Zc:strictStrings-, because sqlce_sync.h - vendored\n  unchanged from SQL Server Compact - defaults a BSTR parameter to L\"\".\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+      "parents": [
+        {
+          "sha": "3fbed50be067d786dc3daa9ca0f4861034718af0",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/3fbed50be067d786dc3daa9ca0f4861034718af0",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/3fbed50be067d786dc3daa9ca0f4861034718af0"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      },
+      "event": "committed"
+    },
+    {
+      "sha": "2864f53c4f8122156ebc03141f1a848765d5d1e4",
+      "node_id": "C_kwDONyQbpdoAKDI4NjRmNTNjNGY4MTIyMTU2ZWJjMDMxNDFmMWE4NDg3NjVkNWQxZTQ",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/2864f53c4f8122156ebc03141f1a848765d5d1e4",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/2864f53c4f8122156ebc03141f1a848765d5d1e4",
+      "author": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:38:26Z"
+      },
+      "committer": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:38:26Z"
+      },
+      "tree": {
+        "sha": "17f28f0ebae9e076ba59e2e4a2d79b50c6061b4b",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/17f28f0ebae9e076ba59e2e4a2d79b50c6061b4b"
+      },
+      "message": "Pin the Windows API version project-wide; temporarily print what Boost.WinAPI sees\n\nBoost 1.92's Atomic always uses WaitOnAddress on Windows, which Boost.WinAPI only\ndeclares for Windows 8 and later. Define WINVER, _WIN32_WINNT and\nBOOST_USE_WINAPI_VERSION (0x0A00, Windows 10) for the whole project, so no header can\nsee a different value. The #pragma message lines are a temporary diagnostic and will\nbe removed before this is merged.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+      "parents": [
+        {
+          "sha": "b414ee3f9a153900d190a65b46b4b0ee43090433",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/b414ee3f9a153900d190a65b46b4b0ee43090433",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/b414ee3f9a153900d190a65b46b4b0ee43090433"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      },
+      "event": "committed"
+    },
+    {
+      "sha": "f40a81f078ef74b39f856c2040a8d439d6219a01",
+      "node_id": "C_kwDONyQbpdoAKGY0MGE4MWYwNzhlZjc0YjM5Zjg1NmMyMDQwYThkNDM5ZDYyMTlhMDE",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/f40a81f078ef74b39f856c2040a8d439d6219a01",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/f40a81f078ef74b39f856c2040a8d439d6219a01",
+      "author": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:41:39Z"
+      },
+      "committer": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:41:39Z"
+      },
+      "tree": {
+        "sha": "f9e0891aad4a0ec3b2568cc5dff573fa88cabc38",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/f9e0891aad4a0ec3b2568cc5dff573fa88cabc38"
+      },
+      "message": "Let Boost.WinAPI target Windows 10, as the rest of the server does\n\nstdafx.h hard-coded BOOST_USE_WINAPI_VERSION to 0x0600 (Vista), so Boost.WinAPI did not\ndeclare WaitOnAddress, which Boost 1.92's Atomic uses on Windows. Under /permissive-\nits templates are parsed where they are defined, so every file that includes\nboost/atomic.hpp failed. Remove the override, so Boost takes the version from\n_WIN32_WINNT (0x0A00), and drop the previous commit's diagnostics and project-wide\ndefines.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+      "parents": [
+        {
+          "sha": "2864f53c4f8122156ebc03141f1a848765d5d1e4",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/2864f53c4f8122156ebc03141f1a848765d5d1e4",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/2864f53c4f8122156ebc03141f1a848765d5d1e4"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      },
+      "event": "committed"
+    },
+    {
+      "sha": "78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "node_id": "C_kwDONyQbpdoAKDc4YTQ5ZWUwZWQ5ZTRiN2FlNGM5ZGIzYTIyMGNjYzk1NTU1ZDJiZDA",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "html_url": "https://github.com/jassifx/ArzoieMail/commit/78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+      "author": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:49:02Z"
+      },
+      "committer": {
+        "name": "Jaspreet Singh",
+        "email": "jassi@homenode.in",
+        "date": "2026-10-23T20:49:29Z"
+      },
+      "tree": {
+        "sha": "aef5c5232e73898ea518badb66c09d23a99c62d5",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/trees/aef5c5232e73898ea518badb66c09d23a99c62d5"
+      },
+      "message": "Keep the server's intermediate directory where VS2022 put it\n\nVisual Studio 2026 defaults IntDir to $(ProjectName)\\$(Platform)\\$(Configuration)\\, which\nmoved the MIDL-generated hMailServer.tlb out of x64\\Release beside hMailServer.exe, where\nthe tools' interop build, the installer and post-build read it. Pin IntDir to the\nprevious default, $(Platform)\\$(Configuration)\\.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+      "parents": [
+        {
+          "sha": "f40a81f078ef74b39f856c2040a8d439d6219a01",
+          "url": "https://api.github.com/repos/jassifx/ArzoieMail/git/commits/f40a81f078ef74b39f856c2040a8d439d6219a01",
+          "html_url": "https://github.com/jassifx/ArzoieMail/commit/f40a81f078ef74b39f856c2040a8d439d6219a01"
+        }
+      ],
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      },
+      "event": "committed"
+    },
+    {
+      "id": 34091863684,
+      "node_id": "ME_lADONyQbpc8AAAABZfN2Hc8AAAAH8AiOhA",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/issues/events/34091863684",
+      "actor": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "event": "merged",
+      "commit_id": "9005fed0553318341944dbc203162bea2016b151",
+      "commit_url": "https://api.github.com/repos/jassifx/ArzoieMail/commits/9005fed0553318341944dbc203162bea2016b151",
+      "created_at": "2026-10-23T21:06:44Z",
+      "performed_via_github_app": null
+    },
+    {
+      "id": 34091863824,
+      "node_id": "CE_lADONyQbpc8AAAABZfN2Hc8AAAAH8AiPEA",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/issues/events/34091863824",
+      "actor": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "event": "closed",
+      "commit_id": null,
+      "commit_url": null,
+      "created_at": "2026-10-23T21:06:44Z",
+      "state_reason": null,
+      "intent": null,
+      "performed_via_github_app": null
+    },
+    {
+      "id": 34091993384,
+      "node_id": "HRDE_lADONyQbpc8AAAABZfN2Hc8AAAAH8AqJKA",
+      "url": "https://api.github.com/repos/jassifx/ArzoieMail/issues/events/34091993384",
+      "actor": {
+        "login": "jassifx",
+        "id": 156990848,
+        "node_id": "U_kgDOCVt9gA",
+        "avatar_url": "https://avatars.githubusercontent.com/u/156990848?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/jassifx",
+        "html_url": "https://github.com/jassifx",
+        "followers_url": "https://api.github.com/users/jassifx/followers",
+        "following_url": "https://api.github.com/users/jassifx/following{/other_user}",
+        "gists_url": "https://api.github.com/users/jassifx/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/jassifx/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/jassifx/subscriptions",
+        "organizations_url": "https://api.github.com/users/jassifx/orgs",
+        "repos_url": "https://api.github.com/users/jassifx/repos",
+        "events_url": "https://api.github.com/users/jassifx/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/jassifx/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "event": "head_ref_deleted",
+      "commit_id": null,
+      "commit_url": null,
+      "created_at": "2026-10-23T21:08:39Z",
+      "performed_via_github_app": null
+    }
+  ],
+  "head_checks": {
+    "total_count": 5,
+    "check_runs": [
+      {
+        "id": 120654860211,
+        "name": "Publish the installer",
+        "node_id": "CR_kwDONyQbpc8AAAAcF5cPsw",
+        "head_sha": "78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+        "external_id": "83d76c19-d0f4-5966-87a8-9cba2d583504",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120654860211",
+        "html_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193881/job/120654860211",
+        "details_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193881/job/120654860211",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-23T21:02:43Z",
+        "completed_at": "2026-10-23T21:03:08Z",
+        "output": {
+          "title": null,
+          "summary": null,
+          "text": null,
+          "annotations_count": 1,
+          "annotations_url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120654860211/annotations"
+        },
+        "check_suite": {
+          "id": 108484257907
+        },
+        "app": {
+          "id": 15368,
+          "client_id": "Iv1.05c79e9ad1f6bdfa",
+          "slug": "github-actions",
+          "node_id": "MDM6QXBwMTUzNjg=",
+          "owner": {
+            "login": "github",
+            "id": 9919,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjk5MTk=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/9919?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/github",
+            "html_url": "https://github.com/github",
+            "followers_url": "https://api.github.com/users/github/followers",
+            "following_url": "https://api.github.com/users/github/following{/other_user}",
+            "gists_url": "https://api.github.com/users/github/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/github/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/github/subscriptions",
+            "organizations_url": "https://api.github.com/users/github/orgs",
+            "repos_url": "https://api.github.com/users/github/repos",
+            "events_url": "https://api.github.com/users/github/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/github/received_events",
+            "type": "Organization",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "name": "GitHub Actions",
+          "description": "Automate your workflow from idea to production",
+          "external_url": "https://help.github.com/en/actions",
+          "html_url": "https://github.com/apps/github-actions",
+          "created_at": "2018-07-30T09:30:17Z",
+          "updated_at": "2026-06-18T16:17:48Z",
+          "permissions": {
+            "actions": "write",
+            "administration": "read",
+            "artifact_metadata": "write",
+            "attestations": "write",
+            "checks": "write",
+            "code_quality": "write",
+            "contents": "write",
+            "copilot_requests": "write",
+            "deployments": "write",
+            "discussions": "write",
+            "drives": "write",
+            "issues": "write",
+            "merge_queues": "write",
+            "metadata": "read",
+            "models": "read",
+            "packages": "write",
+            "pages": "write",
+            "pull_requests": "write",
+            "repository_hooks": "write",
+            "repository_projects": "write",
+            "security_events": "write",
+            "statuses": "write",
+            "vulnerability_alerts": "read"
+          },
+          "events": [
+            "branch_protection_rule",
+            "check_run",
+            "check_suite",
+            "create",
+            "delete",
+            "deployment",
+            "deployment_status",
+            "discussion",
+            "discussion_comment",
+            "fork",
+            "gollum",
+            "issues",
+            "issue_comment",
+            "label",
+            "merge_group",
+            "milestone",
+            "page_build",
+            "public",
+            "pull_request",
+            "pull_request_review",
+            "pull_request_review_comment",
+            "push",
+            "registry_package",
+            "release",
+            "repository",
+            "repository_dispatch",
+            "status",
+            "watch",
+            "workflow_dispatch",
+            "workflow_run"
+          ]
+        },
+        "pull_requests": []
+      },
+      {
+        "id": 120651919305,
+        "name": "Tests / Regression tests",
+        "node_id": "CR_kwDONyQbpc8AAAAcF2ovyQ",
+        "head_sha": "78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+        "external_id": "f291dca9-a5df-5417-8d85-ae33906391c5",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120651919305",
+        "html_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193881/job/120651919305",
+        "details_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193881/job/120651919305",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-23T20:55:44Z",
+        "completed_at": "2026-10-23T21:02:40Z",
+        "output": {
+          "title": null,
+          "summary": null,
+          "text": null,
+          "annotations_count": 0,
+          "annotations_url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120651919305/annotations"
+        },
+        "check_suite": {
+          "id": 108484257907
+        },
+        "app": {
+          "id": 15368,
+          "client_id": "Iv1.05c79e9ad1f6bdfa",
+          "slug": "github-actions",
+          "node_id": "MDM6QXBwMTUzNjg=",
+          "owner": {
+            "login": "github",
+            "id": 9919,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjk5MTk=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/9919?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/github",
+            "html_url": "https://github.com/github",
+            "followers_url": "https://api.github.com/users/github/followers",
+            "following_url": "https://api.github.com/users/github/following{/other_user}",
+            "gists_url": "https://api.github.com/users/github/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/github/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/github/subscriptions",
+            "organizations_url": "https://api.github.com/users/github/orgs",
+            "repos_url": "https://api.github.com/users/github/repos",
+            "events_url": "https://api.github.com/users/github/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/github/received_events",
+            "type": "Organization",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "name": "GitHub Actions",
+          "description": "Automate your workflow from idea to production",
+          "external_url": "https://help.github.com/en/actions",
+          "html_url": "https://github.com/apps/github-actions",
+          "created_at": "2018-07-30T09:30:17Z",
+          "updated_at": "2026-06-18T16:17:48Z",
+          "permissions": {
+            "actions": "write",
+            "administration": "read",
+            "artifact_metadata": "write",
+            "attestations": "write",
+            "checks": "write",
+            "code_quality": "write",
+            "contents": "write",
+            "copilot_requests": "write",
+            "deployments": "write",
+            "discussions": "write",
+            "drives": "write",
+            "issues": "write",
+            "merge_queues": "write",
+            "metadata": "read",
+            "models": "read",
+            "packages": "write",
+            "pages": "write",
+            "pull_requests": "write",
+            "repository_hooks": "write",
+            "repository_projects": "write",
+            "security_events": "write",
+            "statuses": "write",
+            "vulnerability_alerts": "read"
+          },
+          "events": [
+            "branch_protection_rule",
+            "check_run",
+            "check_suite",
+            "create",
+            "delete",
+            "deployment",
+            "deployment_status",
+            "discussion",
+            "discussion_comment",
+            "fork",
+            "gollum",
+            "issues",
+            "issue_comment",
+            "label",
+            "merge_group",
+            "milestone",
+            "page_build",
+            "public",
+            "pull_request",
+            "pull_request_review",
+            "pull_request_review_comment",
+            "push",
+            "registry_package",
+            "release",
+            "repository",
+            "repository_dispatch",
+            "status",
+            "watch",
+            "workflow_dispatch",
+            "workflow_run"
+          ]
+        },
+        "pull_requests": []
+      },
+      {
+        "id": 120649676008,
+        "name": "Release x64 (windows-2025-vs2026)",
+        "node_id": "CR_kwDONyQbpc8AAAAcF0f06A",
+        "head_sha": "78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+        "external_id": "607f70d8-c24b-5a6e-8707-ca39ca90161e",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120649676008",
+        "html_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193881/job/120649676008",
+        "details_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193881/job/120649676008",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-23T20:50:34Z",
+        "completed_at": "2026-10-23T20:55:41Z",
+        "output": {
+          "title": null,
+          "summary": null,
+          "text": null,
+          "annotations_count": 0,
+          "annotations_url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120649676008/annotations"
+        },
+        "check_suite": {
+          "id": 108484257907
+        },
+        "app": {
+          "id": 15368,
+          "client_id": "Iv1.05c79e9ad1f6bdfa",
+          "slug": "github-actions",
+          "node_id": "MDM6QXBwMTUzNjg=",
+          "owner": {
+            "login": "github",
+            "id": 9919,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjk5MTk=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/9919?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/github",
+            "html_url": "https://github.com/github",
+            "followers_url": "https://api.github.com/users/github/followers",
+            "following_url": "https://api.github.com/users/github/following{/other_user}",
+            "gists_url": "https://api.github.com/users/github/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/github/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/github/subscriptions",
+            "organizations_url": "https://api.github.com/users/github/orgs",
+            "repos_url": "https://api.github.com/users/github/repos",
+            "events_url": "https://api.github.com/users/github/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/github/received_events",
+            "type": "Organization",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "name": "GitHub Actions",
+          "description": "Automate your workflow from idea to production",
+          "external_url": "https://help.github.com/en/actions",
+          "html_url": "https://github.com/apps/github-actions",
+          "created_at": "2018-07-30T09:30:17Z",
+          "updated_at": "2026-06-18T16:17:48Z",
+          "permissions": {
+            "actions": "write",
+            "administration": "read",
+            "artifact_metadata": "write",
+            "attestations": "write",
+            "checks": "write",
+            "code_quality": "write",
+            "contents": "write",
+            "copilot_requests": "write",
+            "deployments": "write",
+            "discussions": "write",
+            "drives": "write",
+            "issues": "write",
+            "merge_queues": "write",
+            "metadata": "read",
+            "models": "read",
+            "packages": "write",
+            "pages": "write",
+            "pull_requests": "write",
+            "repository_hooks": "write",
+            "repository_projects": "write",
+            "security_events": "write",
+            "statuses": "write",
+            "vulnerability_alerts": "read"
+          },
+          "events": [
+            "branch_protection_rule",
+            "check_run",
+            "check_suite",
+            "create",
+            "delete",
+            "deployment",
+            "deployment_status",
+            "discussion",
+            "discussion_comment",
+            "fork",
+            "gollum",
+            "issues",
+            "issue_comment",
+            "label",
+            "merge_group",
+            "milestone",
+            "page_build",
+            "public",
+            "pull_request",
+            "pull_request_review",
+            "pull_request_review_comment",
+            "push",
+            "registry_package",
+            "release",
+            "repository",
+            "repository_dispatch",
+            "status",
+            "watch",
+            "workflow_dispatch",
+            "workflow_run"
+          ]
+        },
+        "pull_requests": []
+      },
+      {
+        "id": 120649275920,
+        "name": "gcc",
+        "node_id": "CR_kwDONyQbpc8AAAAcF0HaEA",
+        "head_sha": "78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+        "external_id": "20738a49-f417-5496-8055-efefb81dd398",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120649275920",
+        "html_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193938/job/120649275920",
+        "details_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193938/job/120649275920",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-23T20:49:39Z",
+        "completed_at": "2026-10-23T20:49:54Z",
+        "output": {
+          "title": null,
+          "summary": null,
+          "text": null,
+          "annotations_count": 1,
+          "annotations_url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120649275920/annotations"
+        },
+        "check_suite": {
+          "id": 108484258038
+        },
+        "app": {
+          "id": 15368,
+          "client_id": "Iv1.05c79e9ad1f6bdfa",
+          "slug": "github-actions",
+          "node_id": "MDM6QXBwMTUzNjg=",
+          "owner": {
+            "login": "github",
+            "id": 9919,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjk5MTk=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/9919?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/github",
+            "html_url": "https://github.com/github",
+            "followers_url": "https://api.github.com/users/github/followers",
+            "following_url": "https://api.github.com/users/github/following{/other_user}",
+            "gists_url": "https://api.github.com/users/github/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/github/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/github/subscriptions",
+            "organizations_url": "https://api.github.com/users/github/orgs",
+            "repos_url": "https://api.github.com/users/github/repos",
+            "events_url": "https://api.github.com/users/github/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/github/received_events",
+            "type": "Organization",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "name": "GitHub Actions",
+          "description": "Automate your workflow from idea to production",
+          "external_url": "https://help.github.com/en/actions",
+          "html_url": "https://github.com/apps/github-actions",
+          "created_at": "2018-07-30T09:30:17Z",
+          "updated_at": "2026-06-18T16:17:48Z",
+          "permissions": {
+            "actions": "write",
+            "administration": "read",
+            "artifact_metadata": "write",
+            "attestations": "write",
+            "checks": "write",
+            "code_quality": "write",
+            "contents": "write",
+            "copilot_requests": "write",
+            "deployments": "write",
+            "discussions": "write",
+            "drives": "write",
+            "issues": "write",
+            "merge_queues": "write",
+            "metadata": "read",
+            "models": "read",
+            "packages": "write",
+            "pages": "write",
+            "pull_requests": "write",
+            "repository_hooks": "write",
+            "repository_projects": "write",
+            "security_events": "write",
+            "statuses": "write",
+            "vulnerability_alerts": "read"
+          },
+          "events": [
+            "branch_protection_rule",
+            "check_run",
+            "check_suite",
+            "create",
+            "delete",
+            "deployment",
+            "deployment_status",
+            "discussion",
+            "discussion_comment",
+            "fork",
+            "gollum",
+            "issues",
+            "issue_comment",
+            "label",
+            "merge_group",
+            "milestone",
+            "page_build",
+            "public",
+            "pull_request",
+            "pull_request_review",
+            "pull_request_review_comment",
+            "push",
+            "registry_package",
+            "release",
+            "repository",
+            "repository_dispatch",
+            "status",
+            "watch",
+            "workflow_dispatch",
+            "workflow_run"
+          ]
+        },
+        "pull_requests": []
+      },
+      {
+        "id": 120649275615,
+        "name": "clang",
+        "node_id": "CR_kwDONyQbpc8AAAAcF0HY3w",
+        "head_sha": "78a49ee0ed9e4b7ae4c9db3a220ccc95555d2bd0",
+        "external_id": "11e297c9-52d3-571a-8035-b58bdba31083",
+        "url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120649275615",
+        "html_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193938/job/120649275615",
+        "details_url": "https://github.com/jassifx/ArzoieMail/actions/runs/40022193938/job/120649275615",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-23T20:49:38Z",
+        "completed_at": "2026-10-23T20:50:08Z",
+        "output": {
+          "title": null,
+          "summary": null,
+          "text": null,
+          "annotations_count": 1,
+          "annotations_url": "https://api.github.com/repos/jassifx/ArzoieMail/check-runs/120649275615/annotations"
+        },
+        "check_suite": {
+          "id": 108484258038
+        },
+        "app": {
+          "id": 15368,
+          "client_id": "Iv1.05c79e9ad1f6bdfa",
+          "slug": "github-actions",
+          "node_id": "MDM6QXBwMTUzNjg=",
+          "owner": {
+            "login": "github",
+            "id": 9919,
+            "node_id": "MDEyOk9yZ2FuaXphdGlvbjk5MTk=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/9919?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/github",
+            "html_url": "https://github.com/github",
+            "followers_url": "https://api.github.com/users/github/followers",
+            "following_url": "https://api.github.com/users/github/following{/other_user}",
+            "gists_url": "https://api.github.com/users/github/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/github/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/github/subscriptions",
+            "organizations_url": "https://api.github.com/users/github/orgs",
+            "repos_url": "https://api.github.com/users/github/repos",
+            "events_url": "https://api.github.com/users/github/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/github/received_events",
+            "type": "Organization",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "name": "GitHub Actions",
+          "description": "Automate your workflow from idea to production",
+          "external_url": "https://help.github.com/en/actions",
+          "html_url": "https://github.com/apps/github-actions",
+          "created_at": "2018-07-30T09:30:17Z",
+          "updated_at": "2026-06-18T16:17:48Z",
+          "permissions": {
+            "actions": "write",
+            "administration": "read",
+            "artifact_metadata": "write",
+            "attestations": "write",
+            "checks": "write",
+            "code_quality": "write",
+            "contents": "write",
+            "copilot_requests": "write",
+            "deployments": "write",
+            "discussions": "write",
+            "drives": "write",
+            "issues": "write",
+            "merge_queues": "write",
+            "metadata": "read",
+            "models": "read",
+            "packages": "write",
+            "pages": "write",
+            "pull_requests": "write",
+            "repository_hooks": "write",
+            "repository_projects": "write",
+            "security_events": "write",
+            "statuses": "write",
+            "vulnerability_alerts": "read"
+          },
+          "events": [
+            "branch_protection_rule",
+            "check_run",
+            "check_suite",
+            "create",
+            "delete",
+            "deployment",
+            "deployment_status",
+            "discussion",
+            "discussion_comment",
+            "fork",
+            "gollum",
+            "issues",
+            "issue_comment",
+            "label",
+            "merge_group",
+            "milestone",
+            "page_build",
+            "public",
+            "pull_request",
+            "pull_request_review",
+            "pull_request_review_comment",
+            "push",
+            "registry_package",
+            "release",
+            "repository",
+            "repository_dispatch",
+            "status",
+            "watch",
+            "workflow_dispatch",
+            "workflow_run"
+          ]
+        },
+        "pull_requests": []
+      }
+    ]
+  }
+}
