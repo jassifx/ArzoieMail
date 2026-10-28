@@ -507,9 +507,10 @@ with sync_playwright() as p:
     assert page.get_by_label('password', exact=True).input_value() == ''
     page.get_by_label('description', exact=True).fill('Updated relay')
     page.once('dialog', lambda dialog: dialog.accept())
-    page.get_by_role('button', name='Save changes', exact=True).click()
+    with page.expect_response(lambda response: urlsplit(response.url).path == '/api/v1/routes/35' and response.request.method == 'PATCH') as route_update:
+        page.get_by_role('button', name='Save changes', exact=True).click()
     page.get_by_text('Route saved.', exact=True).wait_for()
-    assert requests[-2][2] == {'description': 'Updated relay'}, 'Unchanged route credentials and TLS must be omitted.'
+    assert route_update.value.request.post_data_json == {'description': 'Updated relay'}, 'Unchanged route credentials and TLS must be omitted.'
     page.get_by_role('button', name='Route recipients', exact=True).click()
     page.get_by_label('address', exact=True).fill('allowed@example.net')
     page.once('dialog', lambda dialog: dialog.accept())

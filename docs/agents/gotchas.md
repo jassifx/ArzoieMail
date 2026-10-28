@@ -5,6 +5,11 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 
 ## Editing files
 
+- **Browser notices can outlive the operation being tested.** A repeated "saved" notice may
+  already be visible when a later save starts. Wait for the exact mutation response and inspect
+  that request's body; do not infer completion from an old notice or `requests[-2]`. PR #42's
+  route-password omission check passed in the VM but exposed this timing race on CI.
+
 - **Shell quoting mangles Windows paths and C++.** Bash heredocs and `-c` strings ate
   backslashes and `$(...)`; JSON with Windows paths failed to parse. Write edit scripts, commit
   messages and PR bodies to files and run or pass the file. For replacements, a Python file of
