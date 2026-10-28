@@ -16,13 +16,13 @@ inventory makes those obligations visible rather than declaring them complete.
 
 | Area | Current state |
 |---|---|
-| Product overview and engineering roadmap | README/ROADMAP track merged work through #41, the current queue/routing/rules bundle, remaining Phase 1b delivery and planned UID lifecycle work. |
+| Product overview and engineering roadmap | README/ROADMAP track merged work through #42, remaining Phase 1b delivery and the approved finite full-roadmap 6.0 scope. The new scope/register own validation gates and migration impact, including complete COM removal. |
 | Release identity | Independent ArzoieMail 6.0.0 target supersedes 5.8.0. VERSION/release policy own metadata, compatibility and schema separation. The product-identity regression passed in the verified 1317-case baseline; no production release is claimed. |
-| CI test inventory | Verified #42 application/test head: 1,317 NUnit cases per backend, zero failures/warnings, 734 separate management assertions and browser checks on all four DBs; exact outcomes/retry history, historical 1,315-case baselines, fixture boundaries and manual/planned checks are explicit. Later revisions require their own CI; the acceptance matrix also tracks newly added runtime, real REST/HTTPS/native and published browser layers, plus future unimplemented gates. |
+| CI test inventory | Verified #42 application/test head: 1,317 NUnit cases per backend, zero failures/warnings, 897 separate management/runtime/security assertions and browser checks on all four DBs; exact outcomes/retry history, historical 1,315-case baselines, fixture boundaries and manual/planned checks are explicit. Both browser suites and runtime/real REST/HTTPS/native layers passed on final #42 head 28dd3df; later revisions require their own CI. The acceptance matrix tracks future unimplemented gates. |
 | Manual entry and installation | ArzoieMail source/provenance, current platform baseline, installation paths, database prerequisites and supported upgrade procedure replace old generic hMailServer instructions. |
 | Database guidance | Full SQL Server/Express is separated from Compact; OLE DB 19/TLS prerequisites and validated SQL Server 2025 Express coverage are explicit. Old bundled-MySQL/Blowfish recipes are not current connection guidance. |
 | Security and backup | Current service identity, protected secrets, key export and passphrase-protected backups replace the obsolete universal-obfuscation description. |
-| Web administration | Merged through #41; #42 queue/routing/rules passed VM/four-backend CI on the recorded application/test head and remains unmerged awaiting review. Detailed parity/acceptance is in the ledger, actual endpoint semantics in the contract. Advanced parity and production provisioning remain unfinished; PHP/COM consumers remain during migration. |
+| Web administration | Merged through #42, including queue/routing/rules and expanded CI verified on final head 28dd3df. Detailed parity/acceptance is in the ledger, actual endpoint semantics in the contract. Advanced parity and production provisioning remain unfinished; PHP administration/COM consumers remain only in intermediate code; supported consumer API migration and complete COM retirement are required for 6.0. |
 | Certificates and antivirus | Present manual file/listener configuration and existing scanners are separated from the planned certificate wizard/renewal and optional Defender lifecycle/pressure acceptance. |
 | Inherited references | Product prose is rebranded; code/compatibility examples are preserved. Pages needing technical review carry a reference-status note. Historical upgrade/integration recipes retain upstream names and explicit historical notices. |
 
@@ -30,9 +30,11 @@ inventory makes those obligations visible rather than declaring them complete.
 
 Human-facing product prose uses ArzoieMail. Retain actual identifiers, paths and historical
 attribution, including `hMailServer.exe`, `hMailServer.ini`, `hMailAdmin.exe`, service name
-`hMailServer`, `NT SERVICE\hMailServer`, `hMailServer.Application`, type-library/.NET namespace,
+`hMailServer`, `NT SERVICE\hMailServer`, existing non-COM .NET namespaces,
 `hm_` tables, `hMailServerBackup.xml`, source/project filenames and the compatibility installer
-AppId/headers/registry keys. AGENTS.md holds the full policy.
+AppId/headers/non-COM registry identities. COM ProgID/type library/registration are explicitly
+retired for 6.0 after migration; historical examples remain labelled until replacement guides exist.
+AGENTS.md holds the full policy.
 
 Existing manual filenames, YAML `slug`/`parent` values, `?page=` targets and image paths remain
 stable. Historical hMailServer releases and original authorship are not renamed into ArzoieMail
@@ -51,11 +53,13 @@ history. Third-party license text is not changed by this refresh.
 | Remaining Phase 1b features | Add user instructions and acceptance evidence as domain/account parity, advanced administration, DNS/DKIM lifecycle, SpamAssassin packaging and hosting/installer provisioning land. |
 | Certificate lifecycle | Publish tested import/issuance/renewal, listener assignment, failure/rollback and IIS-versus-mail-binding workflows after implementation. |
 | Defender scanning and capacity | Document the implemented adapter, effective limits, mitigation, queue/latency observability and measured hardware/workload envelope after VM acceptance. The 10,000-message scenario is still a requirement. |
+| COM retirement and automation | Inventory and migrate supported consumers/fixtures and COM-specific manual examples, document secured API bootstrap/roles/scripts/recovery, remove obsolete current guidance after implementation; BC-007/E10 track acceptance. |
+| 6.0 scope and release acceptance | Dated full-roadmap checklist, independent review, signed production release gates and compatibility register are approved requirements; implementation/operational evidence remains pending. |
 | PHP retirement | Publish the final upgrade/cutover guide, verify old endpoints are disabled, then remove legacy PHP deployment material with the source/packaging migration. |
 | Release and database matrices | Expand tested Windows/engine versions and capacity evidence as runs occur; do not generalize Express 2025 functional success into a universal throughput guarantee. |
 
 Basic domain/account, alias/list management, forwarding/replies, mailbox signatures and advanced
-domain/mailbox settings are merged through #41. The current larger bundle adds queue operations,
+domain/mailbox settings are merged through #42, including queue operations,
 routes/allowed recipients and global/mailbox rules, with VM/CI acceptance on its application/test
 head; review/merge and verification of later documentation heads remain. Phase 2
 remains the separate PowerShell event-host migration after Phase 1b acceptance; UID lifecycle

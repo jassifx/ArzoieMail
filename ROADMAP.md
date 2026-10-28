@@ -37,25 +37,14 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-Latest verified application/test head: `766e3d9bc02ef9211803a9a87f2d2deeeb219fd6`,
-[unmerged PR #42](https://github.com/jassifx/ArzoieMail/pull/42), 2026-10-28 (Asia/Colombo).
-All four backend jobs, Release, GCC/Clang, CodeQL and installer publication passed. The
-[CI inventory](docs/ci-test-inventory.md#latest-verified-applicationtest-baseline-pr-42)
-records exact totals: 1317 NUnit cases per backend, zero failures/warnings, 734 separate
-management assertions and browser workflows. PostgreSQL's existing IP-range connection
-check failed once and the full job passed on retry without a code change. A browser assertion
-synchronization race was fixed before the successful final application/test head.
-
-Merged master remains #41 (`5294d67a09823a286dd3f1f6b477772bb4b5388f`): its tested head
-`34cfdfd1476cb64f1b55108b37a186f1b6087820` passed 1315 NUnit cases and 528 management
-assertions per backend. Later documentation-only commits do not inherit a CI pass automatically;
-verify their final head in the PR. Historical baselines remain in the CI inventory and handoffs.
-The latest authorized follow-up expands modern-stack CI: .NET 10 SDK/runtime, API publish,
-real REST/native and production HTTPS/native authentication, published browser persistence/roles,
-pipe identity and retained evidence on every backend. The [acceptance matrix](docs/ci-acceptance-matrix.md)
-records implemented checks and future gates; expected expanded count is 897 management/runtime/
-security assertions plus browser suites. Verify final-head CI rather than assuming that count passed.
-
+Merged [PR #42](https://github.com/jassifx/ArzoieMail/pull/42), 2026-10-28 (Asia/Colombo):
+merge `74eecc017f48ddd445870bfd73dd6eb00aed6cef`, tested head
+`28dd3df912fac9109260efe9f5571dc05b402d12`. All four backend jobs, Release, GCC/Clang,
+workflow lint, CodeQL and CI installer publication passed. Each backend recorded 1317 NUnit
+cases with zero failures/warnings, **897 management/runtime/security assertions** and both
+fixture and published-live browser suites. NUnit inconclusive/skipped outcomes and prior
+failure/retry history remain in the [CI inventory](docs/ci-test-inventory.md).
+This documentation PR needs its own final-head checks; it does not change runtime behavior.
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
 the failed job is re-run:
@@ -64,6 +53,24 @@ the failed job is re-run:
 - `Infrastructure.DnsResolution.CNameRecordsShouldBeFollowed` (live hmailserver.com DNS).
 
 ---
+
+## ArzoieMail 6.0 scope and release acceptance
+
+Maintainer decisions, **2026-10-28**: all current phases are mandatory for the **6.0 integrated
+validation baseline**, as frozen in the [scope checklist](docs/version-6-scope.md). Later
+additions/deferrals require explicit approval. That document owns architecture/maintenance,
+finite acceptance criteria, development artifacts, independent review, supported-platform
+policy and signed production release gates; the [breaking-change register](docs/breaking-changes-6.0.md)
+owns migration impact. No development previews before feature completion; CI test artifacts
+remain allowed. Continuous migration/recovery/security/load tests precede comprehensive
+integrated validation. No preview, production release or next implementation phase is
+implicitly authorized by these scope decisions.
+
+COM is completely removed in 6.0 after supported tools/tests/automation migrate to the secured
+management API; the older retention decision below is superseded. Retain non-COM service,
+executable, INI and installer identities. Webmail integrates an existing maintained open-source
+application, optional to install, with PHP permitted. CalDAV/CardDAV remain uncommitted 6.1 ideas.
+
 
 ## 2. Settled decisions
 
@@ -79,8 +86,8 @@ These were decided deliberately; reopen them only with a new reason.
 | **The SQL injection in string-built SQL was fixed publicly**, with no private report upstream first. | The fix is ArzoieMail's own, made in the open like the rest of the project. |
 | **Secrets use AES-256-GCM under a random per-installation key protected by machine-scope DPAPI**, with passphrase export and import of the key. | The old Blowfish key was the same in every installation and is in the public source. DPAPI ties the key to the machine; export moves it to a new one. |
 | **Backups get their own passphrase**, independent of the installation's key. | A backup must restore on a new computer, which does not have the old key. |
-| **Windows 10 / Server 2016 is the minimum**, x64 only. | Everything older is out of support. |
-| **The replacement web panel uses ASP.NET Core / .NET 10 with a native management channel, without COM.** | Revised by the maintainer on 2026-10-26. Keep COM separately for compatibility; remove PHP completely from administration delivery after a tested migration (see Phase 1b and docs/management-api-architecture.md). |
+| **Windows 10 / Server 2016 is the technical minimum**, x64 only. | Production support separately requires applicable vendor security updates and project validation of the exact OS/stack; minimum compatibility is not a support guarantee. |
+| **The replacement web panel uses ASP.NET Core / .NET 10 with a native management channel, without COM.** | Revised by the maintainer on 2026-10-26. 2026-10-28 revision: remove COM completely for 6.0 after all supported consumers migrate; remove PHP from administration delivery after tested migration. PHP remains allowed for optional webmail (see Phase 1b and docs/management-api-architecture.md). |
 
 ---
 
@@ -92,7 +99,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#41 merged; #42 implemented/VM and CI verified, unmerged; detailed parity and expanded requirements remain |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#42 merged; detailed parity, tool/test API migration, COM retirement and expanded requirements remain |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols and data integrity** | Safe UID allocation/generation renewal, identifier boundaries, SMTP/IMAP/authentication extensions, MTA-STS, DANE, DKIM Ed25519 | 📋 | UID plan added; implementation not started |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -261,10 +268,10 @@ and validation, including complex SPF shared with other providers.
 
 The detailed requirements and open architecture decisions are in
 [WebAdmin requirements](docs/webadmin-requirements.md). REST moves here from Phase 6. Preserve
-COM compatibility for existing tools; the replacement panel uses REST without a COM backend.
+temporary COM compatibility in current code; all supported tools/tests/automation migrate to the secured management API and COM is removed before the 6.0 baseline.
 The maintainer has authorized implementation and revised the backend: ASP.NET Core / .NET 10,
 with a restricted local native management channel and no COM dependency in the replacement
-panel/API. COM stays separate for compatibility. See
+panel/API. COM remains only in intermediate development code pending complete 6.0 retirement. See
 [management architecture](docs/management-api-architecture.md). Implementation is in progress;
 PR #31 merged the native/API/panel foundation with passing CI. Engine bundling, remaining
 administration capabilities, certificate lifecycle and installer provisioning are not complete.
@@ -273,7 +280,7 @@ The maintainer confirmed full PHP retirement on **2026-10-26**. Complete the rep
 migration acceptance tests, then remove legacy WebAdmin source, packaging, PHP runtime checks
 and deployment requirements. Existing PHP administration remains temporary until that cutover;
 unrelated PHP installations are outside scope. The earlier PHP-version modernization goals
-are superseded. COM remains independently available for existing desktop tools and scripts.
+are superseded. The 2026-10-28 decision now also requires migrating desktop tools/scripts and removing COM entirely for 6.0; see the frozen scope and breaking-change register.
 
 Certificate installation must be user-friendly from the replacement's first production release:
 a guided import or automatic issuance workflow, hostname/chain/key validation, SMTP/IMAP/POP3
@@ -295,7 +302,7 @@ throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. Se
 ### Phase 1b delivery tracker
 
 Use the [detailed capability ledger](docs/phase-1b-status.md) for F01-F17 delivered boundaries,
-A01-A20 remaining administration work, E01-E09 expanded requirements, the complete 89-PHP-file
+A01-A20 remaining administration work, E01-E10 expanded requirements, the complete 89-PHP-file
 and 54-desktop-pane checklist, suggested grouping and completion gates. This table is its summary.
 The six broad workstreams are not six fixed PRs. The latest authorized follow-up is documentation
 reconciliation in #42; the recommended server/security bundle is not yet authorized.
@@ -323,7 +330,7 @@ actual SignPath certificate signing remains a separate master-only manual valida
 | Mailbox forwarding and automatic replies | ✅ Done | #39 merged; native/REST/panel controls, domain/target-role checks, validation and local SMTP/POP3 coverage passed VM and all four CI backends. 358 management assertions per backend, browser checks and separate VM pipe-identity checks passed. Mailbox-user self-service remains planned. |
 | Mailbox signatures | ✅ Done | #40 merged; scoped native/REST controls, inert source editor, SMTP/MIME and browser safety/newline tests passed VM and all four CI backends (404 management assertions per backend). |
 | Advanced domain/mailbox administration bundle | ✅ Done | #41 merged as `5294d67a09823a286dd3f1f6b477772bb4b5388f`; profiles, catch-all/plus/greylisting, object limits, domain signatures and alternate names passed VM and all four CI backends (528 management assertions per backend). |
-| Mail operations bundle | 🔄 In progress | `feature/webadmin-mail-operations`: queue metadata/recipients, guarded retry/removal, routes and allowed recipients, global/scoped mailbox rule drafts and activation. Native/REST/panel and regressions passed VM acceptance: 734 management assertions, browser workflows, 2 pipe checks and the stored-mail NUnit regression. All four CI backends, Release, portable builds, CodeQL and publication passed application/test head `4267f1e733a2a322c597d9c905bc50ef9368041d`. #42 remains unmerged awaiting review; subsequent documentation heads need their own CI. Queue listing still scans metadata; no workload-capacity claim. |
+| Mail operations bundle | ✅ Merged #42 | Queue metadata/recipients, guarded retry/removal, routes/recipients, global/scoped rule drafts and activation; native/REST/panel regressions. Final tested head `28dd3df912fac9109260efe9f5571dc05b402d12` passed all four backends (1317 NUnit cases, zero failures/warnings, 897 management assertions and both browser suites), Release, portable builds, workflow lint, CodeQL and CI installer publication. Merge `74eecc017`. Queue metadata scans and workload acceptance remain follow-ups. |
 | Remaining advanced administration | 📋 Planned | Remaining domain/mailbox/server settings, external fetchers, IP/security ranges, listener/TLS and other legacy parity. Separate confirmation after the current PR; no production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
@@ -372,10 +379,13 @@ server.
 - DKIM with Ed25519.
 
 ### Phase 4 · SQLite
-SQLite replaces SQL Server Compact as the built-in database. Existing installations migrate
-automatically. SQL Server Compact keeps its upgrade scripts until then.
+SQLite replaces SQL Server Compact as the built-in database with tested automatic migration,
+backup/integrity checks and failure recovery. Normal regression lanes become SQLite, MySQL,
+PostgreSQL and Express; retain separate Compact migration/recovery coverage.
 
 ### Phase 5 · Code quality (continuous) 🔄
+Finite mandatory 6.0 closure is V6-05 in the [scope checklist](docs/version-6-scope.md);
+module ownership, warning exceptions and fuzz budgets must be specified and accepted before closure.
 Replace `catch (...)` that hides errors, move to `std::unique_ptr` / clear ownership, compile at
 `/W4`, and split `Common/Util`. So far it has come along with other work: the `@@IDENTITY` BSTR leak
 (#6) and the Debug build (#10).
@@ -387,7 +397,8 @@ is to move more of the protocol parsing into the portable core (MIME, the SMTP a
 parsers, DKIM) and fuzz each part that reads bytes from the network.
 
 ### Phase 6 · Features
-Sieve filtering, DMARC aggregate reports, ARC and webmail. REST API delivery and domain DNS
+Sieve filtering, DMARC aggregate reports, ARC and optional integration of an existing maintained
+open-source webmail application (PHP permitted; application not yet selected). REST API delivery and domain DNS
 setup/validation have moved to Phase 1b; DMARC aggregate reporting remains here.
 
 ---
@@ -418,12 +429,11 @@ setup/validation have moved to Phase 1b; DMARC aggregate reporting remains here.
   types, the three `CreateTables*.sql`, `REQUIRED_DB_VERSION`, and DBUpdater. Remember the blank
   line between statements. The current schema version is **5714**.
 - **Naming**: the product is ArzoieMail, but some identifiers keep the hMailServer name on purpose
-  (`hMailServer.exe`, the service name, the `hMailServer.Application` COM API, ...). AGENTS.md lists them;
-  don't rename those.
-- **Legacy COM compatibility changes only**: add an interface change to `hMailServer.idl` with
-  a new `id`, implement it in `Server/COM`, and
-  make sure the class implements `ISupportErrorInfo` if it returns error messages.
-  New replacement-panel operations instead use explicit native commands and versioned REST.
+  (`hMailServer.exe`, service/INI names and installer identity). AGENTS.md lists them;
+  COM is explicitly excluded and retires under V6-COM. Do not rename retained identifiers.
+- **Do not add COM features.** Migrate supported tools/tests/automation through secured
+  management contracts and preserve regression coverage; E10/V6-COM own complete retirement.
+
 - **`Formatter::Format`** takes at most five arguments.
 - **Secrets** are never logged and never written plain: use `Crypt::ETSecret`
   (`SecretProtector`), and route anything that goes into a backup through `BackupSecrets`.

@@ -4,28 +4,28 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
-## Modern-stack CI expansion awaiting final-head verification
+## Modern-stack CI expansion merged and verified
 
-The maintainer expanded CI scope on 2026-10-28. The [acceptance matrix](ci-acceptance-matrix.md)
-defines every current check and required future coverage. Each backend now builds/publishes
-the .NET 10 API and runs the following additional modes, beyond the verified 734-assertion
-baseline: 7 runtime/product-boundary, 2 pipe-identity, 131 real HTTP/native, 11 production TLS
-and 12 real-native HTTPS assertions. Expected new combined total: **897** per backend,
-with fixture and published-live browser suites counted separately. Confirm final-head counts
-in #42; do not promote expectations to CI evidence before execution.
+The [acceptance matrix](ci-acceptance-matrix.md) defines current checks and future coverage.
+Final #42 head `28dd3df912fac9109260efe9f5571dc05b402d12` passed **897 assertions per backend**:
+26 deterministic DNS + 304 HTTP/session + 2 plaintext/forwarded-proto rejection + 402 native
++ 7 runtime/product + 2 pipe-identity + 131 real REST/native + 11 production TLS + 12 native
+HTTPS. Both fixture and published-live browser suites passed independently on every backend.
+Each backend uploaded redacted SDK/publish manifests, logs and screenshots plus NUnit results.
 
-All expanded layers and the exact tracked CI driver passed in the VM: **897 assertions**,
-published live browser smoke and the selected version-6 NUnit case, with original state restored.
-Root global.json keeps stable SDK 10,
-and per-backend artifacts now retain redacted framework/manifests/logs/screenshots. Restricted
-IIS/service provisioning, controlled-clock session expiry, certificate wizard, scanner lifecycle,
-capacity and PHP cutover remain explicit acceptance gaps in the matrix.
+The exact tracked driver also passed in the disposable VM with the content-root variable unset,
+published live browser and the selected product-version NUnit case; the original checkpoint
+was restored. Stable SDK 10 is selected in global.json. This proves functional coverage only:
+restricted production hosting, controlled-clock expiry, wizard/scanner lifecycle, capacity,
+installer/API provisioning, consumer migration and PHP/COM retirement are still pending.
+The [6.0 scope](version-6-scope.md) adds mandatory acceptance obligations, not executed tests.
 
 ## Latest verified application/test baseline: PR #42
 
 Verified **2026-10-28 (Asia/Colombo)** on
-[`766e3d9bc02ef9211803a9a87f2d2deeeb219fd6`](https://github.com/jassifx/ArzoieMail/commit/766e3d9bc02ef9211803a9a87f2d2deeeb219fd6/checks),
-[PR #42](https://github.com/jassifx/ArzoieMail/pull/42), still unmerged. All four backend jobs,
+[`28dd3df912fac9109260efe9f5571dc05b402d12`](https://github.com/jassifx/ArzoieMail/commit/28dd3df912fac9109260efe9f5571dc05b402d12/checks),
+[PR #42](https://github.com/jassifx/ArzoieMail/pull/42), merged as
+`74eecc017f48ddd445870bfd73dd6eb00aed6cef`. All four backend jobs,
 Release x64, GCC/Clang, all CodeQL analyses and installer publication passed. Subsequent
 documentation commits require their own checks; consult the PR's final-head validation record.
 
@@ -36,11 +36,13 @@ documentation commits require their own checks; consult the PR's final-head vali
 | PostgreSQL | 1317 | 1207 | 0 | 0 | 34 | 76 |
 | SQL Server 2025 Express | 1317 | 1208 | 0 | 0 | 34 | 75 |
 
-Every backend also passed **26 DNS + 304 HTTP + 2 HTTPS + 402 native = 734 management
-assertions**, plus the browser suite. At this historical head, two pipe-identity assertions were separate manual VM
-coverage. The current expansion automates them; do not retroactively add them to the older
-734 count. The 1317-case NUnit baseline includes both stored-mail queue and product-6 regressions; inconclusive/explicit skips retain the expected
-baseline. Functional success is not throughput or high-pressure scanner acceptance.
+Every backend also passed **897 management/runtime/security assertions**, fixture browser and
+published-live browser checks, as broken down above. The 1317-case NUnit baseline includes
+stored-mail queue and product-6 regressions. Inconclusive/explicit skips remain visible in the
+table; this is not 1317 passing tests. Functional success is not throughput or scanner acceptance.
+The earlier #42 head `766e3d9bc02ef9211803a9a87f2d2deeeb219fd6` passed 734 management
+assertions and fixture browser; two pipe assertions were then separate manual VM coverage.
+Preserve the distinction rather than retroactively attributing the new tests to that head.
 
 Earlier #42 CI, before this verified version-6 baseline, exposed a browser request-history/saved-notice timing race. The fix waits for the
 exact routing PATCH response. PostgreSQL's existing `Infrastructure.IPRanges.TestConnections`
@@ -62,10 +64,10 @@ routing password omission/recipient CRUD, draft ordering/activation/inert source
 
 `API.UtilitiesTests.DeliveryQueueMustNotDeleteOrRetryStoredMailboxMessages` adds one ordinary
 NUnit regression (1316 at the earlier #42 head, 1317 after the version-6 regression). It failed on the original VM binary and passed on the guarded build (1 passed, zero failures/warnings).
-The final VM pass cleared 26 DNS + 304 HTTP + 2 HTTPS + 402 native = 734 assertions,
-plus two separate pipe checks. Expanded browser workflows also passed in the VM.
+The earlier mail-operations VM pass cleared 734 assertions plus two separate pipe checks;
+the subsequent exact tracked CI driver passed all 897 and published-live browser checks.
 Four-backend CI also passed the counts above; final-head evidence is recorded in #42;
-prior merged results below do not establish this branch's acceptance.
+prior merged results below are historical and do not establish later-revision acceptance.
 
 Advanced domain/mailbox administration merged in #41. `AdvancedAdministrationTests.cs` covers
 profiles, domain policies/limits/signatures, alternate names, boundaries and local SMTP/POP3.
@@ -164,8 +166,8 @@ These totals exclude the separate management assertion counts and browser checks
 
 ## Management API, security, DNS and browser checks
 
-Expanded layers below passed the VM tracked-driver validation; verify their final-head CI
-acceptance in #42. They supplement the older 734-assertion groups described afterward.
+Expanded layers below passed VM tracked-driver validation and final-head #42 CI on every
+backend. They supplement the historical 734-assertion groups described afterward.
 
 | Entry point / mode | Assertions | Boundary |
 |---|---:|---|
@@ -176,7 +178,7 @@ acceptance in #42. They supplement the older 734-assertion groups described afte
 | Same driver / `--tls-native` | 12 | Production HTTPS/cookies/trust/Host policy with real native authentication and service status |
 | `test-management-browser.ps1 -PublishedApi <directory>` | Separate browser suite | Actual published API, real roles and persistence, no API mocks; artifact must include ASP.NET runtime dependencies/assets |
 
-New expected automated total: **734 + 7 + 11 + 2 + 131 + 12 = 897** per backend, with
+Verified final-head automated total: **734 + 7 + 11 + 2 + 131 + 12 = 897** per backend, with
 fixture and published-live browser suites separate. Production deployment/identity and
 scanner/certificate lifecycle/capacity gaps remain in the acceptance matrix.
 
@@ -192,9 +194,9 @@ used the combined `Test the native management API` step:
 | [test-management-browser.ps1](../build/test-management-browser.ps1) and [browser.py](../hmailserver/test/RegressionTests/Management/browser.py) | Queue ID precision, busy guards and confirmations; routing secrets and recipient CRUD; global/mailbox rule drafts, order, activation and source safety; domain/mailbox/alias/list/member CRUD, role controls, responsive layout, DNSBL, SpamAssassin and DNS advice. | Playwright uses explicit API response fixtures. It verifies UI workflows, not an end-to-end browser-to-database mutation. |
 | [test-management-live.ps1](../build/test-management-live.ps1) | 402 live native transport/parser/authorization/persistence assertions at the verified #42 application/test head, including CRUD, quotas, parent/role boundaries, forwarding/replies, signatures, advanced policies and mail operations. [AddressingTests.cs](../hmailserver/test/RegressionTests/Management/AddressingTests.cs) adds SMTP RCPT routing/policy probes; [MailboxBehaviorTests.cs](../hmailserver/test/RegressionTests/Management/MailboxBehaviorTests.cs) and [SignatureTests.cs](../hmailserver/test/RegressionTests/Management/SignatureTests.cs) add local SMTP DATA/POP3 delivery checks. [MailOperationsTests.cs](../hmailserver/test/RegressionTests/Management/MailOperationsTests.cs) adds controlled loopback queue contention, routing and rules. | Uses the installed service/database. Alias/list probes issue no DATA; delivery probes use only disposable local mailboxes. No external delivery is attempted. COM is used only to prepare/clean fixtures; management commands are native. |
 
-The deterministic/HTTP/HTTPS/live groups total **734 assertions per backend at the verified #42 application/test head**, independently
-of NUnit totals; browser checks are separate. The same counts passed the VM. Verify subsequent heads independently. Do not report the manually exercised pipe-squatting
-checks as part of that automated total. Merged #33 passed 100 (26/54/2/18) and #35 passed
+The deterministic/HTTP/HTTPS/live groups total **734 assertions per backend at the earlier #42 head `766e3d9`**, independently
+of NUnit totals; browser checks are separate. The same counts passed the VM. Verify subsequent heads independently. At that historical head, pipe-squatting checks were manual; final #42 CI automates them
+as part of the 897 total above. Merged #33 passed 100 (26/54/2/18) and #35 passed
 180 (26/83/2/69). The expanded 26/132/2/152 counts passed VM and all four CI backend jobs
 in #36; #39 passed 26/142/2/188 and #40 passed 26/152/2/224 on all four backends. These are
 verified historical results, not proof that a later mail-operations head has passed.

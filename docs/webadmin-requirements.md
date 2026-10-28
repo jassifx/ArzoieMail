@@ -27,7 +27,7 @@ administrator. Existing engine policy/macros remain authoritative. Mailbox-user 
 planned. Future UID capacity/maintenance controls belong to the
 [identifier lifecycle plan](imap-uid-modernization.md); documenting them does not implement them.
 
-[PR #42](https://github.com/jassifx/ArzoieMail/pull/42), verified but unmerged, adds queue metadata/recipient inspection and guarded
+Merged [PR #42](https://github.com/jassifx/ArzoieMail/pull/42) adds queue metadata/recipient inspection and guarded
 retry/removal, route and allowed-recipient management, and global/scoped mailbox rule builders.
 Queue/routes/global rules require server administrator; mailbox rules preserve domain and
 protected-account boundaries. Busy/stored mail cannot be mutated as queue items. Route passwords
@@ -35,8 +35,10 @@ are write-only and SMTP authentication requires encrypted transport. Rules start
 editing and activation are separate operations, with bounded conditions/actions and no exposed
 regex, scripting or local-binding actions. See the REST contract for limits and partial-write
 recovery. This bundle does not establish full parity, throughput capacity or production cutover.
-Its recorded application/test head passed all four backend jobs and other checks; later
-documentation heads require independent CI verification. Review/merge remains a maintainer gate.
+Its final head `28dd3df` passed all four backend jobs, 1317 NUnit cases, 897 management
+assertions and both browser suites; merge `74eecc017`. Later revisions need their own checks.
+The [6.0 scope](version-6-scope.md) now requires all phases and complete COM retirement;
+[BC-007](breaking-changes-6.0.md) and E10 in the ledger own tool/test/automation migration.
 
 ## Modern administration
 
@@ -54,8 +56,12 @@ documentation heads require independent CI verification. Review/merge remains a 
   release. REST is brought forward from Phase 6 into Phase 1b.
 - Enforce authentication, authorization and input validation in the API, not just the browser.
 - The replacement panel and API must not use COM. Host them on ASP.NET Core / .NET 10 and
-  reach the native business layer through a restricted local management channel. Preserve COM
-  separately for existing desktop tools and scripts during migration.
+  reach the native business layer through a restricted local management channel. All supported
+  desktop/database/maintenance tools, tests and automation must migrate to secured management
+  API contracts. COM remains only in current intermediate code and must be removed entirely
+  before the 6.0 integrated validation baseline; do not create a COM compatibility bridge.
+  Retain non-COM executable/service/configuration/installer identifiers and provide migration
+  guidance, secured bootstrap/recovery and independent permission tests for each consumer.
 - Enforce authorization in the native management dispatcher as well as at the HTTP boundary.
   Use the architecture and security requirements in management-api-architecture.md.
 

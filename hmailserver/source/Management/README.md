@@ -2,18 +2,22 @@
 
 The replacement panel is an ASP.NET Core / .NET 10 application. It communicates with the native
 server over a restricted local Windows named pipe, never through COM or direct SQL. The old
-PHP application and COM API remain available as compatibility surfaces during migration.
+PHP administration and COM API still exist in current code. Both retire before the 6.0
+integrated validation baseline after accepted migration; optional PHP webmail is allowed.
+The [6.0 scope](../../../docs/version-6-scope.md) and [migration register](../../../docs/breaking-changes-6.0.md)
+require all supported desktop/DB tools, tests and automation to use secured management API
+contracts. This documentation decision adds no routes and removes no current implementation.
 
 Read [the requirements](../../../docs/webadmin-requirements.md) and
 [architecture/security boundaries](../../../docs/management-api-architecture.md).
 The [documentation authority index](../../../docs/README.md) and
 [detailed Phase 1b ledger](../../../docs/phase-1b-status.md) identify the status owners,
 remaining capabilities, legacy migration inventories and acceptance gates. #42's application/test
-head passed all four CI backends and remains unmerged; later documentation heads need their own CI.
+final head `28dd3df` passed all four CI backends and merged as `74eecc017`; later revisions need their own CI.
 The foundation was merged in PR #31; SQL Express connectivity in PR #33 is a separate native
 database improvement. See the [Phase 1b tracker](../../../ROADMAP.md#phase-1b-delivery-tracker)
 and [documentation status](../../../docs/documentation-status.md) for remaining administration,
-certificate, Defender, hosting and PHP-retirement work. Do not present the preview as full parity.
+certificate, Defender, hosting and PHP-retirement work. Do not present this development implementation as full parity.
 
 The [CI acceptance matrix](../../../docs/ci-acceptance-matrix.md) defines the test layers for
 this implementation: .NET/ASP.NET Core 10 runtime, publish/asset checks, deterministic HTTP and
@@ -68,7 +72,7 @@ in `hmailserver/test/RegressionTests/Management`; they compile into a separate t
 - Web credentials are kept encrypted in bounded ephemeral memory; cookies hold only opaque
   session IDs. Logout, process restart, inactivity and credential revocation invalidate sessions.
 - Installer/service provisioning and complete legacy-page parity are still being implemented.
-  This preview is not yet selected by the installer as the replacement for existing WebAdmin.
+  This development implementation is not yet selected by the installer as the replacement for existing WebAdmin.
 
 ## REST v1 contract
 

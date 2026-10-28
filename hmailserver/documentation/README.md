@@ -10,6 +10,17 @@ an ArzoieMail deployment. This repository contains the manual source; an ArzoieM
 link/image check and publication pipeline still need to be finalized. The main README links
 readers to the ArzoieMail documentation site; that is not evidence these edits are deployed.
 
+## 6.0 migration notice
+
+The [approved 6.0 scope](../../docs/version-6-scope.md) requires all roadmap phases and complete
+COM API removal after supported tools/tests/automation migrate to secured management APIs.
+Current manual COM, VBScript/JScript and PHPWebAdmin examples describe intermediate or legacy
+behavior; they are not supported 6.0 end-state recipes. The [migration register](../../docs/breaking-changes-6.0.md)
+tracks conversion, recovery and release-note requirements. Optional existing open-source webmail
+may use PHP; that does not retain PHP administration. Existing executable/service/INI/installer
+identities remain. Production support differs from minimum technical compatibility and requires
+applicable vendor security updates plus project validation. No 6.0 public release is announced.
+
 ## Start here
 
 - [ArzoieMail 6 release/version policy](../../docs/release-versioning.md): the independent next

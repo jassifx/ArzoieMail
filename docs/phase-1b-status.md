@@ -1,12 +1,11 @@
 # Phase 1b capability ledger and completion gates
 
-Status snapshot: **2026-10-28, Asia/Colombo**. Master is merged through #41 at
-`5294d67a09823a286dd3f1f6b477772bb4b5388f`.
-[PR #42](https://github.com/jassifx/ArzoieMail/pull/42) is implemented, verified and **unmerged**.
-Its application/test head `766e3d9bc02ef9211803a9a87f2d2deeeb219fd6` passed all four database
-jobs, Release, GCC/Clang, CodeQL and installer publication. Documentation reconciliation after
-that revision requires its own final-head CI check. See [CI evidence](ci-test-inventory.md)
-and the [current handoff](agents/handoffs/2026-10-28.md).
+Status snapshot: **2026-10-28, Asia/Colombo**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
+is merged at `74eecc017f48ddd445870bfd73dd6eb00aed6cef`; tested head
+`28dd3df912fac9109260efe9f5571dc05b402d12` passed all four database jobs, Release,
+GCC/Clang, CodeQL, workflow lint and CI installer publication. See [CI evidence](ci-test-inventory.md)
+and the [current handoff](agents/handoffs/2026-10-28.md). The present documentation-only
+follow-up integrates the approved [6.0 scope](version-6-scope.md), not new implementation.
 
 This is the detailed status owner under [ROADMAP](../ROADMAP.md). The [requirements](webadmin-requirements.md)
 own product obligations; the [REST contract](../hmailserver/source/Management/README.md#rest-v1-contract)
@@ -15,11 +14,11 @@ native/REST/panel, unless a row explicitly describes native database or legacy c
 No row claims production cutover, full parity or workload capacity merely because tests passed.
 
 The release target is now **ArzoieMail 6.0.0**, superseding 5.8.0; see [version policy](release-versioning.md).
-The current follow-up updates product/build metadata, the schema-5714 display label, API product
-metadata and a version-identity regression. The verified version-6 baseline is **1317** NUnit cases per backend plus 734 management
-assertions. The later CI expansion adds runtime/publish, real REST/HTTPS/native and published
-browser acceptance; see the [CI matrix](ci-acceptance-matrix.md) and #42 for final-head results. Phase
-scope, unfinished capabilities and review gates are unchanged by choosing a major version.
+The merged follow-up updates product/build metadata, the schema-5714 display label, API product
+metadata and a version-identity regression. Final #42 CI passed **1317** NUnit cases per backend,
+**897** separate management/runtime/security assertions and both browser suites. The new
+scope decision requires all current phases and complete COM removal before the integrated
+baseline; these are obligations, not delivered features.
 
 ## Implemented capabilities and their boundaries
 
@@ -35,9 +34,9 @@ scope, unfinished capabilities and review gates are unchanged by choosing a majo
 | F08 | Advanced domain policies | Merged #41 | Catch-all mailbox validation, plus addressing/separator, domain greylisting flag, object limits; global greylisting and other server-wide policy remain separate |
 | F09 | Profiles and domain signatures | Merged #41 | First/last names, read-only directory/last-logon state, domain signature formats/replacement/append/local/reply policy; no directory provisioning |
 | F10 | Alternate domain names | Merged #41 | Scoped read/list, server-only create/delete, canonical names/collisions/cache invalidation; no rename, DNS ownership proof or automatic DNS/certificate/DKIM setup |
-| F11 | Queue controls | Verified, unmerged #42 | Metadata/search, first 100 recipients, exact decimal-string IDs, due-mail wake, guarded idle retry/remove; stored/busy items protected; no body/path/bulk-clear endpoint; listing still scans metadata |
-| F12 | Routes and allowed recipients | Verified, unmerged #42 | Server-only CRUD, immutable route domain, host/port/retry/classification/TLS/auth controls, write-only secrets, allowed-recipient list/add/read/delete; immediate effects, no address PATCH |
-| F13 | Global and mailbox rules | Verified, unmerged #42 | Scoped disabled drafts, typed conditions, ordered actions, separate activation; max 20 conditions/actions; regex/script/local-binding excluded; checked writes can leave a disabled partial draft on DB failure |
+| F11 | Queue controls | Merged #42 | Metadata/search, first 100 recipients, exact decimal-string IDs, due-mail wake, guarded idle retry/remove; stored/busy items protected; no body/path/bulk-clear endpoint; listing still scans metadata |
+| F12 | Routes and allowed recipients | Merged #42 | Server-only CRUD, immutable route domain, host/port/retry/classification/TLS/auth controls, write-only secrets, allowed-recipient list/add/read/delete; immediate effects, no address PATCH |
+| F13 | Global and mailbox rules | Merged #42 | Scoped disabled drafts, typed conditions, ordered actions, separate activation; max 20 conditions/actions; regex/script/local-binding excluded; checked writes can leave a disabled partial draft on DB failure |
 | F14 | Multiple DNSBL providers | Merged #31 | Provider add/configure/enable/disable/delete, zone/results/score/rejection text; not restricted to Spamhaus; provider availability and scoring interactions still need operational guidance |
 | F15 | Spam settings and SpamAssassin connection | Merged #31, partial overall | Allowlisted SPF/MX/HELO/PTR/DKIM/DMARC flags/scores, mark/delete/header/size policy, SpamAssassin host/port/merge-score and saved-connection test; engine delivery/lifecycle and remaining spam controls unfinished |
 | F16 | DNS guidance | Merged #31, partial overall | On-demand SPF/DKIM/DMARC publication inspection, copyable advice, shared-provider SPF proposals, deterministic include/redirect/lookup fixtures; key generation/rotation and complete setup/conformance acceptance unfinished |
@@ -84,8 +83,9 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | E05 | Defender lifecycle, scheduling and mitigation | SMTP receive/submission, queued send, external fetch, uploaded drafts/IMAP APPEND/import and changed-content coverage; durable fair bounded workers, verdict gates, hold/retry/quarantine, retention/audit, restart/outage recovery and observability |
 | E06 | Defender capacity acceptance | Define numerical throughput/latency goals and hardware/message mix, test at least 10,000 queued/in-flight messages, concurrent lifecycle activity, bursts/outages/recovery/soak, p95/p99/resource use/headroom; conditional on results, keep alternative scanner path |
 | E07 | Production hosting and installer | Restricted IIS pool or service identity, ASP.NET runtime/offline delivery, SID/service-status/pipe permissions, HTTPS/hostname configuration, identity/secret/key protection, diagnostics, install/uninstall/upgrade and rollback tests |
-| E08 | PHP retirement | Complete parity/dispositions, migration guide and role mapping, disable old URLs on upgrade, remove PHP source/assets/packaging/runtime/deployment dependencies and prove old administration endpoint inaccessible; retain unrelated PHP apps and independent COM compatibility |
+| E08 | PHP retirement | Complete parity/dispositions, migration guide and role mapping, disable old URLs on upgrade, remove PHP source/assets/packaging/runtime/deployment dependencies and prove old administration endpoint inaccessible; retain unrelated PHP apps; migrate supported management consumers and retire COM under E10/V6-COM |
 | E09 | Production acceptance and user documentation | Role matrix on every operation, malicious/invalid/oversized inputs, revocation/concurrency/persistence failures, browser-to-service acceptance, four DB jobs and supported Windows matrix, migration/rollback, actual screenshots/manual review/rendering/navigation/assets/publication |
+| E10 | Tools/tests/automation API migration and COM retirement | Inventory all desktop/DB/maintenance consumers, regression/volume/VM fixtures, scripts, interfaces/events/utility calls and build/packaging registration. Deliver secured API parity and bootstrap/recovery workflows, migrate supported consumers without coverage loss; complete COM removal before the 6.0 integrated baseline, coordinated with Phase 2. Not implemented; BC-007/V6-COM own final acceptance. |
 
 Details for E03–E06 remain in [requirements](webadmin-requirements.md) and the
 [Defender assessment](defender-antivirus-feasibility.md). No scanner throughput, certificate
@@ -93,7 +93,7 @@ automation, PHP removal or production provisioning has been implemented by PR #4
 
 ## Suggested grouping and next authorization
 
-The maintainer prefers larger coherent bundles. Suggested sequence after explicit #42 review:
+The maintainer prefers larger coherent bundles. Suggested sequence after merged #42 and a new explicit implementation authorization:
 server/protocol/security/listener operations; external fetch/mailbox/shared-folder and maintenance
 coverage; spam/DNS/key workflows; guided certificates/production hosting; Defender adapter and
 durable lifecycle/capacity; final migration/installer/PHP retirement. Grouping and dependencies
@@ -107,11 +107,14 @@ and deployment. Phase 2 starts only after Phase 1b acceptance and maintainer aut
   maintainer-approved restriction/migration decision. File presence is not field-level parity.
 - Native/REST/panel contracts, parent/role protections, defaults, secrets, persistence failure
   recovery and in-flight behavior are documented and tested.
-- E01–E09 requirements and relevant A01–A20 dispositions are accepted. Defender capacity and
-  certificate lifecycle are demonstrated; no blanket performance claims from functional CI.
+- E01–E09 requirements, E10 supported tool/test API migration, and relevant A01–A20 dispositions
+  are accepted; E10 final COM deletion is coordinated with Phase 2 and gates the 6.0 baseline.
+  Defender capacity and certificate lifecycle are demonstrated; no blanket performance claims from functional CI.
 - New install and upgrade use the replacement with its restricted identity/runtime/HTTPS.
-  Old PHP administration URLs/source/packaging are retired and tested; unrelated apps and
-  retained COM consumers continue to work.
+  Old PHP administration URLs/source/packaging are retired and tested; unrelated applications
+  continue to work. Supported tools/tests must have secured API migration
+  coverage; event-script conversion belongs to Phase 2. Complete COM deletion is a cross-phase
+  6.0 baseline gate, not a claim that this phase already removed it.
 - Required four-backend CI, VM security/protocol/upgrade/rollback and workload acceptance pass
   on identified revisions. Record manual, skipped and unverified scenarios separately.
 - README, roadmap, ledger, contract, requirements, CI inventory, manual/documentation status
@@ -230,7 +233,8 @@ Paths are relative to `hmailserver/source/WebAdmin/`. Area IDs refer to the tabl
 Paths are relative to `hmailserver/source/Tools/Administrator/Main panes/`. Designer/resource
 files and nested dialogs are not separate capability claims; inspect them with their owning pane
 when comparing fields/actions. DBSetup, DBUpdater, DataDirectorySynchronizer and migration tools
-are covered by A15 and remain independent COM consumers until a separately accepted migration.
+are covered by A15/E10 and currently use COM; their secured API migration and complete COM
+retirement are mandatory for the 6.0 baseline, not an optional later compatibility decision.
 
 | Desktop source | Capability / migration owner |
 |---|---|
