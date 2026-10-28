@@ -10,6 +10,8 @@ Current handoff: [2026-10-28](handoffs/2026-10-28.md). It records merged work th
 the authorized queue/routing/rules bundle, validation evidence, remaining delivery and the
 deferred CodeQL re-audit. The previous handoff retains historical baselines and environment
 lessons. The maintainer prefers grouped Phase 1b capabilities over tiny PRs.
+The latest decision targets independent **ArzoieMail 6.0.0**, not 5.8.0; read the
+[release policy](../release-versioning.md) and current handoff before changing version metadata.
 The [authority index](../README.md) defines document ownership, status meanings and evidence
 updates. The [Phase 1b ledger](../phase-1b-status.md) tracks granular gaps and all legacy
 PHP/desktop main-pane migration owners. Read them before calling a feature or phase complete.

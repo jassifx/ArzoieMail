@@ -2,6 +2,12 @@
 
 ArzoieMail is a free, open-source email server for Microsoft Windows, licensed under AGPLv3. It carries on hMailServer 5.7.2 as a project of its own. It implements SMTP, IMAP, and POP3, and runs as a Windows service. The codebase is written primarily in C++ (server core) and C# (admin tools), targeting C++20 with the Visual Studio 2026 v145 toolset, with 64-bit Windows builds.
 
+**Release target: ArzoieMail 6.0.0**, independently versioned from hMailServer; the former
+5.8.0 target is superseded by the maintainer's 2026-10-28 instruction. Read [VERSION](VERSION)
+and [release versioning](docs/release-versioning.md). Product major, build number, schema 5714,
+assembly identities and historical upgrade mappings are separate. Do not globally rename old
+versions or compatibility identifiers, or publish a release without explicit authorization.
+
 **Names that stay hMailServer.** The product is ArzoieMail in everything users read. Some identifiers keep the
 hMailServer name on purpose, because existing installations, scripts and the web admin depend on them, or so that
 the installer upgrades an hMailServer installation in place. Don't rename them without a decision to do so:

@@ -14,6 +14,12 @@ owns exact fields, types, limits and errors. "Merged" below describes the replac
 native/REST/panel, unless a row explicitly describes native database or legacy capabilities.
 No row claims production cutover, full parity or workload capacity merely because tests passed.
 
+The release target is now **ArzoieMail 6.0.0**, superseding 5.8.0; see [version policy](release-versioning.md).
+The current follow-up updates product/build metadata, the schema-5714 display label, API product
+metadata and a version-identity regression. The expected NUnit total becomes **1317**; final-head
+VM/CI results belong in #42. The verified 1316-case head above predates this follow-up. Phase
+scope, unfinished capabilities and review gates are unchanged by choosing a major version.
+
 ## Implemented capabilities and their boundaries
 
 | ID | Capability | State / evidence | Exact boundary or remaining work |
@@ -113,13 +119,14 @@ and deployment. Phase 2 starts only after Phase 1b acceptance and maintainer aut
 
 ## Legacy surface inventories
 
-The following file inventories are a **coverage checklist**, not a claim that every inherited
+The following maintained-source inventories are a **coverage checklist**, not a claim that every inherited
 field or procedure has been reviewed. They include every current PHP source file and every
 non-designer Administrator main-pane C# file. The shared area IDs above identify the capability
 owner; a "partial" inventory entry still needs field/action/role comparison. Supporting includes,
 authentication handlers and shells also require retirement/security acceptance. New/deleted files
 must be reconciled here before PHP removal. Static inventory coverage must be checked against
-the source tree; it does not execute PHP or the desktop tools.
+the source tree, excluding ignored generated output such as `include_versioncheck.php`;
+it does not execute PHP or the desktop tools.
 
 ### PHP source checklist (89 files)
 

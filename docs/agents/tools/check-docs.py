@@ -1,6 +1,7 @@
 """Read-only documentation link and legacy inventory checks; safe on the development host."""
 from pathlib import Path
 import re
+import subprocess
 from urllib.parse import unquote
 
 root = Path(__file__).resolve().parents[3]
@@ -24,7 +25,10 @@ recorded_php = re.findall(r"^\| `([^`]+\.php)` \|", ledger, re.MULTILINE)
 recorded_desktop = re.findall(r"^\| `([^`]+\.cs)` \|", ledger, re.MULTILINE)
 php_root = root / "hmailserver/source/WebAdmin"
 desktop_root = root / "hmailserver/source/Tools/Administrator/Main panes"
-actual_php = {path.relative_to(php_root).as_posix() for path in php_root.rglob("*.php")}
+source_files = subprocess.check_output(
+    ["git", "-C", str(root), "ls-files", "--cached", "--others", "--exclude-standard", "--",
+     "hmailserver/source/WebAdmin"], text=True).splitlines()
+actual_php = {name.removeprefix("hmailserver/source/WebAdmin/") for name in source_files if name.endswith(".php")}
 actual_desktop = {path.name for path in desktop_root.glob("*.cs") if not path.name.endswith(".Designer.cs")}
 for label, recorded, actual in (("PHP", recorded_php, actual_php), ("desktop pane", recorded_desktop, actual_desktop)):
     if len(recorded) != len(set(recorded)):

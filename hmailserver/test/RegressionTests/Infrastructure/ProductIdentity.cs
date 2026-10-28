@@ -45,6 +45,20 @@ namespace RegressionTests.Infrastructure
       }
 
       [Test]
+      [Description("The independent ArzoieMail 6 product line is reported consistently by the service and executable")]
+      public void ProductVersionShouldFollowArzoieMail6()
+      {
+         var processes = Process.GetProcessesByName("hmailserver");
+         Assert.That(processes.Length, Is.EqualTo(1));
+         var versionInfo = FileVersionInfo.GetVersionInfo(processes[0].MainModule.FileName);
+         var reported = System.Version.Parse(_application.Version.Split('-')[0]);
+         Assert.That(reported.Major, Is.EqualTo(6), "New ArzoieMail builds follow the independent 6.x release line.");
+         Assert.That(versionInfo.ProductMajorPart, Is.EqualTo(reported.Major));
+         Assert.That(versionInfo.ProductMinorPart, Is.EqualTo(reported.Minor));
+         Assert.That(versionInfo.ProductBuildPart, Is.EqualTo(reported.Build));
+      }
+
+      [Test]
       [Description("A new installation keeps its ini file in ProgramData\\ArzoieMail")]
       public void NewInstallationShouldUseArzoieMailProgramData()
       {

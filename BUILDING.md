@@ -15,8 +15,25 @@ Branches
    * Work happens on a branch named after what it is for, such as `feature/...`, `bugfix/...` or
      `techdebt/...`. GitHub Actions builds and tests every push to branches with those prefixes.
 
-   * A version branch, named after the version (for example 5.8.1), can be cut from master for
+   * A version branch, named after the version (for example 6.0.1), can be cut from master for
      bug fixes to a released version.
+
+Product version and release identity
+------------------------------------
+
+The next release target is **ArzoieMail 6.0.0**, independently versioned from hMailServer.
+[VERSION](VERSION) is canonical. [Release versioning](docs/release-versioning.md) documents
+the server/tool/installer stamp, API metadata, build numbering, retained assembly/COM identities
+and schema independence. Development metadata is `6.0.0` with build zero; CI stamps its unique
+build. To refresh development metadata before compiling, without running the product:
+
+```powershell
+$releaseVersion = (Get-Content VERSION -Raw).Trim()
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File build/Set-Version.ps1 $releaseVersion 0
+```
+
+Product 6 does not renumber schema 5714 or remove legacy upgrade paths. Runtime validation
+stays in the disposable VM/CI. Artifact publication is not authorization to publish a release.
 
 Environment set up
 ------------------

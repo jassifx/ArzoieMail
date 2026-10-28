@@ -48,6 +48,12 @@ tooling - while every existing installation keeps working.
 It is a project of its own, with its own roadmap, tests and releases, maintained by
 Jaspreet Singh in Delhi, India. The name honours Arzoie, the maintainer's daughter.
 
+**The next release target is ArzoieMail 6.0.0.** ArzoieMail follows its own release line rather
+than a hMailServer 5.8 target. [VERSION](VERSION) owns the product target; the
+[release/version policy](docs/release-versioning.md) explains build metadata, compatibility,
+schema independence and release gates. Version 6 remains in development; this is not a release
+announcement or a claim that unfinished roadmap work has shipped.
+
 ## What is different
 
 **Tested on every change, on every database.** Each push builds the server, installs it on a

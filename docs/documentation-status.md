@@ -17,6 +17,7 @@ inventory makes those obligations visible rather than declaring them complete.
 | Area | Current state |
 |---|---|
 | Product overview and engineering roadmap | README/ROADMAP track merged work through #41, the current queue/routing/rules bundle, remaining Phase 1b delivery and planned UID lifecycle work. |
+| Release identity | Independent ArzoieMail 6.0.0 target supersedes 5.8.0. VERSION/release policy own metadata, compatibility and schema separation. New product-identity regression expects a 1317-case baseline after fresh acceptance; no production release is claimed. |
 | CI test inventory | Verified #42 application/test head: 1,316 NUnit cases per backend, zero failures/warnings, 734 separate management assertions and browser checks on all four DBs; exact outcomes/retry history, historical 1,315-case baselines, fixture boundaries and manual/planned checks are explicit. Later documentation heads require their own CI. |
 | Manual entry and installation | ArzoieMail source/provenance, current platform baseline, installation paths, database prerequisites and supported upgrade procedure replace old generic hMailServer instructions. |
 | Database guidance | Full SQL Server/Express is separated from Compact; OLE DB 19/TLS prerequisites and validated SQL Server 2025 Express coverage are explicit. Old bundled-MySQL/Blowfish recipes are not current connection guidance. |

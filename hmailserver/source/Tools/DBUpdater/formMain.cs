@@ -312,7 +312,7 @@ namespace DBUpdater
             case 5713:
                return "hMailServer 5.8 (5713)";
             case 5714:
-               return "ArzoieMail 5.8 (5714)";
+               return "ArzoieMail 6.0 (5714)";
             default:
                return "Unknown version";
          }

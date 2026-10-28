@@ -3,8 +3,8 @@
     Stamps a version and build number into the sources and the installer script.
 
 .DESCRIPTION
-    The version hMailServer reports is not stored in the repository: the files that carry it
-    are committed with a 1.0.0 placeholder and rewritten at build time. This script performs
+    VERSION is ArzoieMail's release target. Generated metadata is committed with that version
+    and development build zero, then rewritten with a unique build number in CI. This script performs
     that rewrite, and has to run before the server is compiled, since Version.h is compiled
     into hMailServer.exe.
 
@@ -22,11 +22,11 @@
     against the version the build passes with the signing request.
 
     The CI build workflow calls this with the version and build number it derives for the
-    run. A developer building locally does not need it: the placeholder compiles fine, and
-    the resulting build simply reports itself as 1.0.0.
+    run. A developer may stamp the VERSION value with build zero before compiling; this does
+    not install, register or run the server. Assembly identity versions remain independent.
 
 .PARAMETER Version
-    Three-part product version, for example 5.7.0.
+    Three-part product version, for example 6.0.0. See docs/release-versioning.md.
 
 .PARAMETER Build
     Build number, appended as -B<build> where a full version is shown.
@@ -35,7 +35,7 @@
     Repository root to write into. Defaults to the repository this script lives in.
 
 .EXAMPLE
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\Set-Version.ps1 5.7.0 1234
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File build\Set-Version.ps1 6.0.0 1234
 #>
 [CmdletBinding()]
 param(

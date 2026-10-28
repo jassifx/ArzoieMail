@@ -65,6 +65,7 @@ These were decided deliberately; reopen them only with a new reason.
 
 | Decision | Why |
 |---|---|
+| **The next product release is ArzoieMail 6.0.0, on its own release line.** | Maintainer decision 2026-10-28: divergence in architecture and scope makes the former 5.8.0 target inappropriate. VERSION owns the release target; product, schema, build and compatibility identities remain distinct. See [release policy](docs/release-versioning.md). This does not publish a release or complete future phases. |
 | **Active Scripting (VBScript/JScript) is replaced by a PowerShell event host**, persistent and out of process. Chosen over embedded JavaScript and over webhooks. | Windows disables VBScript by default from about 2027 and will remove it. PowerShell is what Windows administrators already script in, and out of process a script can no longer crash or stall the server. |
 | **Admin tools and tests run on .NET 10 LTS** (supported until 2028-11-14), not .NET Framework 4.8.1. | A current runtime, SDK-style projects and current libraries. |
 | **The installer bundles the .NET 10 Desktop Runtime** and installs it silently when missing, rather than downloading it on demand. | Installs work offline; setup grows by about 60 MB. |

@@ -52,7 +52,7 @@ def api(route):
             user = None
         data = {"user": user, "csrf": "browser-fixture-token"}
     elif path == '/status':
-        data = {"version": "5.7.2", "state": 3, "domains": 2}
+        data = {"version": "6.0.0", "state": 3, "domains": 2}
     elif path == '/dnsbl':
         if request.method == 'POST':
             providers.append({"id": len(providers) + 1, **body})

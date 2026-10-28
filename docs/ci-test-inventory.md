@@ -4,6 +4,17 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Version-6 follow-up awaiting final-head verification
+
+The maintainer selected independent ArzoieMail **6.0.0** after the verified 1316-case baseline
+below. The follow-up updates product metadata and adds one normal NUnit case,
+`Infrastructure.ProductIdentity.ProductVersionShouldFollowArzoieMail6`, checking agreement
+between the service-reported 6.x version and native Windows product-version resources.
+Expected total: **1317** per backend; management count remains 734 unless further tests change.
+Verify actual VM/CI outcomes on the final #42 head before accepting these expectations.
+The [release policy](release-versioning.md) separates product numbering, assembly identity,
+schema 5714 and historical upgrades. No public release/signing workflow was executed for this decision.
+
 ## Latest verified application/test baseline: PR #42
 
 Verified **2026-10-28 (Asia/Colombo)** on
