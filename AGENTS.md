@@ -20,7 +20,7 @@ many places; that is renamed gradually, never in the identifiers above.
 
 ## Repository Layout
 
-The repository root contains two top-level directories plus a handful of config files:
+The repository root contains source, dependencies, build scripts, documentation and config files:
 
 ```
 hmailserver/          # All source code, tools, tests, installation scripts
@@ -36,11 +36,18 @@ README.md             # What the project is: roadmap, design decisions, getting 
 ROADMAP.md            # Engineering roadmap: decisions, what each phase changed, lessons, what is next
 ```
 
-Everything of substance lives under `hmailserver/`.
+Product source lives under `hmailserver/`; root documents and `docs/` hold the shared engineering
+record, `build/` the build/test procedures and `libraries/` the dependency sources/build scripts.
 
 Agents picking up work: start with `docs/agents/README.md`, which gives the reading order and links the
 newest session handoff. Before starting roadmap work, read `ROADMAP.md`: it records the settled decisions, the state of each
 phase, and lessons learned. A pull request that finishes or changes a roadmap item updates it.
+
+The [documentation authority index](docs/README.md) defines ownership and evidence rules for the
+shared project record. Keep the [detailed Phase 1b ledger](docs/phase-1b-status.md), its legacy
+surface inventories, requirements, REST contract, CI inventory and latest handoff aligned with
+the roadmap and README. Record missing/partial/unverified work explicitly. Check documentation
+links and inventory coverage with `python docs/agents/tools/check-docs.py` (static inspection).
 
 Current plan/status handoff: [2026-10-28](docs/agents/handoffs/2026-10-28.md). Phase 1b's
 native/.NET API foundation is merged in #31; complete PHP retirement, guided certificate
@@ -57,7 +64,9 @@ a naming refresh does not establish that every inherited recipe has been validat
 Honor the maintainer's PR review gate and VM/CI-only runtime-testing rule; check live PR/CI state.
 PR #38's identifier/UID roadmap plan, #39's forwarding/replies, #40's mailbox signatures and #41's
 advanced domain/mailbox bundle are merged. The current authorized Phase 1b bundle combines
-queue operations, routes/allowed recipients and global/mailbox rules; use larger coherent PRs. Follow the
+queue operations, routes/allowed recipients and global/mailbox rules in unmerged #42. Its
+application/test head passed all CI; documentation reconciliation is now authorized in the
+same PR. No subsequent feature bundle or merge is authorized. Use larger coherent PRs. Follow the
 current handoff for the branch and live PR state. UID implementation remains a later item.
 
 ---

@@ -1,5 +1,38 @@
 # CI test inventory
 
+The [documentation index](README.md) defines evidence ownership. Capability/coverage gaps
+are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
+production deployment, capacity, or that skipped/manual scenarios executed.
+
+## Latest verified application/test baseline: PR #42
+
+Verified **2026-10-28 (Asia/Colombo)** on
+[`4267f1e733a2a322c597d9c905bc50ef9368041d`](https://github.com/jassifx/ArzoieMail/commit/4267f1e733a2a322c597d9c905bc50ef9368041d/checks),
+[PR #42](https://github.com/jassifx/ArzoieMail/pull/42), still unmerged. All four backend jobs,
+Release x64, GCC/Clang, all CodeQL analyses and installer publication passed. Subsequent
+documentation commits require their own checks; consult the PR's final-head validation record.
+
+| Backend | NUnit total | Passed | Failed | Warnings | Inconclusive | Skipped |
+|---|---:|---:|---:|---:|---:|---:|
+| SQL Server Compact | 1316 | 1206 | 0 | 0 | 34 | 76 |
+| MySQL | 1316 | 1206 | 0 | 0 | 34 | 76 |
+| PostgreSQL | 1316 | 1206 | 0 | 0 | 34 | 76 |
+| SQL Server 2025 Express | 1316 | 1207 | 0 | 0 | 34 | 75 |
+
+Every backend also passed **26 DNS + 304 HTTP + 2 HTTPS + 402 native = 734 management
+assertions**, plus the browser suite. Two pipe-identity assertions are separate manual VM
+coverage. They must not be counted as CI assertions. The current NUnit total includes the
+new normal stored-mail queue regression; inconclusive/explicit skips retain the expected
+baseline. Functional success is not throughput or high-pressure scanner acceptance.
+
+Initial CI exposed a browser request-history/saved-notice timing race. The fix waits for the
+exact routing PATCH response. PostgreSQL's existing `Infrastructure.IPRanges.TestConnections`
+then failed once when SMTP was not reachable after re-enabling a range; a full job retry passed
+without a code change. Preserve that observation; do not silently classify every later failure
+as the same cause or suppress the test. See the PR validation record for final results.
+
+### Mail-operations coverage
+
 Current mail-operations bundle: `MailOperationsTests.cs` adds server/domain/user boundaries,
 stored-mail exclusion, missing/busy queue handling, retry/removal/snapshot invalidation,
 routing TLS/authentication and write-only secrets, allowed-recipient parent checks, disabled
@@ -11,10 +44,10 @@ CSRF/origin and bounds checks. Browser fixtures add busy-state/confirmation/64-b
 routing password omission/recipient CRUD, draft ordering/activation/inert source and mobile UI.
 
 `API.UtilitiesTests.DeliveryQueueMustNotDeleteOrRetryStoredMailboxMessages` adds one ordinary
-NUnit regression (expected total 1316). It failed on the original VM binary and passed on the guarded build (1 passed, zero failures/warnings).
+NUnit regression (verified total 1316 at #42). It failed on the original VM binary and passed on the guarded build (1 passed, zero failures/warnings).
 The final VM pass cleared 26 DNS + 304 HTTP + 2 HTTPS + 402 native = 734 assertions,
 plus two separate pipe checks. Expanded browser workflows also passed in the VM.
-Required four-backend CI results are recorded in the feature PR;
+Four-backend CI also passed the counts above; final-head evidence is recorded in #42;
 prior merged results below do not establish this branch's acceptance.
 
 Advanced domain/mailbox administration merged in #41. `AdvancedAdministrationTests.cs` covers
@@ -72,6 +105,12 @@ creates a draft release from an already built/tested artifact for maintainer rev
 
 Publication dependencies and branch-protection required checks are different settings. The
 workflow enforces the former; confirm the live repository rules before describing the latter.
+Verified 2026-10-28: [protect-master](https://github.com/jassifx/ArzoieMail/rules/25743689)
+requires `Release x64 (windows-2025-vs2026)`, `Tests / Regression tests`, `gcc` and `clang`,
+with strict status checking and an administrator bypass. Adding the other backend contexts
+remains an open repository-policy follow-up. The project still requires all four backends,
+CodeQL and installer publication for acceptance; a bypass or weaker configured rule does not
+authorize skipping them or merging without the maintainer's instruction.
 Green CI never authorizes an agent to merge or start the next task without the maintainer's gate.
 
 ## Installed-server regression suite
@@ -86,7 +125,7 @@ The native class suite is invoked from NUnit, including SQL connection-policy va
 `API/SqlServer.cs` additionally verifies encryption of native mail-service SQL sessions in the
 Express fixture. That database-specific test is explicitly skipped on the other three backends.
 
-### Verified baseline after PR #40
+### Historical verified baseline after PR #40
 
 Verified on **2026-10-27 (Asia/Colombo)** from the successful logs for tested head
 `f9a94491d2f122fdf981aeb0be612136d2267dcd`, merged by
@@ -113,12 +152,12 @@ Each database job runs the `Test the native management API` step after NUnit:
 | Entry point | Verified coverage | Boundary |
 |---|---|---|
 | [test-management.ps1](../build/test-management.ps1) | 26 deterministic DNS assertions covering shared-provider SPF, syntax, includes/redirects, cycles/lookup limits, DKIM and DMARC publication advice. | Uses DNS fixtures; does not prove live DNS-provider configuration or message-level authentication. |
-| Same executable, default mode | 304 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions in the current VM-validated bundle. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions, CRUD route/parent-ID mapping, pagination and security behavior. |
+| Same executable, default mode | 304 HTTP/session/security assertions, plus 2 production HTTPS-boundary assertions at the verified #42 application/test head. | Uses a controlled management-channel fixture to exercise the HTTP host, validation, sessions, CRUD route/parent-ID mapping, pagination and security behavior. |
 | [test-management-browser.ps1](../build/test-management-browser.ps1) and [browser.py](../hmailserver/test/RegressionTests/Management/browser.py) | Queue ID precision, busy guards and confirmations; routing secrets and recipient CRUD; global/mailbox rule drafts, order, activation and source safety; domain/mailbox/alias/list/member CRUD, role controls, responsive layout, DNSBL, SpamAssassin and DNS advice. | Playwright uses explicit API response fixtures. It verifies UI workflows, not an end-to-end browser-to-database mutation. |
-| [test-management-live.ps1](../build/test-management-live.ps1) | 402 live native transport/parser/authorization/persistence assertions in the current VM-validated bundle, including CRUD, quotas, parent/role boundaries, forwarding/replies, signatures, advanced policies and mail operations. [AddressingTests.cs](../hmailserver/test/RegressionTests/Management/AddressingTests.cs) adds SMTP RCPT routing/policy probes; [MailboxBehaviorTests.cs](../hmailserver/test/RegressionTests/Management/MailboxBehaviorTests.cs) and [SignatureTests.cs](../hmailserver/test/RegressionTests/Management/SignatureTests.cs) add local SMTP DATA/POP3 delivery checks. [MailOperationsTests.cs](../hmailserver/test/RegressionTests/Management/MailOperationsTests.cs) adds controlled loopback queue contention, routing and rules. | Uses the installed service/database. Alias/list probes issue no DATA; delivery probes use only disposable local mailboxes. No external delivery is attempted. COM is used only to prepare/clean fixtures; management commands are native. |
+| [test-management-live.ps1](../build/test-management-live.ps1) | 402 live native transport/parser/authorization/persistence assertions at the verified #42 application/test head, including CRUD, quotas, parent/role boundaries, forwarding/replies, signatures, advanced policies and mail operations. [AddressingTests.cs](../hmailserver/test/RegressionTests/Management/AddressingTests.cs) adds SMTP RCPT routing/policy probes; [MailboxBehaviorTests.cs](../hmailserver/test/RegressionTests/Management/MailboxBehaviorTests.cs) and [SignatureTests.cs](../hmailserver/test/RegressionTests/Management/SignatureTests.cs) add local SMTP DATA/POP3 delivery checks. [MailOperationsTests.cs](../hmailserver/test/RegressionTests/Management/MailOperationsTests.cs) adds controlled loopback queue contention, routing and rules. | Uses the installed service/database. Alias/list probes issue no DATA; delivery probes use only disposable local mailboxes. No external delivery is attempted. COM is used only to prepare/clean fixtures; management commands are native. |
 
-The deterministic/HTTP/HTTPS/live groups total **734 assertions in the current VM pass**, independently
-of NUnit totals; browser checks are separate. Four-backend CI acceptance must be verified for the feature head. Do not report the manually exercised pipe-squatting
+The deterministic/HTTP/HTTPS/live groups total **734 assertions per backend at the verified #42 application/test head**, independently
+of NUnit totals; browser checks are separate. The same counts passed the VM. Verify subsequent heads independently. Do not report the manually exercised pipe-squatting
 checks as part of that automated total. Merged #33 passed 100 (26/54/2/18) and #35 passed
 180 (26/83/2/69). The expanded 26/132/2/152 counts passed VM and all four CI backend jobs
 in #36; #39 passed 26/142/2/188 and #40 passed 26/152/2/224 on all four backends. These are

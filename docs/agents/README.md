@@ -10,6 +10,9 @@ Current handoff: [2026-10-28](handoffs/2026-10-28.md). It records merged work th
 the authorized queue/routing/rules bundle, validation evidence, remaining delivery and the
 deferred CodeQL re-audit. The previous handoff retains historical baselines and environment
 lessons. The maintainer prefers grouped Phase 1b capabilities over tiny PRs.
+The [authority index](../README.md) defines document ownership, status meanings and evidence
+updates. The [Phase 1b ledger](../phase-1b-status.md) tracks granular gaps and all legacy
+PHP/desktop main-pane migration owners. Read them before calling a feature or phase complete.
 The [CI inventory](../ci-test-inventory.md) separates automated checks from manual/planned
 coverage. Verify live PR/CI state before continuing; planned features are not implemented.
 The [documentation status](../documentation-status.md) records the manual rebrand, refreshed
@@ -30,14 +33,14 @@ its REST API.
 
 ## Keeping these notes useful
 
-- **Don't copy what is written elsewhere.** ROADMAP.md, AGENTS.md, BUILDING.md, commit messages
-  and pull requests are the record; link to them.
+- **Use the owning document.** Follow the authority index; keep summaries and handoffs aligned
+  through links and concise status/evidence, without creating a competing plan.
 - **A finished roadmap item updates ROADMAP.md**, not these notes.
 - Keep the newest handoff current when the maintainer changes the plan or asks to save project
   memory. Record authorization/review gates and link the authoritative requirements; remove or
   clearly supersede stale status so the next agent cannot mistake old PHP plans for current work.
 - **At the end of a session, add a handoff** to [`handoffs/`](handoffs/) named `YYYY-MM-DD.md`
-  (the `handoff` skill describes what goes in one). Older handoffs stay as history; only the
+  using the required fields in the authority index and working agreement. Older handoffs stay as history; only the
   newest describes the current state.
 - **Never write secrets or personal data here**: no passwords (including test VM credentials),
   tokens, keys or email addresses.

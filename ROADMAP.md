@@ -5,6 +5,10 @@ written for the people and AI agents who work on ArzoieMail. It records what has
 why, the decisions that are settled, the details of each change, the lessons learned on the way,
 and the plan for what comes next.
 
+The [documentation authority index](docs/README.md) defines the shared project record.
+The [detailed Phase 1b ledger](docs/phase-1b-status.md) owns granular capability status, legacy
+PHP/desktop migration inventories and completion gates.
+
 Read [AGENTS.md](AGENTS.md) for the layout of the code and [BUILDING.md](BUILDING.md) for how
 to build, run and test it. **Keep this file current:** a pull request that finishes or changes a
 roadmap item updates its entry here.
@@ -33,21 +37,19 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-Verified after merged PR #41, using its tested head
-`34cfdfd1476cb64f1b55108b37a186f1b6087820` on 2026-10-27 (Asia/Colombo):
+Latest verified application/test head: `4267f1e733a2a322c597d9c905bc50ef9368041d`,
+[unmerged PR #42](https://github.com/jassifx/ArzoieMail/pull/42), 2026-10-28 (Asia/Colombo).
+All four backend jobs, Release, GCC/Clang, CodeQL and installer publication passed. The
+[CI inventory](docs/ci-test-inventory.md#latest-verified-applicationtest-baseline-pr-42)
+records exact totals: 1316 NUnit cases per backend, zero failures/warnings, 734 separate
+management assertions and browser workflows. PostgreSQL's existing IP-range connection
+check failed once and the full job passed on retry without a code change. A browser assertion
+synchronization race was fixed before the successful final application/test head.
 
-| Backend | Total | Passed | Failed | Inconclusive | Skipped |
-|---|---:|---:|---:|---:|---:|
-| SQL Server Compact | 1315 | 1205 | 0 | 34 | 76 |
-| PostgreSQL | 1315 | 1205 | 0 | 34 | 76 |
-| MySQL | 1315 | 1205 | 0 | 34 | 76 |
-| SQL Server 2025 Express | 1315 | 1206 | 0 | 34 | 75 |
-
-Warnings were zero on all four jobs. The extra non-MSSQL skip is the SQL-session encryption
-test. Explicit/environment-dependent outcomes remain expected; investigate unexplained changes.
-The [CI inventory](docs/ci-test-inventory.md) distinguishes these NUnit totals from the separate
-528 management assertions per job at #41, browser checks and manual-only coverage. The earlier Phase 1
-baseline was 1313 tests, 1204 passed, zero failed, 34 inconclusive and 75 skipped on three backends.
+Merged master remains #41 (`5294d67a09823a286dd3f1f6b477772bb4b5388f`): its tested head
+`34cfdfd1476cb64f1b55108b37a186f1b6087820` passed 1315 NUnit cases and 528 management
+assertions per backend. Later documentation-only commits do not inherit a CI pass automatically;
+verify their final head in the PR. Historical baselines remain in the CI inventory and handoffs.
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
 the failed job is re-run:
@@ -83,7 +85,7 @@ These were decided deliberately; reopen them only with a new reason.
 | Pre-roadmap | libpq 18.6 + MariaDB Connector/C 3.4.11, Windows 10 minimum, ArzoieMail rebrand, README | ✅ | #1, #2, #3 |
 | **0 · Foundation** | Toolset, C++20, hardening, installer, .NET 10, NUnit 5 | ✅ | #4–#8, #10 |
 | **1 · Security** | Bound SQL parameters, AES-GCM + DPAPI secrets, key export, encrypted backups, Administrator DPAPI, Argon2id review, UTF-8 client credentials | ✅ | #9, #11–#13, #17, #19–#26 (CI and VM fixes: #14, #15; README: #18) |
-| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#41 merged; current queue/routing/rules bundle is in progress; advanced parity remains |
+| **1b · Web admin** | Modern panel and REST/native API, advanced administration, spam/DNS guidance, certificate lifecycle, optional Defender scanning and PHP retirement | 🔄 | #30–#41 merged; #42 implemented/VM and CI verified, unmerged; detailed parity and expanded requirements remain |
 | **2 · Scripting** | PowerShell event host replacing VBScript/JScript | 📋 | |
 | **3 · Protocols and data integrity** | Safe UID allocation/generation renewal, identifier boundaries, SMTP/IMAP/authentication extensions, MTA-STS, DANE, DKIM Ed25519 | 📋 | UID plan added; implementation not started |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact | 📋 | |
@@ -285,6 +287,12 @@ throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. Se
 
 ### Phase 1b delivery tracker
 
+Use the [detailed capability ledger](docs/phase-1b-status.md) for F01-F17 delivered boundaries,
+A01-A20 remaining administration work, E01-E09 expanded requirements, the complete 89-PHP-file
+and 54-desktop-pane checklist, suggested grouping and completion gates. This table is its summary.
+The six broad workstreams are not six fixed PRs. The latest authorized follow-up is documentation
+reconciliation in #42; the recommended server/security bundle is not yet authorized.
+
 Requirements documented in an open PR do not mean the functionality is implemented. Merged PR #32
 records certificate, PHP-retirement and Defender requirements; it does not implement them.
 The maintainer authorized continued Phase 1b work with SQL Server Express modernization on
@@ -308,7 +316,7 @@ actual SignPath certificate signing remains a separate master-only manual valida
 | Mailbox forwarding and automatic replies | ✅ Done | #39 merged; native/REST/panel controls, domain/target-role checks, validation and local SMTP/POP3 coverage passed VM and all four CI backends. 358 management assertions per backend, browser checks and separate VM pipe-identity checks passed. Mailbox-user self-service remains planned. |
 | Mailbox signatures | ✅ Done | #40 merged; scoped native/REST controls, inert source editor, SMTP/MIME and browser safety/newline tests passed VM and all four CI backends (404 management assertions per backend). |
 | Advanced domain/mailbox administration bundle | ✅ Done | #41 merged as `5294d67a09823a286dd3f1f6b477772bb4b5388f`; profiles, catch-all/plus/greylisting, object limits, domain signatures and alternate names passed VM and all four CI backends (528 management assertions per backend). |
-| Mail operations bundle | 🔄 In progress | `feature/webadmin-mail-operations`: queue metadata/recipients, guarded retry/removal, routes and allowed recipients, global/scoped mailbox rule drafts and activation. Native/REST/panel and regressions passed VM acceptance: 734 management assertions, browser workflows, 2 pipe checks and the stored-mail NUnit regression. Required CI/review remain; see the current handoff and feature PR. Queue listing still scans metadata; no workload-capacity claim. |
+| Mail operations bundle | 🔄 In progress | `feature/webadmin-mail-operations`: queue metadata/recipients, guarded retry/removal, routes and allowed recipients, global/scoped mailbox rule drafts and activation. Native/REST/panel and regressions passed VM acceptance: 734 management assertions, browser workflows, 2 pipe checks and the stored-mail NUnit regression. All four CI backends, Release, portable builds, CodeQL and publication passed application/test head `4267f1e733a2a322c597d9c905bc50ef9368041d`. #42 remains unmerged awaiting review; subsequent documentation heads need their own CI. Queue listing still scans metadata; no workload-capacity claim. |
 | Remaining advanced administration | 📋 Planned | Remaining domain/mailbox/server settings, external fetchers, IP/security ranges, listener/TLS and other legacy parity. Separate confirmation after the current PR; no production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |

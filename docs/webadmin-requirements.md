@@ -4,6 +4,9 @@ Requirements agreed with the maintainer on 2026-10-26 and subsequently revised t
 COM from the replacement panel/backend. Phase 1b implementation is now authorized and in progress;
 requirements below are not claims of completed features. See
 [management architecture](management-api-architecture.md) for the design and delivery status.
+The [authority index](README.md) defines document ownership. The [Phase 1b ledger](phase-1b-status.md)
+maps these obligations to delivered/partial/missing capabilities and legacy migration owners;
+use its completion gates before claiming full parity or finishing this phase.
 
 The API/panel foundation is merged in PR #31 and SQL Express modernization in PR #33. Full
 administration parity, certificate lifecycle, Defender scanning and PHP retirement remain pending.
@@ -24,7 +27,7 @@ administrator. Existing engine policy/macros remain authoritative. Mailbox-user 
 planned. Future UID capacity/maintenance controls belong to the
 [identifier lifecycle plan](imap-uid-modernization.md); documenting them does not implement them.
 
-The next authorized larger bundle adds queue metadata/recipient inspection and guarded
+[PR #42](https://github.com/jassifx/ArzoieMail/pull/42), verified but unmerged, adds queue metadata/recipient inspection and guarded
 retry/removal, route and allowed-recipient management, and global/scoped mailbox rule builders.
 Queue/routes/global rules require server administrator; mailbox rules preserve domain and
 protected-account boundaries. Busy/stored mail cannot be mutated as queue items. Route passwords
@@ -32,6 +35,8 @@ are write-only and SMTP authentication requires encrypted transport. Rules start
 editing and activation are separate operations, with bounded conditions/actions and no exposed
 regex, scripting or local-binding actions. See the REST contract for limits and partial-write
 recovery. This bundle does not establish full parity, throughput capacity or production cutover.
+Its recorded application/test head passed all four backend jobs and other checks; later
+documentation heads require independent CI verification. Review/merge remains a maintainer gate.
 
 ## Modern administration
 

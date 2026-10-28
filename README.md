@@ -116,6 +116,10 @@ ArzoieMail is modernised phase by phase, each change as its own reviewed and tes
 [ROADMAP.md](ROADMAP.md) has the details: the decisions and why they were made, what each change did,
 and the plan for the phases ahead.
 
+The [documentation authority index](docs/README.md) defines the shared project record and update
+rules. The [detailed Phase 1b ledger](docs/phase-1b-status.md) lists implemented capabilities,
+remaining work, acceptance gates and every legacy PHP/desktop main-pane migration owner.
+
 | Phase | Scope | Status |
 |---|---|---|
 | **0 · Foundation** | Visual Studio 2026 and C++20, hardening flags, Windows 10 minimum, Inno Setup 6.7, .NET 10 tools and tests, NUnit 5 | ✅ Done |
@@ -136,9 +140,12 @@ management to the native API and responsive panel. See the
 [REST contract](hmailserver/source/Management/README.md#rest-v1-contract) for the supported
 fields and permissions. Mailbox forwarding and automatic replies merged in #39 after VM and
 four-backend CI acceptance. Mailbox signatures merged in #40; profiles, advanced domain policies,
-object limits, domain signatures and alternate names merged in #41. The current larger bundle
-adds queue inspection/retry/removal, routes/allowed recipients and global/mailbox rule builders;
-advanced administration and production cutover remain unfinished. Implementation still requires
+object limits, domain signatures and alternate names merged in #41. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
+adds queue inspection/retry/removal, routes/allowed recipients and global/mailbox rule builders.
+Its application/test head passed VM and all four CI backends: 1,316 total NUnit cases and 734 separate
+management assertions per backend, plus browser checks. It remains unmerged, awaiting review;
+later documentation revisions require their own CI. Full advanced administration and production
+cutover remain unfinished. Implementation still requires
 the maintainer's confirmation after each PR review. Related Phase 1b capabilities are now grouped
 into larger coherent PRs; the VM/CI and review gates remain in force.
 

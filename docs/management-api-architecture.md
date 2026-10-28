@@ -22,6 +22,11 @@ DB setup and scripts to the new API must precede any eventual removal of COM reg
 
 ## Boundaries
 
+The [Phase 1b ledger](phase-1b-status.md) owns granular delivery/parity status and migration
+gates; [the authority index](README.md) defines documentation ownership. The mail-operations
+application/test head in #42 passed VM and four-backend CI and remains unmerged awaiting review.
+Use its PR validation record for subsequent documentation heads; no next bundle is authorized.
+
 Mailbox forwarding/replies, mailbox signatures and advanced domain/mailbox administration
 merged in #39?#41 with VM/four-backend CI acceptance. Global-name writes and object limits
 require server administrator; other settings retain owning-domain/protected-target checks.
