@@ -24,6 +24,16 @@ itself — formats, protocols, database behaviour — are in ROADMAP.md (§4, §
 
 ## Building
 
+- **Real HTTPS tests on Windows need a Schannel-usable server key.** A generated leaf attached
+  with CopyWithPrivateKey can leave an ephemeral key that causes TLS EOF during the handshake.
+  The CI fixture imports its generated PFX into a Windows user-key context, disposes it and
+  clears the PFX bytes. Trust only the private fixture CA in the client chain policy; never
+  install it globally or bypass chain/name validation. A valid TLS SNI/name and a forged HTTP
+  Host must be tested independently, since HttpClient may derive TLS identity from Host.
+- **Desktop Runtime is not ASP.NET Core Runtime.** The self-contained test runner may work in
+  a VM whose framework-dependent published API cannot start. Verify the actual ASP.NET Core 10
+  runtime before published-browser smoke; keep runtime provisioning inside the VM/checkpoint.
+
 - **`Formatter::Format` takes at most five arguments**; split longer messages.
 - `AnsiString::operator[]` is ambiguous; index through a `const std::string&`.
 - C# rejects narrowing constant casts to `byte` that the old compiler accepted.

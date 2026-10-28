@@ -17,6 +17,8 @@ updates. The [Phase 1b ledger](../phase-1b-status.md) tracks granular gaps and a
 PHP/desktop main-pane migration owners. Read them before calling a feature or phase complete.
 The [CI inventory](../ci-test-inventory.md) separates automated checks from manual/planned
 coverage. Verify live PR/CI state before continuing; planned features are not implemented.
+The [CI acceptance matrix](../ci-acceptance-matrix.md) records the newly requested per-backend
+.NET 10/runtime/publish/real REST/HTTPS/native/browser checks and remaining acceptance gaps.
 The [documentation status](../documentation-status.md) records the manual rebrand, refreshed
 current guides and remaining inherited-content, screenshot and website-publication work.
 

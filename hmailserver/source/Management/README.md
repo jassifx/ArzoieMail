@@ -15,6 +15,28 @@ database improvement. See the [Phase 1b tracker](../../../ROADMAP.md#phase-1b-de
 and [documentation status](../../../docs/documentation-status.md) for remaining administration,
 certificate, Defender, hosting and PHP-retirement work. Do not present the preview as full parity.
 
+The [CI acceptance matrix](../../../docs/ci-acceptance-matrix.md) defines the test layers for
+this implementation: .NET/ASP.NET Core 10 runtime, publish/asset checks, deterministic HTTP and
+browser fixtures, actual REST/native persistence, real production TLS/cookies/trust/Host policy,
+HTTPS/native authentication and published browser smoke with real roles/data. Every backend
+job runs them; install/IIS/certificate-wizard/Defender capacity gates remain separate.
+
+After compiling the management test project, use these **inside the disposable VM only**:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File build/test-management.ps1 -Runtime -NoBuild
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File build/test-management.ps1 -Tls -NoBuild
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File build/test-management.ps1 -PipeIdentity -NoBuild
+```
+
+Pipe-identity testing requires the real management pipe to be disabled first; CI runs it
+before fixture opt-in. `test-management-live.ps1` provisions temporary roles, runs native,
+live HTTP and native HTTPS modes, and optionally tests a published API with
+`-PublishedApi <publish-directory>`. It requires an AdministratorCredential supplied securely
+by the caller and the installed backend. A framework-dependent publish requires ASP.NET Core
+10 as well as .NET 10; the Desktop Runtime alone is insufficient. CI publishes from the same
+revision before testing and retains redacted evidence in backend-specific artifacts.
+
 ## Build on the development host
 
 ```

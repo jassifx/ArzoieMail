@@ -58,6 +58,13 @@ unless the maintainer says otherwise for a specific task.
   **CI runs them**, on the built-in database, PostgreSQL, MySQL and SQL Server Express. A change
   is ready when all four are green. The Hyper-V VM runs them against a real installer.
 
+- **Expanded modern-stack CI is required**, requested on 2026-10-28: every database job runs
+  stable .NET 10 SDK/runtime validation, published web-admin checks, deterministic security/UI,
+  native pipe identity/framing, actual REST/native and HTTPS/native integration, native feature
+  behavior, published live browser roles/persistence and documentation checks. Follow the
+  [acceptance matrix](../ci-acceptance-matrix.md); retain separate planned/manual/capacity gates.
+  Upload redacted manifests/logs/screenshots per backend, never credentials/private keys/HAR.
+
 ## Reporting
 
 - **Documentation is the shared project record**, explicitly reinforced on 2026-10-28. Follow

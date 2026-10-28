@@ -37,11 +37,11 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-Latest verified application/test head: `4267f1e733a2a322c597d9c905bc50ef9368041d`,
+Latest verified application/test head: `766e3d9bc02ef9211803a9a87f2d2deeeb219fd6`,
 [unmerged PR #42](https://github.com/jassifx/ArzoieMail/pull/42), 2026-10-28 (Asia/Colombo).
 All four backend jobs, Release, GCC/Clang, CodeQL and installer publication passed. The
 [CI inventory](docs/ci-test-inventory.md#latest-verified-applicationtest-baseline-pr-42)
-records exact totals: 1316 NUnit cases per backend, zero failures/warnings, 734 separate
+records exact totals: 1317 NUnit cases per backend, zero failures/warnings, 734 separate
 management assertions and browser workflows. PostgreSQL's existing IP-range connection
 check failed once and the full job passed on retry without a code change. A browser assertion
 synchronization race was fixed before the successful final application/test head.
@@ -50,6 +50,12 @@ Merged master remains #41 (`5294d67a09823a286dd3f1f6b477772bb4b5388f`): its test
 `34cfdfd1476cb64f1b55108b37a186f1b6087820` passed 1315 NUnit cases and 528 management
 assertions per backend. Later documentation-only commits do not inherit a CI pass automatically;
 verify their final head in the PR. Historical baselines remain in the CI inventory and handoffs.
+The latest authorized follow-up expands modern-stack CI: .NET 10 SDK/runtime, API publish,
+real REST/native and production HTTPS/native authentication, published browser persistence/roles,
+pipe identity and retained evidence on every backend. The [acceptance matrix](docs/ci-acceptance-matrix.md)
+records implemented checks and future gates; expected expanded count is 897 management/runtime/
+security assertions plus browser suites. Verify final-head CI rather than assuming that count passed.
+
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
 the failed job is re-run:

@@ -19,6 +19,7 @@ competing plans.
 | Implemented REST contract | [Management README](../hmailserver/source/Management/README.md) | Actual routes, fields, limits, permissions, defaults, errors, recovery and preview restrictions |
 | Builds, tests, releases and prerequisites | [BUILDING](../BUILDING.md) | Reproducible commands and runtime prerequisites; runtime execution stays in VM/CI |
 | Test coverage and evidence | [CI inventory](ci-test-inventory.md) | Exact tested revision, backend counts, checks, retries, fixture boundaries and manual/planned coverage |
+| Modern stack CI obligations and gaps | [CI acceptance matrix](ci-acceptance-matrix.md) | .NET 10 runtime/publish, real REST/HTTPS/native/browser coverage on every backend, evidence safety and future-feature acceptance lanes |
 | SQL Server and Express | [SQL Server guide](sql-server.md) | OLE DB 19, TLS policy, supported/tested matrix, diagnostics and migration limits |
 | Defender design and capacity acceptance | [Defender assessment](defender-antivirus-feasibility.md) | Feasibility limits, safe integration, lifecycle/pressure acceptance; not an implementation claim |
 | Database IDs and IMAP UID modernization | [Identifier plan](imap-uid-modernization.md) | Boundaries, checked allocation, generation renewal, migration and client-resynchronization acceptance |

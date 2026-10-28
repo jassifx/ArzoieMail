@@ -4,39 +4,45 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
-## Version-6 follow-up awaiting final-head verification
+## Modern-stack CI expansion awaiting final-head verification
 
-The maintainer selected independent ArzoieMail **6.0.0** after the verified 1316-case baseline
-below. The follow-up updates product metadata and adds one normal NUnit case,
-`Infrastructure.ProductIdentity.ProductVersionShouldFollowArzoieMail6`, checking agreement
-between the service-reported 6.x version and native Windows product-version resources.
-Expected total: **1317** per backend; management count remains 734 unless further tests change.
-Verify actual VM/CI outcomes on the final #42 head before accepting these expectations.
-The [release policy](release-versioning.md) separates product numbering, assembly identity,
-schema 5714 and historical upgrades. No public release/signing workflow was executed for this decision.
+The maintainer expanded CI scope on 2026-10-28. The [acceptance matrix](ci-acceptance-matrix.md)
+defines every current check and required future coverage. Each backend now builds/publishes
+the .NET 10 API and runs the following additional modes, beyond the verified 734-assertion
+baseline: 7 runtime/product-boundary, 2 pipe-identity, 131 real HTTP/native, 11 production TLS
+and 12 real-native HTTPS assertions. Expected new combined total: **897** per backend,
+with fixture and published-live browser suites counted separately. Confirm final-head counts
+in #42; do not promote expectations to CI evidence before execution.
+
+All expanded layers and the exact tracked CI driver passed in the VM: **897 assertions**,
+published live browser smoke and the selected version-6 NUnit case, with original state restored.
+Root global.json keeps stable SDK 10,
+and per-backend artifacts now retain redacted framework/manifests/logs/screenshots. Restricted
+IIS/service provisioning, controlled-clock session expiry, certificate wizard, scanner lifecycle,
+capacity and PHP cutover remain explicit acceptance gaps in the matrix.
 
 ## Latest verified application/test baseline: PR #42
 
 Verified **2026-10-28 (Asia/Colombo)** on
-[`4267f1e733a2a322c597d9c905bc50ef9368041d`](https://github.com/jassifx/ArzoieMail/commit/4267f1e733a2a322c597d9c905bc50ef9368041d/checks),
+[`766e3d9bc02ef9211803a9a87f2d2deeeb219fd6`](https://github.com/jassifx/ArzoieMail/commit/766e3d9bc02ef9211803a9a87f2d2deeeb219fd6/checks),
 [PR #42](https://github.com/jassifx/ArzoieMail/pull/42), still unmerged. All four backend jobs,
 Release x64, GCC/Clang, all CodeQL analyses and installer publication passed. Subsequent
 documentation commits require their own checks; consult the PR's final-head validation record.
 
 | Backend | NUnit total | Passed | Failed | Warnings | Inconclusive | Skipped |
 |---|---:|---:|---:|---:|---:|---:|
-| SQL Server Compact | 1316 | 1206 | 0 | 0 | 34 | 76 |
-| MySQL | 1316 | 1206 | 0 | 0 | 34 | 76 |
-| PostgreSQL | 1316 | 1206 | 0 | 0 | 34 | 76 |
-| SQL Server 2025 Express | 1316 | 1207 | 0 | 0 | 34 | 75 |
+| SQL Server Compact | 1317 | 1207 | 0 | 0 | 34 | 76 |
+| MySQL | 1317 | 1207 | 0 | 0 | 34 | 76 |
+| PostgreSQL | 1317 | 1207 | 0 | 0 | 34 | 76 |
+| SQL Server 2025 Express | 1317 | 1208 | 0 | 0 | 34 | 75 |
 
 Every backend also passed **26 DNS + 304 HTTP + 2 HTTPS + 402 native = 734 management
-assertions**, plus the browser suite. Two pipe-identity assertions are separate manual VM
-coverage. They must not be counted as CI assertions. The current NUnit total includes the
-new normal stored-mail queue regression; inconclusive/explicit skips retain the expected
+assertions**, plus the browser suite. At this historical head, two pipe-identity assertions were separate manual VM
+coverage. The current expansion automates them; do not retroactively add them to the older
+734 count. The 1317-case NUnit baseline includes both stored-mail queue and product-6 regressions; inconclusive/explicit skips retain the expected
 baseline. Functional success is not throughput or high-pressure scanner acceptance.
 
-Initial CI exposed a browser request-history/saved-notice timing race. The fix waits for the
+Earlier #42 CI, before this verified version-6 baseline, exposed a browser request-history/saved-notice timing race. The fix waits for the
 exact routing PATCH response. PostgreSQL's existing `Infrastructure.IPRanges.TestConnections`
 then failed once when SMTP was not reachable after re-enabling a range; a full job retry passed
 without a code change. Preserve that observation; do not silently classify every later failure
@@ -55,7 +61,7 @@ CSRF/origin and bounds checks. Browser fixtures add busy-state/confirmation/64-b
 routing password omission/recipient CRUD, draft ordering/activation/inert source and mobile UI.
 
 `API.UtilitiesTests.DeliveryQueueMustNotDeleteOrRetryStoredMailboxMessages` adds one ordinary
-NUnit regression (verified total 1316 at #42). It failed on the original VM binary and passed on the guarded build (1 passed, zero failures/warnings).
+NUnit regression (1316 at the earlier #42 head, 1317 after the version-6 regression). It failed on the original VM binary and passed on the guarded build (1 passed, zero failures/warnings).
 The final VM pass cleared 26 DNS + 304 HTTP + 2 HTTPS + 402 native = 734 assertions,
 plus two separate pipe checks. Expanded browser workflows also passed in the VM.
 Four-backend CI also passed the counts above; final-head evidence is recorded in #42;
@@ -158,7 +164,26 @@ These totals exclude the separate management assertion counts and browser checks
 
 ## Management API, security, DNS and browser checks
 
-Each database job runs the `Test the native management API` step after NUnit:
+Expanded layers below passed the VM tracked-driver validation; verify their final-head CI
+acceptance in #42. They supplement the older 734-assertion groups described afterward.
+
+| Entry point / mode | Assertions | Boundary |
+|---|---:|---|
+| `test-management.ps1 -Runtime` / `--runtime` | 7 | Actual .NET/ASP.NET Core 10, Windows/x64, target/product metadata and direct COM/SQL reference guard |
+| `test-management.ps1 -Tls` / `--tls` | 11 | Real production TLS/cookies/HSTS/Host policy and trust/name rejection; controlled authentication channel |
+| `test-management.ps1 -PipeIdentity` / `--squatting` | 2 | Impostor pipe/SCM identity and no credential transmission; run before actual endpoint opt-in |
+| `test-management-live.ps1` / `--live-http` | 131 | Actual HTTP/native/backend persistence, roles, revocation, new-host cookie rejection and validation |
+| Same driver / `--tls-native` | 12 | Production HTTPS/cookies/trust/Host policy with real native authentication and service status |
+| `test-management-browser.ps1 -PublishedApi <directory>` | Separate browser suite | Actual published API, real roles and persistence, no API mocks; artifact must include ASP.NET runtime dependencies/assets |
+
+New expected automated total: **734 + 7 + 11 + 2 + 131 + 12 = 897** per backend, with
+fixture and published-live browser suites separate. Production deployment/identity and
+scanner/certificate lifecycle/capacity gaps remain in the acceptance matrix.
+
+Each database job now runs documentation/SDK validation, API build/publish, runtime/security/
+fixture-browser checks, then the live native/REST/HTTPS/published-browser driver after NUnit.
+The [matrix](ci-acceptance-matrix.md) details coverage and boundaries. Earlier verified heads
+used the combined `Test the native management API` step:
 
 | Entry point | Verified coverage | Boundary |
 |---|---|---|
@@ -202,7 +227,7 @@ capacity of Express for a particular message rate or validate every SQL Server e
 
 | Coverage | Current status |
 |---|---|
-| Pipe impersonation (`Management.Tests --squatting`) | Two assertions exercised in the disposable VM during the foundation work. The mode exists but is not invoked by the current CI scripts. Use an isolated VM with no competing management pipe. |
+| Pipe impersonation (`Management.Tests --squatting`) | Previously VM-only; now automated on every backend before fixture opt-in. Use an isolated VM with no competing management pipe. Final-head CI is tracked in #42. |
 | Missing-driver installer rejection without service interruption | Reproduced before the ordering fix and verified after it in the VM. CI currently exercises the related legacy-provider rejection. |
 | Explicit `Stress` tests | Present in `RegressionTests.dll`, opt-in; not included by the normal unfiltered NUnit run. |
 | Explicit `Details` tests | Opt-in edge/RFC checks; not included by normal CI. |
@@ -217,7 +242,11 @@ NUnit XML is uploaded as `regression-test-result` for Compact and
 for the external backends. The workflow adds a per-backend summary; inspect XML and the job log
 for inconclusive/skip reasons. Mail-service logs are uploaded on failure with the corresponding
 `regression-test-logs` suffix. Browser screenshots/logs are produced under
-`out/management-browser-results` during execution; they are not currently uploaded by the workflow.
+`out/management-browser-results` (fixtures) and `out/management-browser-live-results`
+(published real API). The expanded workflow always uploads available artifacts as
+`management-test-evidence`, with `-postgresql`, `-mysql` or `-mssql` for external backends.
+These include SDK details, publish manifests and native/HTTP/TLS logs under
+`out/management-evidence`. They exclude service INI, credentials, private keys and HAR/traces.
 
 Use exact commit SHAs when checking results. Historical green checks do not validate a newer
 head. Keep downloaded logs, VM credentials, certificates and test artifacts out of commits.

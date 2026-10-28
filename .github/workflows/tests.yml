@@ -253,15 +253,37 @@ jobs:
           "nunit3-console exit code: $exitCode"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "exit-code=$exitCode"
 
-      - name: Test the native management API
+      - name: Validate documentation and .NET 10 SDK
         run: |
-          # Installed-server tests execute only on this disposable CI VM.
+          python docs/agents/tools/check-docs.py
+          if ($LASTEXITCODE -ne 0) { throw "Documentation inventory/link validation failed." }
+          $sdk = (& dotnet --version).Trim()
+          if ($sdk -notmatch '^10\.') { throw "Expected the pinned .NET 10 SDK, got $sdk." }
+          New-Item -ItemType Directory -Force out/management-evidence | Out-Null
+          dotnet --info | Set-Content out/management-evidence/dotnet-info.txt
+
+      - name: Build and publish .NET 10 web administration
+        run: |
           dotnet build hmailserver/source/Management/Tests/ArzoieMail.Management.Tests.csproj -c Release
           if ($LASTEXITCODE -ne 0) { throw "Management test build failed." }
-          & build/test-management.ps1
+          dotnet publish hmailserver/source/Management/Api/ArzoieMail.Api.csproj -c Release --no-restore -o out/management-publish
+          if ($LASTEXITCODE -ne 0) { throw "Published web administration build failed." }
+          Copy-Item out/management-publish/ArzoieMail.Api.runtimeconfig.json out/management-evidence/
+          Copy-Item out/management-publish/ArzoieMail.Api.deps.json out/management-evidence/
+
+      - name: Test web admin runtime, security and browser fixtures
+        run: |
+          # All executable checks stay on this disposable CI VM.
+          & build/test-management.ps1 -Runtime -NoBuild
+          & build/test-management.ps1 -Tls -NoBuild
+          & build/test-management.ps1 -PipeIdentity -NoBuild
+          & build/test-management.ps1 -NoBuild
           python -m pip install --disable-pip-version-check -r hmailserver/test/RegressionTests/Management/requirements-browser.txt
           if ($LASTEXITCODE -ne 0) { throw "Browser dependencies failed to install." }
           & build/test-management-browser.ps1
+
+      - name: Test live native, REST and published web administration
+        run: |
           $application = New-Object -ComObject 'hMailServer.Application'
           $source = Get-Content hmailserver/test/RegressionTests/Shared/TestSetup.cs -Raw
           $password = [regex]::Match($source, 'Authenticate\("Administrator", "([^"]+)"\)').Groups[1].Value
@@ -276,7 +298,18 @@ jobs:
               ConvertTo-SecureString $password -AsPlainText -Force
           }
           $credential = [pscredential]::new('Administrator', $securePassword)
-          & build/test-management-live.ps1 -AdministratorCredential $credential
+          & build/test-management-live.ps1 -AdministratorCredential $credential -PublishedApi (Resolve-Path out/management-publish).Path
+
+      - name: Upload management test evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: management-test-evidence${{ inputs.database != 'internal' && format('-{0}', inputs.database) || '' }}
+          path: |
+            out/management-evidence/
+            out/management-browser-results/
+            out/management-browser-live-results/
+          if-no-files-found: warn
 
       - name: Summarise the NUnit result
         if: always()

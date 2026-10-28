@@ -34,6 +34,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File build/Set-Version.ps1 $r
 
 Product 6 does not renumber schema 5714 or remove legacy upgrade paths. Runtime validation
 stays in the disposable VM/CI. Artifact publication is not authorization to publish a release.
+Root `global.json` selects the stable .NET 10 SDK and permits newer compatible feature bands
+within 10. The [CI acceptance matrix](docs/ci-acceptance-matrix.md) describes each modern-stack
+test layer, published API/browser checks, actual HTTPS/native integration, retained evidence
+and the separate deployment/capacity/release lanes still required.
 
 Environment set up
 ------------------

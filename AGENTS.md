@@ -54,6 +54,10 @@ shared project record. Keep the [detailed Phase 1b ledger](docs/phase-1b-status.
 surface inventories, requirements, REST contract, CI inventory and latest handoff aligned with
 the roadmap and README. Record missing/partial/unverified work explicitly. Check documentation
 links and inventory coverage with `python docs/agents/tools/check-docs.py` (static inspection).
+Root `global.json` keeps the SDK on stable .NET 10. The [CI acceptance matrix](docs/ci-acceptance-matrix.md)
+defines current runtime, real REST/native/HTTPS, published-browser and per-backend gates plus
+unimplemented acceptance work. Keep every newly exposed control covered at native, REST and
+browser boundaries. Do not count mocks, manual checks or future scanner capacity as live CI proof.
 
 Current plan/status handoff: [2026-10-28](docs/agents/handoffs/2026-10-28.md). Phase 1b's
 native/.NET API foundation is merged in #31; complete PHP retirement, guided certificate

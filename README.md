@@ -148,9 +148,11 @@ fields and permissions. Mailbox forwarding and automatic replies merged in #39 a
 four-backend CI acceptance. Mailbox signatures merged in #40; profiles, advanced domain policies,
 object limits, domain signatures and alternate names merged in #41. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
 adds queue inspection/retry/removal, routes/allowed recipients and global/mailbox rule builders.
-Its application/test head passed VM and all four CI backends: 1,316 total NUnit cases and 734 separate
+Its application/test head passed VM and all four CI backends: 1,317 total NUnit cases and 734 separate
 management assertions per backend, plus browser checks. It remains unmerged, awaiting review;
-later documentation revisions require their own CI. Full advanced administration and production
+the latest CI expansion requires its own acceptance. It adds actual .NET 10/runtime/publish,
+REST/native and HTTPS/native checks plus a published browser suite on every backend; the
+[acceptance matrix](docs/ci-acceptance-matrix.md) records current and future coverage. Full advanced administration and production
 cutover remain unfinished. Implementation still requires
 the maintainer's confirmation after each PR review. Related Phase 1b capabilities are now grouped
 into larger coherent PRs; the VM/CI and review gates remain in force.

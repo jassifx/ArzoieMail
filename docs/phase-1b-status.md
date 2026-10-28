@@ -3,7 +3,7 @@
 Status snapshot: **2026-10-28, Asia/Colombo**. Master is merged through #41 at
 `5294d67a09823a286dd3f1f6b477772bb4b5388f`.
 [PR #42](https://github.com/jassifx/ArzoieMail/pull/42) is implemented, verified and **unmerged**.
-Its application/test head `4267f1e733a2a322c597d9c905bc50ef9368041d` passed all four database
+Its application/test head `766e3d9bc02ef9211803a9a87f2d2deeeb219fd6` passed all four database
 jobs, Release, GCC/Clang, CodeQL and installer publication. Documentation reconciliation after
 that revision requires its own final-head CI check. See [CI evidence](ci-test-inventory.md)
 and the [current handoff](agents/handoffs/2026-10-28.md).
@@ -16,8 +16,9 @@ No row claims production cutover, full parity or workload capacity merely becaus
 
 The release target is now **ArzoieMail 6.0.0**, superseding 5.8.0; see [version policy](release-versioning.md).
 The current follow-up updates product/build metadata, the schema-5714 display label, API product
-metadata and a version-identity regression. The expected NUnit total becomes **1317**; final-head
-VM/CI results belong in #42. The verified 1316-case head above predates this follow-up. Phase
+metadata and a version-identity regression. The verified version-6 baseline is **1317** NUnit cases per backend plus 734 management
+assertions. The later CI expansion adds runtime/publish, real REST/HTTPS/native and published
+browser acceptance; see the [CI matrix](ci-acceptance-matrix.md) and #42 for final-head results. Phase
 scope, unfinished capabilities and review gates are unchanged by choosing a major version.
 
 ## Implemented capabilities and their boundaries

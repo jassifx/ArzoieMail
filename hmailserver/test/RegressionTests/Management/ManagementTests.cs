@@ -8,10 +8,43 @@ using ArzoieMail.Management;
 using Microsoft.Extensions.DependencyInjection;
 
 int assertions = 0;
+string[] modes = ["--runtime", "--live-http", "--tls", "--tls-native", "--browser-host", "--squatting", "--live"];
+if (args.Length > 1 || args.Any(argument => !modes.Contains(argument)))
+    throw new ArgumentException("Select exactly one supported management-test mode, or omit it for deterministic HTTP/DNS tests.");
 void Check(bool condition, string message)
 {
     ++assertions;
     if (!condition) throw new Exception(message);
+}
+
+if (args.Contains("--runtime"))
+{
+    var api = typeof(ManagementHost).Assembly;
+    Check(Environment.Version.Major == 10, "Management tests must execute on .NET 10, not just compile for it.");
+    Check(System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.X64, "Management runtime must be x64.");
+    Check(OperatingSystem.IsWindows(), "Native management integration requires Windows.");
+    Check(System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>(api)?.FrameworkName == ".NETCoreApp,Version=v10.0", "API targets .NET 10.");
+    Check(typeof(Microsoft.AspNetCore.Http.HttpContext).Assembly.GetName().Version?.Major == 10, "ASP.NET Core 10 must be loaded.");
+    Check(System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(api)?.InformationalVersion.StartsWith("6.", StringComparison.Ordinal) == true, "API product metadata follows ArzoieMail 6.");
+    Check(api.GetReferencedAssemblies().All(reference => !reference.Name!.StartsWith("Interop.hMailServer", StringComparison.OrdinalIgnoreCase)
+        && reference.Name is not ("Microsoft.Data.SqlClient" or "System.Data.SqlClient" or "Npgsql" or "MySql.Data" or "MySqlConnector")), "The replacement API must not reference the legacy COM interop or database drivers.");
+    Console.WriteLine($"Passed {assertions} .NET 10 runtime/product boundary assertions.");
+    return;
+}
+
+if (args.Contains("--live-http"))
+{
+    await LiveRestTests.Run(Check);
+    Console.WriteLine($"Passed {assertions} live HTTP/native integration assertions.");
+    return;
+}
+
+if (args.Contains("--tls") || args.Contains("--tls-native"))
+{
+    bool liveNative = args.Contains("--tls-native");
+    await ProductionTlsTests.Run(Check, liveNative);
+    Console.WriteLine($"Passed {assertions} production TLS/cookie/trust assertions{(liveNative ? " with the real native service" : "")}.");
+    return;
 }
 
 if (args.Contains("--browser-host"))
@@ -414,6 +447,7 @@ try
     using var client = new HttpClient();
     using var request = new HttpRequestMessage(HttpMethod.Get, production.Urls.Single() + "/api/v1/session");
     request.Headers.Host = "admin.example";
+    request.Headers.Add("X-Forwarded-Proto", "https");
     using var response = await client.SendAsync(request);
     Check(response.StatusCode == HttpStatusCode.BadRequest, "Production must refuse unencrypted HTTP.");
     Check(!response.Headers.Contains("Set-Cookie"), "Do not issue session cookies over unencrypted production connections.");
