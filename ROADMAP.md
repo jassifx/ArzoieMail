@@ -311,7 +311,10 @@ Password-policy/IP security-range and logging additions passed subsequent VM/bro
 (latest 736 native assertions). A same-password-reset session regression was reproduced and
 its native/vault credential-binding fix passed the full 739-native/145-live-HTTP VM run.
 An additional 43 controlled-clock session checks and affected integration tests passed;
-four-backend branch CI remains pending. The detailed ledger
+database corrections at `bc3980201` passed all four backend jobs, Release, GCC/Clang and CI
+installer generation. A subsequent eight-field mail TLS section adds certificate verification,
+version/cipher policy and checked dependency validation; the full VM run passed (781 native), with
+corrected final-head CI still required. The detailed ledger
 continues to own every remaining A/E gate; nothing is complete merely because scope was approved.
 
 ### Phase 1b delivery tracker

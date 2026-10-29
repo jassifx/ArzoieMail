@@ -92,7 +92,7 @@
   }
   function inputField(name, value, help = '') {
     const wrap = el('div'); const label = el('label', name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
-    const input = el(['autoReplyBody', 'signaturePlainText', 'signatureHtml'].includes(name) ? 'textarea' : ['level', 'mode', 'signatureMethod', 'security'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
+    const input = el(['autoReplyBody', 'signaturePlainText', 'signatureHtml', 'cipherList'].includes(name) ? 'textarea' : ['level', 'mode', 'signatureMethod', 'security'].includes(name) ? 'select' : 'input'); input.name = name; input.id = `field-${name}-${++fieldSequence}`; label.htmlFor = input.id;
     if (['level', 'mode', 'signatureMethod', 'security'].includes(name)) {
       input.className = 'form-select';
       const choices = name === 'security' ? ['Plaintext', 'Implicit TLS', 'STARTTLS optional', 'STARTTLS required'] : name === 'signatureMethod' ? ['Use domain format when mailbox format is empty', 'Replace mailbox signature', 'Append to mailbox signature'] : name === 'mode' ? ['Anyone (public)', 'List members', 'Specified sender (announcements)', 'Domain senders'] : ['Mailbox user', 'Domain administrator', 'Server administrator'];
@@ -711,7 +711,7 @@
   async function settings(root) {
     const sections = [['protocols', 'Enabled protocols'], ['smtp', 'SMTP delivery'], ['imap', 'IMAP'], ['pop3', 'POP3'],
       ['autoban', 'Auto-ban & invalid clients'], ['greylisting', 'Greylisting'], ['performance', 'Performance & caching'],
-      ['general', 'General settings'], ['antivirus', 'Existing antivirus providers'], ['passwordhash', 'Password hashing policy'], ['logging', 'Logging']];
+      ['general', 'General settings'], ['antivirus', 'Existing antivirus providers'], ['passwordhash', 'Password hashing policy'], ['logging', 'Logging'], ['tls', 'Mail transport TLS']];
     const chooser = el('select', null, 'form-select'); chooser.id = 'settings-section';
     const label = el('label', 'Settings section', 'form-label'); label.htmlFor = chooser.id;
     for (const [value, title] of sections) { const option = el('option', title); option.value = value; chooser.append(option); }

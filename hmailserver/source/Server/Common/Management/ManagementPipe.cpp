@@ -43,6 +43,8 @@
 #include <array>
 #include <openssl/hmac.h>
 #include <openssl/rand.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include <sddl.h>
 #include <boost/json/src.hpp>
 

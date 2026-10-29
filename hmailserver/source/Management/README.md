@@ -366,7 +366,7 @@ and test messages from all providers before strengthening DMARC.
 
 `GET /api/v1/settings/{section}` returns `section`, `values` and a typed `schema` for an
 explicit native allowlist. Sections: `protocols`, `smtp`, `imap`, `pop3`, `autoban`, `greylisting`,
-`performance`, `general`, `antivirus`, `passwordhash`, `logging`. The current implementation maps 73 fields; it is not
+`performance`, `general`, `antivirus`, `passwordhash`, `logging`, `tls`. The current implementation maps 81 fields; it is not
 all server administration parity. Server administrators only, checked in HTTP and native code.
 No raw property names, SQL, process commands, secret values or filesystem paths are accepted.
 
@@ -413,8 +413,8 @@ count in the same patch when needed. Omitted dependencies are also guarded again
 changes. Existing hashes keep their self-described format; auto-upgrade follows the configured
 target after successful authentication, including deliberately lowered costs. Defaults are
 unchanged. Measure authentication workload before increasing costs. This addition passed
-initial Compact VM validation in the later 706/736-native-assertion runs; four-backend and
-failure/concurrency acceptance remain pending. Stored-hash upgrades can require web sign-in again.
+initial Compact VM validation in the later 706/736-native-assertion runs and four-backend CI
+at `bc3980201`; broader failure/concurrency acceptance remains pending. Stored-hash upgrades can require web sign-in again.
 
 `logging` provides enabled, application, smtp, pop3, imap, tcpIp, debug, keepFilesOpen and
 awStats. The native bitmask is never exposed. Multiple changed flags are merged into one
@@ -423,14 +423,35 @@ to that underlying setting causes 409 rather than overwriting it. AWStats remain
 native setting and participates in the same checked batch. Configuration uses existing log
 storage/access policy; this endpoint does not expose filesystem paths or read log contents.
 Keep logs private and monitor volume before enabling detailed conversations/debug. This later
-addition passed initial Compact VM validation in the 736-native-assertion run; broader
-operational diagnostics, failure acceptance and four-backend CI remain pending.
+addition passed initial Compact VM validation in the 736-native-assertion run and four-backend
+CI at `bc3980201`; broader operational diagnostics and failure acceptance remain pending.
 
 Panel tests cover cancellation, stale-edit refusal, refresh/retry, omitted-field preservation
 and mobile layout. Native tests cover both roles, schema/secret boundaries, malformed patches,
 persistence, cleanup and actual POP3 greeting behavior. Published live browser tests exercise
 a real settings change and restore it. This branch still needs complete VM/CI evidence before
 acceptance; the entire Phase 1b completion ledger remains open.
+
+`tls` adds eight fields: verifyRemoteCertificate, cipherList, tls10Enabled, tls11Enabled,
+tls12Enabled, tls13Enabled, preferServerCiphers and prioritizeChaCha. The underlying version
+and option masks are never exposed. Multiple flag edits merge while preserving omitted and
+unknown bits; dependencies and omitted underlying settings participate in the checked batch.
+At least one known TLS version must remain enabled. ChaCha prioritization requires server
+cipher preference and TLS 1.2 or 1.3. Obsolete TLS 1.0/1.1 remain explicit compatibility choices
+with warnings; defaults are unchanged. Retain remote certificate verification to prevent
+impersonation. Its existing native behavior applies to outgoing mail connections; mail TLS
+settings do not configure the separate web HTTPS binding.
+
+The cipher expression is limited to 4096 UTF-8 bytes. CR/LF and spaces retain the legacy
+normalization behavior; other controls/NUL are rejected. Before persistence, OpenSSL must
+accept a nonempty expression with at least one usable legacy-suite match. OpenSSL may ignore
+unknown components in an otherwise matching expression; this is not a strict token allowlist.
+An empty expression selects library defaults. This controls TLS 1.2 and earlier, not TLS 1.3
+cipher suites. Cipher/version/option changes require a later service restart; saving neither
+replaces active contexts nor restarts listeners. Pre-save checks do not prove endpoint handshake,
+certificate/hostname/key suitability or rollback acceptance. Those A06/E03 gates remain open.
+Native/managed compilation and the full Compact VM run passed (781 native assertions,
+including 246 settings assertions, and both browsers); final-head TLS CI is pending.
 
 ## Filtering and trusted-relay collections (completion branch)
 
@@ -469,7 +490,8 @@ about open-relay risk and confirms changes. The acknowledgement is never persist
 reads false, so a later unsafe-range edit requires a fresh decision. This preserves intentional
 trusted-relay configurations while preventing an ordinary edit from silently opening relay.
 The IP policy addition passed 32 targeted native assertions and the later full Compact VM run,
-including real SMTP denial/recovery/authentication. Broader acceptance and four-backend CI remain pending.
+including real SMTP denial/recovery/authentication. Four-backend CI passed at `bc3980201`;
+broader acceptance remains pending.
 
 ## Mailbox self-service (completion branch, under validation)
 
@@ -512,7 +534,8 @@ regression and full Compact VM run (739 native, 145 real HTTP/native assertions)
 Vault/cookie timing uses injected TimeProvider with System as the production default, without an
 HTTP clock override. The 43 controlled-clock VM assertions cover idle/absolute vault expiry,
 sliding cookie renewal/expiry, refreshed roles, opaque-only renewed cookies and binding failures.
-Affected real HTTP/TLS/browser checks also passed; four-backend CI and broader acceptance remain pending.
+Affected real HTTP/TLS/browser checks and four-backend CI at `bc3980201` also passed;
+broader acceptance remains pending.
 
 Self-service native, HTTP and fixture/published browser regressions are under VM validation.
 There is no full Phase 1b or production security acceptance claim. Self-service reply-history clearing follows successful guarded save/readback. Broader legacy

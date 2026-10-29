@@ -15,8 +15,10 @@ full VM/browser checks (latest 736 native assertions). A same-password-reset ses
 was reproduced and its fix passed full VM validation (739 native/145 live HTTP). Another
 43 controlled-clock lifecycle checks and affected integration tests passed. Checkpoint branch CI
 passed three database jobs but failed Express on an ADO parameter-prefix collision. The correction
-and transaction-pool failure regressions passed a fresh Compact VM run, including TestInternals;
-corrected-head four-backend CI remains pending. No completion PR exists. The full A/E ledger
+and transaction-pool failure regressions passed a fresh Compact VM run, including TestInternals.
+Corrected head `bc3980201` passed all four backend jobs, Release, GCC/Clang and CI installer
+generation. Eight subsequent TLS controls passed the full VM run (781 native) and browsers; they need
+their own final-head CI. No completion PR exists. The full A/E ledger
 remains open. Complete COM retirement and the [frozen 6.0 scope](../version-6-scope.md)
 remain mandatory, with [breaking changes](../breaking-changes-6.0.md) and
 [release policy](../release-versioning.md) owning migration/publication rules. No next-phase

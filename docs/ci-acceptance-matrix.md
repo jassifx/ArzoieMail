@@ -23,7 +23,9 @@ baseline. Existing code still uses COM and Compact; future obligations below do 
 Completion-branch follow-up: checkpoint `92c03fc` passed three database jobs but failed Express
 on ADO parameter-prefix replacement. The correction adds native ADO occurrence/order/type
 regressions and shared transaction-lease failure/capability tests to TestInternals and portable
-core tests. These passed in the disposable Compact VM; corrected-head CI remains pending.
+core tests. These passed in the disposable Compact VM; corrected head `bc3980201` then passed
+all four backend jobs, Release, GCC/Clang and installer generation. Later eight-field TLS policy
+tests and published browser workflow passed the full VM run and need their own final-head CI.
 Fault-injected helper tests do not prove real provider outage or commit-acknowledgement recovery.
 
 | ID | Technology / boundary | Coverage and evidence | Execution |

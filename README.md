@@ -169,7 +169,9 @@ The current authorized effort completes all remaining Phase 1b, tracked on
 initial VM validation; mailbox self-service also passed native/browser VM checks. Password-policy
 and IP security-range additions, plus logging, passed initial VM checks. A reproduced session
 revocation issue was reproduced and fixed with passing VM regression checks; 43 controlled-clock
-session checks also passed. Four-backend branch CI remains pending. The remaining
+session checks also passed. Database corrections at `bc3980201` passed all four backend jobs,
+Release, GCC/Clang and CI installer generation. Eight additional mail TLS controls passed
+the 781-native-assertion VM run and published browser checks; their final-head CI is pending. The remaining
 administration, scanner, certificate, hosting, migration and cutover gates are still open.
 No new completion PR or Phase 1b completion is claimed.
 

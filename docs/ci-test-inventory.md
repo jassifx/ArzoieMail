@@ -85,7 +85,25 @@ The corrected fresh native/managed build passed the disposable Compact VM run re
 26 DNS, 2 plaintext-boundary, 7 runtime, 11 TLS, 145 live HTTP/native and 12 native TLS
 assertions, both browser suites and selected NUnit **TestInternals** (1 passed, including
 the new ADO and transaction tests). Original executable/database/INI/service state was restored.
-Four-backend CI for the correction and full-phase acceptance remain pending; no PR exists.
+Corrected head `bc3980201` then passed all four backend jobs, Release, GCC/Clang and CI installer
+generation. Per backend: **1402 management/runtime/security assertions** = 26 DNS +415 HTTP
++2 plaintext-boundary +43 lifecycle +739 native +7 runtime +2 pipe-squatting +145 real HTTP
++11 TLS +12 native TLS, plus both browser suites. NUnit on Compact/MySQL/PostgreSQL recorded
+1317 total, 1207 passed, 0 failed/warnings, 34 inconclusive, 76 skipped; Express recorded
+1208 passed, 34 inconclusive and 75 skipped. These are not 1317 passing cases. Ignored logs:
+`out/database-green-{compact,mysql,postgresql,express}-ci.log`. CodeQL/workflow lint were not
+checks in this branch-push run. Subsequent TLS changes require their own CI; no PR exists.
+
+The next TLS revision adds eight controls (81 settings total), tests for invalid/all-disabled
+version policies, cipher validation, combined option masks, stale edits, role denials and
+configuration restoration, plus a real published browser validation/save/reload workflow.
+Native and managed builds passed with host service hooks disabled. The full Compact VM run
+passed in `out/phase1b-tls-controls-vm.log`: **781 native** (246 settings +72 collections
++29 self +32 IP ranges +402 prior),415 HTTP/security,43 lifecycle,26 DNS,2 plaintext-boundary,
+7 runtime,11 TLS,145 live HTTP/native,12 native TLS, both browsers and selected TestInternals
+(1 passed). Original executable/database/INI/service state was restored. Final-head TLS CI
+is pending; do not attribute the preceding green CI to these later sources or claim listener handshake/
+certificate/renewal acceptance from configuration tests.
 
 ## Modern-stack CI expansion merged and verified
 

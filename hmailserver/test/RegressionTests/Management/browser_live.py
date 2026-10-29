@@ -30,6 +30,7 @@ with sync_playwright() as playwright:
     page.on('pageerror', lambda error: errors.append(type(error).__name__))
     domain_id = None
     original_pop_limit = None
+    original_tls_cipher = None
     try:
         stage = 'server login and version'
         login(page, os.environ['ARZOIEMAIL_TEST_USERNAME'])
@@ -58,6 +59,34 @@ with sync_playwright() as playwright:
             page.get_by_role('button', name='Save server settings', exact=True).click()
         assert restored_settings.value.status == 200
         original_pop_limit = None
+        stage = 'TLS policy validation and persistence'
+        tls = context.request.get(base + '/api/v1/settings/tls')
+        assert tls.status == 200
+        original_tls_cipher = tls.json()['data']['values']['cipherList']
+        page.get_by_label('Settings section', exact=True).select_option('tls')
+        cipher = page.get_by_label('cipher List', exact=True)
+        cipher.fill('ARZOIEMAIL-NO-SUCH-CIPHER')
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda item: item.url.endswith('/settings/tls') and item.request.method == 'PATCH') as rejected_tls:
+            page.get_by_role('button', name='Save server settings', exact=True).click()
+        assert rejected_tls.value.status == 422
+        assert context.request.get(base + '/api/v1/settings/tls').json()['data']['values']['cipherList'] == original_tls_cipher
+        cipher.fill('HIGH:!aNULL:!eNULL')
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda item: item.url.endswith('/settings/tls') and item.request.method == 'PATCH') as saved_tls:
+            page.get_by_role('button', name='Save server settings', exact=True).click()
+        assert saved_tls.value.status == 200
+        page.reload()
+        page.get_by_label('Settings section', exact=True).select_option('tls')
+        cipher = page.get_by_label('cipher List', exact=True)
+        assert cipher.input_value() == 'HIGH:!aNULL:!eNULL'
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        cipher.fill(original_tls_cipher)
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda item: item.url.endswith('/settings/tls') and item.request.method == 'PATCH') as restored_tls:
+            page.get_by_role('button', name='Save server settings', exact=True).click()
+        assert restored_tls.value.status == 200
+        original_tls_cipher = None
         stage = 'domain persistence'
         domain = 'browser-' + uuid.uuid4().hex + '.test'
         page.get_by_role('link', name='Domains & DNS').click()
@@ -119,6 +148,7 @@ with sync_playwright() as playwright:
                 assert role_context.request.get(base + '/api/v1/queue').status == 403
                 assert not role_page.get_by_role('link', name='Server settings', exact=True).is_visible()
                 assert role_context.request.get(base + '/api/v1/settings/pop3').status == 403
+                assert role_context.request.get(base + '/api/v1/settings/tls').status == 403
                 stage = 'live mailbox self-service'
                 own_profile = role_context.request.get(base + '/api/v1/self/profile')
                 assert own_profile.status == 200
@@ -152,6 +182,18 @@ with sync_playwright() as playwright:
         page.screenshot(path=str(output / 'published-live-failure.png'), full_page=True)
         raise SystemExit(1) from None
     finally:
+        if original_tls_cipher is not None:
+            try:
+                session = context.request.get(base + '/api/v1/session')
+                current = context.request.get(base + '/api/v1/settings/tls')
+                if session.status == 200 and current.status == 200:
+                    restored = context.request.patch(base + '/api/v1/settings/tls', data={
+                        'fields': {'cipherList': original_tls_cipher},
+                        'expected': {'cipherList': current.json()['data']['values']['cipherList']}},
+                        headers={'Content-Type': 'application/json', 'X-CSRF-Token': session.json()['data']['csrf']})
+                    assert restored.status == 200
+            except Exception:
+                print('Published live browser TLS cleanup could not complete.', file=sys.stderr)
         if original_pop_limit is not None:
             try:
                 session = context.request.get(base + '/api/v1/session')

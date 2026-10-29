@@ -15,6 +15,7 @@ struct ServerSetting
 #define ADMIN_INT(section, name, property, low, high, help, restart) {section, name, property, "integer", low, high, help, restart}
 #define ADMIN_TEXT(section, name, property, maximum, help, restart) {section, name, property, "string", 0, maximum, help, restart}
 #define ADMIN_LOG_FLAG(name, mask, help) {"logging", name, PROPERTY_LOGGING, "boolean", 0, 1, help, false, mask}
+#define ADMIN_TLS_FLAG(name, property, mask, help) {"tls", name, property, "boolean", 0, 1, help, true, mask}
 const ServerSetting ServerSettings[] = {
    ADMIN_BOOL("protocols", "smtpEnabled", PROPERTY_PROTOCOLSMTP, "Enable SMTP listeners after service restart.", true),
    ADMIN_BOOL("protocols", "imapEnabled", PROPERTY_PROTOCOLIMAP, "Enable IMAP listeners after service restart.", true),
@@ -88,16 +89,25 @@ const ServerSetting ServerSettings[] = {
    ADMIN_LOG_FLAG("tcpIp", Logger::LSTCPIP, "Record transport connection diagnostics."),
    ADMIN_LOG_FLAG("debug", Logger::LSDebug, "Detailed diagnostics increase log volume and may expose operational metadata."),
    ADMIN_LOG_FLAG("keepFilesOpen", Logger::LSKeepFilesOpen, "Keep native log files open between writes."),
-   ADMIN_BOOL("logging", "awStats", PROPERTY_AWSTATSENABLED, "Enable the existing AWStats-compatible mail activity log.", false)
+   ADMIN_BOOL("logging", "awStats", PROPERTY_AWSTATSENABLED, "Enable the existing AWStats-compatible mail activity log.", false),
+   ADMIN_BOOL("tls", "verifyRemoteCertificate", PROPERTY_VERIFYREMOTESSLCERTIFICATE, "Verify remote mail-server certificates. Disabling verification allows server impersonation; retain enabled for secure transport.", false),
+   ADMIN_TEXT("tls", "cipherList", PROPERTY_SSLCIPHERLIST, 4096, "OpenSSL cipher expression for TLS 1.2 and earlier; empty uses library defaults. TLS 1.3 suites are independent. Restart required.", true),
+   ADMIN_TLS_FLAG("tls10Enabled", PROPERTY_SSLVERSIONS, TlsVersion10, "Obsolete TLS 1.0 compatibility; leave disabled. Requires restart."),
+   ADMIN_TLS_FLAG("tls11Enabled", PROPERTY_SSLVERSIONS, TlsVersion11, "Obsolete TLS 1.1 compatibility; leave disabled. Requires restart."),
+   ADMIN_TLS_FLAG("tls12Enabled", PROPERTY_SSLVERSIONS, TlsVersion12, "Enable TLS 1.2 for mail transport after restart."),
+   ADMIN_TLS_FLAG("tls13Enabled", PROPERTY_SSLVERSIONS, TlsVersion13, "Enable TLS 1.3 for mail transport after restart."),
+   ADMIN_TLS_FLAG("preferServerCiphers", PROPERTY_TLSOPTIONS, TlsOptionPreferServerCiphers, "Prefer the server cipher order after restart."),
+   ADMIN_TLS_FLAG("prioritizeChaCha", PROPERTY_TLSOPTIONS, TlsOptionPrioritizeChaCha, "Prioritize ChaCha when the client prefers it; requires server cipher preference and TLS 1.2 or 1.3. Restart required.")
 };
 #undef ADMIN_BOOL
 #undef ADMIN_INT
 #undef ADMIN_TEXT
 #undef ADMIN_LOG_FLAG
+#undef ADMIN_TLS_FLAG
 
-json::value ReadServerSetting(const ServerSetting &field, PropertySet &properties, long loggingMask)
+json::value ReadServerSetting(const ServerSetting &field, PropertySet &properties, const std::map<String, long> &masks)
 {
-   if (field.mask) return (loggingMask & field.mask) != 0;
+   if (field.mask) return (masks.at(field.property) & field.mask) != 0;
    if (std::string_view(field.kind) == "string") return json::value(Utf8(properties.GetString(field.property)));
    if (std::string_view(field.kind) == "boolean") return properties.GetBool(field.property);
    return properties.GetLong(field.property);
@@ -111,10 +121,12 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
    auto properties = Configuration::Instance()->GetSettings();
    json::array schema;
    json::object values;
-   auto loggingMask = section == "logging" ? properties->GetLong(PROPERTY_LOGGING) : 0L;
+   std::map<String, long> masks;
+   for (const auto &field : ServerSettings) if (section == field.section && field.mask && !masks.count(field.property))
+      masks[field.property] = properties->GetLong(field.property);
    for (const auto &field : ServerSettings) if (section == field.section)
    {
-      values[field.name] = ReadServerSetting(field, *properties, loggingMask);
+      values[field.name] = ReadServerSetting(field, *properties, masks);
       schema.push_back(json::object{{"name", field.name}, {"type", field.kind}, {"minimum", field.minimum},
          {"maximum", field.maximum}, {"help", field.help}, {"restart", field.restart}});
    }
@@ -140,7 +152,8 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
          {
             const std::string name(entry.key());
             const auto text = Text(patch->as_object(), name.c_str(), rule->maximum);
-            for (const unsigned char character : text) if (character < 32 || character == 127) throw RequestError{422};
+            for (const unsigned char character : text)
+               if ((character < 32 || character == 127) && !(section == "tls" && name == "cipherList" && (character == '\r' || character == '\n'))) throw RequestError{422};
             change.expectedString = Wide(*before); change.value = Wide(entry.value());
             if (name == "deliveryBindAddress" && !text.empty())
             {
@@ -168,8 +181,9 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
             change.number = static_cast<long>(number);
             if (rule->mask)
             {
-               change.expectedNumber = loggingMask;
-               change.number = number ? loggingMask | rule->mask : loggingMask & ~rule->mask;
+               const auto originalMask = masks.at(rule->property);
+               change.expectedNumber = originalMask;
+               change.number = number ? originalMask | rule->mask : originalMask & ~rule->mask;
                auto existing = std::find_if(changes.begin(), changes.end(), [&](const auto &item) { return item.name == change.name; });
                if (existing != changes.end())
                {
@@ -179,6 +193,26 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
             }
          }
          changes.push_back(std::move(change));
+      }
+      if (section == "tls")
+      {
+         auto effective = values;
+         for (const auto &entry : patch->as_object()) effective[entry.key()] = entry.value();
+         const bool modern = effective.at("tls12Enabled").as_bool() || effective.at("tls13Enabled").as_bool();
+         if (!modern && !effective.at("tls10Enabled").as_bool() && !effective.at("tls11Enabled").as_bool()) throw RequestError{422};
+         if (effective.at("prioritizeChaCha").as_bool() && (!modern || !effective.at("preferServerCiphers").as_bool())) throw RequestError{422};
+         // Match the existing transport's whitespace normalization. Probe before
+         // persistence without replacing any active listener or client context.
+         std::string cipher(effective.at("cipherList").as_string());
+         cipher.erase(std::remove_if(cipher.begin(), cipher.end(), [](char c) { return c == ' ' || c == '\r' || c == '\n'; }), cipher.end());
+         if (!cipher.empty())
+         {
+            std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> context(SSL_CTX_new(TLS_method()), SSL_CTX_free);
+            if (!context) throw RequestError{503};
+            const bool valid = SSL_CTX_set_cipher_list(context.get(), cipher.c_str()) == 1;
+            ERR_clear_error();
+            if (!valid) throw RequestError{422};
+         }
       }
       if (section == "passwordhash")
       {
@@ -199,12 +233,32 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
             changes.push_back({field.property, false, number, number, {}, {}});
          }
       }
+      if (section == "tls")
+      {
+         // Guard every dependency, including omitted bits and the cipher string.
+         // A concurrent legacy/API edit must invalidate this validated proposal.
+         for (const auto &field : ServerSettings) if (section == field.section)
+         {
+            if (std::any_of(changes.begin(), changes.end(), [&](const auto &item) { return item.name == field.property; })) continue;
+            if (std::string_view(field.kind) == "string")
+            {
+               const auto text = Wide(values.at(field.name));
+               changes.push_back({field.property, true, 0, 0, text, text});
+            }
+            else
+            {
+               const auto &before = values.at(field.name);
+               const long number = field.mask ? masks.at(field.property) : (before.as_bool() ? 1L : 0L);
+               changes.push_back({field.property, false, number, number, {}, {}});
+            }
+         }
+      }
       const auto result = properties->ApplyChecked(changes);
       if (result != PropertySet::CheckedResult::Success)
          throw RequestError{result == PropertySet::CheckedResult::Conflict ? 409 : result == PropertySet::CheckedResult::Unsupported ? 412 : 503};
       values.clear();
-      if (section == "logging") loggingMask = properties->GetLong(PROPERTY_LOGGING);
-      for (const auto &field : ServerSettings) if (section == field.section) values[field.name] = ReadServerSetting(field, *properties, loggingMask);
+      for (auto &entry : masks) entry.second = properties->GetLong(entry.first);
+      for (const auto &field : ServerSettings) if (section == field.section) values[field.name] = ReadServerSetting(field, *properties, masks);
    }
    return json::object{{"section", section}, {"values", std::move(values)}, {"schema", std::move(schema)}};
 }

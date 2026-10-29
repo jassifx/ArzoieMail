@@ -17,7 +17,7 @@ static class ServerSettingsTests
             await Refuse("settings.read", new { section = "smtp" }, 403, actor);
             await Refuse("settings.update", new { section = "smtp", fields = new { maxConnections = 10 }, expected = new { maxConnections = 0 } }, 403, actor);
         }
-        foreach (string section in new[] { "protocols", "smtp", "imap", "pop3", "autoban", "greylisting", "performance", "general", "antivirus", "passwordhash", "logging" })
+        foreach (string section in new[] { "protocols", "smtp", "imap", "pop3", "autoban", "greylisting", "performance", "general", "antivirus", "passwordhash", "logging", "tls" })
         {
             var result = await Send("settings.read", new { section });
             var values = result.GetProperty("values"); var schema = result.GetProperty("schema");
@@ -32,6 +32,7 @@ static class ServerSettingsTests
         await Refuse("settings.read", new { section = "../../settings" }, 404);
         await Refuse("settings.read", new { section = "unknown" }, 404);
         await Refuse("settings.execute", new { section = "smtp" }, 404);
+        await TlsSettingsTests.Run(native, username, password, check);
         var loggingOriginal = (await Send("settings.read", new { section = "logging" })).GetProperty("values").Clone();
         Exception? loggingFailure = null;
         try
