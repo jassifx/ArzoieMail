@@ -13,8 +13,10 @@ No new PR is submitted yet. Server settings and three filtering/relay collection
 Compact VM validation. Password-policy, IP-range and logging revisions subsequently passed
 full VM/browser checks (latest 736 native assertions). A same-password-reset session regression
 was reproduced and its fix passed full VM validation (739 native/145 live HTTP). Another
-43 controlled-clock lifecycle checks and affected integration tests passed. Branch CI remains
-pending; no completion PR exists. The full A/E ledger
+43 controlled-clock lifecycle checks and affected integration tests passed. Checkpoint branch CI
+passed three database jobs but failed Express on an ADO parameter-prefix collision. The correction
+and transaction-pool failure regressions passed a fresh Compact VM run, including TestInternals;
+corrected-head four-backend CI remains pending. No completion PR exists. The full A/E ledger
 remains open. Complete COM retirement and the [frozen 6.0 scope](../version-6-scope.md)
 remain mandatory, with [breaking changes](../breaking-changes-6.0.md) and
 [release policy](../release-versioning.md) owning migration/publication rules. No next-phase

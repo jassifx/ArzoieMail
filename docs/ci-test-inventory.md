@@ -65,7 +65,27 @@ HTTP/TLS/browser run passed in `out/phase1b-session-lifetime-vm.log`: 415 HTTP/s
 both browser suites and selected NUnit (1 passed). Original files/service and checkpoint restored.
 Native code is
 unchanged from the 739-assertion pass; its full direct suite is not redundantly rerun there.
-No new PR/CI run is submitted; final-head four-backend and full-phase acceptance remain pending.
+Checkpoint head `92c03fc154b40c6d12ccdd6b7267371b3f68aefa` was pushed without a PR.
+Release, GCC/Clang and Compact/MySQL/PostgreSQL regression jobs passed. SQL Server Express
+failed in live mailbox self-service after its 1317-case NUnit run returned exit code 0;
+CI installer publication was skipped. Run `40870226699` exposed ADO replacing `@SELF_AD`
+inside `@SELF_ADDRESS`, leaving an invalid SQL parameter. This is a real product failure.
+
+The correction uses the existing whole-token positional binder and tests prefix collisions,
+repeated parameters, SQL occurrence order, Unicode and 64-bit values in ADOConnectionTester.
+Transaction-pool regressions also reproduced failed-BEGIN lease leaks and unsafe recycling
+after failed COMMIT/ROLLBACK (11 failed assertions), then unsupported/no-op transactions
+(2 failed assertions), before fixes passed with zero failures. These fault-injection tests
+run in both the portable core and native TestInternals; they do not simulate real provider
+outages or lost commit acknowledgements. Evidence: ignored `out/transaction-lease-red-vm-v2.log`,
+`out/transaction-capability-red-vm.log`, `out/transaction-lease-green-vm.log`.
+
+The corrected fresh native/managed build passed the disposable Compact VM run recorded in
+`out/phase1b-database-fixes-vm.log`: 739 native, 415 HTTP/security, 43 controlled-clock,
+26 DNS, 2 plaintext-boundary, 7 runtime, 11 TLS, 145 live HTTP/native and 12 native TLS
+assertions, both browser suites and selected NUnit **TestInternals** (1 passed, including
+the new ADO and transaction tests). Original executable/database/INI/service state was restored.
+Four-backend CI for the correction and full-phase acceptance remain pending; no PR exists.
 
 ## Modern-stack CI expansion merged and verified
 

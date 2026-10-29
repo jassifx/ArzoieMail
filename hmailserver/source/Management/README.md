@@ -389,7 +389,12 @@ are not a supported configuration-management mechanism.
 On database/commit/notification failure, 503 does not prove the database remained unchanged:
 a commit acknowledgement may be lost or a post-commit observer may fail. Reconcile persisted
 and effective configuration before retrying, using supported recovery/service reload where
-needed. Do not claim an acknowledged success from the cache alone. Database failure injection,
+needed. Do not claim an acknowledged success from the cache alone. Failed or exceptional
+BEGIN/COMMIT/ROLLBACK retires the physical client instead of recycling uncertain transaction
+state; its replacement opens before any SQL borrower uses it. Unsupported transactional storage
+returns 412. For MySQL, the existing capability check requires all database tables to use InnoDB;
+migrate with the service stopped and restart before retrying. Helper fault-injection regressions
+and native TestInternals passed in the disposable VM. Real provider outage/acknowledgement-loss,
 restart and concurrent legacy/new-tool acceptance remain pending full-phase validation.
 
 Schema entries expose type, bounds, explanation and whether restart is required. Saving never

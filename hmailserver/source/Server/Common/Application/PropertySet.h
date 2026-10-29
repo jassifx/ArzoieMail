@@ -34,7 +34,7 @@ namespace HM
          String expectedString;
          String value;
       };
-      enum class CheckedResult { Success, Conflict, Failure };
+      enum class CheckedResult { Success, Conflict, Failure, Unsupported };
       // Management allowlists choose the names. Commit all values before changing the cache
       // or firing notifications. A stale persisted/cache value rejects the complete patch.
       CheckedResult ApplyChecked(const std::vector<CheckedChange> &changes);

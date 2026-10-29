@@ -27,6 +27,7 @@ namespace HM
       virtual bool Disconnect();
       virtual ExecutionResult TryExecute(const SQLCommand &command, String &sErrorMessage, __int64 *iInsertID = 0, int iIgnoreErrors = 0); 
       virtual bool IsConnected() const;
+      bool GetSupportsTransactions() const override { return supports_transactions_; }
 
       hm_MYSQL *GetConnection() const;
 

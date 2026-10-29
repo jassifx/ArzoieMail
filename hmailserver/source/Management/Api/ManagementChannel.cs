@@ -61,6 +61,7 @@ public sealed class ManagementChannel : IManagementChannel
                 throw new ManagementError(status is >= 400 and <= 599 ? status : 503,
                     status switch { 401 => "Incorrect username or password.", 403 => "Access denied.",
                         404 => "Resource not found.", 409 => "The operation conflicts with the current state. Reload and try again; your own account or domain cannot be deleted.",
+                        412 => "Checked updates require a transactional database. MySQL mail databases require InnoDB tables; migrate with the service stopped, then restart.",
                         422 => "Invalid settings, duplicate address/name, or domain limits exceeded. Review the fields and try again.", _ => "Management operation failed." });
             return document.RootElement.GetProperty("data").Clone();
         }

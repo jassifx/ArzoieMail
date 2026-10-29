@@ -201,7 +201,7 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
       }
       const auto result = properties->ApplyChecked(changes);
       if (result != PropertySet::CheckedResult::Success)
-         throw RequestError{result == PropertySet::CheckedResult::Conflict ? 409 : 503};
+         throw RequestError{result == PropertySet::CheckedResult::Conflict ? 409 : result == PropertySet::CheckedResult::Unsupported ? 412 : 503};
       values.clear();
       if (section == "logging") loggingMask = properties->GetLong(PROPERTY_LOGGING);
       for (const auto &field : ServerSettings) if (section == field.section) values[field.name] = ReadServerSetting(field, *properties, loggingMask);

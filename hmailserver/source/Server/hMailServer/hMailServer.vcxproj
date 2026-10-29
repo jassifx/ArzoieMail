@@ -751,6 +751,8 @@ EXIT 0
     <ClInclude Include="..\Common\Application\Application.h" />
     <ClInclude Include="..\Common\Management\ManagementAuthentication.h" />
     <ClInclude Include="..\Common\Management\ManagementPipe.h" />
+    <ClInclude Include="..\Common\SQL\TransactionLease.h" />
+    <ClInclude Include="..\Common\SQL\TransactionLeaseTests.h" />
     <ClInclude Include="..\Common\Application\Backup.h" />
     <ClInclude Include="..\Common\Application\BackupExecuter.h" />
     <ClInclude Include="..\Common\Application\BackupManager.h" />

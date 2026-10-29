@@ -40,7 +40,10 @@ the following full 736-native-assertion run. Both runs passed browser/REST/TLS c
 their checkpoints. A same-password-reset session revocation regression was then reproduced;
 the native/vault credential-binding fix passed the full 739-native/145-live-HTTP VM run.
 Another 43 controlled-clock lifecycle checks and affected integration tests passed. Four-backend
-CI remains pending. A13 log access/diagnostics remains incomplete. These are implementation
+CI passed Compact/MySQL/PostgreSQL but failed Express on an ADO parameter-prefix collision.
+The correction and transaction-pool failure handling passed a fresh Compact VM run including
+native TestInternals; corrected-head four-backend CI remains pending. A13 log access/diagnostics
+remains incomplete. These are implementation
 progress, not full A/E acceptance. All open obligations below remain visible;
 no Defender/certificate/hosting/consumer-migration/PHP-retirement completion is implied.
 

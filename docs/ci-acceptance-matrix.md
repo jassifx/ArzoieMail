@@ -20,6 +20,12 @@ The approved [6.0 scope](version-6-scope.md) requires continuous migration/recov
 validation as each phase lands, followed by comprehensive validation of an immutable integrated
 baseline. Existing code still uses COM and Compact; future obligations below do not claim removal.
 
+Completion-branch follow-up: checkpoint `92c03fc` passed three database jobs but failed Express
+on ADO parameter-prefix replacement. The correction adds native ADO occurrence/order/type
+regressions and shared transaction-lease failure/capability tests to TestInternals and portable
+core tests. These passed in the disposable Compact VM; corrected-head CI remains pending.
+Fault-injected helper tests do not prove real provider outage or commit-acknowledgement recovery.
+
 | ID | Technology / boundary | Coverage and evidence | Execution |
 |---|---|---|---|
 | C01 | .NET 10 LTS toolchain | Root global.json selects stable SDK 10 with latest compatible feature band; check actual SDK, runtime major, x64 Windows, API target, ASP.NET Core 10 loaded and version-6 metadata | New runtime mode and SDK check on every backend |

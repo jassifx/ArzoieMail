@@ -41,6 +41,7 @@
 #include "../SQL/SQLCommand.h"
 #include "../SQL/SQLStatement.h"
 #include "../SQL/ADOConnection.h"
+#include "../SQL/TransactionLeaseTests.h"
 #include "../Util/EventTester.h"
 #include "../Scripting/ScriptServer.h"
 #include <boost/pool/object_pool.hpp>
@@ -196,6 +197,10 @@ namespace HM
 
       ADOConnectionTester adoConnectionTester;
       adoConnectionTester.Test();
+
+      std::vector<AnsiString> transactionFailures;
+      for (const auto &failure : TransactionLeaseTests::Run()) transactionFailures.emplace_back(failure.c_str());
+      ReportFailures_("database transaction leases", transactionFailures);
 
       OutputDebugString(_T("hMailServer: Testing RegularExpressionTester\n"));
       RegularExpressionTester *pRegExTest = new RegularExpressionTester();

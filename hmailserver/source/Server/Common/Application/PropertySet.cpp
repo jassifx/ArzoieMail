@@ -175,8 +175,9 @@ namespace HM
          }
          auto manager = Application::Instance()->GetDBManager();
          String error;
-         auto connection = manager->BeginTransaction(error);
-         if (!connection) return CheckedResult::Failure;
+         TransactionLease::BeginResult started;
+         auto connection = manager->BeginTransaction(error, &started);
+         if (!connection) return started == TransactionLease::BeginResult::Unsupported ? CheckedResult::Unsupported : CheckedResult::Failure;
          bool pending = true;
          try
          {
