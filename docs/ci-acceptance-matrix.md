@@ -54,9 +54,16 @@ Additional completion-branch native coverage: TestInternals runs the shared tran
 fault tests and ADO parameter prefix/occurrence/order/type regressions (green CI at `bc3980201`).
 Later persistence regressions require database-rejected listener/certificate inserts to fail
 the caller, avoid collection/identity publication and allow a corrected retry. Both passed in
-the Compact VM; they require their own CI. A disconnected-manager TestInternals regression
-reproduced unsafe prerequisite success; null-guard correction passed VM TestInternals and needs CI.
+the Compact VM and four-backend CI at `170442658`. A disconnected-manager TestInternals
+regression reproduced unsafe prerequisite success; its null-guard correction also passed that CI.
 These checks do not replace real provider outage/acknowledgement-loss/concurrency acceptance.
+
+The following inventory revision extends C04/C12/C13 with configured listener/certificate
+roles, strict filters, 25-item pages, exact string IDs, explicit public metadata fields and a
+published browser search/mobile/inert-markup workflow. Its temporary certificate registration
+uses nonexistent paths, is never assigned to a listener and is removed by the tracked live
+driver. Builds and full VM validation passed; its own final-head CI remains pending. These tests do
+not satisfy certificate import/chain/key/renewal, actual listener state or activation/rollback gates.
 
 ## Fixture boundaries and secret handling
 

@@ -92,7 +92,7 @@ generation. Per backend: **1402 management/runtime/security assertions** = 26 DN
 1317 total, 1207 passed, 0 failed/warnings, 34 inconclusive, 76 skipped; Express recorded
 1208 passed, 34 inconclusive and 75 skipped. These are not 1317 passing cases. Ignored logs:
 `out/database-green-{compact,mysql,postgresql,express}-ci.log`. CodeQL/workflow lint were not
-checks in this branch-push run. Subsequent TLS changes require their own CI; no PR exists.
+checks in this branch-push run. Subsequent TLS changes were validated separately below; no PR exists.
 
 The next TLS revision adds eight controls (81 settings total), tests for invalid/all-disabled
 version policies, cipher validation, combined option masks, stale edits, role denials and
@@ -117,8 +117,8 @@ assertion in `out/phase1b-persistence-red-vm.log`; original VM state/checkpoint 
 Native bool/error propagation and the existing compatibility caller were then corrected.
 Native and test compilation passed (inherited analyzer warnings remain). A focused VM rerun
 passed **2/2 NUnit cases** in `out/phase1b-persistence-green-vm.log`, with added no-publication
-and corrected-retry checks; original VM state/checkpoint restored. No CI evidence for this
-newer correction is claimed yet. The certificate failure fixture
+and corrected-retry checks; original VM state/checkpoint restored. The subsequent CI result
+is recorded below. The certificate failure fixture
 requires provider length enforcement; permissive truncation is not proven covered.
 
 The next disconnected-manager regression in native ClassTester failed the selected TestInternals
@@ -129,8 +129,30 @@ The assertion runs before the old SQL-script null dereference, so no intentional
 is needed. Both manager entry points then gained early null guards; native compilation and
 selected TestInternals passed (1/1, zero failures/warnings/skips) in
 `out/phase1b-disconnected-green-vm.log`; original VM state/checkpoint restored. These changes
-still need their own CI. This tests an unavailable connection manager, not a live provider
+then passed CI at `170442658`. This tests an unavailable connection manager, not a live provider
 outage or lost commit acknowledgement.
+
+Recovery head `170442658fc3603bface0613dafd6b271dbb3306` passed all four database jobs,
+Release, GCC/Clang and CI installer generation. Every backend retained **1444** separate
+management/runtime/security assertions and both browser suites. NUnit increased to **1319**:
+Compact/MySQL/PostgreSQL 1209 passed,0 failed/warnings,34 inconclusive,76 skipped; Express
+1210 passed,0 failed/warnings,34 inconclusive,75 skipped. This includes both new rejected-write/
+corrected-retry cases and the disconnected-manager TestInternals check. Logs:
+`out/recovery-green-{compact,mysql,postgresql,express}-ci.log`. CodeQL/workflow lint were not
+checks in this branch-push run. No public release or full-phase acceptance is implied.
+
+The next transport-inventory revision adds native role/filter/schema/paging/string-ID tests,
+deterministic REST route/bounds checks and a published browser workflow for configured listeners,
+certificate search, inert markup and mobile layout. The tracked live driver seeds one temporary
+certificate registration with deliberately nonexistent file paths and a markup-bearing name,
+then removes it in cleanup. No certificate files are installed/read or assigned to a listener.
+Native and managed builds passed. The full Compact VM run passed in
+`out/phase1b-transport-inventory-vm.log`: **831 native** (402 prior +246 settings +72 collections
++29 self +32 ranges +50 inventory on the four-listener fixture),**449 HTTP/security**,
+43 lifecycle,26 DNS,2 plaintext-boundary,7 runtime,11 TLS,145 real HTTP/native and12 native TLS
+assertions, both browsers and selected TestInternals (1 passed). Original executable/database/
+INI/service state was restored. Inventory assertion counts depend on fixture listener count;
+these are functional checks, not load evidence. Final-head CI for this addition remains pending.
 
 ## Modern-stack CI expansion merged and verified
 

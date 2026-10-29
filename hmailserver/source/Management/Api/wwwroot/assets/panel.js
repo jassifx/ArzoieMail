@@ -14,6 +14,7 @@
     settings: ['Server settings', 'Configure protocols, security policy, performance and existing scanners.'],
     policies: ['Filtering & relays', 'Manage URI blocklists, attachment rules and explicitly trusted incoming relays.'],
     self: ['My mailbox', 'Manage your own profile, signature, forwarding, replies, rules and password.'],
+    transport: ['Mail transport', 'Inspect configured mail listeners and certificate registrations.'],
   };
   function el(tag, text, className) {
     const node = document.createElement(tag);
@@ -751,6 +752,40 @@
     chooser.addEventListener('change', () => reload().catch(error => notify(error.message, true)));
     root.append(label, chooser, editor); await reload();
   }
+  async function transport(root) {
+    const chooser = el('select', null, 'form-select'); chooser.id = 'transport-resource';
+    const label = el('label', 'Transport inventory', 'form-label'); label.htmlFor = chooser.id;
+    for (const [value, title] of [['listeners', 'Mail listeners'], ['certificates', 'Configured certificates']]) {
+      const option = el('option', title); option.value = value; chooser.append(option);
+    }
+    const search = inputField('search', '', 'Search protocol, address or port for listeners; name or ID for certificates.');
+    search.input.id = 'transport-search'; search.wrap.querySelector('label').htmlFor = search.input.id;
+    const form = el('form', null, 'form-actions'); const find = el('button', 'Search transport', 'btn btn-outline-secondary'); find.type = 'submit';
+    form.append(search.wrap, find);
+    const listing = el('div', null, 'section-gap'); let offset = 0, sequence = 0;
+    async function reload(next = 0) {
+      offset = next; const run = ++sequence, resource = chooser.value;
+      const result = await request(`/transport/${resource}?limit=25&offset=${offset}&search=${encodeURIComponent(search.input.value)}`);
+      if (run !== sequence) return;
+      const c = card(resource === 'listeners' ? 'Configured listeners' : 'Configured certificates');
+      c.body.append(el('p', resource === 'listeners'
+        ? 'These are saved settings. Running listeners can differ until the service is restarted.'
+        : 'Registrations do not confirm certificate validity, private-key access or expiry. Validate certificates before assigning them to mail services.', 'help'));
+      if (!result.items.length) c.body.append(el('p', 'No matching configuration records.', 'help'));
+      for (const item of result.items) {
+        const row = el('div', null, 'domain-row'), summary = el('div');
+        if (resource === 'listeners') {
+          summary.append(el('strong', `${item.protocol} · ${item.address}:${item.port}`),
+            el('p', `${item.security} · ${item.certificateId ? `Certificate ID ${item.certificateId}` : 'No certificate assigned'}`, 'help mb-0'));
+        } else summary.append(el('strong', item.name || 'Unnamed certificate'));
+        summary.append(el('p', `ID ${item.id}`, 'help mb-0')); row.append(summary); c.body.append(row);
+      }
+      pager(c.body, result, offset, reload); listing.replaceChildren(c.outer);
+    }
+    form.addEventListener('submit', event => { event.preventDefault(); reload().catch(error => notify(error.message, true)); });
+    chooser.addEventListener('change', () => { search.input.value = ''; reload().catch(error => notify(error.message, true)); });
+    root.append(label, chooser, form, listing); await reload();
+  }
   async function diagnostics(root) {
     const result = await request('/diagnostics');
     const c = card('Runtime checks');
@@ -769,7 +804,7 @@
     $('content').setAttribute('aria-busy', 'true'); $('content').replaceChildren(el('p', 'Loading…', 'help'));
     const container = el('div');
     try {
-      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules, settings, policies, self })[page](container);
+      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules, settings, policies, self, transport })[page](container);
       if (run === generation) $('content').replaceChildren(container);
     } catch (error) { if (run === generation) { $('content').replaceChildren(); notify(error.message, true); } }
     finally { if (run === generation) $('content').setAttribute('aria-busy', 'false'); }

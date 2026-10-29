@@ -19,7 +19,9 @@ and transaction-pool failure regressions passed a fresh Compact VM run, includin
 Corrected head `bc3980201` passed all four backend jobs, Release, GCC/Clang and CI installer
 generation. Eight subsequent TLS controls passed the full VM run (781 native), browsers and
 four-backend CI at `82a3bdaf5`. Later listener/certificate save-error and disconnected-upgrade
-corrections passed targeted VM regressions; their own CI remains pending. No completion PR exists. The full A/E ledger
+corrections passed targeted VM regressions and four-backend CI at `170442658`. The subsequent
+read-only transport inventory passed full VM/browser validation and awaits its own CI.
+No completion PR exists. The full A/E ledger
 remains open. Complete COM retirement and the [frozen 6.0 scope](../version-6-scope.md)
 remain mandatory, with [breaking changes](../breaking-changes-6.0.md) and
 [release policy](../release-versioning.md) owning migration/publication rules. No next-phase

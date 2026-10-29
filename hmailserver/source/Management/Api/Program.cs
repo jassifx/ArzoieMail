@@ -191,6 +191,8 @@ public static class ManagementHost
         }).RequireRateLimiting("login");
         api.MapGet("/settings/{section}", (string section, HttpContext c, CredentialVault v, IManagementChannel p) => Settings(c, v, p, section, false));
         api.MapPatch("/settings/{section}", (string section, HttpContext c, CredentialVault v, IManagementChannel p) => Settings(c, v, p, section, true));
+        api.MapGet("/transport/listeners", (HttpContext c, CredentialVault v, IManagementChannel p) => TransportInventory(c, v, p, "transport.listeners.list"));
+        api.MapGet("/transport/certificates", (HttpContext c, CredentialVault v, IManagementChannel p) => TransportInventory(c, v, p, "transport.certificates.list"));
         api.MapPost("/policies/securityranges/match", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "securityranges.match", true));
         foreach (string resource in new[] { "surbl", "blockedattachments", "incomingrelays", "securityranges" })
         {
@@ -350,6 +352,13 @@ public static class ManagementHost
         }
         var credentials = vault.Get(context.User.FindFirstValue(ClaimTypes.NameIdentifier));
         return Data(await channel.SendAsync(operation, credentials.Username, credentials.Password, arguments, context.RequestAborted));
+    }
+    private static Task<IResult> TransportInventory(HttpContext context, CredentialVault vault, IManagementChannel channel, string operation)
+    {
+        if (context.User.FindFirstValue("level") != "2") throw new ManagementError(403, "Server administration is required.");
+        if (context.Request.Query.TryGetValue("limit", out var value) && (!int.TryParse(value.ToString(), out int limit) || limit is < 1 or > 25))
+            throw new ManagementError(422, "Transport inventory page size must be between 1 and 25.");
+        return Objects(context, vault, channel, operation);
     }
     private static ClaimsPrincipal Principal(string id, JsonElement user) => new(new ClaimsIdentity([
         new Claim(ClaimTypes.NameIdentifier, id), new Claim(ClaimTypes.Name, user.GetProperty("address").GetString()!),

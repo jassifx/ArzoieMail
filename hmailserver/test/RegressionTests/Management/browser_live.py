@@ -38,6 +38,21 @@ with sync_playwright() as playwright:
         response = context.request.get(base + '/api/v1/status')
         assert response.status == 200 and response.json()['data']['version'].startswith('6.')
         assert 'frame-ancestors' in response.headers['content-security-policy']
+        stage = 'configured transport inventory'
+        page.get_by_role('link', name='Mail transport', exact=True).click()
+        page.get_by_role('heading', name='Configured listeners', exact=True).wait_for()
+        page.get_by_text('These are saved settings. Running listeners can differ until the service is restarted.', exact=True).wait_for()
+        page.get_by_label('Transport inventory', exact=True).select_option('certificates')
+        page.get_by_role('heading', name='Configured certificates', exact=True).wait_for()
+        page.get_by_label('search', exact=True).fill(os.environ['ARZOIEMAIL_TEST_CERTIFICATE_NAME'])
+        page.get_by_role('button', name='Search transport', exact=True).click()
+        page.get_by_text(os.environ['ARZOIEMAIL_TEST_CERTIFICATE_NAME'], exact=True).wait_for()
+        assert page.evaluate('typeof window.transportInventoryExecuted') == 'undefined', 'Certificate names must remain inert text.'
+        assert 'not-used-private-key.pem' not in page.locator('#content').inner_text()
+        page.set_viewport_size({"width": 390, "height": 844})
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Transport inventory overflows on mobile.'
+        page.screenshot(path=str(output / 'transport-inventory-mobile.png'), full_page=True)
+        page.set_viewport_size({"width": 1440, "height": 1000})
         stage = 'server settings persistence'
         settings = context.request.get(base + '/api/v1/settings/pop3')
         assert settings.status == 200
@@ -149,6 +164,9 @@ with sync_playwright() as playwright:
                 assert not role_page.get_by_role('link', name='Server settings', exact=True).is_visible()
                 assert role_context.request.get(base + '/api/v1/settings/pop3').status == 403
                 assert role_context.request.get(base + '/api/v1/settings/tls').status == 403
+                assert not role_page.get_by_role('link', name='Mail transport', exact=True).is_visible()
+                assert role_context.request.get(base + '/api/v1/transport/listeners').status == 403
+                assert role_context.request.get(base + '/api/v1/transport/certificates').status == 403
                 stage = 'live mailbox self-service'
                 own_profile = role_context.request.get(base + '/api/v1/self/profile')
                 assert own_profile.status == 200

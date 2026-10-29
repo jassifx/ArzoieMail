@@ -453,6 +453,34 @@ certificate/hostname/key suitability or rollback acceptance. Those A06/E03 gates
 Native/managed compilation and the full Compact VM run passed (781 native assertions,
 including 246 settings assertions, and both browsers), followed by four-backend CI at `82a3bdaf5`.
 
+## Mail transport inventory (completion branch, validation in progress)
+
+`GET /api/v1/transport/listeners` and `GET /api/v1/transport/certificates` are server-only
+in REST and native code. Native commands are `transport.listeners.list` and
+`transport.certificates.list`; other transport commands are not exposed. These are read-only
+configuration records, not a live socket census or certificate-health check.
+
+Both return `items`, `total`, `offset`, `limit`, `maximumLimit:25` and `source:"configured"`.
+Filters are `search` (case-insensitive substring, maximum 255 UTF-8 bytes), `offset`
+(0-2147483647) and `limit` (1-25, default 25). Unknown filters and repeated REST query filters are rejected.
+Listener search covers protocol, address and port; certificate search covers name and ID text.
+Responses are bounded, but metadata is currently scanned in memory; DB-side paging/capacity
+acceptance remains open. Configured state can differ from running contexts until restart.
+
+Listener fields are `id`, `protocol`, `protocolCode`, `address`, `port`, `security`,
+`securityCode` and `certificateId`. IDs are exact decimal strings; an unassigned certificate
+is null. Known protocol codes are SMTP=1, POP3=3 and IMAP=5; security codes are plaintext=0,
+implicit TLS=1, optional STARTTLS=2 and required STARTTLS=3. Unknown legacy codes remain
+visible as `Unknown` with their numeric code so they are not silently reinterpreted.
+Certificate fields are only `id` and `name`. Queries do not select private-key/certificate
+paths and do not open certificate files. Registrations do not establish existence, expiry,
+chain/hostname/key validity, access permissions or renewal readiness.
+
+The panel renders registration names as inert text, supports search/paging and distinguishes
+saved listeners from running state. Guided import/ACME, listener edits/assignment, validation,
+activation/restart and rollback remain A06/E03 work. Native/managed builds and the full Compact
+VM run passed (831 native,449 HTTP/security,145 real HTTP and both browsers); its own CI is required.
+
 ## Filtering and trusted-relay collections (completion branch)
 
 `/api/v1/policies/{resource}` supports GET/list and POST/create; `/{id}` supports GET,

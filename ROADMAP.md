@@ -320,8 +320,14 @@ Subsequent listener/certificate persistence regressions reproduced two false-suc
 real Compact write rejection. Error propagation is corrected and both focused VM cases passed,
 including collection non-publication and successful retry. A disconnected-manager regression
 also reproduced unsafe upgrade-prerequisite success; both upgrade/script entry points now
-refuse missing connections and TestInternals passed in the VM. CI for these fixes remains pending;
+refuse missing connections and TestInternals passed in the VM. All four backend jobs, Release,
+GCC/Clang and CI installer generation passed these corrections at `170442658`;
 see the handoff and CI inventory for exact revision attribution.
+The next transport-inventory addition exposes bounded server-only configured listener and
+certificate metadata, with exact string IDs and no private paths/file reads. Native/managed
+compilation and the full VM/native/REST/browser run passed (831 native,449 HTTP/security).
+Its own CI remains pending. This supports future
+guided setup; it does not deliver certificate provisioning, assignment or activation.
 
 ### Phase 1b delivery tracker
 

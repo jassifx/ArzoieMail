@@ -172,7 +172,9 @@ revocation issue was reproduced and fixed with passing VM regression checks; 43 
 session checks also passed. Database corrections at `bc3980201` passed all four backend jobs,
 Release, GCC/Clang and CI installer generation. Eight additional mail TLS controls passed
 the 781-native-assertion VM run, published browser checks and four-backend CI at `82a3bdaf5`.
-Subsequent persistence/recovery corrections passed targeted VM regressions and await their own CI. The remaining
+Subsequent persistence/recovery corrections passed targeted VM regressions and four-backend CI at `170442658`.
+A transport inventory addition passed full VM/browser validation and awaits its own CI; it shows configured listeners and
+certificate names without private paths. The remaining
 administration, scanner, certificate, hosting, migration and cutover gates are still open.
 No new completion PR or Phase 1b completion is claimed.
 

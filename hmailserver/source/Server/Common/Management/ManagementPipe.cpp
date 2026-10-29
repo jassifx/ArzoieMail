@@ -38,6 +38,7 @@
 #include "../BO/IncomingRelays.h"
 #include "../BO/SecurityRanges.h"
 #include "../Cache/Cache.h"
+#include "../SQL/IPAddressSQLHelper.h"
 #include <functional>
 #include <string_view>
 #include <array>
@@ -768,6 +769,7 @@ namespace HM
       }
       #include "MailOperations.inc"
       #include "ServerSettings.inc"
+      #include "TransportInventory.inc"
       #include "PolicyCollections.inc"
       #include "MailboxSelfService.inc"
       json::object DnsblView(DNSBlackList &item)
@@ -874,6 +876,7 @@ namespace HM
          if (operation == "authenticate") return User(*account);
          if (operation.rfind("self.", 0) == 0) return ManageSelf(operation, arguments, *account);
          if (operation.rfind("settings.", 0) == 0) return ManageServerSettings(operation, arguments, *account);
+         if (operation.rfind("transport.", 0) == 0) return ReadTransportInventory(operation, arguments, *account);
          if (operation.rfind("surbl.", 0) == 0 || operation.rfind("blockedattachments.", 0) == 0
              || operation.rfind("incomingrelays.", 0) == 0 || operation.rfind("securityranges.", 0) == 0)
             return ManagePolicies(operation, arguments, *account);

@@ -168,6 +168,7 @@ if (args.Contains("--live"))
     await PolicyCollectionsTests.Run(native, name, password, Check);
     await MailboxSelfServiceTests.Run(native, name, password, Check);
     await SecurityRangeTests.Run(native, name, password, Check);
+    await TransportInventoryTests.Run(native, name, password, Check);
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
     // Real native persistence/authorization coverage runs on every CI database backend.
     async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>
@@ -351,6 +352,14 @@ try
     Check(fake.LastOperation == "antispam.update", "Route calls explicit native command.");
     await Send("/settings/smtp", HttpMethod.Get);
     Check(fake.LastOperation == "settings.read" && fake.LastArguments.GetProperty("section").GetString() == "smtp", "Server-settings route selects its native section.");
+    foreach (string resource in new[] { "listeners", "certificates" })
+    {
+        await Send($"/transport/{resource}?limit=25&offset=1&search=fixture", HttpMethod.Get);
+        Check(fake.LastOperation == "transport." + resource + ".list" && fake.LastArguments.GetProperty("limit").GetInt32() == 25,
+            "Transport inventory uses an explicit native command and bounded filters.");
+        foreach (string invalid in new[] { "limit=26", "limit=0", "limit=1&limit=2", "offset=-1", "path=secret" })
+            await Send($"/transport/{resource}?{invalid}", HttpMethod.Get, status: 422);
+    }
     await Send("/settings/pop3", HttpMethod.Patch, new { fields = new { maxConnections = 7 }, expected = new { maxConnections = 0 } }, token);
     Check(fake.LastOperation == "settings.update" && fake.LastArguments.GetProperty("expected").GetProperty("maxConnections").GetInt32() == 0, "Settings preserve the optimistic concurrency precondition.");
     await Send("/settings/pop3", HttpMethod.Patch, new { fields = new { maxConnections = 7 } }, token, 422);
@@ -466,8 +475,12 @@ try
     var current = await Send("/session", HttpMethod.Get);
     Check(current.GetProperty("user").GetProperty("level").GetInt32() == 1, "Refresh roles from the native service.");
     await Send("/status", HttpMethod.Get, status: 403);
+    await Send("/transport/listeners", HttpMethod.Get, status: 403);
+    await Send("/transport/certificates", HttpMethod.Get, status: 403);
     await Send("/domains", HttpMethod.Get);
     fake.Level = 0;
+    await Send("/transport/listeners", HttpMethod.Get, status: 403);
+    await Send("/transport/certificates", HttpMethod.Get, status: 403);
     await Send("/self", HttpMethod.Get);
     Check(fake.LastOperation == "self.read" && !fake.LastArguments.TryGetProperty("accountId", out _), "Self-service derives the mailbox in the native service.");
     foreach (string area in new[] { "profile", "behavior", "signature" })

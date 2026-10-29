@@ -165,6 +165,13 @@ Defender throughput and the necessary scheduling changes are not implemented by 
 
 ## Implementation sequence
 
+The completion branch's transport inventory reads only configured listener and certificate
+metadata. Its native SELECTs omit certificate/private-key paths, and IDs remain decimal strings.
+This is a prerequisite for guided setup, not a certificate import/health or active-listener
+implementation. Certificate transfer must accommodate the current 16 KiB HTTP-body and 64 KiB
+RPC-frame limits without accepting arbitrary server paths or silently weakening global limits.
+Import/key-file/database reconciliation and safe listener activation remain design/delivery gates.
+
 1. Establish the opt-in native management boundary, shared business authentication, ASP.NET Core
    session/security foundation, initial spam/DNSBL/DNS workflows and repeatable tests. This is
    the foundation merged in PR #31; it does not switch existing installations to the new panel.

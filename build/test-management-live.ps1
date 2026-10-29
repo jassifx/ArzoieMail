@@ -40,6 +40,7 @@ $app = New-Object -ComObject 'hMailServer.Application'
 if ($null -eq $app.Authenticate($AdministratorCredential.UserName, $adminPassword)) { throw 'Cannot authenticate integration-test setup.' }
 if ($app.Database.CurrentVersion -ne $app.Database.RequiredVersion) { throw 'Install a matching server/database before running native tests.' }
 $fixtureDomainId = $null
+$fixtureCertificateId = $null
 $objects = @()
 function Stop-TestService {
     if ((Get-Service hMailServer).Status -ne 'Stopped') {
@@ -56,6 +57,17 @@ try {
     $domain.Active = $true
     $domain.Save()
     $fixtureDomainId = $domain.ID
+    # Registration metadata only: deliberately nonexistent paths must never be
+    # read, returned, logged by the inventory endpoint, or assigned to a listener.
+    $certificate = $app.Settings.SSLCertificates.Add(); $objects += $certificate
+    $certificate.Name = 'Inventory fixture <img src=x onerror=window.transportInventoryExecuted=1> ' + [Guid]::NewGuid().ToString('N')
+    $certificate.CertificateFile = 'C:\ArzoieInventoryFixture\not-used-certificate.pem'
+    $certificate.PrivateKeyFile = 'C:\ArzoieInventoryFixture\not-used-private-key.pem'
+    $certificate.Save()
+    $fixtureCertificateId = $certificate.ID
+    if ($fixtureCertificateId -le 0) { throw 'Certificate inventory fixture was not persisted.' }
+    $env:ARZOIEMAIL_TEST_CERTIFICATE_ID = [string]$fixtureCertificateId
+    $env:ARZOIEMAIL_TEST_CERTIFICATE_NAME = $certificate.Name
     $password = [Convert]::ToBase64String([Guid]::NewGuid().ToByteArray()) + '!aA1'
     if ($env:GITHUB_ACTIONS -eq 'true') { Write-Output "::add-mask::$password" }
     foreach ($role in @(@('server',2),@('domain',1),@('user',0))) {
@@ -113,8 +125,11 @@ try {
     Start-Service hMailServer
     (Get-Service hMailServer).WaitForStatus('Running', [TimeSpan]::FromSeconds(30))
     $cleanup = New-Object -ComObject 'hMailServer.Application'
-    if ($null -ne $cleanup.Authenticate($AdministratorCredential.UserName, $adminPassword) -and $null -ne $fixtureDomainId) { $cleanup.Domains.DeleteByDBID($fixtureDomainId) }
+    if ($null -eq $cleanup.Authenticate($AdministratorCredential.UserName, $adminPassword)) { throw 'Cannot authenticate integration fixture cleanup.' }
+    if ($null -ne $fixtureDomainId) { $cleanup.Domains.DeleteByDBID($fixtureDomainId) }
+    if ($null -ne $fixtureCertificateId) { $cleanup.Settings.SSLCertificates.DeleteByDBID($fixtureCertificateId) }
     $env:ARZOIEMAIL_TEST_USERNAME = $null; $env:ARZOIEMAIL_TEST_PASSWORD = $null
     $env:ARZOIEMAIL_TEST_DOMAIN_USERNAME = $null; $env:ARZOIEMAIL_TEST_USER_USERNAME = $null
     $env:ARZOIEMAIL_TEST_STORED_ID = $null
+    $env:ARZOIEMAIL_TEST_CERTIFICATE_ID = $null; $env:ARZOIEMAIL_TEST_CERTIFICATE_NAME = $null
 }
