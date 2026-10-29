@@ -164,6 +164,15 @@ remaining work, acceptance gates and every legacy PHP/desktop main-pane migratio
 | **5 · Code quality** | Modern ownership (smart pointers), compiling at warning level 4, smaller modules, more of the server in the portable core with its tests and fuzzers - continuously, alongside the other phases | Ongoing |
 | **6 · Features** | Sieve filtering, DMARC aggregate reports, ARC, webmail | Planned |
 
+The current authorized effort completes all remaining Phase 1b, tracked on
+`feature/phase1b-completion`. Server settings and three filtering/relay collections passed
+initial VM validation; mailbox self-service also passed native/browser VM checks. Password-policy
+and IP security-range additions, plus logging, passed initial VM checks. A reproduced session
+revocation issue was reproduced and fixed with passing VM regression checks; 43 controlled-clock
+session checks also passed. Four-backend branch CI remains pending. The remaining
+administration, scanner, certificate, hosting, migration and cutover gates are still open.
+No new completion PR or Phase 1b completion is claimed.
+
 The phases run in this order, each starting once the one before it is done; code quality (5) runs
 alongside all of them.
 

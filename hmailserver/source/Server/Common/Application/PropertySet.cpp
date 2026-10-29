@@ -5,6 +5,7 @@
 #include "PropertySet.h"
 #include "BackupSecrets.h"
 #include "Property.h"
+#include "../SQL/DALRecordset.h"
 #include "../Util/Crypt.h"
 
 
@@ -31,6 +32,7 @@ namespace HM
    void 
    PropertySet::Refresh()
    {
+      boost::lock_guard<boost::recursive_mutex> writes(checked_mutex_);
       SQLCommand command("select * from hm_settings");
       std::shared_ptr<DALRecordset> pRS = Application::Instance()->GetDBManager()->OpenRecordset(command);
    
@@ -64,7 +66,10 @@ namespace HM
 
 
 
-      items_ = tmpMap;
+      {
+         boost::lock_guard<boost::recursive_mutex> cache(cache_mutex_);
+         items_ = tmpMap;
+      }
 
       auto iter = items_.begin();
       auto iterEnd = items_.end();
@@ -78,6 +83,7 @@ namespace HM
    std::shared_ptr<Property>
    PropertySet::GetProperty_(const String & sPropertyName)
    {
+      boost::lock_guard<boost::recursive_mutex> cache(cache_mutex_);
       auto iterProperty = items_.find(sPropertyName);
    
       if (iterProperty != items_.end())
@@ -114,6 +120,7 @@ namespace HM
    void 
    PropertySet::SetLong(const String &sPropertyName, long lValue)
    {
+      boost::lock_guard<boost::recursive_mutex> writes(checked_mutex_);
       std::shared_ptr<Property> pProperty = GetProperty_(sPropertyName);
       bool bChanged = lValue != pProperty->GetLongValue();
       pProperty->SetLongValue(lValue);
@@ -125,6 +132,7 @@ namespace HM
    void 
    PropertySet::SetBool(const String &sPropertyName, bool bValue)
    {
+      boost::lock_guard<boost::recursive_mutex> writes(checked_mutex_);
       std::shared_ptr<Property> pProperty = GetProperty_(sPropertyName);
       bool bChanged = bValue != pProperty->GetBoolValue();
       pProperty->SetBoolValue(bValue);
@@ -136,6 +144,7 @@ namespace HM
    void 
    PropertySet::SetString(const String &sPropertyName, const String &sValue)
    {
+      boost::lock_guard<boost::recursive_mutex> writes(checked_mutex_);
       std::shared_ptr<Property> pProperty = GetProperty_(sPropertyName);
       bool bChanged = sValue != pProperty->GetStringValue();
       pProperty->SetStringValue(sValue);
@@ -144,9 +153,103 @@ namespace HM
          OnPropertyChanged_(pProperty);
    }
 
+   PropertySet::CheckedResult
+   PropertySet::ApplyChecked(const std::vector<CheckedChange> &changes)
+   {
+      if (changes.empty() || changes.size() > 128) return CheckedResult::Failure;
+      std::vector<std::shared_ptr<Property>> notify;
+      {
+         boost::lock_guard<boost::recursive_mutex> guard(checked_mutex_);
+         std::set<String> names;
+         for (const auto &change : changes)
+         {
+            const auto item = items_.find(change.name);
+            if (item == items_.end() || IsCryptedProperty(change.name) || !names.insert(change.name).second)
+               return CheckedResult::Failure;
+            if (change.text ? item->second->GetStringValue() != change.expectedString
+                            : item->second->GetLongValue() != change.expectedNumber)
+            {
+               LOG_DEBUG("Management settings: cached precondition changed for " + change.name);
+               return CheckedResult::Conflict;
+            }
+         }
+         auto manager = Application::Instance()->GetDBManager();
+         String error;
+         auto connection = manager->BeginTransaction(error);
+         if (!connection) return CheckedResult::Failure;
+         bool pending = true;
+         try
+         {
+            for (const auto &change : changes)
+            {
+               SQLCommand update(change.text
+                  ? "update hm_settings set settingstring = @VALUE where settingname = @NAME and settingstring = @EXPECTED"
+                  : "update hm_settings set settinginteger = @VALUE where settingname = @NAME and settinginteger = @EXPECTED");
+               // Compact's ADO provider binds by ordinal even with NamedParameters=true.
+               // Keep the binding order identical to the SQL, also for named providers.
+               if (change.text)
+                  update.AddParameter("@VALUE", change.value);
+               else
+                  update.AddParameter("@VALUE", change.number);
+               update.AddParameter("@NAME", change.name);
+               if (change.text)
+                  update.AddParameter("@EXPECTED", change.expectedString);
+               else
+                  update.AddParameter("@EXPECTED", change.expectedNumber);
+               // Do not reconnect/retry inside a transaction: losing the connection loses
+               // the transaction. Verify the guarded update on that same connection.
+               if (connection->TryExecute(update, error) != DALConnection::DALSuccess)
+               {
+                  pending = false;
+                  manager->RollbackTransaction(connection, error);
+                  return CheckedResult::Failure;
+               }
+               SQLCommand select("select settinginteger, settingstring from hm_settings where settingname = @NAME");
+               select.AddParameter("@NAME", change.name);
+               auto row = connection->CreateRecordset();
+               if (!row || row->TryOpen(connection, select, error) != DALConnection::DALSuccess)
+               {
+                  pending = false;
+                  manager->RollbackTransaction(connection, error);
+                  return CheckedResult::Failure;
+               }
+               const bool matches = !row->IsEOF() && (change.text
+                  ? row->GetStringValue("settingstring") == change.value
+                  : row->GetLongValue("settinginteger") == change.number);
+               if (!matches)
+               {
+                  LOG_DEBUG("Management settings: persisted precondition changed for " + change.name);
+                  pending = false;
+                  manager->RollbackTransaction(connection, error);
+                  return CheckedResult::Conflict;
+               }
+            }
+            pending = false; // CommitTransaction releases the leased connection even on failure.
+            if (!manager->CommitTransaction(connection, error)) return CheckedResult::Failure;
+            for (const auto &change : changes)
+            {
+               auto item = items_.at(change.name);
+               if (change.text) item->SetStringValueWithoutSaving(change.value);
+               else item->SetLongValueWithoutSaving(change.number);
+               notify.push_back(item);
+            }
+         }
+         catch (...)
+         {
+            if (pending) manager->RollbackTransaction(connection, error);
+            throw;
+         }
+      }
+      // Observers see all committed values; never run external callbacks while holding
+      // the batch mutex. Database outages leave the previous effective cache intact.
+      for (const auto &item : notify) OnPropertyChanged_(item);
+      return CheckedResult::Success;
+   }
+
    String
    PropertySet::InitializeStringIfEmpty(const String &sPropertyName, const String &sValue)
    {
+      boost::lock_guard<boost::recursive_mutex> writes(checked_mutex_);
       bool bIsCrypted = IsCryptedProperty(sPropertyName);
 
       String sStoredValue = bIsCrypted ? Crypt::Instance()->EnCrypt(sValue, Crypt::ETSecret) : sValue;
@@ -215,6 +318,7 @@ namespace HM
    bool
    PropertySet::XMLStore(XNode *pBackupNode)
    {
+      boost::lock_guard<boost::recursive_mutex> writes(checked_mutex_);
       XNode *pPropertiesNode = pBackupNode->AppendChild(_T("Properties"));
       auto iterProperty = items_.begin();
 
@@ -242,6 +346,7 @@ namespace HM
    bool
    PropertySet::XMLLoad(XNode *pBackupNode)
    {
+      boost::lock_guard<boost::recursive_mutex> writes(checked_mutex_);
       XNode *pPropertiesNode = pBackupNode->GetChild(_T("Properties"));
       if (!pPropertiesNode)
          return true;

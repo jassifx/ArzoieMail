@@ -11,6 +11,9 @@
     queue: ['Delivery queue', 'Inspect pending mail and request a retry or removal.'],
     routes: ['Routing', 'Manage next-hop delivery and allowed recipients.'],
     rules: ['Global rules', 'Build disabled drafts, then validate and enable processing rules.'],
+    settings: ['Server settings', 'Configure protocols, security policy, performance and existing scanners.'],
+    policies: ['Filtering & relays', 'Manage URI blocklists, attachment rules and explicitly trusted incoming relays.'],
+    self: ['My mailbox', 'Manage your own profile, signature, forwarding, replies, rules and password.'],
   };
   function el(tag, text, className) {
     const node = document.createElement(tag);
@@ -66,12 +69,13 @@
       $('identity').textContent = user.address;
       document.querySelectorAll('[data-server]').forEach(n => { n.hidden = user.level !== 2; });
       document.querySelectorAll('[data-page=domains]').forEach(n => { n.hidden = user.level < 1; });
+      document.querySelectorAll('[data-mailbox]').forEach(n => { n.hidden = !(user.accountId > 0); });
     }
   }
   async function overview(root) {
     if (user.level !== 2) {
       const c = card('Your domain workspace');
-      c.body.append(el('p', user.level === 1 ? 'Manage your mailboxes and inspect domain authentication records.' : 'Your mailbox is active. Self-service account settings are planned for a later slice.', 'text-secondary'));
+      c.body.append(el('p', user.level === 1 ? 'Manage your mailboxes and inspect domain authentication records.' : 'Manage your profile, forwarding, signatures and rules from My mailbox.', 'text-secondary'));
       root.append(c.outer); return;
     }
     const status = await request('/status');
@@ -405,8 +409,8 @@
       } catch (error) { notify(error.message, true); } finally { submit.disabled = false; }
     }); c.body.append(form, button('Cancel', () => root.replaceChildren())); root.append(c.outer);
   }
-  async function mailboxProfile(editor, domain, account) {
-    const path = `/domains/${domain.id}/accounts/${account.id}/profile`; const profile = await request(path);
+  async function mailboxProfile(editor, domain, account, self = false) {
+    const path = self ? '/self/profile' : `/domains/${domain.id}/accounts/${account.id}/profile`; const profile = await request(path);
     editor.replaceChildren(); const c = card(`Mailbox profile · ${account.address}`);
     c.body.append(el('p', `${profile.directoryBacked ? 'Directory-backed' : 'Local'} account · Last logon: ${profile.lastLogon || 'Not recorded'}`, 'help'));
     c.body.append(el('p', 'Names are used by signature macros. Directory authentication settings and credentials are managed separately.', 'help'));
@@ -457,8 +461,8 @@
     if (!result.items.length) c.body.append(el('p', 'No alternate domain names.', 'help'));
     pager(c.body, result, offset, next => reload(next)); editor.append(c.outer);
   }
-  async function mailboxSignature(editor, domain, account) {
-    const path = `/domains/${domain.id}/accounts/${account.id}/signature`;
+  async function mailboxSignature(editor, domain, account, self = false) {
+    const path = self ? '/self/signature' : `/domains/${domain.id}/accounts/${account.id}/signature`;
     const values = await request(path);
     editor.replaceChildren(); const c = card(`Signature · ${account.address}`);
     c.body.append(el('p', 'Choose plain text and HTML signatures for this mailbox. Domain policy can replace or append a signature, or omit it for local mail and replies. HTML is edited as source text. Saving does not sanitize email markup.', 'help'));
@@ -482,8 +486,8 @@
     }
     c.body.append(form, button('Cancel', () => editor.replaceChildren())); editor.append(c.outer);
   }
-  async function mailboxBehavior(editor, domain, account) {
-    const path = `/domains/${domain.id}/accounts/${account.id}/behavior`;
+  async function mailboxBehavior(editor, domain, account, self = false) {
+    const path = self ? '/self/behavior' : `/domains/${domain.id}/accounts/${account.id}/behavior`;
     const values = await request(path);
     editor.replaceChildren(); const c = card(`Forwarding and automatic replies · ${account.address}`);
     c.body.append(el('p', 'Forward to one local or external address. External forwarding can expose mail and affect SPF/DMARC delivery; review the destination. Keeping originals uses mailbox storage. Indirect forwarding loops are not checked here.', 'help'));
@@ -604,6 +608,149 @@
       list.body.append(row);
     }); pager(list.body, result, offset, next => reload(next)); root.replaceChildren(list.outer, editor);
   }
+  async function self(root) {
+    const identity = await request('/self');
+    const c = card(identity.address), editor = el('div', null, 'section-gap');
+    const account = { address: identity.address };
+    c.body.append(el('p', identity.directoryBacked ? 'Directory authentication is managed by your organization.' : 'Changes apply only to your signed-in mailbox.', 'help'));
+    c.body.append(button('My profile', () => mailboxProfile(editor, null, account, true)),
+      button('My signature', () => mailboxSignature(editor, null, account, true)),
+      button('My forwarding and replies', () => mailboxBehavior(editor, null, account, true)),
+      button('My rules', () => ruleList(editor, '/self/rules', identity.address)));
+    if (identity.passwordChangeable) c.body.append(button('Change my password', () => {
+      editor.replaceChildren(); const box = card('Change mailbox password'), form = el('form'), controls = {};
+      for (const [name, title, autocomplete] of [['currentPassword', 'Current password', 'current-password'], ['newPassword', 'New password', 'new-password'], ['confirmPassword', 'Confirm new password', 'new-password']]) {
+        const field = inputField(name, ''); field.input.type = 'password'; field.input.maxLength = 1024;
+        field.input.autocomplete = autocomplete; field.input.required = true; field.wrap.querySelector('label').textContent = title;
+        controls[name] = field.input; form.append(field.wrap);
+      }
+      const save = el('button', 'Change password and sign out', 'btn btn-primary mt-3'); save.type = 'submit'; form.append(save);
+      form.addEventListener('submit', async event => {
+        event.preventDefault(); if (controls.newPassword.value !== controls.confirmPassword.value) { notify('The new passwords do not match.', true); return; }
+        save.disabled = true;
+        try {
+          const result = await request('/self/password', 'POST', { currentPassword: controls.currentPassword.value, newPassword: controls.newPassword.value });
+          Object.values(controls).forEach(input => { input.value = ''; }); csrf = result.csrf; user = null; ++generation; showIdentity();
+          $('login-error').textContent = 'Password changed. Sign in with your new password.';
+        } catch (error) { notify(error.message, true); }
+        finally { save.disabled = false; }
+      });
+      box.body.append(el('p', 'Use a unique password. All sessions using the previous password will be rejected.', 'help'), form);
+      editor.append(box.outer);
+    }));
+    root.append(c.outer, editor);
+  }
+  async function policies(root) {
+    const resources = [['surbl', 'URI blocklists (SURBL)'], ['blockedattachments', 'Blocked attachments'], ['incomingrelays', 'Trusted incoming relays'], ['securityranges', 'IP security ranges']];
+    const chooser = el('select', null, 'form-select'); chooser.id = 'policy-resource';
+    const label = el('label', 'Policy collection', 'form-label'); label.htmlFor = chooser.id;
+    for (const [value, title] of resources) { const option = el('option', title); option.value = value; chooser.append(option); }
+    const listing = el('div', null, 'section-gap'), editor = el('div', null, 'section-gap');
+    let sequence = 0;
+    async function reload(offset = 0) {
+      const run = ++sequence, resource = chooser.value, path = `/policies/${resource}`;
+      editor.replaceChildren();
+      listing.replaceChildren(el('p', 'Loading policies…', 'help'));
+      $('notice').hidden = true;
+      const result = await request(`${path}?offset=${offset}&limit=50`);
+      if (run !== sequence || chooser.value !== resource) return;
+      const c = card(resources.find(item => item[0] === resource)[1]);
+      const warning = resource === 'securityranges'
+        ? 'Changes affect new mail connections immediately. Higher priorities win; avoid equal-priority overlaps. Web administration remains available for recovery. Unauthenticated external delivery requires a separate risk acknowledgement; use only explicitly trusted source ranges. New ranges deny mail connections until configured.'
+        : resource === 'incomingrelays'
+        ? 'Trust only the exact IP ranges of your incoming relays. Trusting other senders can invalidate spam attribution.'
+        : resource === 'blockedattachments' ? 'Attachment patterns apply when attachment blocking is enabled in server settings.'
+          : 'Use each provider’s documented zone and usage policy. New URI blocklists start disabled.';
+      c.body.append(el('p', warning, 'alert alert-light border'));
+      if (resource === 'securityranges') {
+        const probe = inputField('address', '127.0.0.1'); probe.input.maxLength = 64;
+        const resultBox = el('p', '', 'help');
+        c.body.append(probe.wrap, button('Inspect matching IP policy', async () => {
+          const match = await request('/policies/securityranges/match', 'POST', { address: probe.input.value });
+          resultBox.textContent = match.matched ? `${match.matched.name} (priority ${match.matched.priority}). ${match.note}` : 'No matching IP policy; new mail connections are denied.';
+        }), resultBox);
+      }
+      function edit(item = null) {
+        $('notice').hidden = true;
+        const selected = item || result.defaults;
+        const values = Object.fromEntries(result.schema.map(rule => [rule.name, selected[rule.name]]));
+        const help = Object.fromEntries(result.schema.map(rule => [rule.name, rule.help]));
+        const box = card(item ? 'Edit policy' : 'Add policy');
+        const form = editForm(values, async fields => {
+          const patch = item ? Object.fromEntries(Object.entries(fields).filter(([name, value]) => value !== item[name])) : fields;
+          if (item && !Object.keys(patch).length) { notify('No policy fields changed.'); return; }
+          if (!confirm('Apply this policy change? ' + warning)) return;
+          await request(item ? `${path}/${item.id}` : path, item ? 'PATCH' : 'POST', item ? { ...patch, expected: item } : patch);
+          await reload(offset); notify('Policy saved.');
+        }, help);
+        for (const rule of result.schema) {
+          const input = form.elements.namedItem(rule.name);
+          if (rule.type === 'integer') { input.min = String(rule.minimum); input.max = String(rule.maximum); input.required = true; }
+          if (rule.type === 'string') input.maxLength = rule.maximum;
+        }
+        box.body.append(form, button('Cancel', () => editor.replaceChildren())); editor.replaceChildren(box.outer);
+        editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      c.body.append(button('Add policy', () => edit(), 'btn btn-primary btn-sm'));
+      for (const item of result.items) {
+        const row = el('div', null, 'domain-row');
+        row.append(el('strong', item.name || item.zone || item.pattern), button('Edit policy', () => edit(item)));
+        if (typeof item.active === 'boolean') row.append(pill(item.active ? 'Enabled' : 'Disabled', item.active ? '' : 'warning'));
+        row.append(button('Delete policy', async () => {
+          if (!confirm('Delete this policy? ' + warning)) return;
+          await request(`${path}/${item.id}`, 'DELETE', { expected: item }); await reload(0); notify('Policy deleted.');
+        }, 'btn btn-outline-danger btn-sm'));
+        c.body.append(row);
+      }
+      if (!result.items.length) c.body.append(el('p', 'No policies in this collection.', 'help'));
+      pager(c.body, result, offset, reload); listing.replaceChildren(c.outer);
+    }
+    chooser.addEventListener('change', () => reload().catch(error => notify(error.message, true)));
+    root.append(label, chooser, listing, editor); await reload();
+  }
+  async function settings(root) {
+    const sections = [['protocols', 'Enabled protocols'], ['smtp', 'SMTP delivery'], ['imap', 'IMAP'], ['pop3', 'POP3'],
+      ['autoban', 'Auto-ban & invalid clients'], ['greylisting', 'Greylisting'], ['performance', 'Performance & caching'],
+      ['general', 'General settings'], ['antivirus', 'Existing antivirus providers'], ['passwordhash', 'Password hashing policy'], ['logging', 'Logging']];
+    const chooser = el('select', null, 'form-select'); chooser.id = 'settings-section';
+    const label = el('label', 'Settings section', 'form-label'); label.htmlFor = chooser.id;
+    for (const [value, title] of sections) { const option = el('option', title); option.value = value; chooser.append(option); }
+    const editor = el('div', null, 'section-gap'); let load = 0;
+    async function reload() {
+      const sequence = ++load; const section = chooser.value;
+      editor.replaceChildren(el('p', 'Loading settings…', 'help'));
+      const result = await request(`/settings/${section}`);
+      if (sequence !== load || section !== chooser.value) return;
+      const c = card(sections.find(item => item[0] === section)[1]); const form = el('form');
+      const grid = el('div', null, 'form-grid'); const controls = new Map();
+      for (const rule of result.schema) {
+        const field = inputField(rule.name, result.values[rule.name], rule.help + (rule.restart ? ' Requires service restart.' : ''));
+        // These schemas are returned by the native allowlist, not executable UI templates.
+        if (rule.type === 'integer') { field.input.type = 'number'; field.input.required = true; field.input.min = String(rule.minimum); field.input.max = String(rule.maximum); field.input.step = '1'; }
+        if (rule.type === 'string') field.input.maxLength = rule.maximum;
+        controls.set(rule.name, { input: field.input, rule }); grid.append(field.wrap);
+      }
+      const save = el('button', 'Save server settings', 'btn btn-primary mt-3'); save.type = 'submit';
+      form.append(grid, save); c.body.append(form, el('p', 'Changes are checked against the values you loaded. Reload after a conflict. Restart is never performed automatically.', 'help mt-3'));
+      editor.replaceChildren(c.outer);
+      form.addEventListener('submit', async event => {
+        event.preventDefault(); if (!form.reportValidity()) return;
+        const fields = {}, expected = {}; let restart = false;
+        for (const [name, { input, rule }] of controls) {
+          const value = rule.type === 'boolean' ? input.checked : rule.type === 'integer' ? Number(input.value) : input.value;
+          if (value !== result.values[name]) { fields[name] = value; expected[name] = result.values[name]; restart ||= rule.restart; }
+        }
+        if (!Object.keys(fields).length) { notify('No settings changed.'); return; }
+        if (!confirm(`Apply ${Object.keys(fields).length} server setting change(s)? Mail processing policy may change.${restart ? ' Some changes require a later service restart.' : ''}`)) return;
+        save.disabled = true;
+        try { await request(`/settings/${section}`, 'PATCH', { fields, expected }); await reload(); notify(restart ? 'Settings saved. Restart the service to apply the marked changes.' : 'Server settings saved.'); }
+        catch (error) { notify(error.message, true); }
+        finally { save.disabled = false; }
+      });
+    }
+    chooser.addEventListener('change', () => reload().catch(error => notify(error.message, true)));
+    root.append(label, chooser, editor); await reload();
+  }
   async function diagnostics(root) {
     const result = await request('/diagnostics');
     const c = card('Runtime checks');
@@ -613,7 +760,7 @@
   async function render() {
     if (!user) return;
     const run = ++generation; let page = location.hash.slice(1) || 'overview';
-    if (!pages[page] || (user.level !== 2 && !['overview', 'domains'].includes(page)) || (user.level < 1 && page === 'domains')) page = 'overview';
+    if (!pages[page] || (user.level !== 2 && !['overview', 'domains', 'self'].includes(page)) || (user.level < 1 && page === 'domains') || (page === 'self' && !(user.accountId > 0))) page = 'overview';
     currentPage = page; $('notice').hidden = true;
     $('page-title').textContent = pages[page][0]; $('page-description').textContent = pages[page][1];
     document.querySelectorAll('[data-page]').forEach(node => {
@@ -622,7 +769,7 @@
     $('content').setAttribute('aria-busy', 'true'); $('content').replaceChildren(el('p', 'Loading…', 'help'));
     const container = el('div');
     try {
-      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules })[page](container);
+      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules, settings, policies, self })[page](container);
       if (run === generation) $('content').replaceChildren(container);
     } catch (error) { if (run === generation) { $('content').replaceChildren(); notify(error.message, true); } }
     finally { if (run === generation) $('content').setAttribute('aria-busy', 'false'); }

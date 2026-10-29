@@ -28,7 +28,7 @@ competing plans.
 | End-user manual and publication gaps | [Manual index](../hmailserver/documentation/README.md), [documentation status](documentation-status.md) | Current guides, inherited/historical content, technical review, assets and publication still required |
 | Codebase rules and compatibility identifiers | [AGENTS](../AGENTS.md) | Layout, naming, persistence/schema, regression and build rules |
 | Maintainer instructions | [Working agreement](agents/working-agreement.md) | Scope authorization, VM-only runtime testing, PR/CI/review/merge gates |
-| Current task and resumption | [Agent index](agents/README.md), [latest handoff](agents/handoffs/2026-10-28.md) | Branch/base, PR, verified head, work done, open issues, next permitted action and stop conditions |
+| Current task and resumption | [Agent index](agents/README.md), [latest handoff](agents/handoffs/2026-10-29.md) | Branch/base, PR, verified head, work done, open issues, next permitted action and stop conditions |
 | Local setup and lessons | [Environment](agents/environment.md), [gotchas](agents/gotchas.md) | Local prerequisites, VM procedures and known traps; never credentials |
 
 ## Status and evidence rules

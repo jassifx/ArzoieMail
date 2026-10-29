@@ -25,6 +25,20 @@ namespace HM
       void SetBool(const String &sPropertyName, bool lValue);
       void SetString(const String &sPropertyName, const String &lValue);
 
+      struct CheckedChange
+      {
+         String name;
+         bool text;
+         long expectedNumber;
+         long number;
+         String expectedString;
+         String value;
+      };
+      enum class CheckedResult { Success, Conflict, Failure };
+      // Management allowlists choose the names. Commit all values before changing the cache
+      // or firing notifications. A stale persisted/cache value rejects the complete patch.
+      CheckedResult ApplyChecked(const std::vector<CheckedChange> &changes);
+
       String InitializeStringIfEmpty(const String &sPropertyName, const String &sValue);
       // Writes sValue only if the property is empty in the database, and returns the value
       // the database holds afterwards - which is another server's if it got there first,
@@ -44,5 +58,7 @@ namespace HM
       std::shared_ptr<Property> GetProperty_(const String &sPropertyName);
 
       std::map<String, std::shared_ptr<Property> > items_;
+      boost::recursive_mutex checked_mutex_;
+      boost::recursive_mutex cache_mutex_;
    };
 }

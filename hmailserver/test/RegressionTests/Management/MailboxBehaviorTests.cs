@@ -16,6 +16,7 @@ static class MailboxBehaviorTests
         }
         string name = "behavior-" + Guid.NewGuid().ToString("N") + ".test";
         long domainId = (await Send("domains.create", new { fields = new { name, active = true } })).GetProperty("id").GetInt64();
+        Exception? bodyFailure = null;
         try
         {
             async Task<long> Create(string local, int level = 0) => (await Send("accounts.create", new { domainId,
@@ -73,7 +74,15 @@ static class MailboxBehaviorTests
             await Submit(sender, mailbox, "new-generation"); await WaitFor(mailbox, password, 4); await WaitFor(sender, password, 2);
             check(true, "Re-enabled replies reset the existing per-sender history.");
         }
-        finally { await Send("domains.delete", new { id = domainId }); }
+        catch (Exception error) { bodyFailure = error; throw; }
+        finally
+        {
+            try { await Send("domains.delete", new { id = domainId }); }
+            catch (Exception cleanup) when (bodyFailure is not null)
+            {
+                throw new AggregateException("Mailbox behavior and fixture cleanup both failed.", bodyFailure, cleanup);
+            }
+        }
     }
 
     internal static async Task Submit(string sender, string recipient, string marker, string? contentType = null, string? body = null, string? inReplyTo = null)

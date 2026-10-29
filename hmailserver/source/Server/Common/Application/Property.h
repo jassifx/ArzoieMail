@@ -2,6 +2,7 @@
 // http://www.hmailserver.com
 
 #pragma once
+#include <atomic>
 
 namespace HM
 {
@@ -20,9 +21,18 @@ namespace HM
       int GetLongValue() const {return long_value_; }
       void SetLongValue(long NewVal);
 
-      String GetStringValue() const {return string_value_; }
+      String GetStringValue() const
+      {
+         boost::lock_guard<boost::recursive_mutex> guard(value_mutex_);
+         return string_value_;
+      }
       void SetStringValue(const String &NewVal);
-      void SetStringValueWithoutSaving(const String &NewVal) {string_value_ = NewVal; }
+      void SetStringValueWithoutSaving(const String &NewVal)
+      {
+         boost::lock_guard<boost::recursive_mutex> guard(value_mutex_);
+         string_value_ = NewVal;
+      }
+      void SetLongValueWithoutSaving(long value) {long_value_ = value; }
       // For a value which has just been read back out of the database, and so does not
       // need writing to it again.
 
@@ -37,7 +47,8 @@ namespace HM
       bool WriteLongSetting_(long lValue);
       bool WriteStringSetting_(const String &sValue);
 
-      long long_value_;
+      std::atomic<long> long_value_;
+      mutable boost::recursive_mutex value_mutex_;
       String string_value_;
       AnsiString name_;
 

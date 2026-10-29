@@ -32,6 +32,32 @@ routes = []
 route_addresses = []
 rules = {}
 revoked = False
+server_settings = {
+    'protocols': {'section': 'protocols', 'values': {'smtpEnabled': True},
+                  'schema': [{'name': 'smtpEnabled', 'type': 'boolean', 'minimum': 0, 'maximum': 1, 'help': 'SMTP listener enablement.', 'restart': True}]},
+    'pop3': {'section': 'pop3', 'values': {'maxConnections': 7, 'welcomeMessage': 'ArzoieMail'},
+             'schema': [{'name': 'maxConnections', 'type': 'integer', 'minimum': 0, 'maximum': 1000000, 'help': 'Connection limit.', 'restart': False},
+                        {'name': 'welcomeMessage', 'type': 'string', 'minimum': 0, 'maximum': 255, 'help': 'Greeting text.', 'restart': False}]}
+}
+server_settings['passwordhash'] = {'section': 'passwordhash', 'values': {'algorithm': 1, 'memoryKiB': 0, 'iterations': 2, 'autoUpgrade': True},
+    'schema': [{'name': name, 'type': 'boolean' if name == 'autoUpgrade' else 'integer', 'minimum': 0,
+                'maximum': 1 if name == 'autoUpgrade' else 2 if name == 'algorithm' else 10000000,
+                'help': 'Algorithm-specific policy; zero uses defaults.', 'restart': False}
+               for name in ['algorithm', 'memoryKiB', 'iterations', 'autoUpgrade']]}
+server_settings['logging'] = {'section': 'logging',
+    'values': {key: key in ['enabled', 'application', 'debug'] for key in ['enabled', 'application', 'smtp', 'pop3', 'imap', 'tcpIp', 'debug', 'keepFilesOpen', 'awStats']},
+    'schema': [{'name': key, 'type': 'boolean', 'minimum': 0, 'maximum': 1, 'help': 'Private native logging configuration.', 'restart': False}
+               for key in ['enabled', 'application', 'smtp', 'pop3', 'imap', 'tcpIp', 'debug', 'keepFilesOpen', 'awStats']]}
+policy_items = {'surbl': [], 'blockedattachments': [], 'incomingrelays': [], 'securityranges': []}
+policy_defaults = {
+    'surbl': {'zone': '', 'active': False, 'score': 0, 'rejectMessage': ''},
+    'blockedattachments': {'pattern': '', 'description': ''},
+    'incomingrelays': {'name': '', 'lowerAddress': '0.0.0.0', 'upperAddress': '0.0.0.0'}
+}
+policy_defaults['securityranges'] = {'name': '', 'lowerAddress': '0.0.0.0', 'upperAddress': '0.0.0.0', 'priority': 0,
+    **{key: False for key in ['allowSmtp', 'allowImap', 'allowPop3', 'localToLocal', 'localToExternal', 'externalToLocal',
+        'externalToExternal', 'authLocalToLocal', 'authLocalToExternal', 'authExternalToLocal', 'authExternalToExternal',
+        'requireTlsForAuth', 'spamProtection', 'virusProtection', 'expires', 'acknowledgeUnauthenticatedRelay']}, 'expiresAt': '2001-01-01 00:00:00'}
 
 
 def api(route):
@@ -51,8 +77,45 @@ def api(route):
         if request.method == 'DELETE':
             user = None
         data = {"user": user, "csrf": "browser-fixture-token"}
+    elif path == '/self':
+        data = {'address': user['address'], 'directoryBacked': False, 'passwordChangeable': True}
+    elif path == '/self/password':
+        user = None
+        data = {'changed': True, 'user': None, 'csrf': 'browser-fixture-token'}
     elif path == '/status':
         data = {"version": "6.0.0", "state": 3, "domains": 2}
+    elif path.startswith('/settings/'):
+        data = server_settings[path.rsplit('/', 1)[1]]
+        if request.method == 'PATCH':
+            if any(data['values'][key] != value for key, value in body['expected'].items()):
+                route.fulfill(status=409, json={'error': {'message': 'Settings changed. Reload before saving.'}})
+                return
+            data['values'].update(body['fields'])
+    elif path == '/policies/securityranges/match':
+        data = {'matched': policy_items['securityranges'][0] if policy_items['securityranges'] else None, 'note': 'Fixture native-selection result.'}
+    elif path.startswith('/policies/'):
+        parts = path.split('/')
+        resource = parts[2]
+        items = policy_items[resource]
+        if len(parts) == 3 and request.method == 'GET':
+            defaults = policy_defaults[resource]
+            schema = [{'name': key, 'type': 'boolean' if isinstance(value, bool) else 'integer' if isinstance(value, int) else 'string',
+                       'minimum': 0, 'maximum': 1 if isinstance(value, bool) else 10000 if isinstance(value, int) else 255, 'help': 'Fixture policy field.'} for key, value in defaults.items()]
+            data = {'items': items, 'total': len(items), 'offset': 0, 'limit': 50, 'defaults': {'id': '0', **defaults}, 'schema': schema, 'idMaximum': 2147483647}
+        elif len(parts) == 3:
+            data = {'id': str(len(items) + 1), **body}
+            items.append(data)
+        else:
+            item = next(value for value in items if value['id'] == parts[3])
+            if body.get('expected') != item:
+                route.fulfill(status=409, json={'error': {'message': 'Policy changed. Reload before saving.'}})
+                return
+            if request.method == 'DELETE':
+                items.remove(item)
+                data = {'deleted': True}
+            else:
+                item.update({key: value for key, value in body.items() if key != 'expected'})
+                data = item
     elif path == '/dnsbl':
         if request.method == 'POST':
             providers.append({"id": len(providers) + 1, **body})
@@ -385,6 +448,96 @@ with sync_playwright() as p:
     page.once('dialog', lambda dialog: dialog.accept())
     page.get_by_role('button', name='Delete rule', exact=True).click()
     page.get_by_text('Rule deleted.', exact=True).wait_for()
+    page.get_by_role('link', name='Server settings', exact=True).click()
+    page.get_by_label('Settings section', exact=True).select_option('pop3')
+    limit = page.get_by_label('max Connections', exact=True)
+    limit.wait_for()
+    assert limit.input_value() == '7'
+    limit.fill('9')
+    before = len(requests)
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Save server settings', exact=True).click()
+    assert len(requests) == before and server_settings['pop3']['values']['maxConnections'] == 7
+    server_settings['pop3']['values']['maxConnections'] = 12
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Save server settings', exact=True).click()
+    page.get_by_text('Settings changed. Reload before saving.', exact=True).wait_for()
+    assert server_settings['pop3']['values']['maxConnections'] == 12
+    page.get_by_role('button', name='Refresh', exact=True).click()
+    page.get_by_label('Settings section', exact=True).select_option('pop3')
+    limit = page.get_by_label('max Connections', exact=True)
+    limit.wait_for()
+    assert limit.input_value() == '12'
+    limit.fill('13')
+    page.once('dialog', lambda dialog: dialog.accept())
+    with page.expect_response(lambda response: response.url.endswith('/settings/pop3') and response.request.method == 'PATCH') as saved:
+        page.get_by_role('button', name='Save server settings', exact=True).click()
+    assert saved.value.status == 200
+    assert saved.value.request.post_data_json == {'fields': {'maxConnections': 13}, 'expected': {'maxConnections': 12}}
+    page.get_by_text('Server settings saved.', exact=True).wait_for()
+    assert page.get_by_label('max Connections', exact=True).input_value() == '13'
+    page.set_viewport_size({'width': 390, 'height': 844})
+    page.screenshot(path=str(output / 'server-settings-mobile.png'), full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Server settings overflow on mobile.'
+    page.get_by_label('Settings section', exact=True).select_option('passwordhash')
+    page.get_by_label('algorithm', exact=True).fill('2')
+    page.get_by_label('iterations', exact=True).fill('0')
+    page.once('dialog', lambda dialog: dialog.accept())
+    with page.expect_response(lambda response: response.url.endswith('/settings/passwordhash') and response.request.method == 'PATCH') as hash_saved:
+        page.get_by_role('button', name='Save server settings', exact=True).click()
+    assert hash_saved.value.request.post_data_json == {'fields': {'algorithm': 2, 'iterations': 0}, 'expected': {'algorithm': 1, 'iterations': 2}}
+    page.get_by_text('Server settings saved.', exact=True).wait_for()
+    assert server_settings['passwordhash']['values']['autoUpgrade'] is True
+    page.get_by_label('Settings section', exact=True).select_option('logging')
+    page.get_by_label('smtp', exact=True).check()
+    page.get_by_label('pop3', exact=True).check()
+    page.once('dialog', lambda dialog: dialog.accept())
+    with page.expect_response(lambda response: response.url.endswith('/settings/logging') and response.request.method == 'PATCH') as logs_saved:
+        page.get_by_role('button', name='Save server settings', exact=True).click()
+    assert logs_saved.value.request.post_data_json == {'fields': {'smtp': True, 'pop3': True}, 'expected': {'smtp': False, 'pop3': False}}
+    page.get_by_text('Server settings saved.', exact=True).wait_for()
+    assert server_settings['logging']['values']['debug'] is True
+    page.get_by_role('link', name='Filtering and relay policies', exact=True).click()
+    for resource in ['surbl', 'blockedattachments', 'incomingrelays', 'securityranges']:
+        page.get_by_label('Policy collection', exact=True).select_option(resource)
+        page.get_by_role('button', name='Add policy', exact=True).click()
+        values = {'surbl': {'zone': 'uri.example.invalid', 'score': '3', 'reject Message': 'Provider match'},
+                  'blockedattachments': {'pattern': '*.blocked-fixture', 'description': 'Fixture attachment'},
+                  'incomingrelays': {'name': 'Trusted fixture', 'lower Address': '192.0.2.10', 'upper Address': '192.0.2.20'},
+                  'securityranges': {'name': 'IP fixture', 'lower Address': '192.0.2.10', 'upper Address': '192.0.2.20', 'priority': '100'}}[resource]
+        for key, value in values.items():
+            page.get_by_label(key, exact=True).fill(value)
+        before = len(requests)
+        page.once('dialog', lambda dialog: dialog.dismiss())
+        page.get_by_role('button', name='Save changes', exact=True).click()
+        assert len(requests) == before and not policy_items[resource], 'Cancelled policy creation must not write.'
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda response: response.url.endswith('/policies/' + resource) and response.request.method == 'POST'):
+            page.get_by_role('button', name='Save changes', exact=True).click()
+        page.get_by_text('Policy saved.', exact=True).wait_for()
+        assert len(policy_items[resource]) == 1
+        if resource == 'securityranges':
+            page.get_by_label('address', exact=True).fill('192.0.2.15')
+            page.get_by_role('button', name='Inspect matching IP policy', exact=True).click()
+            page.get_by_text('IP fixture (priority 100). Fixture native-selection result.', exact=True).wait_for()
+        page.get_by_role('button', name='Edit policy', exact=True).click()
+        field = 'score' if resource == 'surbl' else 'description' if resource == 'blockedattachments' else 'name'
+        page.get_by_label(field, exact=True).fill('7' if field == 'score' else 'Changed fixture')
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda response: '/policies/' + resource + '/' in response.url and response.request.method == 'PATCH') as changed:
+            page.get_by_role('button', name='Save changes', exact=True).click()
+        assert set(changed.value.request.post_data_json) == {field, 'expected'}, 'Policy patches preserve omitted fields and carry their snapshot.'
+        page.get_by_text('Policy saved.', exact=True).wait_for()
+        page.get_by_role('button', name='Delete policy', exact=True).wait_for()
+        page.once('dialog', lambda dialog: dialog.accept())
+        page.get_by_role('button', name='Delete policy', exact=True).click()
+        page.get_by_text('Policy deleted.', exact=True).wait_for()
+        assert not policy_items[resource]
+    page.screenshot(path=str(output / 'policy-collections-mobile.png'), full_page=True)
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Policy controls overflow on mobile.'
+    page.set_viewport_size({'width': 1440, 'height': 1000})
+    page.get_by_role('link', name='Domains & DNS').click()
+    page.get_by_role('button', name='Mailboxes', exact=True).first.click()
     page.once('dialog', lambda dialog: dialog.dismiss())
     page.get_by_role('button', name='Delete mailbox', exact=True).click()
     assert len(mailboxes) == 1, 'Cancelling deletion must preserve the mailbox.'
@@ -561,7 +714,7 @@ with sync_playwright() as p:
     mailboxes.append({"id": 12, "domainId": 5, "address": "server@example.com", "active": True, "maxSizeMB": 10, "level": 2})
     page.reload()
     page.get_by_role('button', name='Mailboxes', exact=True).wait_for()
-    for title in ['Delivery queue', 'Routing', 'Global rules']:
+    for title in ['Delivery queue', 'Routing', 'Global rules', 'Server settings', 'Filtering and relay policies']:
         assert not page.get_by_role('link', name=title).is_visible(), 'Server operations must be hidden from domain administrators.'
     assert page.get_by_role('button', name='New domain', exact=True).count() == 0
     assert page.get_by_role('button', name='Delete domain', exact=True).count() == 0
@@ -583,6 +736,40 @@ with sync_playwright() as p:
     assert page.get_by_label('level', exact=True).locator('option[value="2"]').count() == 0
     page.screenshot(path=str(output / 'domain-admin-mobile.png'), full_page=True)
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Domain administrator editor overflows on mobile.'
+    user = {"address": "mailbox@example.com", "level": 0, "domainId": 5, "accountId": 10}
+    page.goto(base + '/#self')
+    page.reload()
+    page.get_by_role('button', name='My profile', exact=True).click()
+    page.get_by_label('first Name', exact=True).fill('Own mailbox profile')
+    page.get_by_role('button', name='Save changes', exact=True).click()
+    page.get_by_text('Profile saved.', exact=True).wait_for()
+    assert requests[-1][0:2] == ('PATCH', '/self/profile')
+    assert profile['firstName'] == 'Own mailbox profile'
+    page.get_by_role('button', name='My rules', exact=True).click()
+    page.get_by_role('button', name='New rule', exact=True).click()
+    page.get_by_label('name', exact=True).fill('Own mailbox draft')
+    page.get_by_label('value', exact=True).fill('own-message')
+    page.get_by_role('button', name='Save draft', exact=True).click()
+    page.get_by_text('Own mailbox draft', exact=True).wait_for()
+    assert '/self/rules' in rules and not rules['/self/rules'][0]['active']
+    page.get_by_role('button', name='Change my password', exact=True).click()
+    page.get_by_label('Current password', exact=True).fill('fixture-current')
+    page.get_by_label('New password', exact=True).fill('fixture-new')
+    page.get_by_label('Confirm new password', exact=True).fill('different')
+    before_password = len(requests)
+    page.get_by_role('button', name='Change password and sign out', exact=True).click()
+    page.get_by_text('The new passwords do not match.', exact=True).wait_for()
+    assert len(requests) == before_password
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mailbox self-service overflows on mobile.'
+    page.screenshot(path=str(output / 'mailbox-self-service-mobile.png'), full_page=True)
+    page.get_by_label('Confirm new password', exact=True).fill('fixture-new')
+    page.get_by_role('button', name='Change password and sign out', exact=True).click()
+    page.get_by_role('heading', name='Sign in to your server').wait_for()
+    assert requests[-1][0:2] == ('POST', '/self/password')
+    user = {"address": "manager@example.com", "level": 1, "domainId": 5, "accountId": 11}
+    page.goto(base + '/#domains')
+    page.reload()
+    page.get_by_role('button', name='Mailboxes', exact=True).wait_for()
     page.get_by_role('button', name='Sign out').click()
     page.get_by_role('heading', name='Sign in to your server').wait_for()
     page.screenshot(path=str(output / 'login-mobile.png'), full_page=True)

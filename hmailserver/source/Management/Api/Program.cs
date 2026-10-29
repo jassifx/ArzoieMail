@@ -29,6 +29,7 @@ public static class ManagementHost
         });
         builder.Services.AddSingleton<IManagementChannel, ManagementChannel>();
         builder.Services.AddSingleton<CredentialVault>();
+        builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<ITxtResolver, WindowsTxtResolver>();
         builder.Services.ConfigureHttpJsonOptions(options =>
             options.SerializerOptions.UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow);
@@ -60,6 +61,7 @@ public static class ManagementHost
                     var login = vault.Get(id);
                     var channel = context.HttpContext.RequestServices.GetRequiredService<IManagementChannel>();
                     var identity = await channel.SendAsync("authenticate", login.Username, login.Password, null, context.HttpContext.RequestAborted);
+                    if (!vault.MatchesStamp(id, SecurityStamp(identity))) throw new ManagementError(401, "Please sign in again.");
                     context.ReplacePrincipal(Principal(id!, identity));
                 }
                 catch (ManagementError error) when (error.Status == 401)
@@ -70,6 +72,8 @@ public static class ManagementHost
                 }
             };
         });
+        builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
+            .Configure<TimeProvider>((options, clock) => options.TimeProvider = clock);
         builder.Services.AddAuthorization();
         builder.Services.AddRateLimiter(options =>
         {
@@ -148,7 +152,7 @@ public static class ManagementHost
             vault.Remove(context.User.FindFirstValue(ClaimTypes.NameIdentifier));
             await context.SignOutAsync();
             var identity = await channel.SendAsync("authenticate", login.Username, login.Password, null, context.RequestAborted);
-            string id = vault.Add(login);
+            string id = vault.Add(login, SecurityStamp(identity));
             context.User = Principal(id, identity);
             // Persist only the opaque vault ID in the encrypted cookie ticket. Roles and names
             // are reloaded from the native service, never accepted from a browser-held snapshot.
@@ -166,6 +170,37 @@ public static class ManagementHost
         });
         var api = app.MapGroup("/api/v1").RequireAuthorization();
         api.MapGet("/status", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "status"));
+        api.MapGet("/self", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "self.read"));
+        foreach (string area in new[] { "profile", "behavior", "signature" })
+        {
+            api.MapGet("/self/" + area, (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "self." + area + ".read"));
+            api.MapPatch("/self/" + area, (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "self." + area + ".update", true));
+        }
+        api.MapGet("/self/rules", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "self.rules.list"));
+        api.MapPost("/self/rules", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "self.rules.create", true));
+        api.MapGet("/self/rules/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "self.rules.read", id: id));
+        api.MapPatch("/self/rules/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "self.rules.update", true, id));
+        api.MapDelete("/self/rules/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "self.rules.delete", id: id));
+        api.MapPost("/self/password", async (HttpContext c, CredentialVault v, IManagementChannel p, IAntiforgery antiforgery) =>
+        {
+            await Objects(c, v, p, "self.password.update", true);
+            v.Remove(c.User.FindFirstValue(ClaimTypes.NameIdentifier));
+            await c.SignOutAsync();
+            c.User = new ClaimsPrincipal(new ClaimsIdentity());
+            return Data(new { changed = true, user = (object?)null, csrf = antiforgery.GetAndStoreTokens(c).RequestToken });
+        }).RequireRateLimiting("login");
+        api.MapGet("/settings/{section}", (string section, HttpContext c, CredentialVault v, IManagementChannel p) => Settings(c, v, p, section, false));
+        api.MapPatch("/settings/{section}", (string section, HttpContext c, CredentialVault v, IManagementChannel p) => Settings(c, v, p, section, true));
+        api.MapPost("/policies/securityranges/match", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "securityranges.match", true));
+        foreach (string resource in new[] { "surbl", "blockedattachments", "incomingrelays", "securityranges" })
+        {
+            var policy = api.MapGroup("/policies/" + resource);
+            policy.MapGet("", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, resource + ".list"));
+            policy.MapPost("", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, resource + ".create", true));
+            policy.MapGet("/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, resource + ".read", id: id));
+            policy.MapPatch("/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, resource + ".update", true, id));
+            policy.MapDelete("/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, resource + ".delete", true, id));
+        }
         api.MapGet("/queue", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "queue.list"));
         api.MapGet("/queue/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "queue.read", id: id));
         api.MapPost("/queue/{id:long:min(1)}/retry", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "queue.retry", id: id));
@@ -259,6 +294,32 @@ public static class ManagementHost
     }
 
     private static IResult Data(object data) => Results.Json(new { data });
+    private static string SecurityStamp(JsonElement identity)
+    {
+        if (!identity.TryGetProperty("securityStamp", out var field) || field.ValueKind != JsonValueKind.String
+            || field.GetString() is not string stamp || stamp.Length != 64 || !stamp.All(char.IsAsciiHexDigit))
+            throw new ManagementError(503, "The native identity version is unavailable.");
+        return stamp;
+    }
+    private static async Task<IResult> Settings(HttpContext context, CredentialVault vault, IManagementChannel channel,
+        string section, bool update)
+    {
+        if (context.User.FindFirstValue("level") != "2") throw new ManagementError(403, "Server administrator access is required.");
+        var arguments = new Dictionary<string, object?> { ["section"] = section };
+        if (update)
+        {
+            var body = await context.Request.ReadFromJsonAsync<JsonElement>(context.RequestAborted);
+            if (body.ValueKind != JsonValueKind.Object || body.EnumerateObject().Count() != 2
+                || !body.TryGetProperty("fields", out var fields) || fields.ValueKind != JsonValueKind.Object
+                || !body.TryGetProperty("expected", out var expected) || expected.ValueKind != JsonValueKind.Object)
+                throw new ManagementError(422, "Supply fields and their expected previous values. Reload after a conflict.");
+            arguments["fields"] = fields;
+            arguments["expected"] = expected;
+        }
+        var credentials = vault.Get(context.User.FindFirstValue(ClaimTypes.NameIdentifier));
+        return Data(await channel.SendAsync(update ? "settings.update" : "settings.read", credentials.Username,
+            credentials.Password, arguments, context.RequestAborted));
+    }
     private static async Task<IResult> Objects(HttpContext context, CredentialVault vault, IManagementChannel channel,
         string operation, bool readBody = false, long? id = null, long? domainId = null, long? listId = null, long? routeId = null, long? accountId = null)
     {

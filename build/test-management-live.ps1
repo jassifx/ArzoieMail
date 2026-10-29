@@ -15,9 +15,17 @@ if (-not $EvidenceDirectory) { $EvidenceDirectory = Join-Path $repo 'out\managem
 New-Item -ItemType Directory -Force $EvidenceDirectory | Out-Null
 function Invoke-ManagementMode([string]$Mode) {
     $log = Join-Path $EvidenceDirectory ($Mode.TrimStart('-') + '.log')
-    if ([IO.Path]::GetExtension($TestExecutable) -eq '.dll') { & dotnet $TestExecutable $Mode | Tee-Object -FilePath $log }
-    else { & $TestExecutable $Mode | Tee-Object -FilePath $log }
-    if ($LASTEXITCODE -ne 0) { throw "Management regression mode $Mode failed." }
+    $errors = Join-Path $EvidenceDirectory ($Mode.TrimStart('-') + '-error.log')
+    $program = if ([IO.Path]::GetExtension($TestExecutable) -eq '.dll') { 'dotnet' } else { $TestExecutable }
+    $modeArguments = if ($program -eq 'dotnet') { @("`"$TestExecutable`"", $Mode) } else { @($Mode) }
+    # PowerShell 5 can throw on the first stderr line and hide the rest of a .NET
+    # exception. Retain the complete process output before propagating failure.
+    $runner = Start-Process -FilePath $program -ArgumentList $modeArguments -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput $log -RedirectStandardError $errors
+    Get-Content -LiteralPath $log | Write-Output
+    if ($runner.ExitCode -ne 0) {
+        Get-Content -LiteralPath $errors | Write-Output
+        throw "Management regression mode $Mode failed. Full evidence is retained in $EvidenceDirectory."
+    }
 }
 $serviceKey = 'HKLM:\SYSTEM\CurrentControlSet\Services\hMailServer'
 $service = Get-CimInstance Win32_Service -Filter "Name='hMailServer'"

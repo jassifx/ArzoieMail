@@ -4,6 +4,69 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Current completion-branch validation (not CI acceptance)
+
+Branch `feature/phase1b-completion`, based on merged #43, adds typed server settings,
+checked transactional patches/cache synchronization and SURBL/blocked-attachment/incoming-relay
+collections. On 2026-10-29 the disposable Windows Server 2025/Compact VM passed **630 native
+assertions** (402 prior + 156 settings + 72 policy collections), **131 real HTTP/native**,
+**12 production TLS/native**, fixture and published-live browser suites, and the selected
+product-version NUnit case (1 passed). The temporary checkpoint and original service/database/
+INI/executable were restored. Evidence: local ignored `out/phase1b-settings-policies-vm.log`;
+repeatable test sources and driver are checked in. Settings tests include a real POP3 greeting;
+browser tests include persisted settings changes and restoration.
+
+Earlier settings validation reproduced a Compact parameter-binding failure: ADO binds by
+ordinal, so guarded UPDATE parameters must follow SQL order (SET, then WHERE). Corrected code
+passed the run above. Earlier diagnostic and browser-navigation failures are historical failures,
+not additional successful tests. Database failure injection and concurrent legacy-tool acceptance
+remain open. Subsequent mailbox self-service changes are **not covered by that first VM pass**.
+The subsequent self-service revision passed a full Compact VM run: **656 native assertions**
+(630 above +26 self-service), **131 live HTTP/native**, **12 native TLS**, both browser suites
+(including ordinary-user/domain-admin own-profile persistence), and the selected NUnit case
+(1 passed). Original files/service and the checkpoint were restored. Local evidence:
+`out/phase1b-self-service-vm-v2.log`. A prior fixture identity-switch failure was fixed by
+explicitly reloading the mocked session after hash navigation. The later deterministic HTTP
+run caught a new test DELETE request without the API-required JSON body (415); the test was
+corrected to use the same request contract as the panel. Its checkpoint was restored.
+
+Later password-policy and IP security-range code is **not covered by those passes**. New tests
+cover algorithm-dependent cost validation/transaction restoration; IPv4/IPv6 permissions and
+expiry; real SMTP denial/recovery/authentication gates; transient trusted-relay acknowledgement;
+and management access during mail-protocol lockout. Those additions passed a full run with
+**706 native assertions**, 26 deterministic DNS, 413 HTTP/security, 2 plaintext HTTPS-boundary,
+7 runtime, 11 TLS, 131 real HTTP/native and 12 native TLS checks, both browser suites and
+the selected NUnit case (1 passed). The checkpoint was restored. Evidence:
+`out/phase1b-security-policy-vm.log`.
+
+The following logging revision passed **736 native assertions** (402 previous +204 settings
++72 filtering/relays +26 self-service +32 IP policies), the same other assertion layers,
+both browser suites and selected NUnit (1 passed), with original service state and checkpoint
+restored. Evidence: `out/phase1b-logging-policy-vm.log`. Logging tests exercise merged bit flags,
+omitted flags, stale/mixed-invalid patches and restoration. These are Compact VM runs, not
+four-backend CI or full security/capacity acceptance.
+
+A new real REST regression then **reproduced** session reuse after resetting an account to the
+same password: old session GET /status returned 200 instead of 401. Evidence:
+`out/phase1b-session-repro-vm.log`, LiveRestTests.cs; original state/checkpoint restored.
+The fix then passed **739 native assertions**, **415 HTTP/security**, **145 real HTTP/native**,
+26 DNS, 2 plaintext-boundary, 7 runtime, 11 TLS and 12 native TLS assertions, both browser suites
+and selected NUnit (1 passed). Original files/service and checkpoint were restored. Evidence:
+`out/phase1b-session-binding-vm.log`. The new same-password-reset regression passed; native
+metadata checks verify binding shape, stability across preferences and rotation on password change.
+
+Following that pass, an injected TimeProvider was added to vault/cookie timing with System as
+the production default. **43 controlled-clock assertions** have passed in the follow-up VM run:
+30-minute idle and 8-hour absolute vault expiry, activity below the absolute bound, cookie
+sliding renewal/idle expiry, fresh roles, only an opaque ID in renewed cookies, changed-binding
+revocation with a still-valid password, and missing-binding login refusal. The follow-up affected
+HTTP/TLS/browser run passed in `out/phase1b-session-lifetime-vm.log`: 415 HTTP/security, 43 lifecycle,
+26 DNS, 2 plaintext-boundary, 7 runtime, 11 TLS, 145 live HTTP/native and 12 native TLS assertions,
+both browser suites and selected NUnit (1 passed). Original files/service and checkpoint restored.
+Native code is
+unchanged from the 739-assertion pass; its full direct suite is not redundantly rerun there.
+No new PR/CI run is submitted; final-head four-backend and full-phase acceptance remain pending.
+
 ## Modern-stack CI expansion merged and verified
 
 The [acceptance matrix](ci-acceptance-matrix.md) defines current checks and future coverage.

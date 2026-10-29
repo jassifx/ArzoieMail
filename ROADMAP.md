@@ -44,7 +44,8 @@ workflow lint, CodeQL and CI installer publication passed. Each backend recorded
 cases with zero failures/warnings, **897 management/runtime/security assertions** and both
 fixture and published-live browser suites. NUnit inconclusive/skipped outcomes and prior
 failure/retry history remain in the [CI inventory](docs/ci-test-inventory.md).
-This documentation PR needs its own final-head checks; it does not change runtime behavior.
+PR #43's scope/documentation head `7a143ca` also passed CI and merged at `92ac28d`. The current
+completion branch needs its own final-head checks; local VM evidence is recorded separately.
 
 Tests known to depend on the live internet and that can fail by themselves on CI, in which case
 the failed job is re-run:
@@ -299,13 +300,27 @@ with at least 10,000 messages in flight/queued in acceptance testing. Do not cla
 throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. See
 [Defender assessment](docs/defender-antivirus-feasibility.md).
 
+### Current completion authorization
+
+After #43 merged at `92ac28d`, the maintainer requested all remaining Phase 1b in one completion
+effort. Branch `feature/phase1b-completion`; no completion PR submitted. Typed server settings,
+checked persistence and three filtering/relay collections passed initial Compact VM validation
+(630 native assertions plus HTTP/TLS/browser coverage; see the CI inventory). Mailbox self-service
+and restricted account-field writes passed the subsequent 656-assertion VM/browser run.
+Password-policy/IP security-range and logging additions passed subsequent VM/browser checks
+(latest 736 native assertions). A same-password-reset session regression was reproduced and
+its native/vault credential-binding fix passed the full 739-native/145-live-HTTP VM run.
+An additional 43 controlled-clock session checks and affected integration tests passed;
+four-backend branch CI remains pending. The detailed ledger
+continues to own every remaining A/E gate; nothing is complete merely because scope was approved.
+
 ### Phase 1b delivery tracker
 
 Use the [detailed capability ledger](docs/phase-1b-status.md) for F01-F17 delivered boundaries,
 A01-A20 remaining administration work, E01-E10 expanded requirements, the complete 89-PHP-file
 and 54-desktop-pane checklist, suggested grouping and completion gates. This table is its summary.
-The six broad workstreams are not six fixed PRs. The latest authorized follow-up is documentation
-reconciliation in #42; the recommended server/security bundle is not yet authorized.
+The six broad workstreams are not six fixed PRs. The current authorization covers all remaining
+Phase 1b, following merged #43; it does not authorize the next implementation phase.
 
 Requirements documented in an open PR do not mean the functionality is implemented. Merged PR #32
 records certificate, PHP-retirement and Defender requirements; it does not implement them.

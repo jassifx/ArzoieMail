@@ -72,7 +72,7 @@ defines current runtime, real REST/native/HTTPS, published-browser and per-backe
 unimplemented acceptance work. Keep every newly exposed control covered at native, REST and
 browser boundaries. Do not count mocks, manual checks or future scanner capacity as live CI proof.
 
-Current plan/status handoff: [2026-10-28](docs/agents/handoffs/2026-10-28.md). Phase 1b's
+Current plan/status handoff: [2026-10-29](docs/agents/handoffs/2026-10-29.md). Phase 1b's
 native/.NET API foundation is merged in #31; complete PHP retirement, guided certificate
 management and optional high-pressure Defender scanning remain delivery requirements, not
 completed functionality. Read the [Phase 1b tracker](ROADMAP.md#phase-1b-delivery-tracker)
@@ -90,8 +90,9 @@ advanced domain/mailbox bundle are merged. The merged #42 bundle combines
 queue operations, routes/allowed recipients and global/mailbox rules. Its final
 head `28dd3df` passed 1317 NUnit cases, 897 management assertions and both browser suites per
 backend; merge `74eecc017`. Consult the CI inventory for inconclusive/skipped outcomes.
-The current authorization is a documentation-only PR for the approved 6.0 scope and COM
-retirement plan. Follow the latest handoff for branch/review state; do not start implementation.
+PR #43 merged the approved 6.0 scope at `92ac28d`. The current authorization is to complete
+all remaining Phase 1b in one effort on `feature/phase1b-completion`; follow the latest handoff
+for implementation/evidence status. No Phase 2 start or automatic merge is authorized.
 
 ---
 

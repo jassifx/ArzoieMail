@@ -8,7 +8,7 @@ using ArzoieMail.Management;
 using Microsoft.Extensions.DependencyInjection;
 
 int assertions = 0;
-string[] modes = ["--runtime", "--live-http", "--tls", "--tls-native", "--browser-host", "--squatting", "--live"];
+string[] modes = ["--runtime", "--ranges-live", "--self-live", "--policies-live", "--settings-live", "--live-http", "--tls", "--tls-native", "--browser-host", "--squatting", "--live"];
 if (args.Length > 1 || args.Any(argument => !modes.Contains(argument)))
     throw new ArgumentException("Select exactly one supported management-test mode, or omit it for deterministic HTTP/DNS tests.");
 void Check(bool condition, string message)
@@ -29,6 +29,42 @@ if (args.Contains("--runtime"))
     Check(api.GetReferencedAssemblies().All(reference => !reference.Name!.StartsWith("Interop.hMailServer", StringComparison.OrdinalIgnoreCase)
         && reference.Name is not ("Microsoft.Data.SqlClient" or "System.Data.SqlClient" or "Npgsql" or "MySql.Data" or "MySqlConnector")), "The replacement API must not reference the legacy COM interop or database drivers.");
     Console.WriteLine($"Passed {assertions} .NET 10 runtime/product boundary assertions.");
+    return;
+}
+
+if (args.Contains("--ranges-live"))
+{
+    string username = Environment.GetEnvironmentVariable("ARZOIEMAIL_TEST_USERNAME") ?? throw new Exception("Set test username.");
+    string password = Environment.GetEnvironmentVariable("ARZOIEMAIL_TEST_PASSWORD") ?? throw new Exception("Set test password.");
+    await SecurityRangeTests.Run(new ManagementChannel(), username, password, Check);
+    Console.WriteLine($"Passed {assertions} live IP security-range assertions.");
+    return;
+}
+
+if (args.Contains("--settings-live"))
+{
+    string username = Environment.GetEnvironmentVariable("ARZOIEMAIL_TEST_USERNAME") ?? throw new Exception("Set test username.");
+    string password = Environment.GetEnvironmentVariable("ARZOIEMAIL_TEST_PASSWORD") ?? throw new Exception("Set test password.");
+    await ServerSettingsTests.Run(new ManagementChannel(), username, password, Check);
+    Console.WriteLine($"Passed {assertions} live server-settings assertions.");
+    return;
+}
+
+if (args.Contains("--policies-live"))
+{
+    string username = Environment.GetEnvironmentVariable("ARZOIEMAIL_TEST_USERNAME") ?? throw new Exception("Set test username.");
+    string password = Environment.GetEnvironmentVariable("ARZOIEMAIL_TEST_PASSWORD") ?? throw new Exception("Set test password.");
+    await PolicyCollectionsTests.Run(new ManagementChannel(), username, password, Check);
+    Console.WriteLine($"Passed {assertions} live policy collection assertions.");
+    return;
+}
+
+if (args.Contains("--self-live"))
+{
+    string username = Environment.GetEnvironmentVariable("ARZOIEMAIL_TEST_USERNAME") ?? throw new Exception("Set test username.");
+    string password = Environment.GetEnvironmentVariable("ARZOIEMAIL_TEST_PASSWORD") ?? throw new Exception("Set test password.");
+    await MailboxSelfServiceTests.Run(new ManagementChannel(), username, password, Check);
+    Console.WriteLine($"Passed {assertions} live mailbox self-service assertions.");
     return;
 }
 
@@ -128,6 +164,10 @@ if (args.Contains("--live"))
     await SignatureTests.Run(native, name, password, Check);
     await AdvancedAdministrationTests.Run(native, name, password, Check);
     await MailOperationsTests.Run(native, name, password, Check);
+    await ServerSettingsTests.Run(native, name, password, Check);
+    await PolicyCollectionsTests.Run(native, name, password, Check);
+    await MailboxSelfServiceTests.Run(native, name, password, Check);
+    await SecurityRangeTests.Run(native, name, password, Check);
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
     // Real native persistence/authorization coverage runs on every CI database backend.
     async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>
@@ -249,8 +289,11 @@ if (args.Contains("--live"))
 await DnsTests.Run();
 using (var vault = new CredentialVault())
 {
-    string id = vault.Add(new("admin", "test-password"));
+    string id = vault.Add(new("admin", "test-password"), new string('A', 64));
     Check(vault.Get(id).Password == "test-password", "Encrypted vault round trip.");
+    Check(vault.MatchesStamp(id, new string('A', 64)) && !vault.MatchesStamp(id, new string('B', 64)), "Vault sessions bind to the original native credential version.");
+    try { vault.Add(new("admin", "test-password"), ""); throw new Exception("Missing native identity version accepted."); }
+    catch (ManagementError e) { Check(e.Status == 503, "A missing native credential version fails closed."); }
     vault.Remove(id);
     try { vault.Get(id); throw new Exception("Removed session accepted."); }
     catch (ManagementError e) { Check(e.Status == 401, "Removed session denied."); }
@@ -306,6 +349,26 @@ try
     fake.Unavailable = false;
     await Send("/antispam", HttpMethod.Patch, new { UseSPF = true }, token);
     Check(fake.LastOperation == "antispam.update", "Route calls explicit native command.");
+    await Send("/settings/smtp", HttpMethod.Get);
+    Check(fake.LastOperation == "settings.read" && fake.LastArguments.GetProperty("section").GetString() == "smtp", "Server-settings route selects its native section.");
+    await Send("/settings/pop3", HttpMethod.Patch, new { fields = new { maxConnections = 7 }, expected = new { maxConnections = 0 } }, token);
+    Check(fake.LastOperation == "settings.update" && fake.LastArguments.GetProperty("expected").GetProperty("maxConnections").GetInt32() == 0, "Settings preserve the optimistic concurrency precondition.");
+    await Send("/settings/pop3", HttpMethod.Patch, new { fields = new { maxConnections = 7 } }, token, 422);
+    await Send("/settings/pop3", HttpMethod.Patch, new { fields = new { maxConnections = 7 }, expected = new { maxConnections = 0 }, arbitrary = true }, token, 422);
+    await Send("/settings/pop3", HttpMethod.Patch, new { fields = new { maxConnections = 7 }, expected = new { maxConnections = 0 } }, "wrong", 403);
+    foreach (string policy in new[] { "surbl", "blockedattachments", "incomingrelays", "securityranges" })
+    {
+        await Send("/policies/" + policy + "?limit=1", HttpMethod.Get);
+        Check(fake.LastOperation == policy + ".list", "Policy page maps an explicit native collection.");
+        await Send("/policies/" + policy, HttpMethod.Post, new { name = "fixture" }, token);
+        Check(fake.LastOperation == policy + ".create", "Policy creation maps the allowlisted operation.");
+        await Send("/policies/" + policy + "/1", HttpMethod.Patch, new { expected = new { id = "1" }, name = "changed" }, token);
+        Check(fake.LastOperation == policy + ".update" && fake.LastArguments.GetProperty("id").GetInt64() == 1, "Policy update preserves route identity.");
+        await Send("/policies/" + policy + "/1", HttpMethod.Delete, new { expected = new { id = "1" } }, token);
+        Check(fake.LastOperation == policy + ".delete" && fake.LastArguments.GetProperty("fields").GetProperty("expected").GetProperty("id").GetString() == "1", "Policy delete carries its loaded snapshot.");
+    }
+    await Send("/policies/securityranges/match", HttpMethod.Post, new { address = "127.0.0.1" }, token);
+    Check(fake.LastOperation == "securityranges.match" && fake.LastArguments.GetProperty("address").GetString() == "127.0.0.1", "IP policy inspection delegates selection to the native service.");
     await Send("/domains?search=example&offset=5&limit=10", HttpMethod.Get);
     Check(fake.LastOperation == "domains.list" && fake.LastArguments.GetProperty("offset").GetInt64() == 5, "HTTP paging maps explicit native arguments.");
     await Send("/domains?limit=101", HttpMethod.Get, status: 422);
@@ -404,6 +467,31 @@ try
     Check(current.GetProperty("user").GetProperty("level").GetInt32() == 1, "Refresh roles from the native service.");
     await Send("/status", HttpMethod.Get, status: 403);
     await Send("/domains", HttpMethod.Get);
+    fake.Level = 0;
+    await Send("/self", HttpMethod.Get);
+    Check(fake.LastOperation == "self.read" && !fake.LastArguments.TryGetProperty("accountId", out _), "Self-service derives the mailbox in the native service.");
+    foreach (string area in new[] { "profile", "behavior", "signature" })
+    {
+        await Send("/self/" + area, HttpMethod.Get);
+        Check(fake.LastOperation == "self." + area + ".read", "Mailbox users can read their own supported settings.");
+        await Send("/self/" + area, HttpMethod.Patch, new { firstName = "Own" }, "wrong", 403);
+        await Send("/self/" + area, HttpMethod.Patch, new { firstName = "Own" }, token);
+        Check(fake.LastOperation == "self." + area + ".update" && fake.LastArguments.GetProperty("fields").GetProperty("firstName").GetString() == "Own", "Self patches preserve fields without accepting a parent route.");
+    }
+    await Send("/self/rules?limit=1", HttpMethod.Get);
+    Check(fake.LastOperation == "self.rules.list", "Self rules retain bounded list filters.");
+    await Send("/self/rules", HttpMethod.Post, new { name = "Own draft" }, token);
+    await Send("/self/rules/9", HttpMethod.Patch, new { active = false }, token);
+    Check(fake.LastOperation == "self.rules.update" && fake.LastArguments.GetProperty("id").GetInt64() == 9, "Self rule IDs remain native ownership-checked.");
+    await Send("/self/rules/9", HttpMethod.Delete, new { }, token);
+    await Send("/self/password", HttpMethod.Post, new { currentPassword = "test-password", newPassword = "replacement" }, "wrong", 403);
+    var changedPassword = await Send("/self/password", HttpMethod.Post, new { currentPassword = "test-password", newPassword = "replacement" }, token);
+    Check(changedPassword.GetProperty("changed").GetBoolean(), "Password change returns only the sign-out result.");
+    await Send("/self", HttpMethod.Get, status: 401);
+    Check((await Send("/session", HttpMethod.Get)).GetProperty("user").ValueKind == JsonValueKind.Null, "Password change removes the old browser session.");
+    token = changedPassword.GetProperty("csrf").GetString()!;
+    login = await Send("/session", HttpMethod.Post, new { username = "admin", password = "test-password" }, token);
+    token = login.GetProperty("csrf").GetString()!;
     fake.Valid = false;
     await Send("/status", HttpMethod.Get, status: 401);
     current = await Send("/session", HttpMethod.Get);
@@ -454,6 +542,9 @@ try
 }
 finally { await production.StopAsync(); }
 Console.WriteLine("Passed production HTTPS boundary checks.");
+int lifetimeStart = assertions;
+await SessionLifetimeTests.Run(Check);
+Console.WriteLine($"Passed {assertions - lifetimeStart} controlled-clock session lifecycle assertions.");
 
 sealed class FakeChannel : IManagementChannel
 {
@@ -463,14 +554,15 @@ sealed class FakeChannel : IManagementChannel
     public int Level { get; set; } = 2;
     public bool Valid { get; set; } = true;
     public bool Unavailable { get; set; }
+    public string SecurityStamp { get; set; } = new('A', 64);
     public Task<JsonElement> SendAsync(string operation, string username, string password, object? arguments, CancellationToken cancellationToken)
     {
         ++Calls; LastOperation = operation;
         LastArguments = JsonSerializer.SerializeToElement(arguments ?? new { });
         if (Unavailable) throw new IOException("Simulated unavailable native service.");
         if (!Valid || password != "test-password") throw new ManagementError(401, "Incorrect username or password.");
-        if (operation == "authenticate") return Task.FromResult(JsonSerializer.SerializeToElement(new { address = username, level = Level, domainId = 5, accountId = 7 }));
-        if (operation != "domains.list" && Level != 2) throw new ManagementError(403, "Access denied.");
+        if (operation == "authenticate") return Task.FromResult(JsonSerializer.SerializeToElement(new { address = username, level = Level, domainId = 5, accountId = 7, securityStamp = SecurityStamp }));
+        if (operation != "domains.list" && !operation.StartsWith("self.", StringComparison.Ordinal) && Level != 2) throw new ManagementError(403, "Access denied.");
         return Task.FromResult(JsonSerializer.SerializeToElement(new { ok = true }));
     }
 }

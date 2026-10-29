@@ -32,6 +32,17 @@
 #include "../Util/Unicode.h"
 #include "../Util/ServerStatus.h"
 #include "../Util/Time.h"
+#include "../Application/PropertySet.h"
+#include "../BO/SURBLServers.h"
+#include "../BO/BlockedAttachments.h"
+#include "../BO/IncomingRelays.h"
+#include "../BO/SecurityRanges.h"
+#include "../Cache/Cache.h"
+#include <functional>
+#include <string_view>
+#include <array>
+#include <openssl/hmac.h>
+#include <openssl/rand.h>
 #include <sddl.h>
 #include <boost/json/src.hpp>
 
@@ -80,8 +91,42 @@ namespace HM
       }
       json::object User(const Account &account)
       {
-         return {{"address", Utf8(account.GetAddress())}, {"level", static_cast<int>(account.GetAdminLevel())},
-                 {"domainId", account.GetDomainID()}, {"accountId", account.GetID()}};
+         // Authentication can upgrade a legacy hash. Derive the session binding
+         // from persisted state afterward, never from the pre-upgrade cache object.
+         auto stored = std::make_shared<Account>();
+         const Account *current = &account;
+         if (account.GetID() > 0)
+         {
+            if (!PersistentAccount::ReadObject(stored, account.GetID()) || !stored->GetActive()
+                || stored->GetDomainID() != account.GetDomainID()) throw RequestError{401};
+            current = stored.get();
+         }
+         static const auto key = [] {
+            std::array<unsigned char, 32> bytes{};
+            if (RAND_priv_bytes(bytes.data(), static_cast<int>(bytes.size())) != 1) throw RequestError{503};
+            return bytes;
+         }();
+         const auto hash = current->GetID() > 0 ? current->GetPassword() : IniFileSettings::Instance()->GetAdministratorPassword();
+         std::string material = json::serialize(json::object{{"account", current->GetID()}, {"domain", current->GetDomainID()},
+            {"address", Utf8(current->GetAddress())}, {"directory", current->GetIsAD()},
+            {"directoryDomain", Utf8(current->GetADDomain())}, {"directoryUser", Utf8(current->GetADUsername())},
+            {"format", current->GetPasswordEncryption()}});
+         material += '\n'; material += Utf8(hash);
+         unsigned char digest[EVP_MAX_MD_SIZE]{};
+         unsigned int length = 0;
+         const bool ok = HMAC(EVP_sha256(), key.data(), static_cast<int>(key.size()),
+            reinterpret_cast<const unsigned char *>(material.data()), material.size(), digest, &length) != nullptr;
+         SecureZeroMemory(material.data(), material.size());
+         if (!ok || length != 32) throw RequestError{503};
+         const char hex[] = "0123456789ABCDEF";
+         std::string stamp(64, '0');
+         for (unsigned int index = 0; index < length; ++index)
+         {
+            stamp[index * 2] = hex[digest[index] >> 4];
+            stamp[index * 2 + 1] = hex[digest[index] & 15];
+         }
+         return {{"address", Utf8(current->GetAddress())}, {"level", static_cast<int>(current->GetAdminLevel())},
+                 {"domainId", current->GetDomainID()}, {"accountId", current->GetID()}, {"securityStamp", stamp}};
       }
       json::object DomainView(const Domain &domain)
       {
@@ -259,7 +304,33 @@ namespace HM
          return {{"signatureEnabled", account.GetEnableSignature()}, {"signaturePlainText", Utf8(account.GetSignaturePlainText())},
                  {"signatureHtml", Utf8(account.GetSignatureHTML())}};
       }
-      json::value ManageSignature(const std::string &operation, const json::object &arguments, std::shared_ptr<Account> target)
+      // Self-service must never persist the whole account: a stale object could restore
+      // an administrator's password, role, directory binding or disabled state.
+      void SaveSelfPatch(std::shared_ptr<Account> &target, SQLStatement &statement,
+         const String &expectedPassword, const std::function<bool(const Account &)> &verify)
+      {
+         statement.SetWhereClause("accountid = @SELF_ID and accountdomainid = @SELF_DOMAIN and accountactive = 1 "
+            "and accountadminlevel = @SELF_ROLE and accountisad = @SELF_AD "
+            "and accountpassword = @SELF_PASSWORD and accountaddress = @SELF_ADDRESS");
+         auto command = statement.GetCommand();
+         // Compact binds by ordinal: SET parameters precede these WHERE parameters.
+         command.AddParameter("@SELF_ID", target->GetID());
+         command.AddParameter("@SELF_DOMAIN", target->GetDomainID());
+         command.AddParameter("@SELF_ROLE", static_cast<int>(target->GetAdminLevel()));
+         command.AddParameter("@SELF_AD", target->GetIsAD() ? 1 : 0);
+         command.AddParameter("@SELF_PASSWORD", expectedPassword);
+         command.AddParameter("@SELF_ADDRESS", target->GetAddress());
+         if (!Application::Instance()->GetDBManager()->Execute(command)) throw RequestError{503};
+         Cache<Account>::Instance()->RemoveObject(target->GetID());
+         auto stored = std::make_shared<Account>();
+         if (!PersistentAccount::ReadObject(stored, target->GetID())) throw RequestError{503};
+         if (!stored->GetActive() || stored->GetDomainID() != target->GetDomainID()
+             || stored->GetAdminLevel() != target->GetAdminLevel() || stored->GetIsAD() != target->GetIsAD()
+             || stored->GetAddress() != target->GetAddress() || !verify(*stored)) throw RequestError{409};
+         target = stored;
+      }
+      json::value ManageSignature(const std::string &operation, const json::object &arguments, std::shared_ptr<Account> target,
+         bool selfService = false)
       {
          if (operation == "accounts.signature.read") return SignatureView(*target);
          if (operation != "accounts.signature.update") throw RequestError{404};
@@ -283,13 +354,30 @@ namespace HM
          if (fields.if_contains("signatureEnabled")) target->SetEnableSignature(fields.at("signatureEnabled").as_bool());
          if (fields.if_contains("signaturePlainText")) target->SetSignaturePlainText(Wide(fields.at("signaturePlainText")));
          if (fields.if_contains("signatureHtml")) target->SetSignatureHTML(Wide(fields.at("signatureHtml")));
-         String error;
-         if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+         if (selfService)
+         {
+            SQLStatement statement(SQLStatement::STUpdate, "hm_accounts");
+            if (fields.if_contains("signatureEnabled")) statement.AddColumn("accountenablesignature", target->GetEnableSignature());
+            if (fields.if_contains("signaturePlainText")) statement.AddColumn("accountsignatureplaintext", target->GetSignaturePlainText());
+            if (fields.if_contains("signatureHtml")) statement.AddColumn("accountsignaturehtml", target->GetSignatureHTML());
+            SaveSelfPatch(target, statement, target->GetPassword(), [&](const Account &stored) {
+               const auto view = SignatureView(stored);
+               for (const auto &field : fields) if (view.at(field.key()) != field.value()) return false;
+               return stored.GetPassword() == target->GetPassword();
+            });
+         }
+         else
+         {
+            String error;
+            if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+         }
          return SignatureView(*target);
       }
-      json::value ManageMailboxSettings(const std::string &operation, json::object &arguments, const Account &actor)
+      json::value ManageMailboxSettings(const std::string &operation, json::object &arguments, const Account &actor, bool selfService = false)
       {
-         if (actor.GetAdminLevel() == Account::NormalUser) throw RequestError{403};
+         if (actor.GetAdminLevel() == Account::NormalUser && !selfService) throw RequestError{403};
+         if (selfService && (actor.GetID() <= 0 || Id(arguments) != actor.GetID()
+             || Number(arguments, "domainId", 9223372036854775807LL) != actor.GetDomainID())) throw RequestError{403};
          const bool server = actor.GetAdminLevel() == Account::ServerAdmin;
          const auto domainId = Number(arguments, "domainId", 9223372036854775807LL);
          if (!server && domainId != actor.GetDomainID()) throw RequestError{403};
@@ -314,11 +402,25 @@ namespace HM
             }
             if (fields.if_contains("firstName")) target->SetPersonFirstName(Wide(fields.at("firstName")));
             if (fields.if_contains("lastName")) target->SetPersonLastName(Wide(fields.at("lastName")));
-            String error;
-            if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+            if (selfService)
+            {
+               SQLStatement statement(SQLStatement::STUpdate, "hm_accounts");
+               if (fields.if_contains("firstName")) statement.AddColumn("accountpersonfirstname", target->GetPersonFirstName());
+               if (fields.if_contains("lastName")) statement.AddColumn("accountpersonlastname", target->GetPersonLastName());
+               SaveSelfPatch(target, statement, target->GetPassword(), [&](const Account &stored) {
+                  return (!fields.if_contains("firstName") || stored.GetPersonFirstName() == target->GetPersonFirstName())
+                     && (!fields.if_contains("lastName") || stored.GetPersonLastName() == target->GetPersonLastName())
+                     && stored.GetPassword() == target->GetPassword();
+               });
+            }
+            else
+            {
+               String error;
+               if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+            }
             return view();
          }
-         if (operation.rfind("accounts.signature.", 0) == 0) return ManageSignature(operation, arguments, target);
+         if (operation.rfind("accounts.signature.", 0) == 0) return ManageSignature(operation, arguments, target, selfService);
          if (operation == "accounts.behavior.read") return MailboxBehaviorView(*target);
          if (operation != "accounts.behavior.update") throw RequestError{404};
          auto *value = arguments.if_contains("fields");
@@ -377,9 +479,37 @@ namespace HM
          }
          if (fields.if_contains("autoReplyExpires")) target->SetVacationExpires(fields.at("autoReplyExpires").as_bool());
          if (fields.if_contains("autoReplyAbortSpamFlagged")) target->SetVacationAbortSpamFlagged(fields.at("autoReplyAbortSpamFlagged").as_bool());
-         if (fields.if_contains("autoReplyEnabled")) target->SetVacationMessageIsOn(fields.at("autoReplyEnabled").as_bool());
-         String error;
-         if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+         // For self-service defer the BO's reply-history side effect until the
+         // guarded database write and readback succeed.
+         if (fields.if_contains("autoReplyEnabled") && !selfService) target->SetVacationMessageIsOn(fields.at("autoReplyEnabled").as_bool());
+         if (selfService)
+         {
+            SQLStatement statement(SQLStatement::STUpdate, "hm_accounts");
+            if (fields.if_contains("forwardEnabled")) statement.AddColumn("accountforwardenabled", target->GetForwardEnabled());
+            if (fields.if_contains("forwardAddress")) statement.AddColumn("accountforwardaddress", target->GetForwardAddress());
+            if (fields.if_contains("forwardKeepOriginal")) statement.AddColumn("accountforwardkeeporiginal", target->GetForwardKeepOriginal());
+            if (fields.if_contains("forwardAbortSpamFlagged")) statement.AddColumn("accountforwardabortspamflagged", target->GetForwardAbortSpamFlagged());
+            if (fields.if_contains("autoReplyEnabled")) statement.AddColumn("accountvacationmessageon", fields.at("autoReplyEnabled").as_bool());
+            if (fields.if_contains("autoReplySubject")) statement.AddColumn("accountvacationsubject", target->GetVacationSubject());
+            if (fields.if_contains("autoReplyBody")) statement.AddColumn("accountvacationmessage", target->GetVacationMessage());
+            if (fields.if_contains("autoReplyExpires")) statement.AddColumn("accountvacationexpires", target->GetVacationExpires());
+            if (fields.if_contains("autoReplyExpiresDate")) statement.AddColumn("accountvacationexpiredate", target->GetVacationExpiresDate());
+            if (fields.if_contains("autoReplyAbortSpamFlagged")) statement.AddColumn("accountvacationabortspamflagged", target->GetVacationAbortSpamFlagged());
+            auto intended = MailboxBehaviorView(*target);
+            if (fields.if_contains("autoReplyEnabled")) intended["autoReplyEnabled"] = fields.at("autoReplyEnabled");
+            const auto previous = target;
+            SaveSelfPatch(target, statement, target->GetPassword(), [&](const Account &stored) {
+               const auto view = MailboxBehaviorView(stored);
+               for (const auto &field : fields) if (view.at(field.key()) != intended.at(field.key())) return false;
+               return stored.GetPassword() == target->GetPassword();
+            });
+            if (fields.if_contains("autoReplyEnabled")) previous->SetVacationMessageIsOn(fields.at("autoReplyEnabled").as_bool());
+         }
+         else
+         {
+            String error;
+            if (!PersistentAccount::SaveObject(target, error, true, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
+         }
          return MailboxBehaviorView(*target);
       }
       json::object DomainSettingsView(const Domain &domain)
@@ -635,6 +765,9 @@ namespace HM
          return memberOperation ? MemberView(*member) : aliasOperation ? AliasView(*alias) : ListView(*list);
       }
       #include "MailOperations.inc"
+      #include "ServerSettings.inc"
+      #include "PolicyCollections.inc"
+      #include "MailboxSelfService.inc"
       json::object DnsblView(DNSBlackList &item)
       {
          return {{"id", item.GetID()}, {"Active", item.GetIsActive()}, {"DNSHost", Utf8(item.GetDNSHost())},
@@ -737,6 +870,11 @@ namespace HM
          if (!argumentValue || !argumentValue->is_object()) throw RequestError{422};
          auto &arguments = argumentValue->as_object();
          if (operation == "authenticate") return User(*account);
+         if (operation.rfind("self.", 0) == 0) return ManageSelf(operation, arguments, *account);
+         if (operation.rfind("settings.", 0) == 0) return ManageServerSettings(operation, arguments, *account);
+         if (operation.rfind("surbl.", 0) == 0 || operation.rfind("blockedattachments.", 0) == 0
+             || operation.rfind("incomingrelays.", 0) == 0 || operation.rfind("securityranges.", 0) == 0)
+            return ManagePolicies(operation, arguments, *account);
          if (operation.rfind("queue.", 0) == 0) return ManageQueue(operation, arguments, *account);
          if (operation.rfind("routes.", 0) == 0 || operation.rfind("routeaddresses.", 0) == 0) return ManageRoutes(operation, arguments, *account);
          if (operation.rfind("rules.", 0) == 0) return ManageRules(operation, arguments, *account);

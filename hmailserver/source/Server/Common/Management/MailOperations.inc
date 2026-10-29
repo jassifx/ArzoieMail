@@ -285,10 +285,12 @@ json::object RuleDetail(Rule &rule)
    for (const auto &item : rule.GetActions()->GetSnapshot()) actions.push_back(ActionView(*item));
    view["criteria"] = std::move(criteria); view["actions"] = std::move(actions); return view;
 }
-json::value ManageRules(const std::string &operation, json::object &arguments, const Account &actor)
+json::value ManageRules(const std::string &operation, json::object &arguments, const Account &actor, bool selfService = false)
 {
-   if (actor.GetAdminLevel() == Account::NormalUser) throw RequestError{403};
+   if (actor.GetAdminLevel() == Account::NormalUser && !selfService) throw RequestError{403};
    const auto accountId = Number(arguments, "accountId", 9223372036854775807LL);
+   if (selfService && (actor.GetID() <= 0 || accountId != actor.GetID()
+       || Number(arguments, "domainId", 9223372036854775807LL) != actor.GetDomainID())) throw RequestError{403};
    std::shared_ptr<Account> mailbox;
    if (!accountId) { if (actor.GetAdminLevel() != Account::ServerAdmin) throw RequestError{403}; }
    else

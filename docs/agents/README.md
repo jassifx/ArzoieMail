@@ -6,14 +6,19 @@ traps found along the way, and where the last session left off.
 
 ## Read in this order
 
-Current handoff: [2026-10-28](handoffs/2026-10-28.md). PR #42 is merged at `74eecc017`;
-its final head `28dd3df` passed all four backend jobs, 1317 NUnit cases, 897 management
-assertions and both browser suites. The current authorized task is a documentation PR for the
-maintainer's approved [frozen 6.0 scope](../version-6-scope.md) and
-[breaking changes](../breaking-changes-6.0.md), including complete COM removal and migration
-of every supported tool/test/automation consumer. Implementation remains pending. All current
-phases are mandatory; later scope changes require approval. Read the [release policy](../release-versioning.md)
-for identities and release gates. No next implementation bundle is authorized.
+Current handoff: [2026-10-29](handoffs/2026-10-29.md). PR #43 is merged at `92ac28d`;
+its final head `7a143ca` passed all CI. The maintainer authorized **all remaining Phase 1b**
+in one completion effort on `feature/phase1b-completion`, with no partial completion claim.
+No new PR is submitted yet. Server settings and three filtering/relay collections passed initial
+Compact VM validation. Password-policy, IP-range and logging revisions subsequently passed
+full VM/browser checks (latest 736 native assertions). A same-password-reset session regression
+was reproduced and its fix passed full VM validation (739 native/145 live HTTP). Another
+43 controlled-clock lifecycle checks and affected integration tests passed. Branch CI remains
+pending; no completion PR exists. The full A/E ledger
+remains open. Complete COM retirement and the [frozen 6.0 scope](../version-6-scope.md)
+remain mandatory, with [breaking changes](../breaking-changes-6.0.md) and
+[release policy](../release-versioning.md) owning migration/publication rules. No next-phase
+implementation or automatic merge is authorized.
 The [authority index](../README.md) defines document ownership, status meanings and evidence
 updates. The [Phase 1b ledger](../phase-1b-status.md) tracks granular gaps and all legacy
 PHP/desktop main-pane migration owners. Read them before calling a feature or phase complete.

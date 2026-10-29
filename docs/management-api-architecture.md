@@ -95,6 +95,20 @@ Current desktop tools / scripts -> existing COM API -> same business layer
 - Cookies contain only opaque session IDs. Keep credentials encrypted in bounded, ephemeral
   server-side memory, reauthenticate native commands and expire sessions on restart, logout,
   inactivity or credential revocation. Never persist passwords in browser storage or cookies.
+  The completion branch additionally binds vault entries to a native credential version: an
+  HMAC over persisted account credential/directory-binding state under a random process-local
+  key. It prevents an old browser session surviving a same-password reset. The opaque binding
+  remains between native service and API vault; browser identity responses do not expose it.
+  Native and web process restarts, password resets and stored-hash upgrades require sign-in
+  again. Roles continue to be loaded from native identity. The regression was reproduced before
+  the fix; its full Compact VM run passed (739 native, 145 real HTTP/native assertions).
+  Unobserved disable/re-enable cycles, directory
+  password-reuse epochs and in-flight operations still need explicit acceptance; this is not a
+  claim that every revocation race has been solved.
+  Vault and cookie timing use injectable TimeProvider instances, with System as the production
+  default and no HTTP clock override. The completion branch's 43 controlled-clock assertions
+  cover idle/absolute expiry, sliding renewal, refreshed roles, opaque-only cookie identity
+  and binding failures; per-backend CI remains pending.
 - Do not trust forwarded headers without an explicitly configured trusted proxy. Production
   deployments terminate HTTPS in the application or a configured trusted hosting layer.
 - Publish versioned REST documentation and test unauthenticated access, CSRF, role changes,
