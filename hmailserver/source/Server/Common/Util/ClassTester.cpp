@@ -202,6 +202,21 @@ namespace HM
       for (const auto &failure : TransactionLeaseTests::Run()) transactionFailures.emplace_back(failure.c_str());
       ReportFailures_("database transaction leases", transactionFailures);
 
+      {
+         DatabaseConnectionManager unavailable;
+         String error;
+         // A failed connection acquisition must not approve an upgrade or pass
+         // a null physical client to script parsing. No live database is altered.
+         if (unavailable.EnsuresPrerequisites(REQUIRED_DB_VERSION, error) || error.IsEmpty())
+         {
+            LOG_APPLICATION("Native regression: disconnected database prerequisites incorrectly succeeded.");
+            throw std::logic_error("Disconnected database prerequisite checks must fail with an error.");
+         }
+         error.Empty();
+         if (unavailable.ExecuteScript(_T("unused-disconnected-database-script.sql"), error) || error.IsEmpty())
+            throw std::logic_error("Disconnected database scripts must fail before parsing.");
+      }
+
       OutputDebugString(_T("hMailServer: Testing RegularExpressionTester\n"));
       RegularExpressionTester *pRegExTest = new RegularExpressionTester();
       pRegExTest->Test();

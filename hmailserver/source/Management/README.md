@@ -451,7 +451,7 @@ cipher suites. Cipher/version/option changes require a later service restart; sa
 replaces active contexts nor restarts listeners. Pre-save checks do not prove endpoint handshake,
 certificate/hostname/key suitability or rollback acceptance. Those A06/E03 gates remain open.
 Native/managed compilation and the full Compact VM run passed (781 native assertions,
-including 246 settings assertions, and both browsers); final-head TLS CI is pending.
+including 246 settings assertions, and both browsers), followed by four-backend CI at `82a3bdaf5`.
 
 ## Filtering and trusted-relay collections (completion branch)
 

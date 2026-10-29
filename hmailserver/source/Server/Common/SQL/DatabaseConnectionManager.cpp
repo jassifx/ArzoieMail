@@ -363,6 +363,11 @@ namespace HM
    DatabaseConnectionManager::ExecuteScript(const String &sFile, String &sErrorMessage)
    {
       std::shared_ptr<DALConnection> pConnection = GetConnection_();
+      if (!pConnection)
+      {
+         sErrorMessage = "No database connection is available.";
+         return false;
+      }
 
       SQLScriptRunner scriptRunner;
       bool result = scriptRunner.ExecuteScript(pConnection, sFile, sErrorMessage);
@@ -379,6 +384,11 @@ namespace HM
 
       std::shared_ptr<DALConnection> pConnection = GetConnection_();
 
+      if (!pConnection)
+      {
+         sErrorMessage = "No database connection is available.";
+         return false;
+      }
       bool result = prerequisites.Ensure(pConnection, DBVersion, sErrorMessage);
 
       ReleaseConnection_(pConnection);

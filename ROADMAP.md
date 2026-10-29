@@ -313,9 +313,15 @@ its native/vault credential-binding fix passed the full 739-native/145-live-HTTP
 An additional 43 controlled-clock session checks and affected integration tests passed;
 database corrections at `bc3980201` passed all four backend jobs, Release, GCC/Clang and CI
 installer generation. A subsequent eight-field mail TLS section adds certificate verification,
-version/cipher policy and checked dependency validation; the full VM run passed (781 native), with
-corrected final-head CI still required. The detailed ledger
+version/cipher policy and checked dependency validation; the full VM run (781 native) and
+four-backend CI passed at `82a3bdaf5`. The detailed ledger
 continues to own every remaining A/E gate; nothing is complete merely because scope was approved.
+Subsequent listener/certificate persistence regressions reproduced two false-success saves on
+real Compact write rejection. Error propagation is corrected and both focused VM cases passed,
+including collection non-publication and successful retry. A disconnected-manager regression
+also reproduced unsafe upgrade-prerequisite success; both upgrade/script entry points now
+refuse missing connections and TestInternals passed in the VM. CI for these fixes remains pending;
+see the handoff and CI inventory for exact revision attribution.
 
 ### Phase 1b delivery tracker
 

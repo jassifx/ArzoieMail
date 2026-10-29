@@ -45,7 +45,8 @@ The correction and transaction-pool failure handling passed a fresh Compact VM r
 native TestInternals. Corrected head `bc3980201` passed all four backend jobs, Release,
 GCC/Clang and CI installer generation. Subsequent eight-field global mail TLS controls
 (81 settings in 12 sections) passed the full VM run (781 native assertions and both browsers)
-and await their own CI. A13 log access/diagnostics
+and four-backend CI at `82a3bdaf5`. Subsequent native persistence/recovery corrections passed
+targeted VM regressions but await their own CI. A13 log access/diagnostics
 remains incomplete. These are implementation
 progress, not full A/E acceptance. All open obligations below remain visible;
 no Defender/certificate/hosting/consumer-migration/PHP-retirement completion is implied.
@@ -86,7 +87,7 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | A03 | IMAP and POP3 settings | Protocol switches, limits, IMAP extensions/delimiter/public-folder policy and POP3 behavior; actual protocol regression checks after changes |
 | A04 | IP/security ranges | Implemented on completion branch: IPv4/IPv6 ranges, priority, protocol/relay/authentication/TLS/spam/virus/expiry fields, native effective match and independent management recovery; 32 targeted Compact VM assertions include real SMTP denial/recovery/authentication. Trusted unauthenticated relay requires transient explicit acknowledgement. Four-backend/matrix/failure/field-parity acceptance remains pending |
 | A05 | Incoming relays and Auto-ban | CRUD/policy, trusted-hop interpretation, ban timing/thresholds, effective-state inspection and recovery without silently bypassing security |
-| A06 | TCP/IP listeners and global TLS | Completion branch adds eight global TLS controls with checked version/option masks, remote certificate verification and pre-save cipher validation; 246 targeted settings assertions and full VM/browser checks passed. Their CI remains pending. Bind addresses/ports/protocols, implicit TLS/STARTTLS, certificate assignment, collision/lockout detection, restart/handshake acceptance and safe apply/rollback remain |
+| A06 | TCP/IP listeners and global TLS | Completion branch adds eight global TLS controls with checked version/option masks, remote certificate verification and pre-save cipher validation; 246 targeted settings assertions, full VM/browser checks and four-backend CI at `82a3bdaf5` passed. Later underlying listener/certificate false-success saves were reproduced and corrected; 2/2 recovery VM cases passed, their CI pending. Bind addresses/ports/protocols, implicit TLS/STARTTLS, certificate assignment, collision/lockout detection, restart/handshake acceptance and safe apply/rollback remain |
 | A07 | External POP3 fetch accounts | Scoped configuration, encrypted/write-only credentials, scheduling, SSL/TLS, delivery/rule/delete policy, manual fetch/status/error behavior and lifecycle tests |
 | A08 | Remaining domain/mailbox controls | Field-level comparison with legacy forms, directory bindings/provisioning policy and user-level permissions; document controls intentionally retained only in desktop tools |
 | A09 | Mailbox self-service | Own profile/signature/forwarding/replies/rules/password implemented on completion branch; 29 native assertions, real own-profile browser checks and four-backend CI at `bc3980201` passed. Restricted-column guarded account saves, current-password proof, sign-out, ownership and AD-password refusal implemented. Complete AD/revocation/concurrency/failure/browser-password/legacy workflow acceptance remains pending |

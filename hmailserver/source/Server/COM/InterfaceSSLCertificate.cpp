@@ -21,13 +21,14 @@ InterfaceSSLCertificate::Save()
       if (!authentication_->GetIsServerAdmin())
          return authentication_->GetAccessDenied();
    
-      if (HM::PersistentSSLCertificate::SaveObject(object_))
+      HM::String errorMessage;
+      if (HM::PersistentSSLCertificate::SaveObject(object_, errorMessage, HM::PersistenceModeNormal))
       {
          // Add to parent collection
          AddToParentCollection();
+         return S_OK;
       }
-   
-      return S_OK;
+      return COMError::GenerateError(errorMessage);
    }
    catch (...)
    {

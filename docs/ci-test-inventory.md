@@ -101,9 +101,36 @@ Native and managed builds passed with host service hooks disabled. The full Comp
 passed in `out/phase1b-tls-controls-vm.log`: **781 native** (246 settings +72 collections
 +29 self +32 IP ranges +402 prior),415 HTTP/security,43 lifecycle,26 DNS,2 plaintext-boundary,
 7 runtime,11 TLS,145 live HTTP/native,12 native TLS, both browsers and selected TestInternals
-(1 passed). Original executable/database/INI/service state was restored. Final-head TLS CI
-is pending; do not attribute the preceding green CI to these later sources or claim listener handshake/
+(1 passed). Original executable/database/INI/service state and checkpoint were restored.
+TLS head `82a3bdaf5f15755c25730cbf03d40f80b7c3766b` then passed all four database jobs,
+Release, GCC/Clang and CI installer generation. Per backend: **1444** separate assertions
+(the prior 1402 with native 739 increased to 781), both browser suites, and the same NUnit
+1317-case outcomes as `bc3980201`. Logs: `out/tls-green-{compact,mysql,postgresql,express}-ci.log`.
+CodeQL/workflow lint were not checks in this branch-push run. Do not claim listener handshake/
 certificate/renewal acceptance from configuration tests.
+
+The subsequent listener/certificate persistence review added two NUnit regressions to
+Infrastructure/Persistence/TCPIPPortTests.cs. Both reproduced real Compact provider rejection
+while the caller still reported success: invalid protocol-column integer and a certificate
+name exceeding the 255-character schema limit. Both failed at the expected missing-exception
+assertion in `out/phase1b-persistence-red-vm.log`; original VM state/checkpoint restored.
+Native bool/error propagation and the existing compatibility caller were then corrected.
+Native and test compilation passed (inherited analyzer warnings remain). A focused VM rerun
+passed **2/2 NUnit cases** in `out/phase1b-persistence-green-vm.log`, with added no-publication
+and corrected-retry checks; original VM state/checkpoint restored. No CI evidence for this
+newer correction is claimed yet. The certificate failure fixture
+requires provider length enforcement; permissive truncation is not proven covered.
+
+The next disconnected-manager regression in native ClassTester failed the selected TestInternals
+case in the VM (1/1 failed) with the expected default-log marker confirming that upgrade
+prerequisites incorrectly succeeded without a connection. Evidence:
+`out/phase1b-disconnected-red-vm.log`, `out/phase1b-disconnected-red-results.xml`.
+The assertion runs before the old SQL-script null dereference, so no intentional service crash
+is needed. Both manager entry points then gained early null guards; native compilation and
+selected TestInternals passed (1/1, zero failures/warnings/skips) in
+`out/phase1b-disconnected-green-vm.log`; original VM state/checkpoint restored. These changes
+still need their own CI. This tests an unavailable connection manager, not a live provider
+outage or lost commit acknowledgement.
 
 ## Modern-stack CI expansion merged and verified
 

@@ -45,8 +45,9 @@ namespace HM
    bool 
    PersistentSSLCertificate::SaveObject(std::shared_ptr<SSLCertificate> pObject, String &errorMessage,  PersistenceMode mode)
    {
-      // errorMessage - not supported yet.
-      return SaveObject(pObject);
+      const bool saved = SaveObject(pObject);
+      if (!saved) errorMessage = "Failed to save SSL certificate settings to the database.";
+      return saved;
    }
 
    bool 
@@ -80,8 +81,6 @@ namespace HM
       bool bRetVal = Application::Instance()->GetDBManager()->Execute(oStatement, bNewObject ? &iDBID : 0);
       if (bRetVal && bNewObject)
          pObject->SetID((int) iDBID);
-
-
-      return true;
+      return bRetVal;
    }
 }

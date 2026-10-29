@@ -97,8 +97,7 @@ namespace HM
       bool bRetVal = Application::Instance()->GetDBManager()->Execute(oStatement, bNewObject ? &iDBID : 0);
       if (bRetVal && bNewObject)
          pObject->SetID((int) iDBID);
-
-
-      return true;
+      if (!bRetVal) errorMessage = "Failed to save TCP/IP listener settings to the database.";
+      return bRetVal;
    }
 }

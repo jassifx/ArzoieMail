@@ -25,7 +25,7 @@ on ADO parameter-prefix replacement. The correction adds native ADO occurrence/o
 regressions and shared transaction-lease failure/capability tests to TestInternals and portable
 core tests. These passed in the disposable Compact VM; corrected head `bc3980201` then passed
 all four backend jobs, Release, GCC/Clang and installer generation. Later eight-field TLS policy
-tests and published browser workflow passed the full VM run and need their own final-head CI.
+tests and published browser workflow passed the full VM run and four-backend CI at `82a3bdaf5`.
 Fault-injected helper tests do not prove real provider outage or commit-acknowledgement recovery.
 
 | ID | Technology / boundary | Coverage and evidence | Execution |
@@ -38,17 +38,25 @@ Fault-injected helper tests do not prove real provider outage or commit-acknowle
 | C06 | Production hosting policy | Refuse missing/wildcard AllowedHosts, reject foreign HTTP Host on valid HTTPS and reject plaintext even with forged X-Forwarded-Proto | New TLS checks and expanded existing plaintext boundary checks |
 | C07 | Pipe trust boundary | SCM/server-PID verification, impostor rejection with zero credential bytes; invalid frame/malformed JSON/authorization checks | Existing two-assertion squatting mode newly automated before pipe opt-in; native framing suite on every backend |
 | C08 | Real REST/native/database integration | Real Kestrel, cookies, authentication, native channel and selected backend; domain/mailbox/profile/signature/alias/list/member/rule/route/recipient persistence and validation, stored-mail queue exclusion and request-size limits | New live HTTP mode on every backend, without a fake management channel |
-| C09 | Real identity and session lifecycle | Domain/admin/user restrictions, cross-domain denial, protected-account denial, account disable and same-password reset revoke HTTP sessions, old cookies cannot resume on a fresh host/vault; controlled-clock idle/absolute expiry and cookie renewal | Live HTTP mode; completion branch adds native credential binding and 43 controlled-clock assertions in default mode; VM evidence exists, branch CI pending |
+| C09 | Real identity and session lifecycle | Domain/admin/user restrictions, cross-domain denial, protected-account denial, account disable and same-password reset revoke HTTP sessions, old cookies cannot resume on a fresh host/vault; controlled-clock idle/absolute expiry and cookie renewal | Live HTTP mode; completion branch adds native credential binding and 43 controlled-clock assertions in default mode; VM and four-backend CI passed at `bc3980201` |
 | C10 | HTTPS through the native service | Repeat production TLS/cookie/host/chain checks with actual native authentication and version-6 service status | New live TLS/native mode inside the opted-in fixture on every backend |
 | C11 | Browser interaction edge cases | Fixture-backed workflows, confirmations/cancellation, inert HTML/source, password omission, queue precision/busy controls, rule order/activation, role restrictions, session recovery and mobile layout | Existing browser suite retained on every backend |
 | C12 | Published browser end to end | No API interception: real login, service version, domain/mailbox/profile/rule writes, persistence after reload/readback, native role restrictions, logout, cascading cleanup and mobile layout | New browser_live.py against the published API on every backend |
-| C13 | Native management behavior | Parent/role/revocation/parser/persistence boundaries; domain/account/alias/list/forward/reply/signature/policy/name/queue/route/rule workflows; local SMTP/POP3 effects and controlled busy queue | Existing 402-assertion live-native suite on every backend |
+| C13 | Native management behavior | Parent/role/revocation/parser/persistence boundaries; domain/account/alias/list/forward/reply/signature/policy/name/queue/route/rule workflows; local SMTP/POP3 effects and controlled busy queue; completion branch adds settings/TLS, filtering/relay collections, self-service and IP security ranges | Every backend; baseline 402 assertions expanded to 739 at green `bc3980201`, then 781 at green TLS head `82a3bdaf5`; newer heads need their own evidence |
 | C14 | Mail protocols and data/security | SMTP/IMAP/POP3, SQL binding, TLS, password hashing/UTF-8, crypto/key/backup, permissions and product/install identity; expected explicit/inconclusive outcomes reported separately | Installed-server NUnit suite on every backend; currently 1317 cases at the verified version-6 baseline |
 | C15 | SQL Server Express | OLE DB 19, native SQL-session encryption, certificate rejection/trust behavior and DB migration fixture | Express-specific setup/tests; equivalent shared behavior on all backends |
 | C16 | Product 6 and compatibility | Service/PE version agreement, product name, retained service name, new/legacy paths and installer/native-tool compilation; schema 5714 stays independent | Version-6 product regression and existing installation/identity checks |
 | C17 | Documentation as project memory | Local links, maintained PHP/desktop inventories and capability ownership; SDK/runtime evidence and results distinguish snapshots from unverified work | Static documentation checker newly run in every backend job |
 | C18 | Native portability and static security | GCC/Clang sanitizer/CTest, CodeQL for enabled languages, workflow actionlint/zizmor when workflow files change; NuGet restore auditing remains enabled | Existing separate CI jobs, with the expanded test code included |
 | C19 | Test evidence and diagnosis | SDK/runtime details, publish manifests, live native/REST/TLS logs, fixture/live browser screenshots and host logs; unique backend artifact names, always uploaded when available | New management-test-evidence artifacts; no service INI, credentials, private keys, HAR or authentication traces |
+
+Additional completion-branch native coverage: TestInternals runs the shared transaction-lease
+fault tests and ADO parameter prefix/occurrence/order/type regressions (green CI at `bc3980201`).
+Later persistence regressions require database-rejected listener/certificate inserts to fail
+the caller, avoid collection/identity publication and allow a corrected retry. Both passed in
+the Compact VM; they require their own CI. A disconnected-manager TestInternals regression
+reproduced unsafe prerequisite success; null-guard correction passed VM TestInternals and needs CI.
+These checks do not replace real provider outage/acknowledgement-loss/concurrency acceptance.
 
 ## Fixture boundaries and secret handling
 
