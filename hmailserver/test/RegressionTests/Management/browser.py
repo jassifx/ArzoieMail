@@ -337,7 +337,9 @@ with sync_playwright() as p:
     page = browser.new_page(viewport={"width": 1440, "height": 1000})
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
-    page.on('console', lambda message: errors.append('console ' + message.type + ': ' + message.text) if message.type == 'error' else None)
+    # Expected 4xx responses log console errors, so they stay out of the page-error assertion.
+    console = []
+    page.on('console', lambda message: console.append(message.text) if message.type == 'error' else None)
 
     def visible(locator, what):
         # Fail with the page state, not only a locator timeout.
@@ -346,7 +348,7 @@ with sync_playwright() as p:
         except Exception as error:
             page.screenshot(path=str(output / 'failure.png'), full_page=True)
             notice = page.locator('#notice').inner_text() if page.locator('#notice').is_visible() else '(no notice)'
-            raise AssertionError(f'{what} did not appear. Hash {page.evaluate("location.hash")}; notice: {notice}; page errors: {errors}; '
+            raise AssertionError(f'{what} did not appear. Hash {page.evaluate("location.hash")}; notice: {notice}; page errors: {errors}; console: {console[-5:]}; '
                                  f'content: {page.locator("#content").inner_text()[:600]}') from error
     page.route('**/api/v1/**', api)
     page.goto(base)
