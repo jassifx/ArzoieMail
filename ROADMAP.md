@@ -302,8 +302,9 @@ throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. Se
 
 ### Current completion authorization
 
-After #43 merged at `92ac28d`, the maintainer requested all remaining Phase 1b in one completion
-effort. Branch `feature/phase1b-completion`; no completion PR submitted. Typed server settings,
+After #43 merged at `92ac28d`, the maintainer requested all remaining Phase 1b. On 2026-10-30 the
+maintainer chose one checkpoint PR per coherent bundle instead of a single completion PR; the first
+checkpoint is `feature/phase1b-completion`. No checkpoint claims Phase 1b completion. Typed server settings,
 checked persistence and three filtering/relay collections passed initial Compact VM validation
 (630 native assertions plus HTTP/TLS/browser coverage; see the CI inventory). Mailbox self-service
 and restricted account-field writes passed the subsequent 656-assertion VM/browser run.

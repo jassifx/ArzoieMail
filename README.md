@@ -177,9 +177,9 @@ A transport inventory addition passed full VM/browser validation and four-backen
 certificate names without private paths. The subsequent
 PFX inspection workflow passed full VM/native/browser checks and four-backend CI at `ae903a182`.
 A following native 64-bit certificate/listener ID correction passed a reproduced red/green
-VM regression and still needs its own CI. Certificate installation/assignment is unfinished. The remaining
+VM regression and passed four-backend CI at `7258068df`. Certificate installation/assignment is unfinished. The remaining
 administration, scanner, certificate, hosting, migration and cutover gates are still open.
-No new completion PR or Phase 1b completion is claimed.
+Work is submitted as checkpoint PRs per bundle; none claims Phase 1b completion.
 
 The phases run in this order, each starting once the one before it is done; code quality (5) runs
 alongside all of them.

@@ -91,8 +91,8 @@ queue operations, routes/allowed recipients and global/mailbox rules. Its final
 head `28dd3df` passed 1317 NUnit cases, 897 management assertions and both browser suites per
 backend; merge `74eecc017`. Consult the CI inventory for inconclusive/skipped outcomes.
 PR #43 merged the approved 6.0 scope at `92ac28d`. The current authorization is to complete
-all remaining Phase 1b in one effort on `feature/phase1b-completion`; follow the latest handoff
-for implementation/evidence status. No Phase 2 start or automatic merge is authorized.
+all remaining Phase 1b, submitted as one checkpoint PR per coherent bundle (maintainer decision,
+2026-10-30; see the working agreement); follow the latest handoff for implementation/evidence status. No Phase 2 start or automatic merge is authorized.
 
 ---
 

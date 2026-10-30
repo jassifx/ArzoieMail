@@ -7,9 +7,9 @@ traps found along the way, and where the last session left off.
 ## Read in this order
 
 Current handoff: [2026-10-30](handoffs/2026-10-30.md). PR #43 is merged at `92ac28d`;
-its final head `7a143ca` passed all CI. The maintainer authorized **all remaining Phase 1b**
-in one completion effort on `feature/phase1b-completion`, with no partial completion claim.
-No new PR is submitted yet. Server settings and three filtering/relay collections passed initial
+its final head `7a143ca` passed all CI. The maintainer authorized **all remaining Phase 1b**;
+since 2026-10-30 it is submitted as one **checkpoint PR per bundle**, none claiming Phase 1b
+completion (working agreement). The first checkpoint is `feature/phase1b-completion`. Server settings and three filtering/relay collections passed initial
 Compact VM validation. Password-policy, IP-range and logging revisions subsequently passed
 full VM/browser checks (latest 736 native assertions). A same-password-reset session regression
 was reproduced and its fix passed full VM validation (739 native/145 live HTTP). Another
@@ -32,7 +32,7 @@ CAST dialect error; the fixture correction compiled and requires its own CI. No 
 test job remains active. The handoff owns the latest source/storage-probe work and next checks.
 The new handoff owns
 exact progress and next checks.
-No completion PR exists. The full A/E ledger
+No checkpoint claims completion. The full A/E ledger
 remains open. Complete COM retirement and the [frozen 6.0 scope](../version-6-scope.md)
 remain mandatory, with [breaking changes](../breaking-changes-6.0.md) and
 [release policy](../release-versioning.md) owning migration/publication rules. No next-phase
