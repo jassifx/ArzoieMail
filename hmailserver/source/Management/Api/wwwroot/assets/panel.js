@@ -122,7 +122,7 @@
   }
   // A select for native schema options. An unexpected stored value stays selectable so that
   // saving other fields never silently replaces it.
-  function choiceField(rule, value, help) {
+  function optionField(rule, value, help) {
     const wrap = el('div'); const label = el('label', rule.name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
     const input = el('select', null, 'form-select'); input.name = rule.name; input.id = `field-${rule.name}-${++fieldSequence}`; label.htmlFor = input.id;
     const options = rule.options.some(option => option.value === value) ? rule.options : [...rule.options, { value, label: `Current value (${value})` }];
@@ -777,7 +777,7 @@
       const grid = el('div', null, 'form-grid'); const controls = new Map();
       for (const rule of result.schema) {
         const help = rule.help + (rule.restart ? ' Requires service restart.' : '') + (rule.direct ? ' Save this setting on its own.' : '');
-        const field = rule.options ? choiceField(rule, result.values[rule.name], help) : inputField(rule.name, result.values[rule.name], help);
+        const field = rule.options ? optionField(rule, result.values[rule.name], help) : inputField(rule.name, result.values[rule.name], help);
         // These schemas are returned by the native allowlist, not executable UI templates.
         if (!rule.options && rule.type === 'integer') { field.input.type = 'number'; field.input.required = true; field.input.min = String(rule.minimum); field.input.max = String(rule.maximum); field.input.step = '1'; }
         if (!rule.options && rule.type === 'string') field.input.maxLength = rule.maximum;
