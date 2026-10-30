@@ -87,7 +87,20 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | GET | `/api/v1/session` | Anonymous bootstrap or current authenticated identity |
 | POST | `/api/v1/session` | Sign in with username/password; rate limited |
 | DELETE | `/api/v1/session` | Sign out |
-| GET | `/api/v1/status` | Server administrator |
+| GET | `/api/v1/status` | Server administrator; version, state, start time, per-protocol session counts, message counters, cache hit rates |
+| POST | `/api/v1/server/stop`, `/api/v1/server/start` | Server administrator; `{ "expectedState": 3 }` to stop, `1` to start; a different current state returns 409 |
+| GET | `/api/v1/servermessages` | Server administrator; list server-generated message texts |
+| GET / PATCH | `/api/v1/servermessages/{id}` | Server administrator; read, or change only the text with `{ "expected": { ... }, "text": "..." }` |
+| POST | `/api/v1/sendout/preview` | Server administrator; count the active accounts matching `recipients` |
+| POST | `/api/v1/sendout` | Server administrator; queue one message to the previewed accounts; `expectedRecipients` must match |
+| POST | `/api/v1/diagnostics/run` | Server administrator; start the native diagnostics in the background |
+| GET | `/api/v1/diagnostics/results` | Server administrator; poll the latest diagnostics run |
+| POST | `/api/v1/diagnostics/mail-servers` | Server administrator; the servers outgoing delivery would use for `domain` |
+| GET | `/api/v1/logs` | Server administrator; list allowlisted log files (name, size, modified) |
+| GET | `/api/v1/logs/{name}` | Server administrator; a page of at most 16 KiB ending at `before` (default: end of file) |
+| PUT | `/api/v1/settings/smtp/smart-host-credential` | Server administrator; write-only `{ "password": "..." }`; empty clears |
+| POST | `/api/v1/settings/administrator-password` | Server administrator; `currentPassword` of the built-in Administrator and `newPassword` |
+| POST | `/api/v1/settings/performance/message-index/clear` | Server administrator; empty JSON object |
 | GET | `/api/v1/queue` | Server administrator; pending/held metadata, searchable sender or ID |
 | GET / DELETE | `/api/v1/queue/{id}` | Inspect recipients or permanently remove an idle queued item; stored mail is excluded |
 | POST | `/api/v1/queue/{id}/retry` | Server administrator; request retry of an idle queued item |
@@ -366,8 +379,7 @@ and test messages from all providers before strengthening DMARC.
 
 `GET /api/v1/settings/{section}` returns `section`, `values` and a typed `schema` for an
 explicit native allowlist. Sections: `protocols`, `smtp`, `imap`, `pop3`, `autoban`, `greylisting`,
-`performance`, `general`, `antivirus`, `passwordhash`, `logging`, `tls`. The current implementation maps 81 fields; it is not
-all server administration parity. Server administrators only, checked in HTTP and native code.
+`performance`, `general`, `antivirus`, `passwordhash`, `logging`, `tls`. The current implementation maps 92 fields. Server administrators only, checked in HTTP and native code.
 No raw property names, SQL, process commands, secret values or filesystem paths are accepted.
 
 `PATCH` requires exactly `{ "fields": { ... }, "expected": { ... } }`, with matching keys
@@ -452,6 +464,100 @@ replaces active contexts nor restarts listeners. Pre-save checks do not prove en
 certificate/hostname/key suitability or rollback acceptance. Those A06/E03 gates remain open.
 Native/managed compilation and the full Compact VM run passed (781 native assertions,
 including 246 settings assertions, and both browsers), followed by four-backend CI at `82a3bdaf5`.
+
+## Server operations and remaining protocol settings (bundle 1 checkpoint)
+
+These close the remaining fields of the legacy SMTP, IMAP, POP3, performance, Auto-ban,
+logging, mirror, status, server message, sendout, diagnostics and advanced pages (A01, A02,
+A03, A05, A13, A14, A16, A20). Every operation is server-administrator only in the HTTP
+handler and again in the native dispatcher.
+
+**Additional settings.** `smtp` adds `deliverySecurity` (0 none, 2 STARTTLS when offered,
+3 STARTTLS required; implicit TLS is refused for direct delivery), `smartHost`, `smartHostPort`,
+`smartHostSecurity` (0-3), `smartHostAuthentication`, `smartHostUsername`, `srsEnabled` and
+`srsMaxAgeDays` (1-512, the SRS day-counter limit). `imap` adds `masterUser` (empty, a mailbox
+address, or a local part that takes the authenticating account's domain) and
+`hierarchyDelimiter` (`.`, `/` or `\`). `performance` adds `messageIndexing`. Enumerated
+values carry `options` (value and label) in the schema, and a value outside them is refused.
+A stored value outside the options (set through COM) stays visible as "current value" in the
+panel, so saving other fields never replaces it silently.
+
+`hierarchyDelimiter` and `messageIndexing` are marked `direct`: they go through their native
+setters, which rewrite rule folder references and clear rule caches, or start and stop the
+indexer. A patch that changes one must contain only that field (422 otherwise). The expected
+value is still checked, but unlike the other fields this is not one guarded database
+transaction. The delimiter change returns 409 while a folder or rule action already contains
+the new character.
+
+The smart-host credential is write-only: `GET /settings/smtp` reports only
+`credentials.smartHostConfigured`. It is stored through the existing encrypted setting. The
+built-in Administrator password lives in `hMailServer.ini`, not a mailbox; changing it requires
+the current Administrator password (403 when it is wrong) and revokes Administrator sessions
+through the existing security stamp. Clearing the message index removes indexed metadata; it is
+rebuilt gradually while indexing is enabled.
+
+Not exposed, with reasons: worker thread priority (`WorkerThreadPriority`) is stored but no
+server code reads it, so the setting has no effect; `background_iphome_save.php` targets an
+`IPHomes` COM collection that no longer exists in the server or type library. Both are recorded
+as retired in the [6.0 breaking-change register](../../../docs/breaking-changes-6.0.md).
+
+**Status and control.** `GET /status` adds `architecture`, `startTime`, `processedMessages`,
+`spamMessagesDetected`, `virusesRemoved`, `sessions` (`smtp`, `pop3`, `imap`) and
+`cacheHitRates` (`domain`, `account`, `alias`, `list`, percent). Counters cover the current
+service process. `server.stop` and `server.start` stop or start the protocol listeners,
+delivery and external fetching inside the service process (the same operation as the desktop
+Start/Stop button). The management pipe, configuration and database stay available, so the
+panel can start the services again. The caller must name the state it observed (`3` running to
+stop, `1` stopped to start): a different current state returns 409, which keeps two
+administrators from toggling the service back and forth. This is not a Windows service
+restart; restart-required settings still need one.
+
+**Server messages.** Message names are fixed identifiers the server looks texts up by; only
+`text` changes (at most 8000 UTF-8 bytes; tab, CR and LF allowed, other controls refused). The
+update needs the complete `expected` object as loaded and returns 409 when it differs.
+
+**Sendout.** `recipients` is a wildcard over account addresses (`*` matches any characters; no
+spaces, commas, quotes or angle brackets). Only active accounts in active domains match, as in
+the desktop tool. `POST /sendout/preview` returns the count. `POST /sendout` requires exactly
+`recipients`, `fromAddress` (a valid address), `fromName`, `subject`, `body` (at most
+12288 bytes) and `expectedRecipients`, which must equal the current count (409 otherwise, 422
+when it is zero). `fromName` refuses quotes and backslashes, and both header fields refuse
+control characters, so no header can be injected. One message with all matching recipients is
+queued and delivered locally; the service log records the count. The panel enables sending only
+after a preview of the same pattern and confirms the exact count.
+
+**Diagnostics.** The native diagnostics (directories, IP ranges, error logs, IPv6 and,
+optionally, MX records and self-connection for a local domain and outbound port 25 to a test
+domain) can take longer than a management request, so `POST /diagnostics/run` starts them as
+one maintenance work-queue task (409 while one is running) and `GET /diagnostics/results`
+returns `running`, `run`, `completed` and the results. Results live in memory until the next
+run or service restart. `localDomain` must be an existing local domain or empty; `testDomain`
+must be a domain name or empty. `POST /diagnostics/mail-servers` returns up to 50 host/address
+pairs that direct delivery would use for a domain, as the desktop MX query did; routes and the
+smart host can override them.
+
+**Logs.** `GET /logs` lists at most 200 files in the configured log directory whose names
+match the native allowlist (`hmailserver_<date>.log`, `ERROR_hmailserver_<date>.log`,
+`hmailserver_<KIND>_<date>.log`, `hmailserver_awstats.log`, `hmailserver_backup.log`,
+`hmailserver_events.log`), newest first. Directories and reparse points are skipped. Reads take
+only a name from that allowlist, never a path, open the file shared with the writer and refuse
+reparse points. A page holds at most 16 KiB ending at `before`, starting at the next line
+boundary; invalid UTF-8 becomes U+FFFD and control characters other than tab, CR and LF become
+spaces, so a page always fits the management frame. Logs mask authentication credentials
+(`***`) but contain addresses, IP addresses and message metadata, so keep this to server
+administrators. There is no live log stream, search or download.
+
+Tests: `ServerOperationsTests` runs against the native dispatcher on every CI backend. It
+covers role refusals for every operation; status fields; a real stop (POP3 refused while the
+management channel still answers), stale-state refusal and restart; option, range, header and
+host validation; credential storage reporting only `configured`; the delimiter's alone-only rule
+and restoration; index toggling and clearing; server message conflict/validation/persistence
+and restoration; a sendout to two of three accounts in a temporary domain, verified by POP3;
+diagnostics polling; mail-server lookup validation; and log name, offset and boundary refusals.
+When the test administrator is the built-in Administrator it also changes and restores that
+password. `LiveRestTests` checks the HTTP role, CSRF and log-name boundaries, and
+`browser.py` covers every new panel control, including inert rendering of log and diagnostic
+text and the mobile layout.
 
 ## Mail transport inventory (completion branch, validation in progress)
 

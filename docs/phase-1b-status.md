@@ -101,6 +101,18 @@ standalone probe is separate from application CI and does not close A06/E03/E07.
 | F16 | DNS guidance | Merged #31, partial overall | On-demand SPF/DKIM/DMARC publication inspection, copyable advice, shared-provider SPF proposals, deterministic include/redirect/lookup fixtures; key generation/rotation and complete setup/conformance acceptance unfinished |
 | F17 | Status and diagnostics | Merged #31, partial overall | Basic version/state/domain count and management-boundary checks; not full server start/stop, live sessions, log viewing or complete operational diagnostics |
 
+### Bundle 1 checkpoint: server and protocol operations (2026-10-30)
+
+Branch `feature/phase1b-server-operations`, first commit `3351cc87e`. It adds 11 typed settings
+(92 in 12 sections), native `options`/`direct` schema metadata, a write-only smart-host
+credential, the built-in Administrator password change, message-index clearing, server status
+and stop/start, server messages, administrator sendout, background diagnostics, mail-server
+lookup and bounded log reads, across native, REST and panel. The REST contract is in the
+[Management README](../hmailserver/source/Management/README.md#server-operations-and-remaining-protocol-settings-bundle-1-checkpoint).
+Host compilation of the native service, API and test runner passed; runtime evidence comes
+from CI only, recorded in the [CI inventory](ci-test-inventory.md). This is a checkpoint: A01-A20
+remain open until their remaining items and full-phase acceptance are complete.
+
 ## Remaining administration parity
 
 These rows make the broad "advanced administration" item concrete. They are **planned** for
@@ -110,11 +122,11 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 
 | ID | Work area | Missing work / acceptance |
 |---|---|---|
-| A01 | Server status and control | Start/stop/restart policy, protocol state/counters, live sessions and operational status; least-privilege native operations and interruption confirmation |
-| A02 | SMTP settings | Delivery/retry/relay defaults, authentication, size/recipient/session limits, local hostname/banner, advanced protocol and outgoing policies; retain UTF-8 credential handling and transport security |
-| A03 | IMAP and POP3 settings | Protocol switches, limits, IMAP extensions/delimiter/public-folder policy and POP3 behavior; actual protocol regression checks after changes |
+| A01 | Server status and control | Bundle 1 checkpoint (`feature/phase1b-server-operations`): status adds start time, per-protocol session counts, processed/spam/virus counters and cache hit rates; mail-service stop/start inside the service process, guarded by the observed state (409 otherwise) with panel confirmation, and the management channel stays available while stopped. A real stop/start regression runs on every backend. Remaining: Windows service restart for restart-required settings is not offered (needs service-control rights the API identity must not hold); per-session listing has no native source (counts only) |
+| A02 | SMTP settings | Bundle 1 checkpoint (`feature/phase1b-server-operations`): every field of the legacy SMTP pages is now typed, adding direct-delivery STARTTLS policy, smart host host/port/security/authentication/user name with a write-only credential, and SRS enable/age. Validation, persistence, restoration and credential non-disclosure are tested natively; smart-host delivery through a real relay is not separately tested |
+| A03 | IMAP and POP3 settings | Bundle 1 checkpoint (`feature/phase1b-server-operations`): adds the IMAP master user and hierarchy delimiter (applied alone through its native setter, refused while a folder or rule uses the character); every legacy IMAP/POP3 field is now typed. The POP3 greeting change and delimiter change/restore are exercised against the live service; IMAP client resynchronization after a delimiter change is not tested |
 | A04 | IP/security ranges | Implemented on completion branch: IPv4/IPv6 ranges, priority, protocol/relay/authentication/TLS/spam/virus/expiry fields, native effective match and independent management recovery; 32 targeted Compact VM assertions include real SMTP denial/recovery/authentication. Trusted unauthenticated relay requires transient explicit acknowledgement. Four-backend/matrix/failure/field-parity acceptance remains pending |
-| A05 | Incoming relays and Auto-ban | CRUD/policy, trusted-hop interpretation, ban timing/thresholds, effective-state inspection and recovery without silently bypassing security |
+| A05 | Incoming relays and Auto-ban | Trusted incoming relay CRUD (completion branch) and all four legacy Auto-ban fields plus invalid-command disconnection are typed. Bans the server creates are expiring IP security ranges, so they are inspected and lifted through A04's range list and effective-match tool. Bundle 1 checkpoint (`feature/phase1b-server-operations`) adds no new fields here. Remaining: operator guidance on trusted-hop interpretation |
 | A06 | TCP/IP listeners and global TLS | Completion branch adds eight global TLS controls with checked version/option masks, remote certificate verification and pre-save cipher validation; 246 targeted settings assertions, full VM/browser checks and four-backend CI at `82a3bdaf5` passed. Underlying listener/certificate false-success saves were reproduced and corrected; recovery VM cases and four-backend CI at `170442658` passed. Read-only transport inventory passed full VM and four-backend CI at `8cdc085b4`; the following native ID-width correction passed a red/green VM regression and needs its own CI. Bind addresses/ports/protocols, implicit TLS/STARTTLS, certificate assignment, collision/lockout detection, restart/handshake acceptance and safe apply/rollback remain |
 | A07 | External POP3 fetch accounts | Scoped configuration, encrypted/write-only credentials, scheduling, SSL/TLS, delivery/rule/delete policy, manual fetch/status/error behavior and lifecycle tests |
 | A08 | Remaining domain/mailbox controls | Field-level comparison with legacy forms, directory bindings/provisioning policy and user-level permissions; document controls intentionally retained only in desktop tools |
@@ -122,14 +134,14 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | A10 | Groups, public/shared folders and ACLs | Desktop group/member and IMAP folder/permission surfaces; secure role matrix, hierarchy and client interoperability before any replacement claim |
 | A11 | Remaining spam controls | SURBL lists, allowlists, global greylisting timing/exceptions, other advanced filtering options and effective scoring guidance; existing DNSBL controls do not cover these |
 | A12 | Existing antivirus and blocked attachments | Current custom/ClamAV configuration, test actions, timeouts/results, attachment extension/policy controls and interaction with optional Defender; no silent loss of scanner choices |
-| A13 | Logging and diagnostics | Nine typed logging flags implemented on completion branch with merged checked bit updates; initial Compact VM/native/browser checks passed. Bounded/redacted log access, operational diagnostics and DNS/MX tools remain; no unrestricted file reader or shell execution |
-| A14 | Performance settings | Connection/worker/cache/database knobs, units/limits/effective status, guarded changes and measured workload guidance; collection/queue DB-side paging remains a capacity follow-up |
+| A13 | Logging and diagnostics | Nine typed logging flags (completion branch). Bundle 1 checkpoint (`feature/phase1b-server-operations`): log listing and bounded 16 KiB page reads by allowlisted name only (no paths, reparse points refused, credentials already masked by the server); native diagnostics as a polled background task; mail-server (MX) lookup replacing the desktop MX query. No live log stream, search or download; no shell execution |
+| A14 | Performance settings | Bundle 1 checkpoint (`feature/phase1b-server-operations`): adds message indexing (applied through its native setter) and index clearing; cache hit rates appear in status. Worker thread priority is retired because no server code reads it (BC-009). Remaining: measured workload guidance; collection/queue DB-side paging is a capacity follow-up |
 | A15 | Administrative maintenance | Backup/restore, archive passphrases, installation secret-key export/import, upgrade/database/data-directory tools and recovery; choose safe narrowly scoped web support or an explicitly documented desktop-only procedure |
-| A16 | Mirror, server messages and sendout | Mirror destination/policy, SMTP response templates and administrator sendout, with role, privacy, validation and confirmation checks |
+| A16 | Mirror, server messages and sendout | Mirror address typed (completion branch). Bundle 1 checkpoint (`feature/phase1b-server-operations`): server message list/read and text-only update with expected-value conflicts; administrator sendout with a recipient preview whose exact count must be confirmed, header-injection refusal and POP3-verified delivery in CI |
 | A17 | Password hashing policy | Four typed policy/upgrade settings implemented on completion branch with unchanged defaults, zero/default semantics, algorithm-dependent cross-field bounds and guarded dependencies. Compact settings checks and four-backend CI at `bc3980201` passed; broader concurrency/failure and operational acceptance remain pending. No hashes/secrets are returned |
 | A18 | Scripts and utility migration decisions | Legacy script configuration/execution is not exposed by #42 rules. PowerShell event-host implementation belongs to Phase 2. Resolve how affected PHP workflows migrate before cutover; do not add unrestricted web script/shell execution as a shortcut |
 | A19 | Existing route/rule/queue restrictions | Explicit disposition for legacy regex, script/local-binding rule actions, immutable names, bulk queue operations and other omitted controls; supported migration or approved restriction required, not silent parity claims |
-| A20 | General server settings | Default domain, IPv6 preference and legacy IP-home/multihoming settings, plus remaining general options; review even orphaned handlers and preserve or explicitly retire their supported behavior |
+| A20 | General server settings | Default domain, IPv6 preference, host name and special-use folders typed (completion branch). Bundle 1 checkpoint (`feature/phase1b-server-operations`): built-in Administrator password change requiring the current password. The orphaned IP-home handler, whose `IPHomes` COM collection no longer exists, is retired (BC-009) |
 
 ## Expanded Phase 1b requirements
 
@@ -209,7 +221,7 @@ Paths are relative to `hmailserver/source/WebAdmin/`. Area IDs refer to the tabl
 | `background_domain_name_save.php` | F10 |
 | `background_domain_save.php` | F04/F08/F09/A08/E01 |
 | `background_incomingrelay_save.php` | A05 |
-| `background_iphome_save.php` | A20 |
+| `background_iphome_save.php` | A20 (retired: orphaned handler, BC-009) |
 | `background_login.php` | F01/F02/E07/E08 |
 | `background_route_address_save.php` | F12/A19 |
 | `background_route_save.php` | F12/A19 |

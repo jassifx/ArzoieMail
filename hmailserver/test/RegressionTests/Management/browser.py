@@ -132,6 +132,8 @@ def api(route):
             'results': [{'name': 'Data directory', 'description': 'Checks the data directory.', 'success': True, 'details': ''},
                         {'name': 'Outbound port', 'description': 'Connects to port 25.', 'success': False, 'details': '<img src=x onerror=alert(1)>'}]})
         data = diagnostics_state
+    elif path == '/diagnostics/mail-servers':
+        data = {'domain': body['domain'], 'resolved': True, 'items': [{'host': 'mx.example.net', 'address': '192.0.2.25'}]}
     elif path == '/diagnostics/results':
         data = diagnostics_state
     elif path == '/logs':
@@ -335,6 +337,17 @@ with sync_playwright() as p:
     page = browser.new_page(viewport={"width": 1440, "height": 1000})
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
+    page.on('console', lambda message: errors.append('console ' + message.type + ': ' + message.text) if message.type == 'error' else None)
+
+    def visible(locator, what):
+        # Fail with the page state, not only a locator timeout.
+        try:
+            locator.wait_for(timeout=15000)
+        except Exception as error:
+            page.screenshot(path=str(output / 'failure.png'), full_page=True)
+            notice = page.locator('#notice').inner_text() if page.locator('#notice').is_visible() else '(no notice)'
+            raise AssertionError(f'{what} did not appear. Hash {page.evaluate("location.hash")}; notice: {notice}; page errors: {errors}; '
+                                 f'content: {page.locator("#content").inner_text()[:600]}') from error
     page.route('**/api/v1/**', api)
     page.goto(base)
     page.get_by_text('Running', exact=True).wait_for()
@@ -554,7 +567,7 @@ with sync_playwright() as p:
     assert server_settings['logging']['values']['debug'] is True
     page.get_by_label('Settings section', exact=True).select_option('smtp')
     security = page.get_by_label('delivery Security', exact=True)
-    security.wait_for()
+    visible(security, 'The SMTP delivery security select')
     assert security.input_value() == '2' and security.locator('option').count() == 3, 'Native options render as a select.'
     page.get_by_text('No credential is stored.', exact=True).wait_for()
     page.get_by_label('New credential', exact=True).fill('relay secret')
@@ -644,6 +657,11 @@ with sync_playwright() as p:
     page.get_by_role('button', name='Run diagnostics', exact=True).click()
     page.get_by_text('Outbound port', exact=True).wait_for()
     assert page.locator('#content img').count() == 0, 'Diagnostic details render inertly.'
+    page.get_by_label('Domain', exact=True).fill('example.net')
+    with page.expect_response(lambda response: response.url.endswith('/diagnostics/mail-servers')) as looked_up:
+        page.get_by_role('button', name='Look up mail servers', exact=True).click()
+    assert looked_up.value.request.post_data_json == {'domain': 'example.net'}
+    page.get_by_text('mx.example.net', exact=True).wait_for()
     page.get_by_role('link', name='Filtering and relay policies', exact=True).click()
     for resource in ['surbl', 'blockedattachments', 'incomingrelays', 'securityranges']:
         page.get_by_label('Policy collection', exact=True).select_option(resource)

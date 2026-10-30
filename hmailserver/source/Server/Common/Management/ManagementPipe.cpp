@@ -39,6 +39,8 @@
 #include "../BO/ServerMessages.h"
 #include "../Persistence/PersistentServerMessage.h"
 #include "../Diagnostics/Diagnostic.h"
+#include "../TCPIP/DNSResolver.h"
+#include "../TCPIP/HostNameAndIpAddress.h"
 #include "../Threading/Task.h"
 #include "../Threading/WorkQueue.h"
 #include "../Util/Time.h"

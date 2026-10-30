@@ -23,6 +23,7 @@ static class ServerOperationsTests
             await Refuse("sendout.preview", new { recipients = "*" }, 403, actor);
             await Refuse("diagnostics.start", new { localDomain = "", testDomain = "" }, 403, actor);
             await Refuse("logs.list", new { }, 403, actor);
+            await Refuse("diagnostics.mailservers", new { domain = "example.com" }, 403, actor);
             await Refuse("settings.smarthost.credential", new { password = "x" }, 403, actor);
             await Refuse("settings.messageindex.clear", new { }, 403, actor);
             await Refuse("settings.administrator.password", new { currentPassword = password, newPassword = password }, 403, actor);
@@ -239,6 +240,13 @@ static class ServerOperationsTests
         check(diagnostics.GetProperty("run").GetInt64() == run && diagnostics.GetProperty("completed").GetString()!.Length > 0, "The polled run completes.");
         var results = diagnostics.GetProperty("results").EnumerateArray().ToList();
         check(results.Count >= 4 && results.All(result => result.GetProperty("name").GetString()!.Length > 0), "Diagnostics return named results.");
+
+        // Mail server lookup.
+        foreach (string invalid in new[] { "", "bad domain", "*.example.com" })
+            await Refuse("diagnostics.mailservers", new { domain = invalid }, 422);
+        await Refuse("diagnostics.mailservers", new { domain = "example.com", extra = 1 }, 422);
+        var lookup = await Send("diagnostics.mailservers", new { domain = "missing-" + Guid.NewGuid().ToString("N") + ".invalid" });
+        check(lookup.GetProperty("items").ValueKind == JsonValueKind.Array && lookup.GetProperty("items").GetArrayLength() == 0, "A domain that does not exist has no mail servers.");
 
         // Logs are chosen by exact name from the listing, and read in bounded pages.
         var logs = (await Send("logs.list", new { })).GetProperty("items").EnumerateArray().ToList();

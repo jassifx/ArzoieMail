@@ -917,7 +917,17 @@
     native.body.append(grid, button('Run diagnostics', async () => {
       await request('/diagnostics/run', 'POST', { localDomain: inputs.localDomain.value.trim(), testDomain: inputs.testDomain.value.trim() }); await poll();
     }, 'btn btn-primary btn-sm mt-3'), output);
-    root.append(native.outer);
+    const lookup = card('Mail server lookup'); lookup.outer.classList.add('section-gap');
+    lookup.body.append(el('p', 'Shows the servers outgoing delivery would use for a domain: its MX hosts, or the domain itself when it has none. Routes and a smart host can override this.', 'help'));
+    const domain = el('input', null, 'form-control'); domain.id = 'field-lookupDomain'; domain.maxLength = 253;
+    const domainLabel = el('label', 'Domain', 'form-label'); domainLabel.htmlFor = domain.id; const servers = el('div', null, 'mt-3');
+    lookup.body.append(domainLabel, domain, button('Look up mail servers', async () => {
+      const result = await request('/diagnostics/mail-servers', 'POST', { domain: domain.value.trim() });
+      servers.replaceChildren();
+      if (!result.items.length) servers.append(el('p', result.resolved ? 'No mail servers were found.' : 'The lookup failed.', 'help'));
+      for (const item of result.items) { const row = el('div', null, 'domain-row'); row.append(el('div', item.host), el('div', item.address, 'help')); servers.append(row); }
+    }, 'btn btn-primary btn-sm mt-3'), servers);
+    root.append(native.outer, lookup.outer);
     diagnosticResults(output, await request('/diagnostics/results'));
   }
   const serverStates = ['Unknown', 'Stopped', 'Starting', 'Running', 'Stopping'];

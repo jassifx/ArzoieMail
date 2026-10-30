@@ -167,6 +167,24 @@ private:
 
 json::value ManageDiagnostics(const std::string &operation, json::object &arguments)
 {
+   if (operation == "diagnostics.mailservers")
+   {
+      // The servers outgoing delivery would use: MX hosts, or the domain's own address.
+      if (arguments.size() != 1) throw RequestError{422};
+      Text(arguments, "domain", 253);
+      const auto domain = Wide(arguments.at("domain"));
+      if (domain.IsEmpty() || !StringParser::IsValidDomainName(domain) || domain.Find(_T("*")) >= 0) throw RequestError{422};
+      std::vector<HostNameAndIpAddress> servers;
+      DNSResolver resolver;
+      const bool resolved = resolver.GetEmailServers(domain, servers);
+      json::array items;
+      for (auto &server : servers)
+      {
+         if (items.size() >= 50) break;
+         items.push_back(json::object{{"host", Utf8(server.GetHostName())}, {"address", Utf8(server.GetIpAddress())}});
+      }
+      return json::object{{"domain", Utf8(domain)}, {"resolved", resolved}, {"items", std::move(items)}};
+   }
    if (operation == "diagnostics.read")
    {
       if (!arguments.empty()) throw RequestError{422};

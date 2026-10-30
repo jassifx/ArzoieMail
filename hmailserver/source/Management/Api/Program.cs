@@ -301,6 +301,7 @@ public static partial class ManagementHost
         api.MapPost("/sendout/preview", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "sendout.preview", true));
         api.MapPost("/sendout", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "sendout.send", true));
         api.MapPost("/diagnostics/run", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "diagnostics.start", true));
+        api.MapPost("/diagnostics/mail-servers", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "diagnostics.mailservers", true));
         api.MapGet("/diagnostics/results", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "diagnostics.read"));
         api.MapGet("/logs", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "logs.list"));
         api.MapGet("/logs/{name}", async (string name, HttpContext c, CredentialVault vault, IManagementChannel channel) =>
