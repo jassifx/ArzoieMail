@@ -97,7 +97,8 @@ static class FetchFoldersMaintenanceTests
                 check(members.GetProperty("items").EnumerateArray().Any(item => item.GetProperty("address").GetString() == memberAddress), "Group members are listed by address.");
 
                 string folderName = "Shared " + Guid.NewGuid().ToString("N")[..6] + " \u00e4";
-                await Refuse("publicfolders.create", new { fields = new { name = "a/b", parentId = 0 } }, 422);
+                string delimiter = (await Send("publicfolders.list", new { })).GetProperty("delimiter").GetString()!;
+                await Refuse("publicfolders.create", new { fields = new { name = "a" + delimiter + "b", parentId = 0 } }, 422);
                 await Refuse("publicfolders.create", new { fields = new { name = "child", parentId = long.MaxValue } }, 404);
                 long folderId = (await Send("publicfolders.create", new { fields = new { name = folderName, parentId = 0 } })).GetProperty("id").GetInt64();
                 folderIds.Add(folderId);
