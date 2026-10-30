@@ -289,6 +289,39 @@ public static partial class ManagementHost
         api.MapPatch("/dnsbl/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "dnsbl.update", true, id));
         api.MapDelete("/dnsbl/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "dnsbl.delete", false, id));
         api.MapPost("/spamassassin/test", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "spamassassin.test"));
+        // External POP3 fetch accounts: server and domain administrators, checked again natively.
+        var fetch = api.MapGroup("/domains/{domainId:long:min(1)}/accounts/{accountId:long:min(1)}/fetchaccounts");
+        fetch.MapGet("", (long domainId, long accountId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "fetchaccounts.list", domainId: domainId, accountId: accountId));
+        fetch.MapPost("", (long domainId, long accountId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "fetchaccounts.create", true, domainId: domainId, accountId: accountId));
+        fetch.MapGet("/{id:long:min(1)}", (long domainId, long accountId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "fetchaccounts.read", id: id, domainId: domainId, accountId: accountId));
+        fetch.MapPatch("/{id:long:min(1)}", (long domainId, long accountId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "fetchaccounts.update", true, id, domainId, accountId: accountId));
+        fetch.MapDelete("/{id:long:min(1)}", (long domainId, long accountId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "fetchaccounts.delete", id: id, domainId: domainId, accountId: accountId));
+        fetch.MapPost("/{id:long:min(1)}/run", (long domainId, long accountId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "fetchaccounts.run", id: id, domainId: domainId, accountId: accountId));
+        // Groups, public folders and their permissions: server administrators.
+        api.MapGet("/groups", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "groups.list"));
+        api.MapPost("/groups", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "groups.create", true));
+        api.MapGet("/groups/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "groups.read", id: id));
+        api.MapPatch("/groups/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "groups.update", true, id));
+        api.MapDelete("/groups/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "groups.delete", id: id));
+        api.MapGet("/groups/{groupId:long:min(1)}/members", (long groupId, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "groupmembers.list", groupId: groupId));
+        api.MapPost("/groups/{groupId:long:min(1)}/members", (long groupId, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "groupmembers.create", true, groupId: groupId));
+        api.MapDelete("/groups/{groupId:long:min(1)}/members/{id:long:min(1)}", (long groupId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "groupmembers.delete", id: id, groupId: groupId));
+        api.MapGet("/publicfolders", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "publicfolders.list"));
+        api.MapPost("/publicfolders", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "publicfolders.create", true));
+        api.MapPatch("/publicfolders/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "publicfolders.update", true, id));
+        api.MapDelete("/publicfolders/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "publicfolders.delete", id: id));
+        api.MapGet("/publicfolders/{folderId:long:min(1)}/permissions", (long folderId, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "folderpermissions.list", folderId: folderId));
+        api.MapPost("/publicfolders/{folderId:long:min(1)}/permissions", (long folderId, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "folderpermissions.create", true, folderId: folderId));
+        api.MapPatch("/publicfolders/{folderId:long:min(1)}/permissions/{id:long:min(1)}", (long folderId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "folderpermissions.update", true, id, folderId: folderId));
+        api.MapDelete("/publicfolders/{folderId:long:min(1)}/permissions/{id:long:min(1)}", (long folderId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "folderpermissions.delete", id: id, folderId: folderId));
+        // Backup, restore and the installation key.
+        api.MapGet("/backup", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "backup.status"));
+        api.MapPost("/backup/start", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "backup.start"));
+        api.MapPost("/backup/restore", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "backup.restore", true));
+        api.MapPut("/settings/backup/passphrase", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "settings.backup.passphrase", true));
+        api.MapGet("/secretkey", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "secretkey.read"));
+        api.MapPost("/secretkey/export", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "secretkey.export", true));
+        api.MapPost("/secretkey/import", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "secretkey.import", true));
         // Server operations. The native dispatcher authorizes each one again.
         api.MapPut("/settings/smtp/smart-host-credential", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "settings.smarthost.credential", true));
         api.MapPost("/settings/administrator-password", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "settings.administrator.password", true));
@@ -336,6 +369,12 @@ public static partial class ManagementHost
     // Must match the native allowlist; the native side checks the name again.
     [System.Text.RegularExpressions.GeneratedRegex(@"^(ERROR_)?hmailserver(_[A-Za-z0-9]{1,16})?_[0-9]{4}-[0-9]{2}-[0-9]{2}\.log\z|^hmailserver_(awstats|backup|events)\.log\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex LogName();
+    private static Task<IResult> ServerObjects(HttpContext context, CredentialVault vault, IManagementChannel channel,
+        string operation, bool readBody = false, long? id = null, long? groupId = null, long? folderId = null)
+    {
+        if (context.User.FindFirstValue("level") != "2") throw new ManagementError(403, "Server administration is required.");
+        return Objects(context, vault, channel, operation, readBody, id, groupId: groupId, folderId: folderId);
+    }
     private static Task<IResult> ServerOnly(HttpContext context, CredentialVault vault, IManagementChannel channel,
         string operation, bool readBody = false, long? id = null)
     {
@@ -369,10 +408,13 @@ public static partial class ManagementHost
             credentials.Password, arguments, context.RequestAborted));
     }
     private static async Task<IResult> Objects(HttpContext context, CredentialVault vault, IManagementChannel channel,
-        string operation, bool readBody = false, long? id = null, long? domainId = null, long? listId = null, long? routeId = null, long? accountId = null)
+        string operation, bool readBody = false, long? id = null, long? domainId = null, long? listId = null, long? routeId = null, long? accountId = null,
+        long? groupId = null, long? folderId = null)
     {
         var arguments = new Dictionary<string, object?>();
         if (id.HasValue) arguments["id"] = id.Value;
+        if (groupId.HasValue) arguments["groupId"] = groupId.Value;
+        if (folderId.HasValue) arguments["folderId"] = folderId.Value;
         if (domainId.HasValue) arguments["domainId"] = domainId.Value;
         if (listId.HasValue) arguments["listId"] = listId.Value;
         if (routeId.HasValue) arguments["routeId"] = routeId.Value;

@@ -63,6 +63,17 @@ server_messages = [{'id': '1', 'name': 'VIRUS_FOUND', 'text': 'Virus found'}, {'
 sendout_requests = []
 diagnostics_state = {'running': False, 'run': 0, 'completed': '', 'results': []}
 log_text = 'first line\n<script>window.logInjected = true</script>\nlast line\n'
+fetch_accounts = []
+groups = [{'id': 1, 'name': 'Sales', 'members': 0}]
+group_members = []
+public_folders = [{'id': 7, 'parentId': 0, 'name': 'Shared', 'path': 'Shared'}]
+folder_permissions = []
+backup_state = {'running': False, 'destination': 'D:\\Backups', 'archives': [{'name': 'HMBackup 2026-10-30 090000.7z', 'size': 2097152, 'modified': '2026-10-30T09:00:00Z'}]}
+restore_requests = []
+server_settings['backup'] = {'section': 'backup', 'values': {'includeSettings': True, 'includeDomains': True, 'includeMessages': False, 'compress': True, 'destination': 'D:\\Backups'},
+    'schema': [{'name': key, 'type': 'boolean', 'minimum': 0, 'maximum': 1, 'help': 'Backup content.', 'restart': False} for key in ['includeSettings', 'includeDomains', 'includeMessages', 'compress']]
+              + [{'name': 'destination', 'type': 'string', 'minimum': 0, 'maximum': 240, 'help': 'Backup folder.', 'restart': False}],
+    'credentials': {'passphraseConfigured': False}}
 policy_items = {'surbl': [], 'blockedattachments': [], 'incomingrelays': [], 'securityranges': []}
 policy_defaults = {
     'surbl': {'zone': '', 'active': False, 'score': 0, 'rejectMessage': ''},
@@ -122,6 +133,70 @@ def api(route):
             return
         item['text'] = body['text']
         data = item
+    elif '/fetchaccounts' in path:
+        parts = path.split('/')
+        if parts[-1] == 'fetchaccounts' and request.method == 'POST':
+            data = {'id': len(fetch_accounts) + 1, 'accountId': 10, 'active': False, 'running': False, 'nextTry': '', 'passwordConfigured': True,
+                    **{key: value for key, value in body.items() if key != 'password'}}
+            data.setdefault('security', 1)
+            fetch_accounts.append(data)
+        elif parts[-1] == 'fetchaccounts':
+            data = {'items': fetch_accounts, 'total': len(fetch_accounts), 'offset': 0, 'limit': 50}
+        elif parts[-1] == 'run':
+            data = fetch_accounts[0]
+        else:
+            item = next(value for value in fetch_accounts if value['id'] == int(parts[-1]))
+            if request.method == 'DELETE':
+                fetch_accounts.remove(item)
+                data = {'deleted': True}
+            else:
+                item.update({key: value for key, value in body.items() if key != 'password'})
+                data = item
+    elif path.startswith('/groups'):
+        parts = path.split('/')
+        if path == '/groups' and request.method == 'POST':
+            data = {'id': len(groups) + 1, 'name': body['name'], 'members': 0}
+            groups.append(data)
+        elif path == '/groups':
+            data = {'items': groups, 'total': len(groups), 'offset': 0, 'limit': 50}
+        elif parts[-1] == 'members' and request.method == 'POST':
+            data = {'id': len(group_members) + 1, 'groupId': int(parts[2]), 'accountId': body['accountId'], 'address': 'user@example.com'}
+            group_members.append(data)
+        elif parts[-1] == 'members':
+            data = {'items': group_members, 'total': len(group_members)}
+        else:
+            data = {'deleted': True}
+    elif path.startswith('/publicfolders'):
+        parts = path.split('/')
+        if path == '/publicfolders' and request.method == 'POST':
+            data = {'id': 8, 'parentId': body['parentId'], 'name': body['name'], 'path': body['name']}
+            public_folders.append(data)
+        elif path == '/publicfolders':
+            data = {'items': public_folders, 'delimiter': '.'}
+        elif parts[-1] == 'permissions' and request.method == 'POST':
+            data = {'id': len(folder_permissions) + 1, 'folderId': int(parts[2]), 'holder': '', 'accountId': 0, 'groupId': body.get('groupId', 0),
+                    'rights': {**{right: False for right in ['lookup', 'read', 'writeSeen', 'writeOthers', 'insert', 'post', 'create', 'deleteMailbox', 'writeDeleted', 'expunge', 'administer']}, **body['rights']}, 'type': body['type']}
+            folder_permissions.append(data)
+        elif parts[-1] == 'permissions':
+            data = {'items': folder_permissions, 'rights': ['lookup', 'read', 'writeSeen', 'writeOthers', 'insert', 'post', 'create', 'deleteMailbox', 'writeDeleted', 'expunge', 'administer']}
+        else:
+            data = {'deleted': True}
+    elif path == '/backup':
+        data = backup_state
+    elif path == '/backup/start':
+        data = backup_state
+    elif path == '/backup/restore':
+        restore_requests.append(body)
+        data = backup_state
+    elif path == '/settings/backup/passphrase':
+        server_settings['backup']['credentials']['passphraseConfigured'] = bool(body['passphrase'])
+        data = {'configured': bool(body['passphrase'])}
+    elif path == '/secretkey':
+        data = {'keyId': 'abc123'}
+    elif path == '/secretkey/export':
+        data = {'keyId': 'abc123', 'exported': 'ARZOIEMAIL-KEY-1:fixture'}
+    elif path == '/secretkey/import':
+        data = {'keyId': 'abc123'}
     elif path == '/sendout/preview':
         data = {'recipients': 2 if body['recipients'] == '*@example.com' else 0}
     elif path == '/sendout':
@@ -508,6 +583,22 @@ with sync_playwright() as p:
     page.screenshot(path=str(output / 'mailboxes-mobile.png'), full_page=True)
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mailbox controls overflow on mobile.'
     page.set_viewport_size({"width": 1440, "height": 1000})
+    page.get_by_role('button', name='External accounts', exact=True).click()
+    page.get_by_text('No external accounts.', exact=True).wait_for()
+    page.get_by_role('button', name='New external account', exact=True).click()
+    page.locator('#content').get_by_label('Name', exact=True).fill('Old provider')
+    page.locator('#content').get_by_label('POP3 server', exact=True).fill('pop.example.net')
+    page.locator('#content').get_by_label('User name', exact=True).fill('remote')
+    page.locator('#content').get_by_label('Password', exact=True).fill('fetch secret')
+    page.locator('#content').get_by_label('Messages on the server', exact=True).select_option('days')
+    page.locator('#content').get_by_label('Days to keep', exact=True).fill('14')
+    assert page.locator('#content').get_by_label('Connection security', exact=True).locator('option').count() == 2, 'New fetch accounts offer only encrypted connections.'
+    with page.expect_response(lambda response: response.url.endswith('/fetchaccounts') and response.request.method == 'POST') as fetch_created:
+        page.get_by_role('button', name='Create external account', exact=True).click()
+    fetch_body = fetch_created.value.request.post_data_json
+    assert fetch_body['password'] == 'fetch secret' and fetch_body['daysToKeep'] == 14 and fetch_body['security'] == 1 and fetch_body['active'] is False
+    page.get_by_text('External account created.', exact=True).wait_for()
+    assert 'fetch secret' not in page.content(), 'The fetch password is not kept in the page.'
     page.get_by_role('button', name='Rules', exact=True).click()
     page.get_by_role('button', name='New rule', exact=True).click()
     page.get_by_label('name', exact=True).fill('Mailbox draft')
@@ -664,6 +755,51 @@ with sync_playwright() as p:
         page.get_by_role('button', name='Look up mail servers', exact=True).click()
     assert looked_up.value.request.post_data_json == {'domain': 'example.net'}
     page.get_by_text('mx.example.net', exact=True).wait_for()
+    page.get_by_role('link', name='Groups and public folders', exact=True).click()
+    page.get_by_text('Sales', exact=True).wait_for()
+    page.get_by_label('New group name', exact=True).fill('Support')
+    with page.expect_response(lambda response: response.url.endswith('/groups') and response.request.method == 'POST') as group_created:
+        page.get_by_role('button', name='Create group', exact=True).click()
+    assert group_created.value.request.post_data_json == {'name': 'Support'}
+    page.get_by_text('Group created.', exact=True).wait_for()
+    page.get_by_label('New folder name', exact=True).fill('Projects')
+    page.get_by_label('Inside', exact=True).select_option('7')
+    with page.expect_response(lambda response: response.url.endswith('/publicfolders') and response.request.method == 'POST') as folder_created:
+        page.get_by_role('button', name='Create folder', exact=True).click()
+    assert folder_created.value.request.post_data_json == {'name': 'Projects', 'parentId': 7}
+    page.get_by_text('Public folder created.', exact=True).wait_for()
+    page.get_by_role('button', name='Permissions', exact=True).first.click()
+    page.get_by_text('No permissions: only the server can see this folder.', exact=True).wait_for()
+    page.get_by_label('Grant to', exact=True).select_option('1')
+    page.get_by_label('Mailbox address or group name', exact=True).fill('sales')
+    with page.expect_response(lambda response: response.url.endswith('/publicfolders/7/permissions') and response.request.method == 'POST') as granted:
+        page.get_by_role('button', name='Add permission', exact=True).click()
+    assert granted.value.request.post_data_json == {'type': 1, 'rights': {'lookup': True, 'read': True}, 'groupId': 1}
+    page.get_by_role('link', name='Backup and maintenance', exact=True).click()
+    page.get_by_text('HMBackup 2026-10-30 090000.7z', exact=True).wait_for()
+    page.get_by_role('button', name='Restore…', exact=True).click()
+    page.get_by_label('Settings', exact=True).check()
+    page.get_by_label('Archive passphrase (if encrypted)', exact=True).fill('archive secret')
+    page.get_by_label('Type the archive name to confirm', exact=True).fill('HMBackup 2026-10-30 090000.7z')
+    page.get_by_role('button', name='Restore', exact=True).click()
+    page.get_by_text('Restore started. See hmailserver_backup.log for progress.', exact=True).wait_for()
+    assert restore_requests[-1] == {'name': 'HMBackup 2026-10-30 090000.7z', 'confirmName': 'HMBackup 2026-10-30 090000.7z', 'settings': True, 'domains': False, 'messages': False, 'passphrase': 'archive secret'}
+    assert page.get_by_label('Archive passphrase (if encrypted)', exact=True).input_value() == '', 'The archive passphrase field is cleared.'
+    page.get_by_label('Export passphrase', exact=True).fill('export passphrase')
+    page.get_by_role('button', name='Export key', exact=True).click()
+    page.get_by_text('Key exported. Copy it to a safe place.', exact=True).wait_for()
+    assert page.get_by_label('Export passphrase', exact=True).input_value() == ''
+    page.set_viewport_size({'width': 390, 'height': 844})
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Maintenance overflows on mobile.'
+    page.set_viewport_size({'width': 1440, 'height': 1000})
+    page.get_by_role('link', name='Server settings', exact=True).click()
+    page.get_by_label('Settings section', exact=True).select_option('backup')
+    page.get_by_text('No passphrase is set, so new backups are not encrypted. Use at least 12 characters.', exact=True).wait_for()
+    page.get_by_label('New passphrase', exact=True).fill('backup passphrase')
+    with page.expect_response(lambda response: response.url.endswith('/settings/backup/passphrase')) as stored_passphrase:
+        page.get_by_role('button', name='Store passphrase', exact=True).click()
+    assert stored_passphrase.value.request.post_data_json == {'passphrase': 'backup passphrase'}
+    page.get_by_text('Backup passphrase stored.', exact=True).wait_for()
     page.get_by_role('link', name='Filtering and relay policies', exact=True).click()
     for resource in ['surbl', 'blockedattachments', 'incomingrelays', 'securityranges']:
         page.get_by_label('Policy collection', exact=True).select_option(resource)
@@ -881,7 +1017,7 @@ with sync_playwright() as p:
     mailboxes.append({"id": 12, "domainId": 5, "address": "server@example.com", "active": True, "maxSizeMB": 10, "level": 2})
     page.reload()
     page.get_by_role('button', name='Mailboxes', exact=True).wait_for()
-    for title in ['Delivery queue', 'Routing', 'Global rules', 'Server settings', 'Filtering and relay policies', 'Server status', 'Server messages', 'Administrator sendout', 'Logs']:
+    for title in ['Delivery queue', 'Routing', 'Global rules', 'Server settings', 'Filtering and relay policies', 'Server status', 'Server messages', 'Administrator sendout', 'Logs', 'Groups and public folders', 'Backup and maintenance']:
         assert not page.get_by_role('link', name=title).is_visible(), 'Server operations must be hidden from domain administrators.'
     assert page.get_by_role('button', name='New domain', exact=True).count() == 0
     assert page.get_by_role('button', name='Delete domain', exact=True).count() == 0

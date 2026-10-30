@@ -34,6 +34,7 @@ namespace HM
 
       void SetStatus(const String &sStatus);
       String GetStatus();
+      bool IsRunning() const { return is_running_; }
 
       void OnBackupCompleted();
       void OnBackupFailed(const String &sReason);

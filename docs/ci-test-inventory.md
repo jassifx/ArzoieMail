@@ -4,6 +4,38 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Bundle 2 checkpoint: fetch accounts, groups, folders and maintenance
+
+Branch `feature/phase1b-fetch-folders-maintenance` (A07/A10/A15; see the
+[ledger](phase-1b-status.md#bundle-2-checkpoint-fetch-accounts-groups-folders-and-maintenance-2026-10-30)).
+Head `aa126ef4556a8061ea74bdf85b041e03f927ec8f` passed all four database jobs, Release x64,
+GCC/Clang and CI installer publication. Per backend:
+
+| Check | Compact, MySQL, PostgreSQL | SQL Server Express |
+|---|---|---|
+| NUnit regression | 1319 cases: 1209 passed, 0 failed, 34 inconclusive, 76 skipped | 1319 cases: 1210 passed, 0 failed, 34 inconclusive, 75 skipped |
+| Live native management | 1039 assertions (963 before; +76 from `FetchFoldersMaintenanceTests`) | same |
+| Live HTTP/native integration | 204 assertions (182 before; +22 REST boundary checks) | same |
+| Other management checks | unchanged from bundle 1 (7 runtime, 11 + 12 production TLS, 2 pipe-squatting, 26 DNS, 546 security, 43 lifecycle, 60 PFX) | same |
+| Browser | fixture suite (new controls included) and published live suite | same |
+
+That is 1950 numbered assertions per backend plus the unnumbered plaintext-boundary line.
+
+Exercised for real: an IMAP `LIST` by a group member showing a public folder through a group
+permission and hiding it after the membership is removed; an encrypted backup written by the
+service, polled to completion and listed; installation-key export and re-import. Not exercised:
+a real POP3 download (the CI POP3 listener has no TLS certificate, and new fetch accounts must
+use TLS); a restore that replaces data (left to the NUnit restore tests so the shared CI server
+is not overwritten).
+
+Failures fixed on the way, none of them flaky:
+- `9cc721037`: the fetch-form browser steps matched the hidden sign-in form's Password field.
+- `472123db6`: a real panel bug. The desktop sidebar could not scroll, so the eighteenth link
+  was unreachable at a 1000-pixel window height.
+- `833567bde`: the folder test assumed `/` as the hierarchy delimiter; the default is `.`.
+- `b35a0abb9`: the backup test used a folder the restricted `NT SERVICE\hMailServer` account
+  could not see. The service checks the destination under its own identity, as it should.
+
 ## Bundle 1 checkpoint: server and protocol operations
 
 Branch `feature/phase1b-server-operations` (A01/A02/A03/A05/A13/A14/A16/A20; see the

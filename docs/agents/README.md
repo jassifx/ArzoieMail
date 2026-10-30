@@ -10,8 +10,9 @@ Current handoff: [2026-10-30](handoffs/2026-10-30.md). PR #43 is merged at `92ac
 its final head `7a143ca` passed all CI. The maintainer authorized **all remaining Phase 1b**;
 since 2026-10-30 it is submitted as one **checkpoint PR per bundle**, none claiming Phase 1b
 completion (working agreement). Checkpoint 1 (`feature/phase1b-completion`) merged as #45;
-checkpoint 2, bundle 1 server and protocol operations (`feature/phase1b-server-operations`), is
-PR #46, green and awaiting review. Next after review: bundle 2 (A07, A10, A15). Earlier history: server settings and three filtering/relay collections passed initial
+checkpoint 2, bundle 1 server and protocol operations, merged as #46. Checkpoint 3, bundle 2
+(A07, A10, A15), is PR #47 (`feature/phase1b-fetch-folders-maintenance`), green and awaiting review. The 2026-10-30 delivery decisions
+for bundles 3-6 are in the 6.0 scope; stop for review after each bundle's PR. Earlier history: server settings and three filtering/relay collections passed initial
 Compact VM validation. Password-policy, IP-range and logging revisions subsequently passed
 full VM/browser checks (latest 736 native assertions). A same-password-reset session regression
 was reproduced and its fix passed full VM validation (739 native/145 live HTTP). Another

@@ -41,6 +41,27 @@
 #include "../Diagnostics/Diagnostic.h"
 #include "../TCPIP/DNSResolver.h"
 #include "../TCPIP/HostNameAndIpAddress.h"
+#include "../BO/FetchAccount.h"
+#include "../BO/FetchAccounts.h"
+#include "../Persistence/PersistentFetchAccount.h"
+#include "../../ExternalFetcher/ExternalFetchManager.h"
+#include "../BO/Group.h"
+#include "../BO/Groups.h"
+#include "../BO/GroupMember.h"
+#include "../BO/GroupMembers.h"
+#include "../Persistence/PersistentGroup.h"
+#include "../Persistence/PersistentGroupMember.h"
+#include "../BO/IMAPFolder.h"
+#include "../BO/IMAPFolders.h"
+#include "../BO/ACLPermission.h"
+#include "../BO/ACLPermissions.h"
+#include "../Persistence/PersistentIMAPFolder.h"
+#include "../Persistence/PersistentACLPermission.h"
+#include "../Util/Encoding/ModifiedUTF7.h"
+#include "../Application/Backup.h"
+#include "../Application/BackupManager.h"
+#include "../Util/SecretProtector.h"
+#include "../Persistence/SecretMigration.h"
 #include "../Threading/Task.h"
 #include "../Threading/WorkQueue.h"
 #include "../Util/Time.h"
@@ -787,6 +808,9 @@ namespace HM
       #include "PolicyCollections.inc"
       #include "MailboxSelfService.inc"
       #include "ServerOperations.inc"
+      #include "FetchAccounts.inc"
+      #include "GroupsFolders.inc"
+      #include "Maintenance.inc"
       json::object DnsblView(DNSBlackList &item)
       {
          return {{"id", item.GetID()}, {"Active", item.GetIsActive()}, {"DNSHost", Utf8(item.GetDNSHost())},
@@ -902,6 +926,7 @@ namespace HM
          if (operation.rfind("domainaliases.", 0) == 0) return ManageDomainAliases(operation, arguments, *account);
          if (operation.rfind("accounts.behavior.", 0) == 0 || operation.rfind("accounts.signature.", 0) == 0 || operation.rfind("accounts.profile.", 0) == 0)
             return ManageMailboxSettings(operation, arguments, *account);
+         if (operation.rfind("fetchaccounts.", 0) == 0) return ManageFetchAccounts(operation, arguments, *account);
          if (operation.rfind("aliases.", 0) == 0 || operation.rfind("lists.", 0) == 0 || operation.rfind("members.", 0) == 0)
             return ManageAddressing(operation, arguments, *account);
          if (operation.rfind("domains.", 0) == 0 || operation.rfind("accounts.", 0) == 0)
@@ -928,6 +953,10 @@ namespace HM
          if (operation == "status" || operation.rfind("server.", 0) == 0 || operation.rfind("servermessages.", 0) == 0
              || operation.rfind("sendout.", 0) == 0 || operation.rfind("diagnostics.", 0) == 0 || operation.rfind("logs.", 0) == 0)
             return ManageServerOperations(operation, arguments);
+         if (operation.rfind("groups.", 0) == 0 || operation.rfind("groupmembers.", 0) == 0) return ManageGroups(operation, arguments);
+         if (operation.rfind("publicfolders.", 0) == 0) return ManagePublicFolders(operation, arguments);
+         if (operation.rfind("folderpermissions.", 0) == 0) return ManageFolderPermissions(operation, arguments);
+         if (operation.rfind("backup.", 0) == 0 || operation.rfind("secretkey.", 0) == 0) return ManageMaintenance(operation, arguments);
          if (operation == "antispam.read") return SpamView(config);
          if (operation == "antispam.update") { UpdateSpam(config, arguments); return SpamView(config); }
          if (operation == "spamassassin.test")

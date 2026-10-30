@@ -46,6 +46,26 @@ implemented contracts, acceptance evidence and an explicit disposition of known 
 | V6-06 | Additional features | Sieve filtering, DMARC aggregate reports, ARC and an optional existing open-source webmail integration. Specify contracts, privacy/trust boundaries, resource limits, failure modes, lifecycle and interoperability acceptance before each implementation. Planned; no webmail application has been selected. |
 | V6-REL | Operational and release acceptance | Supported OS/database matrix, upgrade/migration and recovery evidence, continuous and final security/load testing, documentation/manual/publication review, signed official binaries/setup, checksums/provenance and explicit production-release approval. Pending. |
 
+### Delivery decisions (2026-10-30)
+
+On 2026-10-30 (Asia/Kolkata) the maintainer asked to finish the remaining Phase 1b work and
+decided how the open V6-1B items are delivered. These choose implementation routes; they do
+not add, remove or defer scope.
+
+- **Review gate per bundle.** Each remaining bundle is one checkpoint PR. After it is green, the
+  agent stops for review; it does not merge or stack bundles. Order: 2 fetch/folders/maintenance
+  (A07, A10, A15) → 3 spam, DNS/DKIM and SpamAssassin (A11, E01, E02) → 4 certificates and hosting
+  (E03, E07) → 5 Defender (E04-E06) → 6 cutover: PHP retirement, COM migration and removal,
+  acceptance and documentation (E08-E10). A08, A12, A18 and A19 fold into the nearest bundle.
+- **SpamAssassin (E02) is packaged as a Windows build**: a Perl runtime and SpamAssassin ship in
+  the installer and run as a managed service. Installer, licensing, update and security-update
+  ownership come with that choice and must be documented in E02's acceptance.
+- **ACME (E03) is built into the .NET management API**, using a maintained open-source ACME
+  library, with HTTP-01 challenges, renewal, and keys held in native protected storage (see the
+  [certificate storage proposal](certificate-storage-design.md)).
+- **Microsoft Defender scanning (E04-E06) stays in Phase 1b, in roadmap order** (bundle 5, before
+  the cutover bundle), including its 10,000-message pressure acceptance.
+
 The checklist freezes capabilities, not unapproved implementation details. Outstanding bounded
 design work (especially Phase 5 module ownership, webmail selection and measured performance
 targets) must be specified and accepted before its row can close; an agent cannot invent a pass.

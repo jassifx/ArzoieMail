@@ -19,6 +19,8 @@
     messages: ['Server messages', 'Edit the texts used in server-generated notifications and replies.'],
     sendout: ['Administrator sendout', 'Send one message to all or matching accounts.'],
     logs: ['Logs', 'Read the server log files.'],
+    folders: ['Groups & public folders', 'Manage groups, shared public folders and who may use them.'],
+    maintenance: ['Backup & maintenance', 'Back up and restore the server, and move its installation key.'],
   };
   function el(tag, text, className) {
     const node = document.createElement(tag);
@@ -147,6 +149,23 @@
       finally { clear(); }
       notify('Administrator password changed.');
     }, 'btn btn-primary btn-sm mt-3'));
+    return c.outer;
+  }
+  function backupPassphrase(credentials, reload) {
+    const c = card('Backup passphrase'); c.outer.classList.add('section-gap');
+    c.body.append(el('p', credentials.passphraseConfigured ? 'New backups are encrypted with a stored passphrase, which is never displayed. Keep a copy: without it, the archives cannot be restored.' : 'No passphrase is set, so new backups are not encrypted. Use at least 12 characters.', 'help'));
+    const field = textInput('', 1024, 'password'); field.autocomplete = 'new-password';
+    const actions = el('div', null, 'form-actions');
+    actions.append(button('Store passphrase', async () => {
+      if (field.value.length < 12) { notify('Use at least 12 characters.', true); return; }
+      try { await request('/settings/backup/passphrase', 'PUT', { passphrase: field.value }); } finally { field.value = ''; }
+      await reload(); notify('Backup passphrase stored.');
+    }, 'btn btn-primary btn-sm'));
+    if (credentials.passphraseConfigured) actions.append(button('Remove passphrase', async () => {
+      if (!confirm('Remove the backup passphrase? New backups will not be encrypted.')) return;
+      await request('/settings/backup/passphrase', 'PUT', { passphrase: '' }); await reload(); notify('Backup passphrase removed.');
+    }, 'btn btn-outline-danger btn-sm'));
+    c.body.append(labelled('backupPassphrase', 'New passphrase', field), actions);
     return c.outer;
   }
   function smartHostCredential(credentials, reload) {
@@ -315,6 +334,7 @@
         row.append(button('Signature', () => mailboxSignature(detail, domain, account)));
         row.append(button('Profile', () => mailboxProfile(detail, domain, account)));
         row.append(button('Rules', () => ruleList(detail, `/domains/${domain.id}/accounts/${account.id}/rules`, account.address)));
+        row.append(button('External accounts', () => fetchAccountList(detail, domain, account)));
         if (account.id !== user.accountId) row.append(button('Delete mailbox', async () => {
           if (!confirm(`Permanently delete ${account.address} and all its messages? This cannot be undone.`)) return;
           await request(`/domains/${domain.id}/accounts/${account.id}`, 'DELETE'); await reload(0); notify('Mailbox deleted.');
@@ -763,7 +783,7 @@
   async function settings(root) {
     const sections = [['protocols', 'Enabled protocols'], ['smtp', 'SMTP delivery'], ['imap', 'IMAP'], ['pop3', 'POP3'],
       ['autoban', 'Auto-ban & invalid clients'], ['greylisting', 'Greylisting'], ['performance', 'Performance & caching'],
-      ['general', 'General settings'], ['antivirus', 'Existing antivirus providers'], ['passwordhash', 'Password hashing policy'], ['logging', 'Logging'], ['tls', 'Mail transport TLS']];
+      ['general', 'General settings'], ['antivirus', 'Existing antivirus providers'], ['passwordhash', 'Password hashing policy'], ['logging', 'Logging'], ['tls', 'Mail transport TLS'], ['backup', 'Backup']];
     const chooser = el('select', null, 'form-select'); chooser.id = 'settings-section';
     const label = el('label', 'Settings section', 'form-label'); label.htmlFor = chooser.id;
     for (const [value, title] of sections) { const option = el('option', title); option.value = value; chooser.append(option); }
@@ -788,6 +808,7 @@
       editor.replaceChildren(c.outer);
       if (section === 'smtp') editor.append(smartHostCredential(result.credentials, reload));
       if (section === 'general') editor.append(administratorPassword());
+      if (section === 'backup') editor.append(backupPassphrase(result.credentials, reload));
       if (section === 'performance') {
         const index = card('Message index'); index.outer.classList.add('section-gap');
         index.body.append(el('p', 'Clearing removes indexed metadata. While indexing is enabled it is rebuilt gradually, and IMAP sorting is slower until then.', 'help'),
@@ -930,6 +951,261 @@
     root.append(native.outer, lookup.outer);
     diagnosticResults(output, await request('/diagnostics/results'));
   }
+  const securityLabels = { 0: 'None (legacy, unencrypted)', 1: 'SSL/TLS', 2: 'STARTTLS when offered (legacy)', 3: 'STARTTLS required' };
+  function labelled(name, title, input) {
+    const wrap = el('div'); input.id = `field-${name}-${++fieldSequence}`; input.name = name;
+    const label = el('label', title, input.type === 'checkbox' ? 'form-check-label' : 'form-label'); label.htmlFor = input.id;
+    if (input.type === 'checkbox') { wrap.className = 'form-check'; input.className = 'form-check-input'; wrap.append(input, label); }
+    else wrap.append(label, input);
+    return wrap;
+  }
+  function textInput(value, maximum, type = 'text') {
+    const input = el('input', null, 'form-control'); input.type = type; input.value = value === undefined || value === null ? '' : String(value); input.maxLength = maximum; return input;
+  }
+  function checkInput(value) { const input = el('input'); input.type = 'checkbox'; input.checked = !!value; return input; }
+  async function fetchAccountList(detail, domain, account) {
+    const base = `/domains/${domain.id}/accounts/${account.id}/fetchaccounts`;
+    const result = await request(base);
+    const c = card(`External accounts for ${account.address}`);
+    c.body.append(el('p', 'Downloads mail from other POP3 servers into this mailbox. Passwords are stored encrypted and never displayed. New accounts start disabled and always use an encrypted connection.', 'help'));
+    for (const item of result.items) {
+      const row = el('div', null, 'domain-row'); const text = el('div');
+      text.append(el('strong', item.name), el('div', `${item.username} at ${item.serverAddress}:${item.port} · ${securityLabels[item.security] || item.security} · every ${item.minutesBetweenFetch} min`, 'help'));
+      row.append(text, pill(item.running ? 'Downloading' : item.active ? 'Enabled' : 'Disabled', item.active ? '' : 'warning'));
+      row.append(button('Edit', () => fetchAccountForm(detail, domain, account, item)));
+      if (item.active) row.append(button('Download now', async () => { await request(`${base}/${item.id}/run`, 'POST'); notify('Download requested.'); }));
+      row.append(button('Delete', async () => {
+        if (!confirm(`Delete the external account ${item.name}? Mail already downloaded stays in the mailbox.`)) return;
+        await request(`${base}/${item.id}`, 'DELETE'); notify('External account deleted.'); await fetchAccountList(detail, domain, account);
+      }, 'btn btn-outline-danger btn-sm'));
+      c.body.append(row);
+    }
+    if (!result.items.length) c.body.append(el('p', 'No external accounts.', 'help'));
+    c.body.append(button('New external account', () => fetchAccountForm(detail, domain, account, null), 'btn btn-primary btn-sm mt-2'));
+    detail.replaceChildren(c.outer);
+  }
+  function fetchAccountForm(detail, domain, account, item) {
+    const base = `/domains/${domain.id}/accounts/${account.id}/fetchaccounts`;
+    const c = card(item ? `Edit ${item.name}` : 'New external account'); const form = el('form'); const grid = el('div', null, 'form-grid');
+    const inputs = {
+      name: textInput(item?.name, 255), serverAddress: textInput(item?.serverAddress, 253), port: textInput(item?.port ?? 995, 5, 'number'),
+      username: textInput(item?.username, 255), password: textInput('', 1024, 'password'), minutesBetweenFetch: textInput(item?.minutesBetweenFetch ?? 30, 5, 'number'),
+      mimeRecipientHeaders: textInput(item?.mimeRecipientHeaders ?? 'To,CC,X-RCPT-To,X-Envelope-To', 255),
+      active: checkInput(item?.active), processMimeRecipients: checkInput(item?.processMimeRecipients), processMimeDate: checkInput(item?.processMimeDate),
+      routeRecipients: checkInput(item?.routeRecipients), useAntiSpam: checkInput(item?.useAntiSpam ?? true), useAntiVirus: checkInput(item?.useAntiVirus ?? true)
+    };
+    inputs.password.autocomplete = 'new-password'; inputs.port.min = '1'; inputs.port.max = '65535'; inputs.minutesBetweenFetch.min = '1'; inputs.minutesBetweenFetch.max = '10080';
+    for (const key of ['name', 'serverAddress', 'username']) inputs[key].required = true;
+    if (!item) inputs.password.required = true;
+    const security = el('select', null, 'form-select');
+    for (const value of [1, 3]) { const option = el('option', securityLabels[value]); option.value = String(value); security.append(option); }
+    if (item && ![1, 3].includes(item.security)) { const option = el('option', `Current: ${securityLabels[item.security]}`); option.value = 'keep'; security.append(option); security.value = 'keep'; }
+    else security.value = String(item?.security ?? 1);
+    const keep = el('select', null, 'form-select');
+    for (const [value, title] of [[-1, 'Delete messages after downloading'], [0, 'Keep messages on the server'], ['days', 'Delete after a number of days']]) { const option = el('option', title); option.value = String(value); keep.append(option); }
+    const days = textInput(item && item.daysToKeep > 0 ? item.daysToKeep : 7, 5, 'number'); days.min = '1'; days.max = '36500';
+    keep.value = !item || item.daysToKeep === 0 ? '0' : item.daysToKeep === -1 ? '-1' : 'days';
+    const titles = { name: 'Name', serverAddress: 'POP3 server', port: 'Port', username: 'User name', password: item ? (item.passwordConfigured ? 'New password (leave empty to keep)' : 'Password') : 'Password',
+      minutesBetweenFetch: 'Minutes between downloads', mimeRecipientHeaders: 'Recipient headers', active: 'Enabled', processMimeRecipients: 'Deliver to recipients in MIME headers',
+      processMimeDate: 'Use the message date header', routeRecipients: 'Allow route recipients', useAntiSpam: 'Spam protection', useAntiVirus: 'Virus scanning' };
+    for (const [key, input] of Object.entries(inputs)) grid.append(labelled(key, titles[key], input));
+    grid.append(labelled('security', 'Connection security', security), labelled('daysToKeep', 'Messages on the server', keep), labelled('days', 'Days to keep', days));
+    const save = el('button', item ? 'Save external account' : 'Create external account', 'btn btn-primary mt-3'); save.type = 'submit';
+    form.append(grid, save); c.body.append(form, button('Back to list', () => fetchAccountList(detail, domain, account), 'btn btn-outline-secondary btn-sm mt-2'));
+    detail.replaceChildren(c.outer);
+    form.addEventListener('submit', async event => {
+      event.preventDefault(); if (!form.reportValidity()) return;
+      const fields = {};
+      for (const [key, input] of Object.entries(inputs)) fields[key] = input.type === 'checkbox' ? input.checked : input.type === 'number' ? Number(input.value) : input.value;
+      if (!fields.password) delete fields.password;
+      if (security.value !== 'keep') fields.security = Number(security.value);
+      fields.daysToKeep = keep.value === 'days' ? Number(days.value) : Number(keep.value);
+      if (!fields.processMimeRecipients) fields.routeRecipients = false;
+      save.disabled = true;
+      try { await request(item ? `${base}/${item.id}` : base, item ? 'PATCH' : 'POST', fields); inputs.password.value = ''; notify(item ? 'External account saved.' : 'External account created.'); await fetchAccountList(detail, domain, account); }
+      catch (error) { inputs.password.value = ''; notify(error.message, true); }
+      finally { save.disabled = false; }
+    });
+  }
+  async function folders(root) {
+    const groupsCard = card('Groups'); const folderCard = card('Public folders'); folderCard.outer.classList.add('section-gap');
+    const detail = el('div', null, 'section-gap');
+    root.append(el('p', 'Groups collect mailboxes so public-folder permissions can be granted once. Mailbox owners share their own folders from their mail client (IMAP ACL).', 'help'), groupsCard.outer, folderCard.outer, detail);
+    async function loadGroups() {
+      const result = await request('/groups');
+      groupsCard.body.replaceChildren(el('h2', 'Groups'));
+      for (const group of result.items) {
+        const row = el('div', null, 'domain-row'); row.append(el('div', group.name), el('div', `${group.members} member(s)`, 'help'));
+        row.append(button('Members', () => groupMembers(detail, group, loadGroups)));
+        row.append(button('Rename', async () => {
+          const name = prompt('New group name', group.name); if (!name || name === group.name) return;
+          await request(`/groups/${group.id}`, 'PATCH', { name }); notify('Group renamed.'); await loadGroups();
+        }));
+        row.append(button('Delete', async () => {
+          if (!confirm(`Delete the group ${group.name}? Its members lose the public-folder permissions granted through it.`)) return;
+          await request(`/groups/${group.id}`, 'DELETE'); notify('Group deleted.'); await loadGroups(); await loadFolders();
+        }, 'btn btn-outline-danger btn-sm'));
+        groupsCard.body.append(row);
+      }
+      if (!result.items.length) groupsCard.body.append(el('p', 'No groups.', 'help'));
+      const name = textInput('', 255); const form = el('form', null, 'form-actions');
+      const add = el('button', 'Create group', 'btn btn-primary btn-sm'); add.type = 'submit';
+      form.append(labelled('newGroup', 'New group name', name), add); groupsCard.body.append(form);
+      form.addEventListener('submit', async event => {
+        event.preventDefault(); if (!name.value.trim()) return;
+        try { await request('/groups', 'POST', { name: name.value.trim() }); notify('Group created.'); await loadGroups(); } catch (error) { notify(error.message, true); }
+      });
+    }
+    async function loadFolders() {
+      const result = await request('/publicfolders');
+      folderCard.body.replaceChildren(el('h2', 'Public folders'));
+      for (const folder of result.items) {
+        const row = el('div', null, 'domain-row'); row.append(el('div', folder.path));
+        row.append(button('Permissions', () => folderPermissions(detail, folder)));
+        row.append(button('Rename', async () => {
+          const name = prompt('New folder name', folder.name); if (!name || name === folder.name) return;
+          await request(`/publicfolders/${folder.id}`, 'PATCH', { name }); notify('Folder renamed.'); await loadFolders();
+        }));
+        row.append(button('Delete', async () => {
+          if (!confirm(`Delete the public folder ${folder.path} and every message in it? This cannot be undone.`)) return;
+          await request(`/publicfolders/${folder.id}`, 'DELETE'); notify('Public folder deleted.'); await loadFolders();
+        }, 'btn btn-outline-danger btn-sm'));
+        folderCard.body.append(row);
+      }
+      if (!result.items.length) folderCard.body.append(el('p', 'No public folders.', 'help'));
+      const name = textInput('', 255); const parent = el('select', null, 'form-select');
+      const top = el('option', '(top level)'); top.value = '0'; parent.append(top);
+      for (const folder of result.items) { const option = el('option', folder.path); option.value = String(folder.id); parent.append(option); }
+      const form = el('form', null, 'form-grid'); const add = el('button', 'Create folder', 'btn btn-primary btn-sm'); add.type = 'submit';
+      form.append(labelled('newFolder', 'New folder name', name), labelled('parentFolder', 'Inside', parent), add); folderCard.body.append(form);
+      form.addEventListener('submit', async event => {
+        event.preventDefault(); if (!name.value.trim()) return;
+        try { await request('/publicfolders', 'POST', { name: name.value.trim(), parentId: Number(parent.value) }); notify('Public folder created.'); await loadFolders(); } catch (error) { notify(error.message, true); }
+      });
+    }
+    await loadGroups(); await loadFolders();
+  }
+  async function groupMembers(detail, group, reloadGroups) {
+    const result = await request(`/groups/${group.id}/members`);
+    const c = card(`Members of ${group.name}`);
+    for (const member of result.items) {
+      const row = el('div', null, 'domain-row'); row.append(el('div', member.address || `Account ${member.accountId}`));
+      row.append(button('Remove', async () => {
+        await request(`/groups/${group.id}/members/${member.id}`, 'DELETE'); notify('Member removed.'); await groupMembers(detail, group, reloadGroups); await reloadGroups();
+      }, 'btn btn-outline-danger btn-sm'));
+      c.body.append(row);
+    }
+    if (!result.items.length) c.body.append(el('p', 'No members.', 'help'));
+    const address = textInput('', 320, 'email'); const form = el('form', null, 'form-actions');
+    const add = el('button', 'Add member', 'btn btn-primary btn-sm'); add.type = 'submit';
+    form.append(labelled('memberAddress', 'Mailbox address', address), add); c.body.append(form);
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        const accountId = await findAccountId(address.value.trim());
+        await request(`/groups/${group.id}/members`, 'POST', { accountId }); notify('Member added.'); await groupMembers(detail, group, reloadGroups); await reloadGroups();
+      } catch (error) { notify(error.message, true); }
+    });
+    detail.replaceChildren(c.outer);
+  }
+  async function findAccountId(address) {
+    const at = address.lastIndexOf('@'); if (at < 1) throw new Error('Enter a full mailbox address.');
+    const domainName = address.slice(at + 1).toLowerCase();
+    const domainList = await request(`/domains?search=${encodeURIComponent(domainName)}`);
+    const domain = domainList.items.find(item => item.name.toLowerCase() === domainName); if (!domain) throw new Error('That domain is not hosted here.');
+    const accounts = await request(`/domains/${domain.id}/accounts?search=${encodeURIComponent(address)}`);
+    const account = accounts.items.find(item => item.address.toLowerCase() === address.toLowerCase()); if (!account) throw new Error('No mailbox has that address.');
+    return account.id;
+  }
+  async function folderPermissions(detail, folder) {
+    const result = await request(`/publicfolders/${folder.id}/permissions`);
+    const c = card(`Permissions for ${folder.path}`);
+    const kinds = ['Mailbox', 'Group', 'Anyone'];
+    for (const permission of result.items) {
+      const block = el('div', null, 'section-gap'); block.append(el('strong', `${kinds[permission.type]}: ${permission.type === 2 ? 'every mailbox' : permission.holder}`));
+      const grid = el('div', null, 'form-grid'); const checks = {};
+      for (const right of result.rights) { checks[right] = checkInput(permission.rights[right]); grid.append(labelled(`right-${permission.id}-${right}`, right.replace(/([a-z])([A-Z])/g, '$1 $2'), checks[right])); }
+      block.append(grid, button('Save permission', async () => {
+        const rights = {}; for (const [right, input] of Object.entries(checks)) rights[right] = input.checked;
+        await request(`/publicfolders/${folder.id}/permissions/${permission.id}`, 'PATCH', { rights }); notify('Permission saved.');
+      }, 'btn btn-primary btn-sm mt-2'), button('Remove permission', async () => {
+        if (!confirm('Remove this permission?')) return;
+        await request(`/publicfolders/${folder.id}/permissions/${permission.id}`, 'DELETE'); notify('Permission removed.'); await folderPermissions(detail, folder);
+      }, 'btn btn-outline-danger btn-sm mt-2'));
+      c.body.append(block);
+    }
+    if (!result.items.length) c.body.append(el('p', 'No permissions: only the server can see this folder.', 'help'));
+    const kind = el('select', null, 'form-select'); kinds.forEach((title, index) => { const option = el('option', title); option.value = String(index); kind.append(option); });
+    const holder = textInput('', 320); const form = el('form', null, 'form-grid'); const add = el('button', 'Add permission', 'btn btn-primary btn-sm'); add.type = 'submit';
+    form.append(labelled('permissionType', 'Grant to', kind), labelled('permissionHolder', 'Mailbox address or group name', holder), add); c.body.append(form);
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        const body = { type: Number(kind.value), rights: { lookup: true, read: true } };
+        if (body.type === 0) body.accountId = await findAccountId(holder.value.trim());
+        if (body.type === 1) {
+          const group = (await request('/groups?limit=100')).items.find(item => item.name.toLowerCase() === holder.value.trim().toLowerCase());
+          if (!group) throw new Error('No group has that name.'); body.groupId = group.id;
+        }
+        await request(`/publicfolders/${folder.id}/permissions`, 'POST', body); notify('Permission added with lookup and read rights.'); await folderPermissions(detail, folder);
+      } catch (error) { notify(error.message, true); }
+    });
+    detail.replaceChildren(c.outer);
+  }
+  async function maintenance(root) {
+    const status = await request('/backup');
+    const backup = card('Backups');
+    backup.body.append(el('p', status.destination ? `Archives are written to ${status.destination}. Choose what they contain and the destination under Server settings → Backup.` : 'No backup folder is set. Set one under Server settings → Backup.', 'help'));
+    const actions = el('div', null, 'form-actions');
+    actions.append(button('Start backup', async () => {
+      if (!confirm('Start a backup now? Large message stores take a while; progress is written to hmailserver_backup.log.')) return;
+      await request('/backup/start', 'POST'); notify('Backup started. See hmailserver_backup.log under Logs for progress.'); await render();
+    }, 'btn btn-primary'));
+    backup.body.append(el('p', status.running ? 'A backup or restore is running.' : 'No backup or restore is running.', 'help'), actions);
+    for (const archive of status.archives) {
+      const row = el('div', null, 'domain-row'); row.append(el('div', archive.name), el('div', `${Math.ceil(archive.size / 1048576)} MiB · ${archive.modified}`, 'help'));
+      row.append(button('Restore…', () => restoreForm(root, archive)));
+      backup.body.append(row);
+    }
+    if (!status.archives.length) backup.body.append(el('p', 'No archives in the backup folder.', 'help'));
+    root.append(backup.outer, await secretKeyPanel());
+  }
+  function restoreForm(root, archive) {
+    const c = card(`Restore ${archive.name}`); c.outer.classList.add('section-gap');
+    c.body.append(el('p', 'Restoring replaces the chosen parts of this server with the archive contents. Take a fresh backup first. Restoring settings also restores the protected settings of the server the archive came from, so import its installation key first if it came from another server.', 'alert alert-warning'));
+    const settings = checkInput(false), domainsBox = checkInput(false), messages = checkInput(false), passphrase = textInput('', 1024, 'password'), confirmName = textInput('', 80);
+    passphrase.autocomplete = 'off';
+    const grid = el('div', null, 'form-grid');
+    grid.append(labelled('restoreSettings', 'Settings', settings), labelled('restoreDomains', 'Domains and mailboxes', domainsBox), labelled('restoreMessages', 'Messages', messages),
+      labelled('restorePassphrase', 'Archive passphrase (if encrypted)', passphrase), labelled('restoreConfirm', 'Type the archive name to confirm', confirmName));
+    c.body.append(grid, button('Restore', async () => {
+      const body = { name: archive.name, confirmName: confirmName.value, settings: settings.checked, domains: domainsBox.checked, messages: messages.checked };
+      if (passphrase.value) body.passphrase = passphrase.value;
+      try { await request('/backup/restore', 'POST', body); notify('Restore started. See hmailserver_backup.log for progress.'); } finally { passphrase.value = ''; }
+    }, 'btn btn-danger btn-sm mt-3'));
+    root.append(c.outer);
+  }
+  async function secretKeyPanel() {
+    const key = await request('/secretkey');
+    const c = card('Installation key'); c.outer.classList.add('section-gap');
+    c.body.append(el('p', `Key ${key.keyId} protects stored passwords and encrypted backups. Export it, protected by a passphrase of at least 12 characters, before moving to another server; import an exported key on the new one. Keep exports private.`, 'help'));
+    const passphrase = textInput('', 1024, 'password'); passphrase.autocomplete = 'new-password';
+    const output = el('textarea', null, 'form-control'); output.rows = 3; output.readOnly = true; output.hidden = true;
+    const exportGrid = el('div', null, 'form-grid'); exportGrid.append(labelled('exportPassphrase', 'Export passphrase', passphrase));
+    c.body.append(exportGrid, button('Export key', async () => {
+      try { const result = await request('/secretkey/export', 'POST', { passphrase: passphrase.value }); output.value = result.exported; output.hidden = false; notify('Key exported. Copy it to a safe place.'); }
+      finally { passphrase.value = ''; }
+    }, 'btn btn-outline-secondary btn-sm mt-2'), output);
+    const imported = el('textarea', null, 'form-control'); imported.rows = 3; imported.maxLength = 16384; const importPassphrase = textInput('', 1024, 'password'); importPassphrase.autocomplete = 'off';
+    const importGrid = el('div', null, 'form-grid section-gap');
+    importGrid.append(labelled('importKey', 'Exported key to import', imported), labelled('importPassphrase', 'Its passphrase', importPassphrase));
+    c.body.append(importGrid, button('Import key', async () => {
+      if (!confirm('Import this key? Every protected setting is re-protected under it; keep the current key exported first.')) return;
+      try { const result = await request('/secretkey/import', 'POST', { exported: imported.value.trim(), passphrase: importPassphrase.value }); notify(`Key ${result.keyId} imported.`); imported.value = ''; }
+      finally { importPassphrase.value = ''; }
+    }, 'btn btn-outline-danger btn-sm mt-2'));
+    return c.outer;
+  }
   const serverStates = ['Unknown', 'Stopped', 'Starting', 'Running', 'Stopping'];
   async function server(root) {
     const status = await request('/status');
@@ -1051,7 +1327,7 @@
     $('content').setAttribute('aria-busy', 'true'); $('content').replaceChildren(el('p', 'Loading…', 'help'));
     const container = el('div');
     try {
-      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules, settings, policies, self, transport, server, messages, sendout, logs })[page](container);
+      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules, settings, policies, self, transport, server, messages, sendout, logs, folders, maintenance })[page](container);
       if (run === generation) $('content').replaceChildren(container);
     } catch (error) { if (run === generation) { $('content').replaceChildren(); notify(error.message, true); } }
     finally { if (run === generation) $('content').setAttribute('aria-busy', 'false'); }
