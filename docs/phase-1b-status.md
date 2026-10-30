@@ -138,6 +138,8 @@ and GTUBE-aware SpamAssassin testing (E02), across native, REST and panel. The m
 optional, administrator-installed SpamAssassin and ClamAV; see the
 [6.0 scope](version-6-scope.md#delivery-decisions-2026-10-30). The REST contract is in the
 [Management README](../hmailserver/source/Management/README.md#spam-allowlists-antivirus-providers-and-dkim-bundle-3a-checkpoint).
+Head `d2b051f67` passed four-backend CI (1084 native and 224 live HTTP assertions per backend,
+both browser suites); see the [CI inventory](ci-test-inventory.md#bundle-3a-checkpoint-spam-allowlists-antivirus-tests-and-dkim).
 
 ## Remaining administration parity
 
