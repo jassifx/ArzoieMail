@@ -304,7 +304,10 @@ throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. Se
 
 After #43 merged at `92ac28d`, the maintainer requested all remaining Phase 1b. On 2026-10-30 the
 maintainer chose one checkpoint PR per coherent bundle instead of a single completion PR; the first
-checkpoint is `feature/phase1b-completion`. No checkpoint claims Phase 1b completion. Typed server settings,
+checkpoint, `feature/phase1b-completion`, merged as #45 (`5cce5a906`). The second, bundle 1 (server and
+protocol operations: status/control, remaining SMTP/IMAP/performance settings, server messages,
+sendout, diagnostics, logs), is `feature/phase1b-server-operations` and passed four-backend CI at
+`b65cc8555`. No checkpoint claims Phase 1b completion. Typed server settings,
 checked persistence and three filtering/relay collections passed initial Compact VM validation
 (630 native assertions plus HTTP/TLS/browser coverage; see the CI inventory). Mailbox self-service
 and restricted account-field writes passed the subsequent 656-assertion VM/browser run.

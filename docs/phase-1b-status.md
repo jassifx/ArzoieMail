@@ -109,8 +109,9 @@ credential, the built-in Administrator password change, message-index clearing, 
 and stop/start, server messages, administrator sendout, background diagnostics, mail-server
 lookup and bounded log reads, across native, REST and panel. The REST contract is in the
 [Management README](../hmailserver/source/Management/README.md#server-operations-and-remaining-protocol-settings-bundle-1-checkpoint).
-Host compilation of the native service, API and test runner passed; runtime evidence comes
-from CI only, recorded in the [CI inventory](ci-test-inventory.md). This is a checkpoint: A01-A20
+Host compilation of the native service, API and test runner passed. Head `b65cc8555` passed
+four-backend CI (963 native and 182 live HTTP assertions per backend, both browser suites); see
+the [CI inventory](ci-test-inventory.md#bundle-1-checkpoint-server-and-protocol-operations). This is a checkpoint: A01-A20
 remain open until their remaining items and full-phase acceptance are complete.
 
 ## Remaining administration parity
