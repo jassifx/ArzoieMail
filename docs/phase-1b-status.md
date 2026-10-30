@@ -221,7 +221,7 @@ Paths are relative to `hmailserver/source/WebAdmin/`. Area IDs refer to the tabl
 | `background_domain_name_save.php` | F10 |
 | `background_domain_save.php` | F04/F08/F09/A08/E01 |
 | `background_incomingrelay_save.php` | A05 |
-| `background_iphome_save.php` | A20 (retired: orphaned handler, BC-009) |
+| `background_iphome_save.php` | A20 |
 | `background_login.php` | F01/F02/E07/E08 |
 | `background_route_address_save.php` | F12/A19 |
 | `background_route_save.php` | F12/A19 |
