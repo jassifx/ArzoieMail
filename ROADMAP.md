@@ -37,7 +37,7 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-Merged [PR #42](https://github.com/jassifx/ArzoieMail/pull/42), 2026-10-28 (Asia/Colombo):
+Merged [PR #42](https://github.com/jassifx/ArzoieMail/pull/42), 2026-10-28 (Asia/Kolkata):
 merge `74eecc017f48ddd445870bfd73dd6eb00aed6cef`, tested head
 `28dd3df912fac9109260efe9f5571dc05b402d12`. All four backend jobs, Release, GCC/Clang,
 workflow lint, CodeQL and CI installer publication passed. Each backend recorded 1317 NUnit
@@ -304,7 +304,10 @@ throughput before lifecycle, burst, outage/recovery and soak benchmarks pass. Se
 
 After #43 merged at `92ac28d`, the maintainer requested all remaining Phase 1b. On 2026-10-30 the
 maintainer chose one checkpoint PR per coherent bundle instead of a single completion PR; the first
-checkpoint is `feature/phase1b-completion`. No checkpoint claims Phase 1b completion. Typed server settings,
+checkpoint, `feature/phase1b-completion`, merged as #45 (`5cce5a906`). The second, bundle 1 (server and
+protocol operations: status/control, remaining SMTP/IMAP/performance settings, server messages,
+sendout, diagnostics, logs), is `feature/phase1b-server-operations` and passed four-backend CI at
+`b65cc8555`. No checkpoint claims Phase 1b completion. Typed server settings,
 checked persistence and three filtering/relay collections passed initial Compact VM validation
 (630 native assertions plus HTTP/TLS/browser coverage; see the CI inventory). Mailbox self-service
 and restricted account-field writes passed the subsequent 656-assertion VM/browser run.
@@ -375,7 +378,9 @@ actual SignPath certificate signing remains a separate master-only manual valida
 | Mailbox signatures | ✅ Done | #40 merged; scoped native/REST controls, inert source editor, SMTP/MIME and browser safety/newline tests passed VM and all four CI backends (404 management assertions per backend). |
 | Advanced domain/mailbox administration bundle | ✅ Done | #41 merged as `5294d67a09823a286dd3f1f6b477772bb4b5388f`; profiles, catch-all/plus/greylisting, object limits, domain signatures and alternate names passed VM and all four CI backends (528 management assertions per backend). |
 | Mail operations bundle | ✅ Merged #42 | Queue metadata/recipients, guarded retry/removal, routes/recipients, global/scoped rule drafts and activation; native/REST/panel regressions. Final tested head `28dd3df912fac9109260efe9f5571dc05b402d12` passed all four backends (1317 NUnit cases, zero failures/warnings, 897 management assertions and both browser suites), Release, portable builds, workflow lint, CodeQL and CI installer publication. Merge `74eecc017`. Queue metadata scans and workload acceptance remain follow-ups. |
-| Remaining advanced administration | 📋 Planned | Remaining domain/mailbox/server settings, external fetchers, IP/security ranges, listener/TLS and other legacy parity. Separate confirmation after the current PR; no production PHP cutover yet. |
+| Checkpoint 1: typed settings, self-service, mail TLS, transport inventory, PFX inspection | ✅ Merged #45 | 81 typed settings, SURBL/attachment/relay collections, IP security ranges, mailbox self-service, global mail TLS, read-only transport inventory and PFX inspection; head `3c07946f3` passed four-backend CI and CodeQL. Merge `5cce5a906`. |
+| Checkpoint 2: server status/control, protocol settings and server operations (A01, A02/A03, A05, A13, A14, A16, A20) | 🔄 [PR #46](https://github.com/jassifx/ArzoieMail/pull/46), awaiting review | Status counters and mail-service stop/start, 11 more settings (92), write-only smart-host credential, Administrator password, server messages, sendout, background diagnostics, mail-server lookup, bounded log reading; worker thread priority and the IP-home handler retired (BC-009). Head `b65cc8555` passed four-backend CI (963 native, 182 live HTTP assertions per backend, both browser suites); PR head passed CodeQL. Remaining per row is in the ledger. |
+| Remaining advanced administration | 📋 Planned | Bundle 2: external POP3 fetch, groups/shared folders/ACLs, maintenance and backup tools (A07, A10, A15). Bundle 3: remaining spam controls (A11) with E01/E02 below. A08, A12, A18 and A19 decisions fold into the nearest bundle. No production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
 | Guided TLS certificate installation and renewal | 🔄 In progress | Configured inventory/PFX inspection passed checkpoint CI; [storage proposal](docs/certificate-storage-design.md) has a bounded CNG VM probe. Native import/storage adapter, issuance, assignment, renewal, safe activation/rollback and hosting acceptance remain unfinished. |

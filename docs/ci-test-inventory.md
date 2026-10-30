@@ -4,6 +4,38 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Bundle 1 checkpoint: server and protocol operations
+
+Branch `feature/phase1b-server-operations` (A01/A02/A03/A05/A13/A14/A16/A20; see the
+[ledger](phase-1b-status.md#bundle-1-checkpoint-server-and-protocol-operations-2026-10-30)).
+Head `b65cc8555927b86d91c55c868dbf400904cd83b9` passed all four database jobs, Release x64,
+GCC/Clang and CI installer publication. Per backend:
+
+| Check | Compact, MySQL, PostgreSQL | SQL Server Express |
+|---|---|---|
+| NUnit regression | 1319 cases: 1209 passed, 0 failed, 34 inconclusive, 76 skipped | 1319 cases: 1210 passed, 0 failed, 34 inconclusive, 75 skipped |
+| Live native management | 963 assertions (831 before; +132 from `ServerOperationsTests`) | same |
+| Live HTTP/native integration | 182 assertions (145 before; +37 REST boundary checks) | same |
+| Other management checks | 7 runtime, 11 + 12 production TLS, 2 pipe-squatting, 26 DNS, 546 security, 43 lifecycle, 60 PFX | same |
+| Browser | fixture suite (new controls included) and published live suite | same |
+
+That is 1852 numbered assertions per backend plus the unnumbered plaintext-boundary line
+(1854 on the 1685 basis used for `ae903a182`). The NUnit outcome is unchanged from #45.
+
+Not exercised in CI: the built-in Administrator password change (the CI test administrator
+is not the built-in Administrator, so the test logs that it skipped it); smart-host delivery
+through a real relay; IMAP client resynchronization after a delimiter change; outbound
+port-25 diagnostics (no test domain is given). The test clears a smart-host credential left
+by earlier NUnit fixtures because a write-only credential cannot be restored.
+
+Failures fixed on the way, each a real defect or test fault rather than flakiness:
+`3351cc87e` and `e6e6cad86` exposed a panel helper named like the rule editor's
+`choiceField`, which replaced it (the SMTP section failed with "name.replace is not a
+function"); `e6e6cad86` also failed the documentation inventory check; `f55e5e930` failed the
+browser page-error assertion on console messages from intentional 409/401 responses;
+`e98e34ecd` failed restoring SMTP values that NUnit fixtures had left outside the API's
+accepted range; `a5641e838` exposed native sendout requiring seven fields instead of six.
+
 ## Current completion-branch validation (not CI acceptance)
 
 Branch `feature/phase1b-completion`, based on merged #43, adds typed server settings,
@@ -243,7 +275,7 @@ The [6.0 scope](version-6-scope.md) adds mandatory acceptance obligations, not e
 
 ## Latest merged application/test baseline: PR #42
 
-Verified **2026-10-28 (Asia/Colombo)** on
+Verified **2026-10-28 (Asia/Kolkata)** on
 [`28dd3df912fac9109260efe9f5571dc05b402d12`](https://github.com/jassifx/ArzoieMail/commit/28dd3df912fac9109260efe9f5571dc05b402d12/checks),
 [PR #42](https://github.com/jassifx/ArzoieMail/pull/42), merged as
 `74eecc017f48ddd445870bfd73dd6eb00aed6cef`. All four backend jobs,
@@ -367,7 +399,7 @@ Express fixture. That database-specific test is explicitly skipped on the other 
 
 ### Historical verified baseline after PR #40
 
-Verified on **2026-10-27 (Asia/Colombo)** from the successful logs for tested head
+Verified on **2026-10-27 (Asia/Kolkata)** from the successful logs for tested head
 `f9a94491d2f122fdf981aeb0be612136d2267dcd`, merged by
 [PR #40](https://github.com/jassifx/ArzoieMail/pull/40) as
 `589001f49f89dec62a390d78dbf4eecccaeeaf1d`. NUnit totals match #33/#35/#36/#39:

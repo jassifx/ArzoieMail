@@ -1,6 +1,6 @@
 # Message identifiers and IMAP UID lifecycle plan
 
-Status: planned, added at the maintainer's request on 2026-10-27 (Asia/Colombo).
+Status: planned, added at the maintainer's request on 2026-10-27 (Asia/Kolkata).
 This document authorizes no implementation or phase change. Deliver each implementation slice
 through a separate reviewed PR, with all runtime validation confined to the disposable VM or CI.
 

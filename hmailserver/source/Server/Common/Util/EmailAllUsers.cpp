@@ -40,10 +40,13 @@ namespace HM
    bool 
    EmailAllUsers::Start(const String &sRecipientWildcard, const String &sFromAddress, const String &sFromName, const String &sSubject, const String &sBody)
    {
-      // Create the message
-      std::shared_ptr<Message> pMessage = std::shared_ptr<Message>(new Message);
+      return Send(GetRecipients(sRecipientWildcard), sFromAddress, sFromName, sSubject, sBody);
+   }
 
-      std::shared_ptr<MessageRecipients> pRecipients = pMessage->GetRecipients();
+   std::vector<std::shared_ptr<Account> >
+   EmailAllUsers::GetRecipients(const String &sRecipientWildcard)
+   {
+      std::vector<std::shared_ptr<Account> > recipients;
 
       // First read all accounts from the database.
       Accounts oAccounts(0);
@@ -84,14 +87,33 @@ namespace HM
             continue;
          }
 
+         recipients.push_back(pAccount);
+
+         iterAccount++;
+      }
+
+      return recipients;
+   }
+
+   bool
+   EmailAllUsers::Send(const std::vector<std::shared_ptr<Account> > &recipients, const String &sFromAddress, const String &sFromName, const String &sSubject, const String &sBody)
+   {
+      if (recipients.empty())
+         return false;
+
+      // Create the message
+      std::shared_ptr<Message> pMessage = std::shared_ptr<Message>(new Message);
+
+      std::shared_ptr<MessageRecipients> pRecipients = pMessage->GetRecipients();
+
+      for (const auto &pAccount : recipients)
+      {
          // Add the recipient
          std::shared_ptr<MessageRecipient> pRecipient = std::shared_ptr<MessageRecipient>(new MessageRecipient);
          pRecipient->SetLocalAccountID(pAccount->GetID());
          pRecipient->SetAddress(pAccount->GetAddress());
 
          pRecipients->Add(pRecipient);
-
-         iterAccount++;
       }
 
       const String fileName = PersistentMessage::GetFileName(pMessage);

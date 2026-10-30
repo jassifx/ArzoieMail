@@ -16,6 +16,9 @@
 #include "../../SMTP/DeliveryQueue.h"
 #include "../../SMTP/SMTPDeliveryManager.h"
 #include "../../SMTP/SMTPConfiguration.h"
+#include "../../SMTP/SRS/SRS.h"
+#include "../../IMAP/IMAPConfiguration.h"
+#include "../Persistence/PersistentMessageMetaData.h"
 #include <boost/asio/ip/address.hpp>
 #include "../BO/Aliases.h"
 #include "../BO/DistributionLists.h"
@@ -31,6 +34,15 @@
 #include "../AntiSpam/SpamAssassin/SpamAssassinTestConnect.h"
 #include "../Util/Unicode.h"
 #include "../Util/ServerStatus.h"
+#include "../Util/EmailAllUsers.h"
+#include "../BO/ServerMessage.h"
+#include "../BO/ServerMessages.h"
+#include "../Persistence/PersistentServerMessage.h"
+#include "../Diagnostics/Diagnostic.h"
+#include "../TCPIP/DNSResolver.h"
+#include "../TCPIP/HostNameAndIpAddress.h"
+#include "../Threading/Task.h"
+#include "../Threading/WorkQueue.h"
 #include "../Util/Time.h"
 #include "../Application/PropertySet.h"
 #include "../BO/SURBLServers.h"
@@ -42,6 +54,8 @@
 #include <functional>
 #include <string_view>
 #include <array>
+#include <mutex>
+#include <regex>
 #include <openssl/hmac.h>
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
@@ -772,6 +786,7 @@ namespace HM
       #include "TransportInventory.inc"
       #include "PolicyCollections.inc"
       #include "MailboxSelfService.inc"
+      #include "ServerOperations.inc"
       json::object DnsblView(DNSBlackList &item)
       {
          return {{"id", item.GetID()}, {"Active", item.GetIsActive()}, {"DNSHost", Utf8(item.GetDNSHost())},
@@ -910,13 +925,9 @@ namespace HM
          }
          if (account->GetAdminLevel() != Account::ServerAdmin) throw RequestError{403};
          auto &config = Configuration::Instance()->GetAntiSpamConfiguration();
-         if (operation == "status")
-         {
-            Domains domains;
-            domains.Refresh();
-            return json::object{{"version", Utf8(Application::Instance()->GetVersionNumber())},
-                                {"state", static_cast<int>(ServerStatus::Instance()->GetState())}, {"domains", domains.GetCount()}};
-         }
+         if (operation == "status" || operation.rfind("server.", 0) == 0 || operation.rfind("servermessages.", 0) == 0
+             || operation.rfind("sendout.", 0) == 0 || operation.rfind("diagnostics.", 0) == 0 || operation.rfind("logs.", 0) == 0)
+            return ManageServerOperations(operation, arguments);
          if (operation == "antispam.read") return SpamView(config);
          if (operation == "antispam.update") { UpdateSpam(config, arguments); return SpamView(config); }
          if (operation == "spamassassin.test")
