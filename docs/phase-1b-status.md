@@ -123,7 +123,8 @@ external POP3 fetch accounts per mailbox (A07), groups, members, public folders 
 permissions (A10), and backup settings, backup/restore and installation-key export/import (A15),
 across native, REST and panel. Five backup settings bring the typed settings to 97 in 13 sections.
 The REST contract is in the [Management README](../hmailserver/source/Management/README.md#fetch-accounts-groups-public-folders-and-maintenance-bundle-2-checkpoint).
-CI evidence is recorded in the [CI inventory](ci-test-inventory.md) once the final head passes.
+Head `aa126ef45` passed four-backend CI (1039 native and 204 live HTTP assertions per backend,
+both browser suites); see the [CI inventory](ci-test-inventory.md#bundle-2-checkpoint-fetch-accounts-groups-folders-and-maintenance).
 The maintainer's 2026-10-30 decisions for the remaining bundles are in the
 [6.0 scope](version-6-scope.md#delivery-decisions-2026-10-30).
 
