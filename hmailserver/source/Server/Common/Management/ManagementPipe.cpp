@@ -62,6 +62,14 @@
 #include "../Application/BackupManager.h"
 #include "../Util/SecretProtector.h"
 #include "../Persistence/SecretMigration.h"
+#include "../BO/WhiteListAddress.h"
+#include "../BO/WhiteListAddresses.h"
+#include "../Persistence/PersistentWhiteListAddress.h"
+#include "../BO/GreyListingWhiteAddress.h"
+#include "../BO/GreyListingWhiteAddresses.h"
+#include "../Persistence/PersistentGreyListingWhiteAddress.h"
+#include "../AntiVirus/AntiVirusConfiguration.h"
+#include "../AntiVirus/VirusScannerTester.h"
 #include "../Threading/Task.h"
 #include "../Threading/WorkQueue.h"
 #include "../Util/Time.h"
@@ -81,6 +89,9 @@
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+#include <openssl/evp.h>
 #include <sddl.h>
 #include <boost/json/src.hpp>
 
@@ -811,6 +822,8 @@ namespace HM
       #include "FetchAccounts.inc"
       #include "GroupsFolders.inc"
       #include "Maintenance.inc"
+      #include "AntiVirus.inc"
+      #include "Dkim.inc"
       json::object DnsblView(DNSBlackList &item)
       {
          return {{"id", item.GetID()}, {"Active", item.GetIsActive()}, {"DNSHost", Utf8(item.GetDNSHost())},
@@ -917,7 +930,8 @@ namespace HM
          if (operation.rfind("settings.", 0) == 0) return ManageServerSettings(operation, arguments, *account);
          if (operation.rfind("transport.", 0) == 0) return ReadTransportInventory(operation, arguments, *account);
          if (operation.rfind("surbl.", 0) == 0 || operation.rfind("blockedattachments.", 0) == 0
-             || operation.rfind("incomingrelays.", 0) == 0 || operation.rfind("securityranges.", 0) == 0)
+             || operation.rfind("incomingrelays.", 0) == 0 || operation.rfind("securityranges.", 0) == 0
+             || operation.rfind("spamallowlist.", 0) == 0 || operation.rfind("greylistexceptions.", 0) == 0)
             return ManagePolicies(operation, arguments, *account);
          if (operation.rfind("queue.", 0) == 0) return ManageQueue(operation, arguments, *account);
          if (operation.rfind("routes.", 0) == 0 || operation.rfind("routeaddresses.", 0) == 0) return ManageRoutes(operation, arguments, *account);
@@ -927,6 +941,7 @@ namespace HM
          if (operation.rfind("accounts.behavior.", 0) == 0 || operation.rfind("accounts.signature.", 0) == 0 || operation.rfind("accounts.profile.", 0) == 0)
             return ManageMailboxSettings(operation, arguments, *account);
          if (operation.rfind("fetchaccounts.", 0) == 0) return ManageFetchAccounts(operation, arguments, *account);
+         if (operation.rfind("dkim.", 0) == 0) return ManageDkim(operation, arguments, *account);
          if (operation.rfind("aliases.", 0) == 0 || operation.rfind("lists.", 0) == 0 || operation.rfind("members.", 0) == 0)
             return ManageAddressing(operation, arguments, *account);
          if (operation.rfind("domains.", 0) == 0 || operation.rfind("accounts.", 0) == 0)
@@ -957,12 +972,30 @@ namespace HM
          if (operation.rfind("publicfolders.", 0) == 0) return ManagePublicFolders(operation, arguments);
          if (operation.rfind("folderpermissions.", 0) == 0) return ManageFolderPermissions(operation, arguments);
          if (operation.rfind("backup.", 0) == 0 || operation.rfind("secretkey.", 0) == 0) return ManageMaintenance(operation, arguments);
+         if (operation.rfind("antivirus.", 0) == 0) return ManageAntiVirus(operation, arguments);
          if (operation == "antispam.read") return SpamView(config);
          if (operation == "antispam.update") { UpdateSpam(config, arguments); return SpamView(config); }
          if (operation == "spamassassin.test")
          {
+            // The test scans the GTUBE sample, which every SpamAssassin installation must flag.
+            // Report whether it did, and its X-Spam headers, so a reachable but misconfigured
+            // engine is not mistaken for a working one.
             String message;
-            return json::object{{"connected", SpamAssassinTestConnect().TestConnect(config.GetSpamAssassinHost(), config.GetSpamAssassinPort(), message)}};
+            const bool connected = SpamAssassinTestConnect().TestConnect(config.GetSpamAssassinHost(), config.GetSpamAssassinPort(), message);
+            std::string headers;
+            bool detected = false;
+            if (connected)
+            {
+               std::vector<String> lines = StringParser::SplitString(message, _T("\r\n"));
+               for (const auto &line : lines)
+               {
+                  if (line.IsEmpty()) break;
+                  if (line.Left(7).CompareNoCase(_T("X-Spam-")) != 0) continue;
+                  if (line.Left(16).CompareNoCase(_T("X-Spam-Status: Y")) == 0 || line.Left(14).CompareNoCase(_T("X-Spam-Flag: Y")) == 0) detected = true;
+                  if (headers.size() < 2000) headers += Utf8(line.Left(400)) + "\n";
+               }
+            }
+            return json::object{{"connected", connected}, {"gtubeDetected", detected}, {"headers", headers}};
          }
          auto lists = config.GetDNSBlackLists();
          if (operation == "dnsbl.list")

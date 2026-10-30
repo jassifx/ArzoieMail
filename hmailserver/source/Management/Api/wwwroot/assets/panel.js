@@ -219,7 +219,8 @@
       if (title === 'SpamAssassin connection') {
         c.body.append(button('Test saved connection', async () => {
           const result = await request('/spamassassin/test', 'POST');
-          notify(result.connected ? 'SpamAssassin connection succeeded.' : 'SpamAssassin connection failed. Check the saved host, port and service.', !result.connected);
+          if (!result.connected) { notify('SpamAssassin connection failed. Check the saved host and port, that spamd is running, and that it allows connections from this server (spamd --allowed-ips).', true); return; }
+          notify(result.gtubeDetected ? 'SpamAssassin is reachable and recognized the GTUBE spam test message.' : 'SpamAssassin answered but did not flag the GTUBE test message. Check its rules and configuration.', !result.gtubeDetected);
         }));
       }
       root.append(c.outer);
@@ -643,6 +644,7 @@
         row.append(button('Distribution lists', () => addressing(editor, domain, 'lists')));
         row.append(button('Advanced settings', () => domainSettings(editor, domain)));
         row.append(button('Alternate domains', () => domainNames(editor, domain)));
+        row.append(button('DKIM', () => dkimPanel(editor, domain)));
         row.append(button('Edit domain', () => {
           editor.replaceChildren(); const c = card(`Domain settings · ${domain.name}`);
           const values = { active: domain.active };
@@ -713,7 +715,7 @@
     root.append(c.outer, editor);
   }
   async function policies(root) {
-    const resources = [['surbl', 'URI blocklists (SURBL)'], ['blockedattachments', 'Blocked attachments'], ['incomingrelays', 'Trusted incoming relays'], ['securityranges', 'IP security ranges']];
+    const resources = [['surbl', 'URI blocklists (SURBL)'], ['blockedattachments', 'Blocked attachments'], ['incomingrelays', 'Trusted incoming relays'], ['securityranges', 'IP security ranges'], ['spamallowlist', 'Spam allowlist'], ['greylistexceptions', 'Greylisting exceptions']];
     const chooser = el('select', null, 'form-select'); chooser.id = 'policy-resource';
     const label = el('label', 'Policy collection', 'form-label'); label.htmlFor = chooser.id;
     for (const [value, title] of resources) { const option = el('option', title); option.value = value; chooser.append(option); }
@@ -732,6 +734,8 @@
         : resource === 'incomingrelays'
         ? 'Trust only the exact IP ranges of your incoming relays. Trusting other senders can invalidate spam attribution.'
         : resource === 'blockedattachments' ? 'Attachment patterns apply when attachment blocking is enabled in server settings.'
+        : resource === 'spamallowlist' ? 'Allowlisted senders skip every spam check, so mail forged with their address does too. Prefer an IP range together with an address pattern, and keep the list short.'
+        : resource === 'greylistexceptions' ? 'Senders matching these IP patterns skip greylisting only; other spam checks still apply. Use them for large senders that retry from many addresses.'
           : 'Use each provider’s documented zone and usage policy. New URI blocklists start disabled.';
       c.body.append(el('p', warning, 'alert alert-light border'));
       if (resource === 'securityranges') {
@@ -766,7 +770,7 @@
       c.body.append(button('Add policy', () => edit(), 'btn btn-primary btn-sm'));
       for (const item of result.items) {
         const row = el('div', null, 'domain-row');
-        row.append(el('strong', item.name || item.zone || item.pattern), button('Edit policy', () => edit(item)));
+        row.append(el('strong', item.name || item.zone || item.pattern || item.address), button('Edit policy', () => edit(item)));
         if (typeof item.active === 'boolean') row.append(pill(item.active ? 'Enabled' : 'Disabled', item.active ? '' : 'warning'));
         row.append(button('Delete policy', async () => {
           if (!confirm('Delete this policy? ' + warning)) return;
@@ -809,6 +813,7 @@
       if (section === 'smtp') editor.append(smartHostCredential(result.credentials, reload));
       if (section === 'general') editor.append(administratorPassword());
       if (section === 'backup') editor.append(backupPassphrase(result.credentials, reload));
+      if (section === 'antivirus') editor.append(await antivirusPanel());
       if (section === 'performance') {
         const index = card('Message index'); index.outer.classList.add('section-gap');
         index.body.append(el('p', 'Clearing removes indexed metadata. While indexing is enabled it is rebuilt gradually, and IMAP sorting is slower until then.', 'help'),
@@ -963,6 +968,72 @@
     const input = el('input', null, 'form-control'); input.type = type; input.value = value === undefined || value === null ? '' : String(value); input.maxLength = maximum; return input;
   }
   function checkInput(value) { const input = el('input'); input.type = 'checkbox'; input.checked = !!value; return input; }
+  async function dkimPanel(editor, domain) {
+    const state = await request(`/domains/${domain.id}/dkim`);
+    const server = user.level === 2; const base = `/domains/${domain.id}/dkim`;
+    const c = card(`DKIM signing for ${domain.name}`);
+    c.body.append(el('p', state.signEnabled ? `Outgoing mail is signed with selector ${state.selector}.` : 'Outgoing mail is not signed.', 'help'));
+    if (state.selector && !state.keyManaged) c.body.append(el('p', 'The active key file was set outside this panel. Generate a key here to manage rotation from the panel.', 'help'));
+    for (const key of state.keys) {
+      const block = el('div', null, 'section-gap'); block.append(el('strong', `${key.selector}${key.active ? ' (active)' : ''}`));
+      block.append(el('div', `Publish a TXT record at ${key.dnsName}:`, 'help'));
+      const record = el('textarea', null, 'form-control'); record.readOnly = true; record.rows = 3; record.value = key.dnsRecord; block.append(record);
+      if (server && !key.active) {
+        const skip = checkInput(false);
+        block.append(labelled(`skip-${key.selector}`, 'Activate without checking DNS (the record must still be published before mail is signed)', skip),
+          button('Activate this key', async () => {
+            await request(`${base}/keys/${encodeURIComponent(key.selector)}/activate`, 'POST', { skipDnsCheck: skip.checked }); notify(`Key ${key.selector} is now active.`); await dkimPanel(editor, domain);
+          }, 'btn btn-primary btn-sm mt-2'),
+          button('Delete key', async () => {
+            if (!confirm(`Delete the key ${key.selector}? Mail already signed with it cannot be verified once its DNS record is removed.`)) return;
+            await request(`${base}/keys/${encodeURIComponent(key.selector)}`, 'DELETE'); notify('Key deleted.'); await dkimPanel(editor, domain);
+          }, 'btn btn-outline-danger btn-sm mt-2'));
+      }
+      c.body.append(block);
+    }
+    if (!state.keys.length) c.body.append(el('p', 'No keys have been generated for this domain.', 'help'));
+    if (server) {
+      const grid = el('div', null, 'form-grid section-gap');
+      const selector = textInput(`arzoie${new Date().getFullYear()}`, 63);
+      grid.append(labelled('dkimSelector', 'New key selector', selector));
+      c.body.append(grid, el('p', 'Keys are RSA 2048, the size large receivers expect.', 'help'), button('Generate key', async () => {
+        await request(`${base}/keys`, 'POST', { selector: selector.value.trim() }); notify('Key generated. Publish its DNS record, then activate it.'); await dkimPanel(editor, domain);
+      }, 'btn btn-outline-secondary btn-sm mt-2'));
+      const settings = el('div', null, 'form-grid section-gap');
+      const sign = checkInput(state.signEnabled), aliases = checkInput(state.signAliases);
+      const header = el('select', null, 'form-select'), body = el('select', null, 'form-select'), algorithm = el('select', null, 'form-select');
+      for (const [select, value] of [[header, state.headerCanonicalization], [body, state.bodyCanonicalization]]) {
+        for (const [code, title] of [[1, 'Simple'], [2, 'Relaxed']]) { const option = el('option', title); option.value = String(code); select.append(option); } select.value = String(value);
+      }
+      for (const [code, title] of [[2, 'RSA-SHA256'], [1, 'RSA-SHA1 (obsolete)']]) { const option = el('option', title); option.value = String(code); algorithm.append(option); } algorithm.value = String(state.algorithm);
+      settings.append(labelled('dkimSign', 'Sign outgoing mail', sign), labelled('dkimAliases', 'Also sign mail from alternate domain names', aliases),
+        labelled('dkimHeader', 'Header canonicalization', header), labelled('dkimBody', 'Body canonicalization', body), labelled('dkimAlgorithm', 'Algorithm', algorithm));
+      c.body.append(settings, button('Save DKIM settings', async () => {
+        await request(base, 'PATCH', { signEnabled: sign.checked, signAliases: aliases.checked, headerCanonicalization: Number(header.value), bodyCanonicalization: Number(body.value), algorithm: Number(algorithm.value) });
+        notify('DKIM settings saved.'); await dkimPanel(editor, domain);
+      }, 'btn btn-primary btn-sm mt-2'));
+    }
+    editor.replaceChildren(c.outer);
+  }
+  async function antivirusPanel() {
+    const status = await request('/antivirus');
+    const c = card('Scanner tests'); c.outer.classList.add('section-gap');
+    c.body.append(el('p', 'Each test scans a harmless EICAR test file and a clean file with the configured scanner. ClamAV is installed separately (on this server or another host) and connected above. The custom scanner and ClamWin run a program on this server, so their paths can only be changed with the desktop tool.', 'help'));
+    const output = el('pre', '', 'log-text'); output.hidden = true;
+    for (const [key, title, detail] of [['clamav', 'ClamAV', `${status.clamAv.host || '(no host)'}:${status.clamAv.port}`],
+      ['custom', 'Custom scanner', status.customScanner.executable || '(not configured)'], ['clamwin', 'ClamWin', status.clamWin.executable || '(not configured)']]) {
+      const row = el('div', null, 'domain-row'); const enabled = key === 'clamav' ? status.clamAv.enabled : key === 'custom' ? status.customScanner.enabled : status.clamWin.enabled;
+      row.append(el('div', title), el('div', detail, 'help'), pill(enabled ? 'Enabled' : 'Disabled', enabled ? '' : 'warning'));
+      row.append(button(`Test ${title}`, async () => {
+        const result = await request('/antivirus/test', 'POST', { scanner: key });
+        output.textContent = result.message || ''; output.hidden = !result.message;
+        notify(result.passed ? `${title} detected the test virus.` : `${title} test failed. See the details below.`, !result.passed);
+      }));
+      c.body.append(row);
+    }
+    c.body.append(output);
+    return c.outer;
+  }
   async function fetchAccountList(detail, domain, account) {
     const base = `/domains/${domain.id}/accounts/${account.id}/fetchaccounts`;
     const result = await request(base);

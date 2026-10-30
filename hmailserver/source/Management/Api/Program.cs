@@ -200,7 +200,7 @@ public static partial class ManagementHost
         api.MapGet("/transport/certificates", (HttpContext c, CredentialVault v, IManagementChannel p) => TransportInventory(c, v, p, "transport.certificates.list"));
         api.MapPost("/transport/certificates/inspect", CertificateInspectionEndpoint.Handle).RequireRateLimiting("certificate-inspection");
         api.MapPost("/policies/securityranges/match", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "securityranges.match", true));
-        foreach (string resource in new[] { "surbl", "blockedattachments", "incomingrelays", "securityranges" })
+        foreach (string resource in new[] { "surbl", "blockedattachments", "incomingrelays", "securityranges", "spamallowlist", "greylistexceptions" })
         {
             var policy = api.MapGroup("/policies/" + resource);
             policy.MapGet("", (HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, resource + ".list"));
@@ -314,6 +314,54 @@ public static partial class ManagementHost
         api.MapPost("/publicfolders/{folderId:long:min(1)}/permissions", (long folderId, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "folderpermissions.create", true, folderId: folderId));
         api.MapPatch("/publicfolders/{folderId:long:min(1)}/permissions/{id:long:min(1)}", (long folderId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "folderpermissions.update", true, id, folderId: folderId));
         api.MapDelete("/publicfolders/{folderId:long:min(1)}/permissions/{id:long:min(1)}", (long folderId, long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerObjects(c, v, p, "folderpermissions.delete", id: id, folderId: folderId));
+        // Existing antivirus providers: status and tests of the configured scanners only.
+        api.MapGet("/antivirus", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "antivirus.status"));
+        api.MapPost("/antivirus/test", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "antivirus.test", true));
+        // DKIM signing. Domain administrators may read their own domain; changes need a server administrator.
+        api.MapGet("/domains/{domainId:long:min(1)}/dkim", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "dkim.read", domainId: domainId));
+        api.MapPatch("/domains/{domainId:long:min(1)}/dkim", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "dkim.update", true, domainId: domainId));
+        api.MapPost("/domains/{domainId:long:min(1)}/dkim/keys", async (long domainId, HttpContext c, CredentialVault vault, IManagementChannel channel) =>
+        {
+            if (c.User.FindFirstValue("level") != "2") throw new ManagementError(403, "Server administration is required.");
+            var body = await c.Request.ReadFromJsonAsync<JsonElement>(c.RequestAborted);
+            if (body.ValueKind != JsonValueKind.Object || body.EnumerateObject().Any(p => p.Name is not ("selector" or "bits"))
+                || !body.TryGetProperty("selector", out var selector) || selector.ValueKind != JsonValueKind.String)
+                throw new ManagementError(422, "Supply a selector; keys are RSA 2048.");
+            var arguments = new Dictionary<string, object?> { ["domainId"] = domainId, ["selector"] = selector.GetString() };
+            if (body.TryGetProperty("bits", out var bits)) arguments["bits"] = bits;
+            var credentials = vault.Get(c.User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return Data(await channel.SendAsync("dkim.generate", credentials.Username, credentials.Password, arguments, c.RequestAborted));
+        });
+        api.MapPost("/domains/{domainId:long:min(1)}/dkim/keys/{selector}/activate", async (long domainId, string selector, HttpContext c, CredentialVault vault, IManagementChannel channel, ITxtResolver resolver) =>
+        {
+            if (c.User.FindFirstValue("level") != "2") throw new ManagementError(403, "Server administration is required.");
+            var body = await c.Request.ReadFromJsonAsync<JsonElement>(c.RequestAborted);
+            bool skip = body.ValueKind == JsonValueKind.Object && body.TryGetProperty("skipDnsCheck", out var flag) && flag.ValueKind == JsonValueKind.True;
+            var credentials = vault.Get(c.User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var state = await channel.SendAsync("dkim.read", credentials.Username, credentials.Password, new { domainId }, c.RequestAborted);
+            var key = state.GetProperty("keys").EnumerateArray().FirstOrDefault(k => k.GetProperty("selector").GetString() == selector);
+            if (key.ValueKind != JsonValueKind.Object) throw new ManagementError(404, "No key has that selector.");
+            if (!skip)
+            {
+                // Publishing comes first: activating a key whose record is missing makes every signature fail.
+                string name = key.GetProperty("dnsName").GetString()!, expected = DkimPublicKey(key.GetProperty("dnsRecord").GetString());
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(c.RequestAborted);
+                timeout.CancelAfter(TimeSpan.FromSeconds(15));
+                string[] published;
+                try { published = await resolver.QueryAsync(name, timeout.Token); }
+                catch (Exception error) when (error is not OperationCanceledException || !c.RequestAborted.IsCancellationRequested)
+                { throw new ManagementError(409, $"The DNS record {name} could not be looked up. Publish it, or activate without the DNS check."); }
+                if (expected.Length == 0 || !published.Any(record => DkimPublicKey(record) == expected))
+                    throw new ManagementError(409, $"The DNS record {name} does not publish this key yet. Publish it and try again, or activate without the DNS check.");
+            }
+            return Data(await channel.SendAsync("dkim.activate", credentials.Username, credentials.Password, new { domainId, selector }, c.RequestAborted));
+        });
+        api.MapDelete("/domains/{domainId:long:min(1)}/dkim/keys/{selector}", async (long domainId, string selector, HttpContext c, CredentialVault vault, IManagementChannel channel) =>
+        {
+            if (c.User.FindFirstValue("level") != "2") throw new ManagementError(403, "Server administration is required.");
+            var credentials = vault.Get(c.User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return Data(await channel.SendAsync("dkim.delete", credentials.Username, credentials.Password, new { domainId, selector }, c.RequestAborted));
+        });
         // Backup, restore and the installation key.
         api.MapGet("/backup", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "backup.status"));
         api.MapPost("/backup/start", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "backup.start"));
@@ -366,6 +414,17 @@ public static partial class ManagementHost
     }
 
     private static IResult Data(object data) => Results.Json(new { data });
+    // The p= value of a DKIM TXT record, without whitespace; empty when absent.
+    internal static string DkimPublicKey(string? record)
+    {
+        if (string.IsNullOrEmpty(record)) return "";
+        foreach (string tag in record.Split(';'))
+        {
+            string part = tag.Trim();
+            if (part.StartsWith("p=", StringComparison.Ordinal)) return string.Concat(part[2..].Where(ch => !char.IsWhiteSpace(ch)));
+        }
+        return "";
+    }
     // Must match the native allowlist; the native side checks the name again.
     [System.Text.RegularExpressions.GeneratedRegex(@"^(ERROR_)?hmailserver(_[A-Za-z0-9]{1,16})?_[0-9]{4}-[0-9]{2}-[0-9]{2}\.log\z|^hmailserver_(awstats|backup|events)\.log\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex LogName();

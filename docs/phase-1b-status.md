@@ -4,7 +4,7 @@ Status snapshot: **2026-10-30, Asia/Kolkata**. [PR #42](https://github.com/jassi
 is merged at `74eecc017f48ddd445870bfd73dd6eb00aed6cef`; tested head
 `28dd3df912fac9109260efe9f5571dc05b402d12` passed all four database jobs, Release,
 GCC/Clang, CodeQL, workflow lint and CI installer publication. See [CI evidence](ci-test-inventory.md)
-and the [current handoff](agents/handoffs/2026-10-30.md). PR #43 is merged at `92ac28d`;
+and the [current handoff](agents/handoffs/2026-10-31.md). PR #43 is merged at `92ac28d`;
 the present completion branch implements remaining work against the approved
 [6.0 scope](version-6-scope.md).
 
@@ -128,6 +128,19 @@ both browser suites); see the [CI inventory](ci-test-inventory.md#bundle-2-check
 The maintainer's 2026-10-30 decisions for the remaining bundles are in the
 [6.0 scope](version-6-scope.md#delivery-decisions-2026-10-30).
 
+### Bundle 3a checkpoint: spam allowlists, antivirus tests and DKIM (2026-10-31)
+
+#47 merged as `a72e32cbc` on 2026-10-31. Branch `feature/phase1b-spam-dkim`, first commit
+`c20368672`. It adds the spam allowlist and greylisting exceptions (A11), antivirus provider
+status and tests (A12), DKIM settings, key generation, DNS-gated activation and rotation (E01),
+and GTUBE-aware SpamAssassin testing (E02), across native, REST and panel. The maintainer's
+2026-10-31 decision replaced packaging SpamAssassin with native filtering (bundle 3b) and
+optional, administrator-installed SpamAssassin and ClamAV; see the
+[6.0 scope](version-6-scope.md#delivery-decisions-2026-10-30). The REST contract is in the
+[Management README](../hmailserver/source/Management/README.md#spam-allowlists-antivirus-providers-and-dkim-bundle-3a-checkpoint).
+Head `d2b051f67` passed four-backend CI (1084 native and 224 live HTTP assertions per backend,
+both browser suites); see the [CI inventory](ci-test-inventory.md#bundle-3a-checkpoint-spam-allowlists-antivirus-tests-and-dkim).
+
 ## Remaining administration parity
 
 These rows make the broad "advanced administration" item concrete. They are **planned** for
@@ -147,8 +160,8 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | A08 | Remaining domain/mailbox controls | Field-level comparison with legacy forms, directory bindings/provisioning policy and user-level permissions; document controls intentionally retained only in desktop tools |
 | A09 | Mailbox self-service | Own profile/signature/forwarding/replies/rules/password implemented on completion branch; 29 native assertions, real own-profile browser checks and four-backend CI at `bc3980201` passed. Restricted-column guarded account saves, current-password proof, sign-out, ownership and AD-password refusal implemented. Complete AD/revocation/concurrency/failure/browser-password/legacy workflow acceptance remains pending |
 | A10 | Groups, public/shared folders and ACLs | Bundle 2 checkpoint (`feature/phase1b-fetch-folders-maintenance`): groups and members, the public folder tree (Unicode names, rename, guarded delete) and permissions for a mailbox, group or anyone with all eleven IMAP rights, server-administrator only; a real IMAP LIST shows a folder through a group permission. Mailbox-owned folder sharing stays in mail clients (IMAP ACL). Remaining: acceptance with several IMAP clients |
-| A11 | Remaining spam controls | SURBL lists, allowlists, global greylisting timing/exceptions, other advanced filtering options and effective scoring guidance; existing DNSBL controls do not cover these |
-| A12 | Existing antivirus and blocked attachments | Current custom/ClamAV configuration, test actions, timeouts/results, attachment extension/policy controls and interaction with optional Defender; no silent loss of scanner choices |
+| A11 | Remaining spam controls | SURBL providers and greylisting timing (completion branch). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): spam allowlist and greylisting exceptions as typed collections. Remaining: effective scoring guidance across DNSBL, SURBL, SPF/DKIM/DMARC, SpamAssassin and the native filter (bundle 3b) |
+| A12 | Existing antivirus and blocked attachments | ClamAV settings and blocked attachments (completion branch). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): provider status and EICAR tests of the configured ClamAV, custom-scanner and ClamWin providers. Custom-scanner and ClamWin program paths stay read-only (a web session must not choose a program the service runs); E10 must migrate them before the desktop tool is removed. Remaining: interaction with optional Defender (bundle 5) |
 | A13 | Logging and diagnostics | Nine typed logging flags (completion branch). Bundle 1 checkpoint (`feature/phase1b-server-operations`): log listing and bounded 16 KiB page reads by allowlisted name only (no paths, reparse points refused, credentials already masked by the server); native diagnostics as a polled background task; mail-server (MX) lookup replacing the desktop MX query. No live log stream, search or download; no shell execution |
 | A14 | Performance settings | Bundle 1 checkpoint (`feature/phase1b-server-operations`): adds message indexing (applied through its native setter) and index clearing; cache hit rates appear in status. Worker thread priority is retired because no server code reads it (BC-009). Remaining: measured workload guidance; collection/queue DB-side paging is a capacity follow-up |
 | A15 | Administrative maintenance | Bundle 2 checkpoint (`feature/phase1b-fetch-folders-maintenance`): backup contents/destination/write-only passphrase, backup start/status/archive list, restore of chosen parts by exact archive name with typed confirmation, and installation-key export/import, with a real encrypted backup in CI. Remaining: database setup/upgrade and data-directory tools stay desktop tools until E10 moves them to the management API; a CI restore that replaces data relies on the existing NUnit restore tests |
@@ -162,8 +175,8 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 
 | ID | Workstream | Remaining delivery and completion gate |
 |---|---|---|
-| E01 | SPF/DKIM/DMARC setup | Finish key creation/protection/selection/rotation, server signing configuration, DNS revalidation, provider coexistence and actual message authentication/alignment conformance; publication inspection alone is insufficient |
-| E02 | SpamAssassin engine operations | Decide packaged engine/version/licensing/update/support model, install/configure/service lifecycle, health/test/error behavior, offline provisioning and interaction with native DNSBL scores; connection settings are already delivered |
+| E01 | SPF/DKIM/DMARC setup | Publication inspection (#31). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): per-domain DKIM settings, server-generated RSA 2048 keys in a service-only folder, DNS-gated activation, rotation and deletion, and CI conformance: a server-signed message verified by an independent RFC 6376 check. Remaining: SPF/DMARC alignment conformance with external receivers and multi-provider SPF changes |
+| E02 | SpamAssassin engine operations | Decided 2026-10-31: not shipped; SpamAssassin and ClamAV are optional, administrator-installed integrations. Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): the SpamAssassin test reports GTUBE detection and headers; setup guidance covers a remote spamd. Bundle 3b adds the native Bayesian filter and content rules as the default. Remaining: 3b, and scoring guidance |
 | E03 | Guided certificates | Import including protected PFX/chain, ACME provider/client/challenge selection, hostname/key/chain/access checks, SMTP/IMAP/POP3 listener assignment, independent web HTTPS binding, renewal/expiry, safe activation and rollback |
 | E04 | Optional Defender adapter | Native protected staging and bounded execution, clean/infected/error/unscannable outcomes, clean/EICAR/MIME/archive/encrypted-content/permission/error tests; implementation has not started |
 | E05 | Defender lifecycle, scheduling and mitigation | SMTP receive/submission, queued send, external fetch, uploaded drafts/IMAP APPEND/import and changed-content coverage; durable fair bounded workers, verdict gates, hold/retry/quarantine, retention/audit, restart/outage recovery and observability |

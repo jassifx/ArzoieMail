@@ -183,6 +183,7 @@ if (args.Contains("--live"))
     await TransportInventoryTests.Run(native, name, password, Check);
     await ServerOperationsTests.Run(native, name, password, Check);
     await FetchFoldersMaintenanceTests.Run(native, name, password, Check);
+    await SpamDkimTests.Run(native, name, password, Check);
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
     // Real native persistence/authorization coverage runs on every CI database backend.
     async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>

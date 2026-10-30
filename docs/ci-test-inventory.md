@@ -4,6 +4,33 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Bundle 3a checkpoint: spam allowlists, antivirus tests and DKIM
+
+Branch `feature/phase1b-spam-dkim` (A11/A12/E01/E02 integration; see the
+[ledger](phase-1b-status.md#bundle-3a-checkpoint-spam-allowlists-antivirus-tests-and-dkim-2026-10-31)).
+Head `d2b051f67d4d665f84597aa20a9e91b3e0f778ba` passed all four database jobs, Release x64,
+GCC/Clang and CI installer publication. Per backend:
+
+| Check | Compact, MySQL, PostgreSQL | SQL Server Express |
+|---|---|---|
+| NUnit regression | 1319 cases: 1209 passed, 0 failed, 34 inconclusive, 76 skipped | 1319 cases: 1210 passed, 0 failed, 34 inconclusive, 75 skipped |
+| Live native management | 1084 assertions (1039 before; +45 from `SpamDkimTests`) | same |
+| Live HTTP/native integration | 224 assertions (204 before; +20 REST checks) | same |
+| Other management checks | unchanged from bundle 2 | same |
+| Browser | fixture suite (new controls included) and published live suite | same |
+
+That is 2015 numbered assertions per backend plus the unnumbered plaintext-boundary line.
+
+Exercised for real: a message from a DKIM-signing domain, signed by the service, read back over
+POP3 and verified by an independent RFC 6376 implementation in the test (relaxed/relaxed,
+rsa-sha256), with a tampered copy failing; DNS-gated activation refused until the check was
+skipped explicitly. Not exercised: a live SpamAssassin or ClamAV engine (CI has neither, so only
+result shapes and refusals are checked) and DKIM verification by an external receiver.
+
+Failures fixed on the way, all in the browser fixture: the SpamAssassin step still expected the
+old connection-only message (`c20368672`), and the DKIM step checked the reload that follows a
+save instead of the save request (`ccccd87c2`).
+
 ## Bundle 2 checkpoint: fetch accounts, groups, folders and maintenance
 
 Branch `feature/phase1b-fetch-folders-maintenance` (A07/A10/A15; see the

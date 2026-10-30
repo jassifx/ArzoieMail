@@ -49,6 +49,12 @@ static class LiveRestTests
             check((await admin.Send(mailbox + "/fetchaccounts", HttpMethod.Get)).GetProperty("total").GetInt64() == 0, "Real API lists a mailbox's fetch accounts.");
             await admin.Send(mailbox + "/fetchaccounts", HttpMethod.Post, new { name = "x", serverAddress = "pop.example.test", username = "u", password = "p", security = 0 }, status: 422);
             check((await admin.Send("/secretkey", HttpMethod.Get)).GetProperty("keyId").GetString()!.Length > 0, "Real API reads the installation key identifier.");
+            var dkimKey = (await admin.Send(domainPath + "/dkim/keys", HttpMethod.Post, new { selector = "rest1" })).GetProperty("keys")[0];
+            check(dkimKey.GetProperty("dnsRecord").GetString()!.StartsWith("v=DKIM1;", StringComparison.Ordinal), "Real API generates a DKIM key.");
+            // The record is not published in CI DNS, so activation must refuse until told to skip the check.
+            await admin.Send(domainPath + "/dkim/keys/rest1/activate", HttpMethod.Post, new { }, status: 409);
+            check((await admin.Send(domainPath + "/dkim/keys/rest1/activate", HttpMethod.Post, new { skipDnsCheck = true })).GetProperty("selector").GetString() == "rest1", "Activation without the DNS check is explicit.");
+            await admin.Send(domainPath + "/dkim/keys", HttpMethod.Post, new { selector = "rest2", path = "x" }, status: 422);
             check(!account.TryGetProperty("password", out _), "Live HTTP account views never expose the password.");
             await admin.Send(mailbox + "/profile", HttpMethod.Patch, new { firstName = "REST", lastName = "Integration" });
             var persisted = await native.SendAsync("accounts.profile.read", username, password, new { domainId, id = accountId }, CancellationToken.None);
@@ -98,7 +104,9 @@ static class LiveRestTests
                 await manager.Send("/sendout/preview", HttpMethod.Post, new { recipients = "*" }, status: 403);
                 await manager.Send("/settings/smtp/smart-host-credential", HttpMethod.Put, new { password = "x" }, status: 403);
                 await manager.Send("/settings/administrator-password", HttpMethod.Post, new { currentPassword = password, newPassword = password }, status: 403);
-                foreach (string path in new[] { "/groups", "/publicfolders", "/backup", "/secretkey" }) await manager.Send(path, HttpMethod.Get, status: 403);
+                foreach (string path in new[] { "/groups", "/publicfolders", "/backup", "/secretkey", "/antivirus", "/policies/spamallowlist", "/policies/greylistexceptions" }) await manager.Send(path, HttpMethod.Get, status: 403);
+                await manager.Send(domainPath + "/dkim", HttpMethod.Get, status: 403);
+                await manager.Send(domainPath + "/dkim/keys", HttpMethod.Post, new { selector = "s1" }, status: 403);
                 await manager.Send("/secretkey/export", HttpMethod.Post, new { passphrase = "long enough passphrase" }, status: 403);
                 await manager.Send("/backup/restore", HttpMethod.Post, new { name = "HMBackup x.7z", confirmName = "HMBackup x.7z", settings = true }, status: 403);
                 await manager.Send(mailbox + "/fetchaccounts", HttpMethod.Get, status: 403);
