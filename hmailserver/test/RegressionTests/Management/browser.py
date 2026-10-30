@@ -74,11 +74,20 @@ server_settings['backup'] = {'section': 'backup', 'values': {'includeSettings': 
     'schema': [{'name': key, 'type': 'boolean', 'minimum': 0, 'maximum': 1, 'help': 'Backup content.', 'restart': False} for key in ['includeSettings', 'includeDomains', 'includeMessages', 'compress']]
               + [{'name': 'destination', 'type': 'string', 'minimum': 0, 'maximum': 240, 'help': 'Backup folder.', 'restart': False}],
     'credentials': {'passphraseConfigured': False}}
-policy_items = {'surbl': [], 'blockedattachments': [], 'incomingrelays': [], 'securityranges': []}
+policy_items = {'surbl': [], 'blockedattachments': [], 'incomingrelays': [], 'securityranges': [], 'spamallowlist': [], 'greylistexceptions': []}
+dkim_state = {'domainId': 5, 'domain': 'example.com', 'signEnabled': False, 'signAliases': False, 'selector': '', 'headerCanonicalization': 2, 'bodyCanonicalization': 2,
+              'algorithm': 2, 'keyConfigured': False, 'keyManaged': False, 'keys': []}
+dkim_requests = []
+server_settings['antivirus'] = {'section': 'antivirus', 'values': {'clamAvEnabled': True, 'clamAvHost': 'clamav.internal', 'clamAvPort': 3310},
+    'schema': [{'name': 'clamAvEnabled', 'type': 'boolean', 'minimum': 0, 'maximum': 1, 'help': 'ClamAV.', 'restart': False},
+               {'name': 'clamAvHost', 'type': 'string', 'minimum': 0, 'maximum': 253, 'help': 'Host.', 'restart': False},
+               {'name': 'clamAvPort', 'type': 'integer', 'minimum': 1, 'maximum': 65535, 'help': 'Port.', 'restart': False}]}
 policy_defaults = {
     'surbl': {'zone': '', 'active': False, 'score': 0, 'rejectMessage': ''},
     'blockedattachments': {'pattern': '', 'description': ''},
-    'incomingrelays': {'name': '', 'lowerAddress': '0.0.0.0', 'upperAddress': '0.0.0.0'}
+    'incomingrelays': {'name': '', 'lowerAddress': '0.0.0.0', 'upperAddress': '0.0.0.0'},
+    'spamallowlist': {'lowerAddress': '0.0.0.0', 'upperAddress': '255.255.255.255', 'address': '', 'description': ''},
+    'greylistexceptions': {'address': '', 'description': ''}
 }
 policy_defaults['securityranges'] = {'name': '', 'lowerAddress': '0.0.0.0', 'upperAddress': '0.0.0.0', 'priority': 0,
     **{key: False for key in ['allowSmtp', 'allowImap', 'allowPop3', 'localToLocal', 'localToExternal', 'externalToLocal',
@@ -133,6 +142,25 @@ def api(route):
             return
         item['text'] = body['text']
         data = item
+    elif path.startswith('/domains/5/dkim'):
+        dkim_requests.append((request.method, path, body))
+        if path.endswith('/keys') and request.method == 'POST':
+            dkim_state['keys'].append({'selector': body['selector'], 'dnsName': body['selector'] + '._domainkey.example.com', 'dnsRecord': 'v=DKIM1; k=rsa; p=MIIBfixture', 'active': False})
+        elif path.endswith('/activate'):
+            if not body.get('skipDnsCheck'):
+                route.fulfill(status=409, json={'error': {'message': 'The DNS record does not publish this key yet.'}})
+                return
+            selector = path.split('/')[-2]
+            for key in dkim_state['keys']: key['active'] = key['selector'] == selector
+            dkim_state.update({'selector': selector, 'keyConfigured': True, 'keyManaged': True})
+        elif request.method == 'PATCH':
+            dkim_state.update(body)
+        data = dkim_state
+    elif path == '/antivirus':
+        data = {'clamAv': {'enabled': True, 'host': 'clamav.internal', 'port': 3310}, 'customScanner': {'enabled': False, 'executable': '', 'returnValue': 1},
+                'clamWin': {'enabled': False, 'executable': '', 'database': ''}}
+    elif path == '/antivirus/test':
+        data = {'scanner': body['scanner'], 'passed': True, 'message': 'Virus found: Eicar-Test-Signature <b>inert</b>'}
     elif '/fetchaccounts' in path:
         parts = path.split('/')
         if parts[-1] == 'fetchaccounts' and request.method == 'POST':
@@ -481,6 +509,21 @@ with sync_playwright() as p:
     assert page.evaluate('typeof window.domainMarkupExecuted') == 'undefined'
     assert page.locator('img[src="x"]').count() == 0, 'Domain HTML source must not become DOM elements.'
     page.get_by_role('button', name='Cancel', exact=True).click()
+    page.get_by_role('button', name='DKIM', exact=True).first.click()
+    page.get_by_text('No keys have been generated for this domain.', exact=True).wait_for()
+    page.get_by_label('New key selector', exact=True).fill('s2026')
+    page.get_by_role('button', name='Generate key', exact=True).click()
+    page.get_by_text('Key generated. Publish its DNS record, then activate it.', exact=True).wait_for()
+    page.get_by_role('button', name='Activate this key', exact=True).click()
+    page.get_by_text('The DNS record does not publish this key yet.', exact=True).wait_for()
+    assert not dkim_state['keyConfigured'], 'Without DNS the key stays inactive.'
+    page.get_by_label('Activate without checking DNS (the record must still be published before mail is signed)', exact=True).check()
+    page.get_by_role('button', name='Activate this key', exact=True).click()
+    page.get_by_text('Key s2026 is now active.', exact=True).wait_for()
+    page.get_by_label('Sign outgoing mail', exact=True).check()
+    page.get_by_role('button', name='Save DKIM settings', exact=True).click()
+    page.get_by_text('DKIM settings saved.', exact=True).wait_for()
+    assert dkim_requests[-1][2] == {'signEnabled': True, 'signAliases': False, 'headerCanonicalization': 2, 'bodyCanonicalization': 2, 'algorithm': 2}
     page.get_by_role('button', name='Alternate domains', exact=True).first.click()
     page.get_by_label('name', exact=True).fill('alternate.test')
     page.once('dialog', lambda dialog: dialog.dismiss())
@@ -793,6 +836,10 @@ with sync_playwright() as p:
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Maintenance overflows on mobile.'
     page.set_viewport_size({'width': 1440, 'height': 1000})
     page.get_by_role('link', name='Server settings', exact=True).click()
+    page.get_by_label('Settings section', exact=True).select_option('antivirus')
+    page.get_by_role('button', name='Test ClamAV', exact=True).click()
+    page.get_by_text('ClamAV detected the test virus.', exact=True).wait_for()
+    assert page.locator('#content b').count() == 0, 'Scanner output renders inertly.'
     page.get_by_label('Settings section', exact=True).select_option('backup')
     page.get_by_text('No passphrase is set, so new backups are not encrypted. Use at least 12 characters.', exact=True).wait_for()
     page.get_by_label('New passphrase', exact=True).fill('backup passphrase')

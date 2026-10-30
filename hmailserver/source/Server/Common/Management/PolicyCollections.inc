@@ -52,7 +52,8 @@ json::object PolicyView(T &item, const std::vector<PolicyField<T>> &fields)
 }
 template<class T, class Persistence, class Validate, class Refresh>
 json::value ManagePolicyCollection(const std::string &action, json::object &arguments,
-   const char *selectSql, const char *idColumn, const std::vector<PolicyField<T>> &fields, Validate validate, Refresh refresh)
+   const char *selectSql, const char *idColumn, const std::vector<PolicyField<T>> &fields, Validate validate, Refresh refresh,
+   bool uniqueNames = true)
 {
    if (action != "list" && action != "read" && action != "create" && action != "update" && action != "delete") throw RequestError{404};
    const auto load = [&]()
@@ -125,7 +126,7 @@ json::value ManagePolicyCollection(const std::string &action, json::object &argu
    for (const auto &item : items)
    {
       String existing = item->GetName(); existing.ToLower();
-      if (existing == name && item->GetID() != target->GetID()) throw RequestError{409};
+      if (uniqueNames && existing == name && item->GetID() != target->GetID()) throw RequestError{409};
    }
    String error;
    if (!Persistence::SaveObject(target, error, PersistenceModeNormal)) throw RequestError{error.IsEmpty() ? 503 : 422};
@@ -187,6 +188,38 @@ json::value ManagePolicies(const std::string &operation, json::object &arguments
             if (item.GetName().IsEmpty() || item.GetLowerIP().GetType() != item.GetUpperIP().GetType()
                 || item.GetLowerIP() > item.GetUpperIP()) throw RequestError{422};
          }, []() { if (!Configuration::Instance()->GetSMTPConfiguration()->GetIncomingRelays()->Refresh()) throw RequestError{503}; });
+   }
+   if (resource == "spamallowlist")
+   {
+      // Trusted senders skip spam checks: an IP range, an address pattern, or both.
+      const std::vector<PolicyField<WhiteListAddress>> fields{
+         PolicyText<WhiteListAddress>("lowerAddress", 64, "First sender IP address; 0.0.0.0 to 255.255.255.255 matches any IPv4 address.", &WhiteListAddress::GetLowerIPAddressString, [](WhiteListAddress &item, const String &value) { return item.SetLowerIPAddress(value); }),
+         PolicyText<WhiteListAddress>("upperAddress", 64, "Last sender IP address, in the same family.", &WhiteListAddress::GetUpperIPAddressString, [](WhiteListAddress &item, const String &value) { return item.SetUpperIPAddress(value); }),
+         PolicyText<WhiteListAddress>("address", 255, "Sender address pattern, for example *@partner.example; * matches any address.", &WhiteListAddress::GetEmailAddress, &WhiteListAddress::SetEMailAddress),
+         PolicyText<WhiteListAddress>("description", 255, "Why this sender is trusted.", &WhiteListAddress::GetDescription, &WhiteListAddress::SetDescription)};
+      return ManagePolicyCollection<WhiteListAddress, PersistentWhiteListAddress>(action, arguments,
+         "select * from hm_whitelist order by whiteid", "whiteid", fields,
+         [](WhiteListAddress &item)
+         {
+            const auto pattern = item.GetEmailAddress();
+            if (pattern.IsEmpty() || item.GetLowerIPAddress().GetType() != item.GetUpperIPAddress().GetType()
+                || item.GetLowerIPAddress() > item.GetUpperIPAddress()) throw RequestError{422};
+            // A pattern with an @ must look like an address; a bare * matches every sender.
+            if (pattern != _T("*") && (pattern.Find(_T("@")) < 0 || pattern.FindOneOf(_T(" \t,;\"<>")) >= 0)) throw RequestError{422};
+         }, [&]() { spam.GetWhiteListAddresses()->Refresh(); }, false);
+   }
+   if (resource == "greylistexceptions")
+   {
+      const std::vector<PolicyField<GreyListingWhiteAddress>> fields{
+         PolicyText<GreyListingWhiteAddress>("address", 255, "Sender IP address or pattern that skips greylisting; * and ? are wildcards, for example 192.0.2.*.", &GreyListingWhiteAddress::GetUserEditableIPAddress, &GreyListingWhiteAddress::SetUserEditableIPAddress),
+         PolicyText<GreyListingWhiteAddress>("description", 255, "Why this sender skips greylisting.", &GreyListingWhiteAddress::GetDescription, &GreyListingWhiteAddress::SetDescription)};
+      return ManagePolicyCollection<GreyListingWhiteAddress, PersistentGreyListingWhiteAddress>(action, arguments,
+         "select * from hm_greylisting_whiteaddresses order by whiteid", "whiteid", fields,
+         [](GreyListingWhiteAddress &item)
+         {
+            const auto pattern = item.GetUserEditableIPAddress();
+            if (pattern.IsEmpty() || pattern.find_first_not_of(_T("0123456789abcdefABCDEF.:*?")) != std::wstring::npos) throw RequestError{422};
+         }, [&]() { spam.GetGreyListingWhiteAddresses()->Refresh(); });
    }
    throw RequestError{404};
 }
