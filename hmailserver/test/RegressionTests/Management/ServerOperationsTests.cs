@@ -79,13 +79,17 @@ static class ServerOperationsTests
         await Refuse("settings.update", new { section = "smtp", fields = new { smartHost = "bad host*" }, expected = new { smartHost } }, 422);
         await Refuse("settings.smarthost.credential", new { password = "x", other = 1 }, 422);
         await Refuse("settings.smarthost.credential", new { password = "line\r\nbreak" }, 422);
+        // Earlier regression fixtures can leave values the API deliberately refuses (an SRS age
+        // outside 1-512, or implicit TLS for direct delivery). Only round-trip valid originals.
+        var original = new Dictionary<string, object> { ["smartHost"] = smartHost };
+        var proposed = new Dictionary<string, object> { ["smartHost"] = "relay.example.test" };
+        if (delivery is 0 or 2 or 3) { original["deliverySecurity"] = delivery; proposed["deliverySecurity"] = delivery == 3 ? 2 : 3; }
+        if (maxAge is >= 1 and <= 512) { original["srsMaxAgeDays"] = maxAge; proposed["srsMaxAgeDays"] = maxAge == 30 ? 31 : 30; }
         Exception? smtpFailure = null;
         try
         {
-            int changed = delivery == 3 ? 2 : 3;
-            var saved = await Send("settings.update", new { section = "smtp", fields = new { deliverySecurity = changed, srsMaxAgeDays = maxAge == 30 ? 31 : 30, smartHost = "relay.example.test" },
-                expected = new { deliverySecurity = delivery, srsMaxAgeDays = maxAge, smartHost } });
-            check(saved.GetProperty("values").GetProperty("deliverySecurity").GetInt32() == changed && saved.GetProperty("values").GetProperty("smartHost").GetString() == "relay.example.test",
+            var saved = (await Send("settings.update", new { section = "smtp", fields = proposed, expected = original })).GetProperty("values");
+            check(proposed.All(field => saved.GetProperty(field.Key).ToString() == field.Value.ToString()),
                 "Delivery security, SRS age and smart host persist as one checked batch.");
             check((await Send("settings.smarthost.credential", new { password = "relay credential ü" })).GetProperty("configured").GetBoolean(), "A smart host credential is stored.");
             var reread = await Send("settings.read", new { section = "smtp" });
@@ -99,12 +103,13 @@ static class ServerOperationsTests
             try
             {
                 var current = (await Send("settings.read", new { section = "smtp" })).GetProperty("values");
-                await Send("settings.update", new { section = "smtp", fields = new { deliverySecurity = delivery, srsMaxAgeDays = maxAge, smartHost },
-                    expected = new { deliverySecurity = current.GetProperty("deliverySecurity").GetInt32(), srsMaxAgeDays = current.GetProperty("srsMaxAgeDays").GetInt32(), smartHost = current.GetProperty("smartHost").GetString() } });
+                var expected = original.Keys.ToDictionary(key => key, key => (object)current.GetProperty(key).Clone());
+                await Send("settings.update", new { section = "smtp", fields = original, expected });
                 if (credentialBefore) Console.WriteLine("Server operations: a smart host credential existed before the test and was cleared.");
             }
             catch (Exception cleanup) when (smtpFailure is not null) { throw new AggregateException("SMTP settings and restoration failed.", smtpFailure, cleanup); }
         }
+        check((await Send("settings.read", new { section = "smtp" })).GetProperty("values").GetProperty("smartHost").GetString() == smartHost, "The original smart host is restored.");
 
         // The built-in Administrator password needs the current one.
         await Refuse("settings.administrator.password", new { currentPassword = "wrong " + Guid.NewGuid(), newPassword = "replacement" }, 403);
