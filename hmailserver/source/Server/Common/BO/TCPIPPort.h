@@ -27,7 +27,7 @@ namespace HM
       IPAddress GetAddress() const;
 
       __int64 GetSSLCertificateID() const  {return sslcertificate_id_; }
-      void SetSSLCertificateID(int iSSLCertificateID) {sslcertificate_id_ = iSSLCertificateID;}
+      void SetSSLCertificateID(__int64 iSSLCertificateID) {sslcertificate_id_ = iSSLCertificateID;}
 
       ConnectionSecurity GetConnectionSecurity() const  {return connection_security_; }
       void SetConnectionSecurity(ConnectionSecurity connection_security) {connection_security_ = connection_security;}
@@ -38,12 +38,12 @@ namespace HM
 
    private:
 
-      int GetSSLCertificateID_(const String &sSSLCertificateName);
+      __int64 GetSSLCertificateID_(const String &sSSLCertificateName);
       String GetSSLCertificateName_(__int64 iCertificateID);
 
       SessionType port_protocol_;
       int port_number_;
-      int sslcertificate_id_;
+      __int64 sslcertificate_id_;
 
       ConnectionSecurity connection_security_;
 

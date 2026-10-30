@@ -482,7 +482,7 @@ activation/restart and rollback remain A06/E03 work. Native/managed builds and t
 VM run passed (831 native,449 HTTP/security,145 real HTTP and both browsers), followed by
 four-backend CI at `8cdc085b4`.
 
-### PFX inspection (completion branch, VM validation in progress)
+### PFX inspection (completion branch, VM validated)
 
 `POST /api/v1/transport/certificates/inspect` accepts exactly `pfx` (base64 PFX bytes),
 `password` (string, empty only for an unprotected file) and `hosts` (1-32 DNS names/IPs).
@@ -518,8 +518,9 @@ and production IIS compatibility still require acceptance. There is no overall a
 The bounded helper passed 60 focused VM assertions. The endpoint/form then passed the full
 native/API/browser/cleanup VM run (513 HTTP/security,60 helper,831 native,145 real HTTP and
 both browsers). The final rate-budget/harness run passed 546 HTTP/security,60 parser and
-the same native/live HTTP/browser layers with checkpoint cleanup. Its own CI is pending;
-no import/activation acceptance is implied.
+the same native/live HTTP/browser layers with checkpoint cleanup. Four-backend CI passed at
+`ae903a182` with 1685 separate assertions and both browser suites; exact NUnit outcomes are
+recorded in the CI inventory. No import/activation acceptance is implied.
 
 ## Filtering and trusted-relay collections (completion branch)
 

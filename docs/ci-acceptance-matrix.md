@@ -69,9 +69,19 @@ PFX preflight extends C04/C12 with the .NET 10 bounded/ephemeral loader, public-
 strict sensitive-buffer ownership, per-route body limits, CSRF/origin/role checks, concurrent
 upload rejection, deadline/cancellation cleanup and an independent request budget. The final
 VM run passed 546 HTTP/security plus60 parser assertions and the affected full browser/native
-layers; its own CI remains pending. The temporary PFX stays outside evidence and is deleted.
+layers; four-backend CI passed at `ae903a182`. The temporary PFX stays outside evidence and is deleted.
 This proves inspection behavior, not protected native installation, authoritative activation,
 IIS private-key access, client trust/revocation or certificate renewal.
+
+The following native transport identity regression runs inside existing NUnit TestInternals:
+real-provider BIGINT projections verify certificate/listener IDs and certificate references,
+and setter boundaries include zero, the signed 32-bit boundary, values above 2^32 and signed
+64-bit maximum. The Compact VM reproduced narrowing before the fix and passed afterward.
+No identity seeds or certificate/listener rows are changed by that regression. Native insert
+identity assignment and backup name lookup are widened too; this test does not separately
+exercise a persisted high-identity insert or high-ID backup restoration. Four-backend final-head
+CI is still required. Legacy COM ID properties and other persistence objects remain outside
+this correction; schema version and table types are unchanged.
 
 ## Fixture boundaries and secret handling
 

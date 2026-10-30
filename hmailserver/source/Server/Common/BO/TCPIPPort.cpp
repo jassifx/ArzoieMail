@@ -75,7 +75,7 @@ namespace HM
       return true;
    }
 
-   int
+   __int64
    TCPIPPort::GetSSLCertificateID_(const String &sSSLCertificateName)
    {
       if (sSSLCertificateName.IsEmpty())
@@ -86,7 +86,7 @@ namespace HM
 
       std::shared_ptr<SSLCertificate> pCertificate = pSSLCertificates->GetItemByName(sSSLCertificateName);
       if (pCertificate)
-         return (int) pCertificate->GetID();
+         return pCertificate->GetID();
       else
          return 0;
 

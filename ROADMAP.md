@@ -331,8 +331,16 @@ guided setup; it does not deliver certificate provisioning, assignment or activa
 The subsequent bounded PFX inspection workflow adds a protected upload form, public metadata/
 host/time/usage/chain warnings, strict secret-owning JSON input and resource guards. Its final
 VM run passed 546 HTTP/security,60 parser,831 native and145 real HTTP assertions, both browsers
-and selected TestInternals, with private fixtures and checkpoint cleaned up. Its own CI remains
-pending; protected native installation/assignment/renewal/rollback and IIS acceptance remain open.
+and selected TestInternals, with private fixtures and checkpoint cleaned up. Four-backend CI at
+`ae903a182` passed 1685 separate assertions, both browsers and the 1319-case NUnit suite
+(skips/inconclusive separately recorded in the CI inventory). Protected native installation/
+assignment/renewal/rollback and IIS acceptance remain open.
+The next native prerequisite fixes 32-bit narrowing in certificate/listener IDs, certificate
+references, returned insert identities and backup certificate-name lookup. A real-provider
+Compact VM TestInternals regression failed before the fix and passed afterward; original
+service files and the temporary checkpoint were restored. This is not a schema change or
+COM interface expansion. Its own four-backend CI is still pending; other high-ID persistence
+and legacy COM long properties remain separate migration work.
 
 ### Phase 1b delivery tracker
 

@@ -59,8 +59,16 @@ is not guided provisioning or active-listener/health evidence; A06/E03 remain op
 The following PFX preparation helper passed 60 bounded-inspection VM checks. Its newer
 HTTP endpoint/owned-buffer reader/form passed a full native/API/browser/cleanup VM run. The
 final run also passed its independent rate budget (546 HTTP/security,60 parser assertions).
-Its own CI remains pending.
+Its four-backend CI passed at `ae903a182` (1685 separate assertions and both browser suites;
+1319 NUnit cases with skips/inconclusive recorded separately in the CI inventory).
 Native installation and activation remain unfinished.
+
+The next native prerequisite corrects 32-bit narrowing of certificate/listener database IDs,
+newly returned identities, listener certificate references and certificate-name lookup during
+backup restoration. The actual Compact provider regression failed before the fix and passed
+afterward through TestInternals. It reads synthetic BIGINT projections without reseeding tables
+or registering/activating certificates. Four-backend CI for this correction remains pending;
+legacy COM long properties and other objects' ID modernization are not covered by it.
 
 ## Implemented capabilities and their boundaries
 
@@ -98,7 +106,7 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | A03 | IMAP and POP3 settings | Protocol switches, limits, IMAP extensions/delimiter/public-folder policy and POP3 behavior; actual protocol regression checks after changes |
 | A04 | IP/security ranges | Implemented on completion branch: IPv4/IPv6 ranges, priority, protocol/relay/authentication/TLS/spam/virus/expiry fields, native effective match and independent management recovery; 32 targeted Compact VM assertions include real SMTP denial/recovery/authentication. Trusted unauthenticated relay requires transient explicit acknowledgement. Four-backend/matrix/failure/field-parity acceptance remains pending |
 | A05 | Incoming relays and Auto-ban | CRUD/policy, trusted-hop interpretation, ban timing/thresholds, effective-state inspection and recovery without silently bypassing security |
-| A06 | TCP/IP listeners and global TLS | Completion branch adds eight global TLS controls with checked version/option masks, remote certificate verification and pre-save cipher validation; 246 targeted settings assertions, full VM/browser checks and four-backend CI at `82a3bdaf5` passed. Underlying listener/certificate false-success saves were reproduced and corrected; recovery VM cases and four-backend CI at `170442658` passed. Read-only transport inventory passed a later full VM run and awaits its own CI. Bind addresses/ports/protocols, implicit TLS/STARTTLS, certificate assignment, collision/lockout detection, restart/handshake acceptance and safe apply/rollback remain |
+| A06 | TCP/IP listeners and global TLS | Completion branch adds eight global TLS controls with checked version/option masks, remote certificate verification and pre-save cipher validation; 246 targeted settings assertions, full VM/browser checks and four-backend CI at `82a3bdaf5` passed. Underlying listener/certificate false-success saves were reproduced and corrected; recovery VM cases and four-backend CI at `170442658` passed. Read-only transport inventory passed full VM and four-backend CI at `8cdc085b4`; the following native ID-width correction passed a red/green VM regression and needs its own CI. Bind addresses/ports/protocols, implicit TLS/STARTTLS, certificate assignment, collision/lockout detection, restart/handshake acceptance and safe apply/rollback remain |
 | A07 | External POP3 fetch accounts | Scoped configuration, encrypted/write-only credentials, scheduling, SSL/TLS, delivery/rule/delete policy, manual fetch/status/error behavior and lifecycle tests |
 | A08 | Remaining domain/mailbox controls | Field-level comparison with legacy forms, directory bindings/provisioning policy and user-level permissions; document controls intentionally retained only in desktop tools |
 | A09 | Mailbox self-service | Own profile/signature/forwarding/replies/rules/password implemented on completion branch; 29 native assertions, real own-profile browser checks and four-backend CI at `bc3980201` passed. Restricted-column guarded account saves, current-password proof, sign-out, ownership and AD-password refusal implemented. Complete AD/revocation/concurrency/failure/browser-password/legacy workflow acceptance remains pending |

@@ -42,6 +42,10 @@
 #include "../SQL/SQLStatement.h"
 #include "../SQL/ADOConnection.h"
 #include "../SQL/TransactionLeaseTests.h"
+#include "../BO/SSLCertificate.h"
+#include "../BO/TCPIPPort.h"
+#include "../Persistence/PersistentSSLCertificate.h"
+#include "../Persistence/PersistentTCPIPPort.h"
 #include "../Util/EventTester.h"
 #include "../Scripting/ScriptServer.h"
 #include <boost/pool/object_pool.hpp>
@@ -201,6 +205,44 @@ namespace HM
       std::vector<AnsiString> transactionFailures;
       for (const auto &failure : TransactionLeaseTests::Run()) transactionFailures.emplace_back(failure.c_str());
       ReportFailures_("database transaction leases", transactionFailures);
+
+      {
+         // Read the real provider's BIGINT values without altering identity seeds,
+         // certificate registrations or active listeners. A truncated reference can
+         // otherwise select an unrelated certificate with the same low 32 bits.
+         constexpr __int64 certificateId = 4294967297LL;
+         constexpr __int64 listenerId = 4294967298LL;
+         const auto row = Application::Instance()->GetDBManager()->OpenRecordset(SQLCommand(
+            "SELECT CAST(4294967297 AS BIGINT) AS sslcertificateid, "
+            "'Native identity fixture' AS sslcertificatename, "
+            "'unused-certificate.pem' AS sslcertificatefile, "
+            "'unused-key.pem' AS sslprivatekeyfile, "
+            "CAST(4294967298 AS BIGINT) AS portid, 1 AS portprotocol, "
+            "45264 AS portnumber, 0 AS portconnectionsecurity, "
+            "CAST(0 AS BIGINT) AS portaddress1, CAST(NULL AS BIGINT) AS portaddress2, "
+            "CAST(4294967297 AS BIGINT) AS portsslcertificateid FROM hm_dbversion"));
+         if (!row || row->IsEOF())
+            throw std::logic_error("Could not read native certificate identity fixture.");
+         const auto certificate = std::make_shared<SSLCertificate>();
+         const auto listener = std::make_shared<TCPIPPort>();
+         std::vector<AnsiString> failures;
+         if (!PersistentSSLCertificate::ReadObject(certificate, row) || certificate->GetID() != certificateId)
+            failures.emplace_back("Certificate persistence narrowed a BIGINT identity.");
+         if (!PersistentTCPIPPort::ReadObject(listener, row) || listener->GetID() != listenerId)
+            failures.emplace_back("Listener persistence narrowed a BIGINT identity.");
+         if (listener->GetSSLCertificateID() != certificateId)
+            failures.emplace_back("Listener persistence narrowed a BIGINT certificate reference.");
+         const __int64 identities[] = {0, 2147483647LL, 2147483648LL, certificateId, 9223372036854775807LL};
+         for (const auto identity : identities)
+         {
+            listener->SetSSLCertificateID(identity);
+            if (listener->GetSSLCertificateID() != identity)
+               failures.emplace_back("Listener setter narrowed a certificate reference.");
+         }
+         for (const auto &failure : failures)
+            LOG_APPLICATION("Native transport identity regression: " + String(failure));
+         ReportFailures_("native transport identities", failures);
+      }
 
       {
          DatabaseConnectionManager unavailable;

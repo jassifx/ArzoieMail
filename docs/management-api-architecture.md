@@ -33,8 +33,10 @@ activation fails on fresh/upgraded installs without affecting unrelated COM regi
 The [Phase 1b ledger](phase-1b-status.md) owns granular delivery/parity status and migration
 gates; [the authority index](README.md) defines documentation ownership. The mail-operations
 final head `28dd3df` in #42 passed VM and four-backend CI (897 assertions plus browser suites),
-merged as `74eecc017`. The current follow-up is documentation-only; no next implementation
-bundle or production cutover is authorized.
+merged as `74eecc017`. After merged #43, the maintainer authorized completing the remaining
+Phase 1b on `feature/phase1b-completion`. The [current handoff](agents/handoffs/2026-10-30.md)
+and ledger distinguish subsequent implementation, VM evidence and checkpoint-specific CI.
+Production cutover and starting Phase 2 are not authorized by that implementation request.
 
 Mailbox forwarding/replies, mailbox signatures and advanced domain/mailbox administration
 merged in #39?#41 with VM/four-backend CI acceptance. Global-name writes and object limits
@@ -51,7 +53,8 @@ transactional: infrastructure failure can leave a disabled partial draft requiri
 Regex, script and local-binding actions are excluded from the new boundary. Queue listing
 scans metadata in memory; indexed paging and measured capacity remain follow-ups.
 
-No COM dependency, web SQL, schema migration or mailbox-user self-service is introduced. See
+The replacement has no COM dependency or direct web SQL. The completion branch adds scoped
+mailbox self-service through native commands; it does not migrate the database schema. See
 the [REST contract](../hmailserver/source/Management/README.md#rest-v1-contract) for fields,
 limits, permissions and recovery. Verify the current feature PR's VM/CI acceptance.
 
@@ -108,7 +111,8 @@ Current desktop tools / scripts -> existing COM API -> same business layer
   Vault and cookie timing use injectable TimeProvider instances, with System as the production
   default and no HTTP clock override. The completion branch's 43 controlled-clock assertions
   cover idle/absolute expiry, sliding renewal, refreshed roles, opaque-only cookie identity
-  and binding failures; per-backend CI remains pending.
+  and binding failures; these checks passed four-backend CI at `bc3980201` and subsequent
+  verified checkpoints recorded in the CI inventory.
 - Do not trust forwarded headers without an explicitly configured trusted proxy. Production
   deployments terminate HTTPS in the application or a configured trusted hosting layer.
 - Publish versioned REST documentation and test unauthenticated access, CSRF, role changes,
@@ -178,7 +182,12 @@ wire/PFX/password buffers are cleared; keys load ephemerally and certificate/key
 disposed. It does not install, assign, persist or forward private material to native commands.
 Native installation must independently validate material and enforce protected storage,
 transaction/recovery, listener policy and activation; the web host's chain view is advisory.
-Its final VM run passed; its own CI and production IIS/identity acceptance remain pending.
+Its final VM run and four-backend CI at `ae903a182` passed; production IIS/identity acceptance
+remains pending. A subsequent native ID-width correction passed a reproduced red/green
+Compact VM regression; its own CI remains pending. The native certificate/listener model now
+preserves BIGINT identities/references, including returned insert IDs and backup name lookup.
+No schema migration or COM expansion is introduced; legacy COM long properties and other
+objects' ID modernization remain separate work.
 
 1. Establish the opt-in native management boundary, shared business authentication, ASP.NET Core
    session/security foundation, initial spam/DNSBL/DNS workflows and repeatable tests. This is

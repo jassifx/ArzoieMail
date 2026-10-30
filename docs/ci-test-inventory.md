@@ -174,10 +174,32 @@ security**,60 parser,43 lifecycle,831 native,145 real HTTP/native,26 DNS,2 plain
 7 runtime,11 TLS and12 native TLS assertions, both browsers and selected TestInternals (1 passed).
 Private PFX files and the original VM state/checkpoint were cleaned up/restored. Public desktop/
 mobile captures were retained and visually reviewed for layout, inert metadata and the cleared
-password; these do not establish complete manual/IIS/platform acceptance. Final-head CI is pending.
+password; these do not establish complete manual/IIS/platform acceptance. Its checkpoint CI
+at `ae903a182811922e1764526936550680a84978d4` passed all four database jobs, Release and GCC/Clang.
+Per backend: **1685** separate assertions = 26 DNS +546 HTTP/security +2 plaintext-boundary
++43 lifecycle +60 PFX +831 native +7 runtime +2 pipe-squatting +145 real HTTP/native +11 TLS
++12 native TLS, plus both browser suites. NUnit remains **1319** cases: Compact/MySQL/PostgreSQL
+1209 passed,0 failed/warnings,34 inconclusive,76 skipped; Express 1210 passed,0 failed/warnings,
+34 inconclusive,75 skipped. Logs: `out/certificate-green-{compact,mysql,postgresql,express}-ci.log`.
+CI installer artifact publication also passed; CodeQL/workflow lint were not checks in this
+branch-push run. The following native correction needs its own final-head CI.
 The earlier focused 60-case pass predates the endpoint changes.
 Current handoff:
 [2026-10-30](agents/handoffs/2026-10-30.md). Native installation/activation is not implemented.
+
+The next native transport identity prerequisite adds a regression to existing TestInternals,
+without adding a separate NUnit case or management assertion count. On the Compact VM, the
+fully qualified test failed before the fix and passed afterward (1 selected case). Its
+application log records certificate ID, listener ID, certificate-reference and setter narrowing.
+Synthetic BIGINT projections use the actual provider without changing identity seeds or
+certificate/listener rows. Boundaries include signed 32-bit overflow, a colliding low 32-bit
+value and signed 64-bit maximum. Sources also widen returned insert IDs and backup certificate-
+name lookup; high-ID persisted insert/backup and COM compatibility are not separately proven
+by this read/setter regression. Logs: `out/phase1b-identity-red-focused-vm.log`,
+`out/phase1b-identity-green-vm.log`; XML: `out/phase1b-identity-{red,green}-results.xml`.
+Both selected runs restored the original service files and temporary checkpoint; no VM job remains active.
+An earlier incomplete filter selected zero tests and was rejected, not accepted as evidence.
+The build ran with service/COM hooks disabled. This correction needs its own four-backend CI.
 
 ## Modern-stack CI expansion merged and verified
 
