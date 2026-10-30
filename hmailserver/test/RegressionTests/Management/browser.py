@@ -523,7 +523,7 @@ with sync_playwright() as p:
     page.get_by_label('Sign outgoing mail', exact=True).check()
     page.get_by_role('button', name='Save DKIM settings', exact=True).click()
     page.get_by_text('DKIM settings saved.', exact=True).wait_for()
-    assert dkim_requests[-1][2] == {'signEnabled': True, 'signAliases': False, 'headerCanonicalization': 2, 'bodyCanonicalization': 2, 'algorithm': 2}
+    assert [entry[2] for entry in dkim_requests if entry[0] == 'PATCH'][-1] == {'signEnabled': True, 'signAliases': False, 'headerCanonicalization': 2, 'bodyCanonicalization': 2, 'algorithm': 2}
     page.get_by_role('button', name='Alternate domains', exact=True).first.click()
     page.get_by_label('name', exact=True).fill('alternate.test')
     page.once('dialog', lambda dialog: dialog.dismiss())
