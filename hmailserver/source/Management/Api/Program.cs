@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.RateLimiting;
 var app = ManagementHost.Build(args);
 await app.RunAsync();
 
-public static class ManagementHost
+public static partial class ManagementHost
 {
     public static WebApplication Build(string[] args, Action<IServiceCollection>? configure = null)
     {
@@ -289,6 +289,36 @@ public static class ManagementHost
         api.MapPatch("/dnsbl/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "dnsbl.update", true, id));
         api.MapDelete("/dnsbl/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "dnsbl.delete", false, id));
         api.MapPost("/spamassassin/test", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "spamassassin.test"));
+        // Server operations. The native dispatcher authorizes each one again.
+        api.MapPut("/settings/smtp/smart-host-credential", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "settings.smarthost.credential", true));
+        api.MapPost("/settings/administrator-password", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "settings.administrator.password", true));
+        api.MapPost("/settings/performance/message-index/clear", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "settings.messageindex.clear"));
+        api.MapPost("/server/start", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "server.start", true));
+        api.MapPost("/server/stop", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "server.stop", true));
+        api.MapGet("/servermessages", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "servermessages.list"));
+        api.MapGet("/servermessages/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "servermessages.read", id: id));
+        api.MapPatch("/servermessages/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "servermessages.update", true, id));
+        api.MapPost("/sendout/preview", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "sendout.preview", true));
+        api.MapPost("/sendout", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "sendout.send", true));
+        api.MapPost("/diagnostics/run", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "diagnostics.start", true));
+        api.MapGet("/diagnostics/results", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "diagnostics.read"));
+        api.MapGet("/logs", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "logs.list"));
+        api.MapGet("/logs/{name}", async (string name, HttpContext c, CredentialVault vault, IManagementChannel channel) =>
+        {
+            if (c.User.FindFirstValue("level") != "2") throw new ManagementError(403, "Server administration is required.");
+            if (!LogName().IsMatch(name)) throw new ManagementError(422, "Choose a log file from the list.");
+            var arguments = new Dictionary<string, object?> { ["name"] = name };
+            foreach (string key in c.Request.Query.Keys)
+            {
+                var values = c.Request.Query[key];
+                if (key != "before" || values.Count != 1 || !long.TryParse(values.ToString(), System.Globalization.NumberStyles.None,
+                        System.Globalization.CultureInfo.InvariantCulture, out long before))
+                    throw new ManagementError(422, "The only log filter is before, a byte offset.");
+                arguments["before"] = before;
+            }
+            var credentials = vault.Get(c.User.FindFirstValue(ClaimTypes.NameIdentifier));
+            return Data(await channel.SendAsync("logs.read", credentials.Username, credentials.Password, arguments, c.RequestAborted));
+        });
         api.MapGet("/diagnostics", async (HttpContext c, CredentialVault v, IManagementChannel p) =>
         {
             await Forward(c, v, p, "status"); // Native authorization, not a browser-provided role.
@@ -302,6 +332,15 @@ public static class ManagementHost
     }
 
     private static IResult Data(object data) => Results.Json(new { data });
+    // Must match the native allowlist; the native side checks the name again.
+    [System.Text.RegularExpressions.GeneratedRegex(@"^(ERROR_)?hmailserver(_[A-Za-z0-9]{1,16})?_[0-9]{4}-[0-9]{2}-[0-9]{2}\.log\z|^hmailserver_(awstats|backup|events)\.log\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    private static partial System.Text.RegularExpressions.Regex LogName();
+    private static Task<IResult> ServerOnly(HttpContext context, CredentialVault vault, IManagementChannel channel,
+        string operation, bool readBody = false, long? id = null)
+    {
+        if (context.User.FindFirstValue("level") != "2") throw new ManagementError(403, "Server administration is required.");
+        return id.HasValue ? Objects(context, vault, channel, operation, readBody, id) : Forward(context, vault, channel, operation, readBody);
+    }
     private static string SecurityStamp(JsonElement identity)
     {
         if (!identity.TryGetProperty("securityStamp", out var field) || field.ValueKind != JsonValueKind.String

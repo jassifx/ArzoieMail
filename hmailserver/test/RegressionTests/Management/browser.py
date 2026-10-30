@@ -48,6 +48,21 @@ server_settings['logging'] = {'section': 'logging',
     'values': {key: key in ['enabled', 'application', 'debug'] for key in ['enabled', 'application', 'smtp', 'pop3', 'imap', 'tcpIp', 'debug', 'keepFilesOpen', 'awStats']},
     'schema': [{'name': key, 'type': 'boolean', 'minimum': 0, 'maximum': 1, 'help': 'Private native logging configuration.', 'restart': False}
                for key in ['enabled', 'application', 'smtp', 'pop3', 'imap', 'tcpIp', 'debug', 'keepFilesOpen', 'awStats']]}
+server_settings['smtp'] = {'section': 'smtp', 'values': {'deliverySecurity': 2, 'smartHost': '', 'smartHostAuthentication': False},
+    'schema': [{'name': 'deliverySecurity', 'type': 'integer', 'minimum': 0, 'maximum': 3, 'help': 'Direct delivery security.', 'restart': False,
+                'options': [{'value': 0, 'label': 'None'}, {'value': 2, 'label': 'STARTTLS when offered'}, {'value': 3, 'label': 'STARTTLS required'}]},
+               {'name': 'smartHost', 'type': 'string', 'minimum': 0, 'maximum': 253, 'help': 'Upstream relay.', 'restart': False},
+               {'name': 'smartHostAuthentication', 'type': 'boolean', 'minimum': 0, 'maximum': 1, 'help': 'Relay authentication.', 'restart': False}],
+    'credentials': {'smartHostConfigured': False}}
+server_settings['imap'] = {'section': 'imap', 'values': {'masterUser': '', 'hierarchyDelimiter': '.'},
+    'schema': [{'name': 'masterUser', 'type': 'string', 'minimum': 0, 'maximum': 320, 'help': 'Master user.', 'restart': False},
+               {'name': 'hierarchyDelimiter', 'type': 'string', 'minimum': 0, 'maximum': 1, 'help': 'Separator.', 'restart': False, 'direct': True,
+                'options': [{'value': '.', 'label': 'Period (.)'}, {'value': '/', 'label': 'Slash (/)'}, {'value': '\\', 'label': 'Backslash (\\)'}]}]}
+server_state = {'state': 3}
+server_messages = [{'id': '1', 'name': 'VIRUS_FOUND', 'text': 'Virus found'}, {'id': '2', 'name': 'SEND_FAILED_NOTIFICATION', 'text': '<b>inert</b> text'}]
+sendout_requests = []
+diagnostics_state = {'running': False, 'run': 0, 'completed': '', 'results': []}
+log_text = 'first line\n<script>window.logInjected = true</script>\nlast line\n'
 policy_items = {'surbl': [], 'blockedattachments': [], 'incomingrelays': [], 'securityranges': []}
 policy_defaults = {
     'surbl': {'zone': '', 'active': False, 'score': 0, 'rejectMessage': ''},
@@ -83,7 +98,47 @@ def api(route):
         user = None
         data = {'changed': True, 'user': None, 'csrf': 'browser-fixture-token'}
     elif path == '/status':
-        data = {"version": "6.0.0", "state": 3, "domains": 2}
+        data = {"version": "6.0.0", "architecture": "x64", "state": server_state['state'], "domains": 2, "startTime": "2026-10-30 08:00:00",
+                "processedMessages": 41, "spamMessagesDetected": 3, "virusesRemoved": 0, "sessions": {"smtp": 2, "pop3": 0, "imap": 5},
+                "cacheHitRates": {"domain": 90, "account": 80, "alias": 70, "list": 0}}
+    elif path in ('/server/start', '/server/stop'):
+        expected = 1 if path.endswith('start') else 3
+        if body != {'expectedState': expected} or server_state['state'] != expected:
+            route.fulfill(status=409, json={'error': {'message': 'Server state changed.'}})
+            return
+        server_state['state'] = 3 if expected == 1 else 1
+        data = {'state': server_state['state']}
+    elif path == '/settings/smtp/smart-host-credential':
+        server_settings['smtp']['credentials']['smartHostConfigured'] = bool(body['password'])
+        data = {'configured': bool(body['password'])}
+    elif path == '/settings/performance/message-index/clear':
+        data = {'cleared': True}
+    elif path == '/servermessages':
+        data = {'items': server_messages, 'maximum': 8000}
+    elif path.startswith('/servermessages/'):
+        item = next(value for value in server_messages if value['id'] == path.rsplit('/', 1)[1])
+        if body.get('expected') != item:
+            route.fulfill(status=409, json={'error': {'message': 'Server message changed. Reload before saving.'}})
+            return
+        item['text'] = body['text']
+        data = item
+    elif path == '/sendout/preview':
+        data = {'recipients': 2 if body['recipients'] == '*@example.com' else 0}
+    elif path == '/sendout':
+        sendout_requests.append(body)
+        data = {'queued': True, 'recipients': body['expectedRecipients']}
+    elif path == '/diagnostics/run':
+        diagnostics_state.update({'running': False, 'run': diagnostics_state['run'] + 1, 'completed': '2026-10-30 09:00:00',
+            'results': [{'name': 'Data directory', 'description': 'Checks the data directory.', 'success': True, 'details': ''},
+                        {'name': 'Outbound port', 'description': 'Connects to port 25.', 'success': False, 'details': '<img src=x onerror=alert(1)>'}]})
+        data = diagnostics_state
+    elif path == '/diagnostics/results':
+        data = diagnostics_state
+    elif path == '/logs':
+        data = {'items': [{'name': 'hmailserver_2026-10-30.log', 'size': 40000, 'modified': '2026-10-30T09:00:00Z'}], 'pageBytes': 16384}
+    elif path.startswith('/logs/'):
+        before = int(query.get('before', [40000])[0])
+        data = {'name': path.rsplit('/', 1)[1], 'size': 40000, 'start': max(0, before - 16384), 'end': before, 'text': log_text}
     elif path.startswith('/settings/'):
         data = server_settings[path.rsplit('/', 1)[1]]
         if request.method == 'PATCH':
@@ -497,6 +552,98 @@ with sync_playwright() as p:
     assert logs_saved.value.request.post_data_json == {'fields': {'smtp': True, 'pop3': True}, 'expected': {'smtp': False, 'pop3': False}}
     page.get_by_text('Server settings saved.', exact=True).wait_for()
     assert server_settings['logging']['values']['debug'] is True
+    page.get_by_label('Settings section', exact=True).select_option('smtp')
+    security = page.get_by_label('delivery Security', exact=True)
+    security.wait_for()
+    assert security.input_value() == '2' and security.locator('option').count() == 3, 'Native options render as a select.'
+    page.get_by_text('No credential is stored.', exact=True).wait_for()
+    page.get_by_label('New credential', exact=True).fill('relay secret')
+    with page.expect_response(lambda response: response.url.endswith('/settings/smtp/smart-host-credential')) as stored:
+        page.get_by_role('button', name='Store credential', exact=True).click()
+    assert stored.value.request.method == 'PUT' and stored.value.request.post_data_json == {'password': 'relay secret'}
+    page.get_by_text('Smart host credential stored.', exact=True).wait_for()
+    page.get_by_text('A credential is stored. It is never displayed.', exact=True).wait_for()
+    assert page.get_by_label('New credential', exact=True).input_value() == '' and 'relay secret' not in page.content()
+    page.get_by_label('delivery Security', exact=True).select_option('3')
+    page.once('dialog', lambda dialog: dialog.accept())
+    with page.expect_response(lambda response: response.url.endswith('/settings/smtp') and response.request.method == 'PATCH') as smtp_saved:
+        page.get_by_role('button', name='Save server settings', exact=True).click()
+    assert smtp_saved.value.request.post_data_json == {'fields': {'deliverySecurity': 3}, 'expected': {'deliverySecurity': 2}}
+    page.get_by_text('Server settings saved.', exact=True).wait_for()
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Clear credential', exact=True).click()
+    page.get_by_text('Smart host credential cleared.', exact=True).wait_for()
+    assert server_settings['smtp']['credentials']['smartHostConfigured'] is False
+    page.get_by_label('Settings section', exact=True).select_option('imap')
+    page.get_by_label('hierarchy Delimiter', exact=True).select_option('/')
+    page.get_by_label('master User', exact=True).fill('master')
+    before = len(requests)
+    page.get_by_role('button', name='Save server settings', exact=True).click()
+    page.get_by_text('Save hierarchy Delimiter on its own, then the other changes.', exact=True).wait_for()
+    assert len(requests) == before, 'A direct setting is never sent together with other fields.'
+    page.get_by_label('master User', exact=True).fill('')
+    page.once('dialog', lambda dialog: dialog.accept())
+    with page.expect_response(lambda response: response.url.endswith('/settings/imap') and response.request.method == 'PATCH') as imap_saved:
+        page.get_by_role('button', name='Save server settings', exact=True).click()
+    assert imap_saved.value.request.post_data_json == {'fields': {'hierarchyDelimiter': '/'}, 'expected': {'hierarchyDelimiter': '.'}}
+    page.get_by_text('Server settings saved.', exact=True).wait_for()
+    page.get_by_role('link', name='Server status', exact=True).click()
+    page.get_by_text('SMTP SESSIONS', exact=True).wait_for()
+    before = len(requests)
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Stop mail services', exact=True).click()
+    assert len(requests) == before, 'Dismissing the stop confirmation sends nothing.'
+    page.once('dialog', lambda dialog: dialog.accept())
+    with page.expect_response(lambda response: response.url.endswith('/server/stop')) as stopped:
+        page.get_by_role('button', name='Stop mail services', exact=True).click()
+    assert stopped.value.request.post_data_json == {'expectedState': 3}
+    page.get_by_text('Mail services stopped.', exact=True).wait_for()
+    with page.expect_response(lambda response: response.url.endswith('/server/start')) as started:
+        page.get_by_role('button', name='Start mail services', exact=True).click()
+    assert started.value.request.post_data_json == {'expectedState': 1}
+    page.get_by_text('Mail services started.', exact=True).wait_for()
+    page.get_by_role('link', name='Server messages', exact=True).click()
+    page.get_by_text('VIRUS_FOUND', exact=True).wait_for()
+    assert page.get_by_label('Text').nth(1).input_value() == '<b>inert</b> text' and page.locator('#content b').count() == 0
+    page.get_by_label('Text').first.fill('Virus removed by policy')
+    with page.expect_response(lambda response: '/servermessages/1' in response.url) as message_saved:
+        page.get_by_role('button', name='Save message', exact=True).first.click()
+    assert message_saved.value.request.post_data_json == {'expected': {'id': '1', 'name': 'VIRUS_FOUND', 'text': 'Virus found'}, 'text': 'Virus removed by policy'}
+    page.get_by_text('Server message saved.', exact=True).wait_for()
+    page.get_by_role('link', name='Administrator sendout', exact=True).click()
+    send = page.get_by_role('button', name='Send message', exact=True)
+    send.wait_for()
+    assert send.is_disabled(), 'Sending needs a recipient preview first.'
+    page.get_by_label('recipients', exact=True).fill('*@example.com')
+    page.get_by_role('button', name='Preview recipients', exact=True).click()
+    page.get_by_text('2 account(s) match.', exact=True).wait_for()
+    page.get_by_label('from Address', exact=True).fill('admin@example.com')
+    page.get_by_label('subject', exact=True).fill('Maintenance')
+    page.get_by_label('body', exact=True).fill('Tonight at 22:00.')
+    page.once('dialog', lambda dialog: dialog.accept())
+    send.click()
+    page.get_by_text('Message queued to 2 account(s).', exact=True).wait_for()
+    assert sendout_requests[-1] == {'recipients': '*@example.com', 'fromAddress': 'admin@example.com', 'fromName': 'Server administrator',
+        'subject': 'Maintenance', 'body': 'Tonight at 22:00.', 'expectedRecipients': 2}
+    page.get_by_label('recipients', exact=True).fill('*@other.example')
+    assert send.is_disabled(), 'Changing the pattern requires a new preview.'
+    page.get_by_role('link', name='Logs', exact=True).click()
+    page.get_by_role('button', name='View', exact=True).click()
+    page.get_by_text('Bytes 23616–40000 of 40000.', exact=True).wait_for()
+    assert '<script>window.logInjected' in page.locator('pre.log-text').inner_text()
+    assert page.evaluate('window.logInjected === undefined'), 'Log text renders inertly.'
+    with page.expect_response(lambda response: 'before=23616' in response.url) as older:
+        page.get_by_role('button', name='Older', exact=True).click()
+    assert older.value.status == 200
+    page.set_viewport_size({'width': 390, 'height': 844})
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Logs overflow on mobile.'
+    page.screenshot(path=str(output / 'logs-mobile.png'), full_page=True)
+    page.set_viewport_size({'width': 1440, 'height': 1000})
+    page.get_by_role('link', name='Diagnostics').click()
+    page.get_by_text('No diagnostics have run since the service started.', exact=True).wait_for()
+    page.get_by_role('button', name='Run diagnostics', exact=True).click()
+    page.get_by_text('Outbound port', exact=True).wait_for()
+    assert page.locator('#content img').count() == 0, 'Diagnostic details render inertly.'
     page.get_by_role('link', name='Filtering and relay policies', exact=True).click()
     for resource in ['surbl', 'blockedattachments', 'incomingrelays', 'securityranges']:
         page.get_by_label('Policy collection', exact=True).select_option(resource)
@@ -714,7 +861,7 @@ with sync_playwright() as p:
     mailboxes.append({"id": 12, "domainId": 5, "address": "server@example.com", "active": True, "maxSizeMB": 10, "level": 2})
     page.reload()
     page.get_by_role('button', name='Mailboxes', exact=True).wait_for()
-    for title in ['Delivery queue', 'Routing', 'Global rules', 'Server settings', 'Filtering and relay policies']:
+    for title in ['Delivery queue', 'Routing', 'Global rules', 'Server settings', 'Filtering and relay policies', 'Server status', 'Server messages', 'Administrator sendout', 'Logs']:
         assert not page.get_by_role('link', name=title).is_visible(), 'Server operations must be hidden from domain administrators.'
     assert page.get_by_role('button', name='New domain', exact=True).count() == 0
     assert page.get_by_role('button', name='Delete domain', exact=True).count() == 0

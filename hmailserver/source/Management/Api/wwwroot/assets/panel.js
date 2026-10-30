@@ -7,7 +7,7 @@
     domains: ['Domains & DNS', 'Manage domains, mailboxes, storage limits and authentication records.'],
     antispam: ['Spam protection', 'Fine-tune filtering, authentication checks, and your SpamAssassin connection.'],
     dnsbl: ['DNS blocklists', 'Your providers. Your policy. Manage multiple lists without vendor restrictions.'],
-    diagnostics: ['Diagnostics', 'Check the administration runtime and deployment configuration.'],
+    diagnostics: ['Diagnostics', 'Check the administration runtime, deployment and server configuration.'],
     queue: ['Delivery queue', 'Inspect pending mail and request a retry or removal.'],
     routes: ['Routing', 'Manage next-hop delivery and allowed recipients.'],
     rules: ['Global rules', 'Build disabled drafts, then validate and enable processing rules.'],
@@ -15,6 +15,10 @@
     policies: ['Filtering & relays', 'Manage URI blocklists, attachment rules and explicitly trusted incoming relays.'],
     self: ['My mailbox', 'Manage your own profile, signature, forwarding, replies, rules and password.'],
     transport: ['Mail transport', 'Inspect configured mail listeners and certificate registrations.'],
+    server: ['Server status', 'Start or stop mail services and watch sessions and counters.'],
+    messages: ['Server messages', 'Edit the texts used in server-generated notifications and replies.'],
+    sendout: ['Administrator sendout', 'Send one message to all or matching accounts.'],
+    logs: ['Logs', 'Read the server log files.'],
   };
   function el(tag, text, className) {
     const node = document.createElement(tag);
@@ -115,6 +119,53 @@
     }
     if (help) wrap.append(el('p', help, 'help mt-2 mb-0'));
     return { wrap, input };
+  }
+  // A select for native schema options. An unexpected stored value stays selectable so that
+  // saving other fields never silently replaces it.
+  function choiceField(rule, value, help) {
+    const wrap = el('div'); const label = el('label', rule.name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label');
+    const input = el('select', null, 'form-select'); input.name = rule.name; input.id = `field-${rule.name}-${++fieldSequence}`; label.htmlFor = input.id;
+    const options = rule.options.some(option => option.value === value) ? rule.options : [...rule.options, { value, label: `Current value (${value})` }];
+    for (const option of options) { const node = el('option', option.label); node.value = String(option.value); input.append(node); }
+    input.value = String(value); wrap.append(label, input);
+    if (help) wrap.append(el('p', help, 'help mt-2 mb-0'));
+    return { wrap, input };
+  }
+  function administratorPassword() {
+    const c = card('Built-in Administrator password'); c.outer.classList.add('section-gap');
+    c.body.append(el('p', 'Changes the password of the built-in Administrator login, which is stored in hMailServer.ini rather than a mailbox. Administrator sessions must sign in again afterwards.', 'help'));
+    const grid = el('div', null, 'form-grid'); const inputs = {};
+    for (const [name, title, complete] of [['current', 'Current Administrator password', 'current-password'], ['replacement', 'New Administrator password', 'new-password'], ['confirmation', 'Confirm new password', 'new-password']]) {
+      const wrap = el('div'); const input = el('input', null, 'form-control'); input.type = 'password'; input.autocomplete = complete; input.maxLength = 1024;
+      input.id = `field-administrator-${name}-${++fieldSequence}`; const label = el('label', title, 'form-label'); label.htmlFor = input.id;
+      wrap.append(label, input); grid.append(wrap); inputs[name] = input;
+    }
+    const clear = () => Object.values(inputs).forEach(input => { input.value = ''; });
+    c.body.append(grid, button('Change Administrator password', async () => {
+      if (!inputs.replacement.value || inputs.replacement.value !== inputs.confirmation.value) { notify('Enter the new password twice.', true); return; }
+      try { await request('/settings/administrator-password', 'POST', { currentPassword: inputs.current.value, newPassword: inputs.replacement.value }); }
+      finally { clear(); }
+      notify('Administrator password changed.');
+    }, 'btn btn-primary btn-sm mt-3'));
+    return c.outer;
+  }
+  function smartHostCredential(credentials, reload) {
+    const c = card('Smart host credential'); c.outer.classList.add('section-gap');
+    c.body.append(el('p', credentials.smartHostConfigured ? 'A credential is stored. It is never displayed.' : 'No credential is stored.', 'help'));
+    const field = el('input', null, 'form-control'); field.type = 'password'; field.autocomplete = 'new-password'; field.maxLength = 1024;
+    field.id = `field-smartHostCredential-${++fieldSequence}`; const label = el('label', 'New credential', 'form-label'); label.htmlFor = field.id;
+    const actions = el('div', null, 'form-actions');
+    actions.append(button('Store credential', async () => {
+      if (!field.value) { notify('Enter the credential, or use Clear credential.', true); return; }
+      try { await request('/settings/smtp/smart-host-credential', 'PUT', { password: field.value }); } finally { field.value = ''; }
+      await reload(); notify('Smart host credential stored.');
+    }, 'btn btn-primary btn-sm'));
+    if (credentials.smartHostConfigured) actions.append(button('Clear credential', async () => {
+      if (!confirm('Clear the stored smart host credential? Authenticated relaying stops working until a new one is stored.')) return;
+      await request('/settings/smtp/smart-host-credential', 'PUT', { password: '' }); await reload(); notify('Smart host credential cleared.');
+    }, 'btn btn-outline-danger btn-sm'));
+    c.body.append(label, field, actions);
+    return c.outer;
   }
   function editForm(values, onSave, help = {}) {
     const form = el('form'); const grid = el('div', null, 'form-grid'); const fields = {};
@@ -725,15 +776,27 @@
       const c = card(sections.find(item => item[0] === section)[1]); const form = el('form');
       const grid = el('div', null, 'form-grid'); const controls = new Map();
       for (const rule of result.schema) {
-        const field = inputField(rule.name, result.values[rule.name], rule.help + (rule.restart ? ' Requires service restart.' : ''));
+        const help = rule.help + (rule.restart ? ' Requires service restart.' : '') + (rule.direct ? ' Save this setting on its own.' : '');
+        const field = rule.options ? choiceField(rule, result.values[rule.name], help) : inputField(rule.name, result.values[rule.name], help);
         // These schemas are returned by the native allowlist, not executable UI templates.
-        if (rule.type === 'integer') { field.input.type = 'number'; field.input.required = true; field.input.min = String(rule.minimum); field.input.max = String(rule.maximum); field.input.step = '1'; }
-        if (rule.type === 'string') field.input.maxLength = rule.maximum;
+        if (!rule.options && rule.type === 'integer') { field.input.type = 'number'; field.input.required = true; field.input.min = String(rule.minimum); field.input.max = String(rule.maximum); field.input.step = '1'; }
+        if (!rule.options && rule.type === 'string') field.input.maxLength = rule.maximum;
         controls.set(rule.name, { input: field.input, rule }); grid.append(field.wrap);
       }
       const save = el('button', 'Save server settings', 'btn btn-primary mt-3'); save.type = 'submit';
       form.append(grid, save); c.body.append(form, el('p', 'Changes are checked against the values you loaded. Reload after a conflict. Restart is never performed automatically.', 'help mt-3'));
       editor.replaceChildren(c.outer);
+      if (section === 'smtp') editor.append(smartHostCredential(result.credentials, reload));
+      if (section === 'general') editor.append(administratorPassword());
+      if (section === 'performance') {
+        const index = card('Message index'); index.outer.classList.add('section-gap');
+        index.body.append(el('p', 'Clearing removes indexed metadata. While indexing is enabled it is rebuilt gradually, and IMAP sorting is slower until then.', 'help'),
+          button('Clear message index', async () => {
+            if (!confirm('Clear the message index? It is rebuilt gradually while indexing is enabled.')) return;
+            await request('/settings/performance/message-index/clear', 'POST'); notify('Message index cleared.');
+          }, 'btn btn-outline-danger btn-sm'));
+        editor.append(index.outer);
+      }
       form.addEventListener('submit', async event => {
         event.preventDefault(); if (!form.reportValidity()) return;
         const fields = {}, expected = {}; let restart = false;
@@ -742,6 +805,8 @@
           if (value !== result.values[name]) { fields[name] = value; expected[name] = result.values[name]; restart ||= rule.restart; }
         }
         if (!Object.keys(fields).length) { notify('No settings changed.'); return; }
+        const direct = result.schema.find(rule => rule.direct && rule.name in fields);
+        if (direct && Object.keys(fields).length > 1) { notify(`Save ${direct.name.replace(/([a-z])([A-Z])/g, '$1 $2')} on its own, then the other changes.`, true); return; }
         if (!confirm(`Apply ${Object.keys(fields).length} server setting change(s)? Mail processing policy may change.${restart ? ' Some changes require a later service restart.' : ''}`)) return;
         save.disabled = true;
         try { await request(`/settings/${section}`, 'PATCH', { fields, expected }); await reload(); notify(restart ? 'Settings saved. Restart the service to apply the marked changes.' : 'Server settings saved.'); }
@@ -834,6 +899,135 @@
     const c = card('Runtime checks');
     result.checks.forEach(check => { const row = el('div', null, 'domain-row'); row.append(el('div', check.message), pill(check.safe ? 'OK' : 'Review', check.safe ? '' : 'warning')); c.body.append(row); });
     root.append(c.outer, el('p', 'Run behind HTTPS with a dedicated identity, private state storage and no direct access to application source. See the deployment guide.', 'help mt-3'));
+    const native = card('Server diagnostics'); native.outer.classList.add('section-gap');
+    native.body.append(el('p', 'Checks the data and backup directories, IP ranges, error logs, IPv6 and, when given, the MX records and connectivity of a local domain and outbound port 25 to a test domain.', 'help'));
+    const grid = el('div', null, 'form-grid'); const inputs = {};
+    for (const [name, title] of [['localDomain', 'Local domain (optional)'], ['testDomain', 'External test domain (optional)']]) {
+      const wrap = el('div'); const input = el('input', null, 'form-control'); input.id = `field-${name}`; input.maxLength = 253;
+      const label = el('label', title, 'form-label'); label.htmlFor = input.id; wrap.append(label, input); grid.append(wrap); inputs[name] = input;
+    }
+    const output = el('div', null, 'mt-3'); const run = generation;
+    async function poll() {
+      for (let attempt = 0; attempt < 60 && run === generation; ++attempt) {
+        const result = await request('/diagnostics/results'); diagnosticResults(output, result);
+        if (!result.running) return;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    native.body.append(grid, button('Run diagnostics', async () => {
+      await request('/diagnostics/run', 'POST', { localDomain: inputs.localDomain.value.trim(), testDomain: inputs.testDomain.value.trim() }); await poll();
+    }, 'btn btn-primary btn-sm mt-3'), output);
+    root.append(native.outer);
+    diagnosticResults(output, await request('/diagnostics/results'));
+  }
+  const serverStates = ['Unknown', 'Stopped', 'Starting', 'Running', 'Stopping'];
+  async function server(root) {
+    const status = await request('/status');
+    const metrics = el('div', null, 'grid');
+    [['SERVER STATUS', serverStates[status.state] || `State ${status.state}`], ['STARTED', status.startTime || '—'], ['VERSION', `${status.version} ${status.architecture}`],
+      ['SMTP SESSIONS', status.sessions.smtp], ['IMAP SESSIONS', status.sessions.imap], ['POP3 SESSIONS', status.sessions.pop3],
+      ['MESSAGES PROCESSED', status.processedMessages], ['SPAM DETECTED', status.spamMessagesDetected], ['VIRUSES REMOVED', status.virusesRemoved]].forEach(([label, value]) => {
+      const c = card(); c.body.append(el('div', label, 'metric-label'), el('div', value, 'metric')); metrics.append(c.outer);
+    });
+    root.append(metrics);
+    const control = card('Mail services'); control.outer.classList.add('section-gap');
+    control.body.append(el('p', 'Stopping disconnects every SMTP, IMAP and POP3 session and pauses delivery and external fetching. This console stays available, so you can start the services again here. Counters cover the time since the service process started.', 'help'));
+    const actions = el('div', null, 'form-actions');
+    if (status.state === 3) actions.append(button('Stop mail services', async () => {
+      if (!confirm('Stop all mail services? Connected users are disconnected and no mail is received or delivered until you start them again.')) return;
+      await request('/server/stop', 'POST', { expectedState: 3 }); await render(); notify('Mail services stopped.');
+    }, 'btn btn-outline-danger'));
+    if (status.state === 1) actions.append(button('Start mail services', async () => {
+      await request('/server/start', 'POST', { expectedState: 1 }); await render(); notify('Mail services started.');
+    }, 'btn btn-primary'));
+    actions.append(button('Refresh status', () => render()));
+    control.body.append(actions);
+    const cache = card('Cache hit rates'); cache.outer.classList.add('section-gap');
+    for (const [name, rate] of Object.entries(status.cacheHitRates)) { const row = el('div', null, 'domain-row'); row.append(el('div', name), el('div', `${rate}%`)); cache.body.append(row); }
+    root.append(control.outer, cache.outer);
+  }
+  async function messages(root) {
+    const result = await request('/servermessages');
+    root.append(el('p', 'These texts are used in notifications and replies the server generates. Names are fixed; only the text can change. Some messages are sent to external senders, so avoid internal details.', 'help'));
+    for (const item of result.items) {
+      const c = card(item.name); c.outer.classList.add('section-gap');
+      const text = el('textarea', null, 'form-control'); text.value = item.text; text.rows = 4; text.maxLength = result.maximum;
+      text.id = `field-message-${item.id}`; const label = el('label', 'Text', 'form-label'); label.htmlFor = text.id;
+      c.body.append(label, text, button('Save message', async () => {
+        if (text.value === item.text) { notify('No changes to save.'); return; }
+        Object.assign(item, await request(`/servermessages/${item.id}`, 'PATCH', { expected: { id: item.id, name: item.name, text: item.text }, text: text.value }));
+        text.value = item.text; notify('Server message saved.');
+      }, 'btn btn-primary btn-sm mt-2'));
+      root.append(c.outer);
+    }
+  }
+  async function sendout(root) {
+    const c = card('Send a message to accounts');
+    c.body.append(el('p', 'One message is queued to every active account in an active domain whose address matches the pattern (* matches any characters). Preview the audience first; sending requires that exact count.', 'help'));
+    const form = el('form'); const grid = el('div', null, 'form-grid'); const fields = {};
+    for (const [name, value, kind, maximum] of [['recipients', '*', 'text', 320], ['fromAddress', '', 'email', 320], ['fromName', 'Server administrator', 'text', 255], ['subject', '', 'text', 998], ['body', '', 'textarea', 12288]]) {
+      const wrap = el('div'); const input = el(kind === 'textarea' ? 'textarea' : 'input', null, 'form-control');
+      if (kind !== 'textarea') input.type = kind; else input.rows = 8;
+      input.id = `field-sendout-${name}`; input.name = name; input.value = value; input.maxLength = maximum; input.required = name !== 'fromName';
+      const label = el('label', name.replace(/([a-z])([A-Z])/g, '$1 $2'), 'form-label'); label.htmlFor = input.id; wrap.append(label, input);
+      fields[name] = input; grid.append(wrap);
+    }
+    let audience = null;
+    const summary = el('p', 'Preview the recipients before sending.', 'help mt-3');
+    const send = el('button', 'Send message', 'btn btn-primary'); send.type = 'submit'; send.disabled = true;
+    fields.recipients.addEventListener('input', () => { audience = null; send.disabled = true; summary.textContent = 'Preview the recipients before sending.'; });
+    const preview = button('Preview recipients', async () => {
+      const result = await request('/sendout/preview', 'POST', { recipients: fields.recipients.value });
+      audience = { pattern: fields.recipients.value, count: result.recipients }; send.disabled = result.recipients < 1;
+      summary.textContent = result.recipients ? `${result.recipients} account(s) match.` : 'No active accounts match this pattern.';
+    });
+    const actions = el('div', null, 'form-actions'); actions.append(preview, send);
+    form.append(grid, summary, actions); c.body.append(form); root.append(c.outer);
+    form.addEventListener('submit', async event => {
+      event.preventDefault(); if (!form.reportValidity() || !audience || audience.pattern !== fields.recipients.value) return;
+      if (!confirm(`Send this message to ${audience.count} account(s)? It cannot be recalled once delivered.`)) return;
+      send.disabled = true;
+      try {
+        const body = {}; for (const [name, input] of Object.entries(fields)) body[name] = input.value;
+        const result = await request('/sendout', 'POST', { ...body, expectedRecipients: audience.count });
+        notify(`Message queued to ${result.recipients} account(s).`); fields.subject.value = ''; fields.body.value = '';
+      } catch (error) { notify(error.message, true); }
+      finally { send.disabled = !audience; }
+    });
+  }
+  async function logs(root) {
+    const result = await request('/logs');
+    const viewer = el('div', null, 'section-gap');
+    const c = card('Log files');
+    c.body.append(el('p', 'Logs contain addresses, IP addresses and message metadata; credentials are masked by the server. Pages show up to 16 KiB at a time, newest text last.', 'help'));
+    async function show(name, before) {
+      const page = await request(`/logs/${encodeURIComponent(name)}${before === undefined ? '' : `?before=${before}`}`);
+      const view = card(name); const text = el('pre', page.text || '(empty)', 'log-text'); text.tabIndex = 0;
+      const actions = el('div', null, 'form-actions');
+      if (page.start > 0) actions.append(button('Older', () => show(name, page.start)));
+      actions.append(button('Newest', () => show(name)));
+      view.body.append(el('p', `Bytes ${page.start}–${page.end} of ${page.size}.`, 'help'), text, actions);
+      viewer.replaceChildren(view.outer);
+    }
+    for (const file of result.items) {
+      const row = el('div', null, 'domain-row');
+      row.append(el('div', file.name), el('div', `${Math.ceil(file.size / 1024)} KiB · ${file.modified}`, 'help'), button('View', () => show(file.name)));
+      c.body.append(row);
+    }
+    if (!result.items.length) c.body.append(el('p', 'No log files found. Enable logging under Server settings → Logging.', 'help'));
+    root.append(c.outer, viewer);
+  }
+  function diagnosticResults(container, result) {
+    container.replaceChildren();
+    if (result.running) { container.append(el('p', 'Diagnostics are running…', 'help')); return; }
+    if (!result.results.length) { container.append(el('p', 'No diagnostics have run since the service started.', 'help')); return; }
+    container.append(el('p', `Completed ${result.completed}.`, 'help'));
+    for (const item of result.results) {
+      const row = el('div', null, 'domain-row'); const text = el('div');
+      text.append(el('strong', item.name), el('div', item.description, 'help'));
+      row.append(text, pill(item.success ? 'OK' : 'Review', item.success ? '' : 'warning')); container.append(row);
+      if (item.details) container.append(el('pre', item.details, 'log-text'));
+    }
   }
   async function render() {
     if (!user) return;
@@ -847,7 +1041,7 @@
     $('content').setAttribute('aria-busy', 'true'); $('content').replaceChildren(el('p', 'Loading…', 'help'));
     const container = el('div');
     try {
-      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules, settings, policies, self, transport })[page](container);
+      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules, settings, policies, self, transport, server, messages, sendout, logs })[page](container);
       if (run === generation) $('content').replaceChildren(container);
     } catch (error) { if (run === generation) { $('content').replaceChildren(); notify(error.message, true); } }
     finally { if (run === generation) $('content').setAttribute('aria-busy', 'false'); }

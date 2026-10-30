@@ -10,12 +10,19 @@ struct ServerSetting
    const char *help;
    bool restart;
    long mask = 0;
+   // "value:label|value:label"; when present, only these values are accepted.
+   const char *choices = nullptr;
+   // Applied alone through its native setter, which has side effects beyond the
+   // stored value (rewriting rule folders, starting or stopping the indexer).
+   bool direct = false;
 };
 #define ADMIN_BOOL(section, name, property, help, restart) {section, name, property, "boolean", 0, 1, help, restart}
 #define ADMIN_INT(section, name, property, low, high, help, restart) {section, name, property, "integer", low, high, help, restart}
 #define ADMIN_TEXT(section, name, property, maximum, help, restart) {section, name, property, "string", 0, maximum, help, restart}
 #define ADMIN_LOG_FLAG(name, mask, help) {"logging", name, PROPERTY_LOGGING, "boolean", 0, 1, help, false, mask}
 #define ADMIN_TLS_FLAG(name, property, mask, help) {"tls", name, property, "boolean", 0, 1, help, true, mask}
+#define ADMIN_CHOICE(section, name, property, low, high, choices, help) {section, name, property, "integer", low, high, help, false, 0, choices}
+#define ADMIN_DIRECT(section, name, property, kind, maximum, choices, help) {section, name, property, kind, 0, maximum, help, false, 0, choices, true}
 const ServerSetting ServerSettings[] = {
    ADMIN_BOOL("protocols", "smtpEnabled", PROPERTY_PROTOCOLSMTP, "Enable SMTP listeners after service restart.", true),
    ADMIN_BOOL("protocols", "imapEnabled", PROPERTY_PROTOCOLIMAP, "Enable IMAP listeners after service restart.", true),
@@ -33,6 +40,16 @@ const ServerSetting ServerSettings[] = {
    ADMIN_BOOL("smtp", "addDeliveredToHeader", PROPERTY_ADDDELIVEREDTOHEADER, "Add the local delivery address to delivered mail.", false),
    ADMIN_TEXT("smtp", "welcomeMessage", PROPERTY_WELCOMESMTP, 255, "Single-line SMTP greeting; no CR/LF.", false),
    ADMIN_TEXT("smtp", "deliveryBindAddress", PROPERTY_SMTPDELIVERYBINDTOIP, 64, "Local outgoing IP address; empty selects automatic binding.", false),
+   ADMIN_CHOICE("smtp", "deliverySecurity", PROPERTY_SMTPCONNECTIONSECURITY, 0, 3, "0:None|2:STARTTLS when offered|3:STARTTLS required",
+      "Transport security for direct delivery to recipient MX hosts. Requiring STARTTLS defers mail to servers that do not offer it."),
+   ADMIN_TEXT("smtp", "smartHost", PROPERTY_SMTPRELAYER, 253, "Optional upstream relay for all outgoing mail; empty delivers directly to recipient MX hosts. Routes still take precedence.", false),
+   ADMIN_INT("smtp", "smartHostPort", PROPERTY_SMTPRELAYER_PORT, 1, 65535, "Smart host TCP port.", false),
+   ADMIN_CHOICE("smtp", "smartHostSecurity", PROPERTY_SMTPRELAYERCONNECTIONSECURITY, 0, 3, "0:None|1:SSL/TLS|2:STARTTLS when offered|3:STARTTLS required",
+      "Transport security towards the smart host. Without TLS, credentials and mail cross the network unencrypted."),
+   ADMIN_BOOL("smtp", "smartHostAuthentication", PROPERTY_SMTPRELAYER_USEAUTH, "Authenticate to the smart host with the user name and the separately stored write-only credential.", false),
+   ADMIN_TEXT("smtp", "smartHostUsername", PROPERTY_SMTPRELAYER_USERNAME, 255, "Smart host user name.", false),
+   ADMIN_BOOL("smtp", "srsEnabled", PROPERTY_SRS_ENABLED, "Rewrite the envelope sender when forwarding to other servers, so forwarded mail passes the original domain's SPF policy.", false),
+   ADMIN_INT("smtp", "srsMaxAgeDays", PROPERTY_SRS_MAXAGEDAYS, SRS::MinMaxAgeDays, SRS::MaxMaxAgeDays, "Days a rewritten address stays valid for returned bounces.", false),
    ADMIN_INT("imap", "maxConnections", PROPERTY_MAXIMAPCONNECTIONS, 0, 1000000, "Simultaneous IMAP connections; zero means unlimited.", false),
    ADMIN_BOOL("imap", "quotaEnabled", PROPERTY_ENABLEIMAPQUOTA, "Advertise the implemented QUOTA extension.", false),
    ADMIN_BOOL("imap", "idleEnabled", PROPERTY_ENABLEIMAPIDLE, "Advertise the implemented IDLE extension.", false),
@@ -42,6 +59,9 @@ const ServerSetting ServerSettings[] = {
    ADMIN_BOOL("imap", "saslInitialResponseEnabled", PROPERTY_ENABLEIMAPSASLINTIALRESPONSE, "Accept SASL initial responses.", false),
    ADMIN_TEXT("imap", "welcomeMessage", PROPERTY_WELCOMEIMAP, 255, "Single-line IMAP greeting; no CR/LF.", false),
    ADMIN_TEXT("imap", "publicFolderName", PROPERTY_IMAPPUBLICFOLDERNAME, 255, "Public-folder namespace name; clients may need to resubscribe.", false),
+   ADMIN_TEXT("imap", "masterUser", PROPERTY_IMAPMASTERUSER, 320, "Optional account that may sign in to any mailbox with a SASL PLAIN authorization identity. This grants full access to every mailbox; leave empty unless required.", false),
+   ADMIN_DIRECT("imap", "hierarchyDelimiter", PROPERTY_IMAP_HIERARCHY_DELIMITER, "string", 1, ".:Period (.)|/:Slash (/)|\\:Backslash (\\)",
+      "Folder hierarchy separator. Saved alone; refused while a folder or rule action name contains the new character. Clients may need to resynchronize."),
    ADMIN_INT("pop3", "maxConnections", PROPERTY_MAXPOP3CONNECTIONS, 0, 1000000, "Simultaneous POP3 connections; zero means unlimited.", false),
    ADMIN_TEXT("pop3", "welcomeMessage", PROPERTY_WELCOMEPOP3, 255, "Single-line POP3 greeting; no CR/LF.", false),
    ADMIN_BOOL("autoban", "enabled", PROPERTY_AUTOBAN_ENABLED, "Create temporary bans after repeated authentication failures.", false),
@@ -64,6 +84,8 @@ const ServerSetting ServerSettings[] = {
    ADMIN_INT("performance", "accountCacheSeconds", PROPERTY_ACCOUNTCACHETTL, 0, 86400, "Account cache lifetime in seconds.", false),
    ADMIN_INT("performance", "aliasCacheSeconds", PROPERTY_ALIASCACHETTL, 0, 86400, "Alias cache lifetime in seconds.", false),
    ADMIN_INT("performance", "listCacheSeconds", PROPERTY_DISTRIBUTIONLISTCACHETTL, 0, 86400, "Distribution-list cache lifetime in seconds.", false),
+   ADMIN_DIRECT("performance", "messageIndexing", PROPERTY_MESSAGE_INDEXING, "boolean", 1, nullptr,
+      "Index message metadata to speed up IMAP SORT and searches. Saved alone; starts or stops the indexer immediately."),
    ADMIN_BOOL("general", "ipv6Preferred", PROPERTY_IPV6_PREFERRED, "Prefer IPv6 when resolving outgoing destinations.", false),
    ADMIN_BOOL("general", "createSpecialUseFolders", PROPERTY_CREATE_DEFAULT_SPECIAL_USE_FOLDERS, "Create default special-use folders for new mailboxes.", false),
    ADMIN_TEXT("general", "defaultDomain", PROPERTY_DEFAULTDOMAIN, 253, "Optional domain appended to unqualified login names.", false),
@@ -104,6 +126,22 @@ const ServerSetting ServerSettings[] = {
 #undef ADMIN_TEXT
 #undef ADMIN_LOG_FLAG
 #undef ADMIN_TLS_FLAG
+#undef ADMIN_CHOICE
+#undef ADMIN_DIRECT
+
+json::array SettingChoices(const ServerSetting &field)
+{
+   json::array options;
+   for (std::string_view rest = field.choices ? field.choices : ""; !rest.empty();)
+   {
+      const auto end = rest.find('|');
+      const auto item = rest.substr(0, end), value = item.substr(0, item.find(':')), label = item.substr(item.find(':') + 1);
+      options.push_back(json::object{{"value", std::string_view(field.kind) == "integer" ? json::value(std::stoll(std::string(value))) : json::value(value)},
+         {"label", label}});
+      rest = end == std::string_view::npos ? std::string_view() : rest.substr(end + 1);
+   }
+   return options;
+}
 
 json::value ReadServerSetting(const ServerSetting &field, PropertySet &properties, const std::map<String, long> &masks)
 {
@@ -113,9 +151,49 @@ json::value ReadServerSetting(const ServerSetting &field, PropertySet &propertie
    return properties.GetLong(field.property);
 }
 
-json::value ManageServerSettings(const std::string &operation, const json::object &arguments, const Account &actor)
+json::value ManageServerSettings(const std::string &operation, json::object &arguments, const Account &actor)
 {
    if (actor.GetAdminLevel() != Account::ServerAdmin) throw RequestError{403};
+   if (operation == "settings.smarthost.credential")
+   {
+      // Write-only: the stored credential is never returned. An empty value clears it.
+      SecretWipe wipe{arguments.if_contains("password")};
+      if (arguments.size() != 1) throw RequestError{422};
+      const auto password = Text(arguments, "password", 1024);
+      for (const unsigned char character : password) if (character < 32 || character == 127) throw RequestError{422};
+      auto smtp = Configuration::Instance()->GetSMTPConfiguration();
+      String value = Wide(arguments.at("password"));
+      smtp->SetSMTPRelayerPassword(value);
+      SecureZeroMemory(value.data(), value.size() * sizeof(wchar_t));
+      return json::object{{"configured", !smtp->GetSMTPRelayerPassword().IsEmpty()}};
+   }
+   if (operation == "settings.administrator.password")
+   {
+      // The built-in Administrator is not a mailbox; its hash lives in hMailServer.ini.
+      // Any server administrator may change it, but only by proving the current one.
+      SecretWipe current{arguments.if_contains("currentPassword")}, replacement{arguments.if_contains("newPassword")};
+      if (arguments.size() != 2) throw RequestError{422};
+      Text(arguments, "currentPassword", 1024);
+      const auto password = Text(arguments, "newPassword", 1024);
+      if (password.empty()) throw RequestError{422};
+      for (const unsigned char character : password) if (character < 32 || character == 127) throw RequestError{422};
+      String proof = Wide(arguments.at("currentPassword")), value = Wide(arguments.at("newPassword"));
+      const bool verified = ManagementAuthentication::Authenticate(_T("Administrator"), proof) != nullptr;
+      SecureZeroMemory(proof.data(), proof.size() * sizeof(wchar_t));
+      if (!verified) { SecureZeroMemory(value.data(), value.size() * sizeof(wchar_t)); throw RequestError{403}; }
+      const bool saved = IniFileSettings::Instance()->SetAdministratorPassword(value);
+      SecureZeroMemory(value.data(), value.size() * sizeof(wchar_t));
+      if (!saved) throw RequestError{503};
+      LOG_APPLICATION("The built-in Administrator password was changed through the management API.");
+      return json::object{{"changed", true}};
+   }
+   if (operation == "settings.messageindex.clear")
+   {
+      if (!arguments.empty()) throw RequestError{422};
+      PersistentMessageMetaData metadata;
+      metadata.Clear();
+      return json::object{{"cleared", true}};
+   }
    if (operation != "settings.read" && operation != "settings.update") throw RequestError{404};
    const auto section = Text(arguments, "section", 32);
    auto properties = Configuration::Instance()->GetSettings();
@@ -127,8 +205,11 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
    for (const auto &field : ServerSettings) if (section == field.section)
    {
       values[field.name] = ReadServerSetting(field, *properties, masks);
-      schema.push_back(json::object{{"name", field.name}, {"type", field.kind}, {"minimum", field.minimum},
-         {"maximum", field.maximum}, {"help", field.help}, {"restart", field.restart}});
+      json::object rule{{"name", field.name}, {"type", field.kind}, {"minimum", field.minimum},
+         {"maximum", field.maximum}, {"help", field.help}, {"restart", field.restart}};
+      if (field.choices) rule["options"] = SettingChoices(field);
+      if (field.direct) rule["direct"] = true;
+      schema.push_back(std::move(rule));
    }
    if (values.empty()) throw RequestError{404};
    if (operation == "settings.update")
@@ -147,6 +228,27 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
          const auto *before = expected->as_object().if_contains(entry.key());
          if (!before || before->kind() != values.at(entry.key()).kind()) throw RequestError{422};
          if (*before != values.at(entry.key())) throw RequestError{409};
+         if (rule->choices)
+         {
+            const auto options = SettingChoices(*rule);
+            if (std::none_of(options.begin(), options.end(), [&](const json::value &option) { return option.as_object().at("value") == entry.value(); }))
+               throw RequestError{422};
+         }
+         if (rule->direct)
+         {
+            if (patch->as_object().size() != 1 || entry.value().kind() != before->kind()) throw RequestError{422};
+            if (entry.key() == "hierarchyDelimiter")
+            {
+               // Refused while a folder or rule action already contains the character;
+               // otherwise rule folder references are rewritten and rule caches cleared.
+               if (!Configuration::Instance()->GetIMAPConfiguration()->SetHierarchyDelimiter(Wide(entry.value()))) throw RequestError{409};
+            }
+            else if (entry.key() == "messageIndexing") Configuration::Instance()->SetMessageIndexing(entry.value().as_bool());
+            else throw RequestError{422};
+            values[entry.key()] = ReadServerSetting(*rule, *properties, masks);
+            if (values.at(entry.key()) != entry.value()) throw RequestError{503};
+            return json::object{{"section", section}, {"values", std::move(values)}, {"schema", std::move(schema)}};
+         }
          PropertySet::CheckedChange change{rule->property, std::string_view(rule->kind) == "string", 0, 0, {}, {}};
          if (change.text)
          {
@@ -162,7 +264,13 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
                if (error) throw RequestError{422};
             }
             if (name == "defaultDomain" && !text.empty() && !StringParser::IsValidDomainName(change.value)) throw RequestError{422};
-            if ((name == "hostName" || name == "clamAvHost") && !text.empty())
+            if (name == "masterUser" && !text.empty())
+            {
+               // A bare local part takes the domain of the authenticating account.
+               const String user = change.value.Find(_T("@")) >= 0 ? change.value : change.value + _T("@example.com");
+               if (!StringParser::IsValidEmailAddress(user) || user.FindOneOf(_T(" \t,;\"")) != -1) throw RequestError{422};
+            }
+            if ((name == "hostName" || name == "clamAvHost" || name == "smartHost") && !text.empty())
             {
                boost::system::error_code error;
                boost::asio::ip::make_address(text, error);
@@ -260,5 +368,9 @@ json::value ManageServerSettings(const std::string &operation, const json::objec
       for (auto &entry : masks) entry.second = properties->GetLong(entry.first);
       for (const auto &field : ServerSettings) if (section == field.section) values[field.name] = ReadServerSetting(field, *properties, masks);
    }
-   return json::object{{"section", section}, {"values", std::move(values)}, {"schema", std::move(schema)}};
+   json::object result{{"section", section}, {"values", std::move(values)}, {"schema", std::move(schema)}};
+   // Write-only secrets report only whether one is stored.
+   if (section == "smtp")
+      result["credentials"] = json::object{{"smartHostConfigured", !Configuration::Instance()->GetSMTPConfiguration()->GetSMTPRelayerPassword().IsEmpty()}};
+   return result;
 }

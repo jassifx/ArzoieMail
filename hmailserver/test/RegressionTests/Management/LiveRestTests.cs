@@ -21,6 +21,14 @@ static class LiveRestTests
             check(actor.GetProperty("level").GetInt32() == 2, "Real HTTP login obtains native server-administrator identity.");
             var status = await admin.Send("/status", HttpMethod.Get);
             check(status.GetProperty("version").GetString()!.StartsWith("6.", StringComparison.Ordinal), "Real API reports the installed ArzoieMail 6 service.");
+            check(status.GetProperty("sessions").TryGetProperty("smtp", out _), "Real API reports session counts.");
+            check((await admin.Send("/servermessages", HttpMethod.Get)).GetProperty("items").GetArrayLength() > 0, "Real API lists server messages.");
+            await admin.Send("/logs", HttpMethod.Get);
+            foreach (string path in new[] { "/logs/hMailServer.ini", "/logs/hmailserver_2026-10-30.log.bak", "/logs/hmailserver_events.log?before=abc", "/logs/hmailserver_events.log?before=-1", "/logs/hmailserver_events.log?offset=1" })
+                await admin.Send(path, HttpMethod.Get, status: 422);
+            // A stale expected state keeps this harmless even if the token check were bypassed.
+            await admin.Send("/server/stop", HttpMethod.Post, new { expectedState = 1 }, status: 403, csrf: "wrong");
+            check((await admin.Send("/sendout/preview", HttpMethod.Post, new { recipients = "nobody-" + Guid.NewGuid().ToString("N") + "@*" })).GetProperty("recipients").GetInt32() == 0, "Real API previews a sendout audience.");
             using (var page = await admin.Client.GetAsync("/"))
             {
                 string html = await page.Content.ReadAsStringAsync();
@@ -81,7 +89,12 @@ static class LiveRestTests
             {
                 await manager.Login(Required("ARZOIEMAIL_TEST_DOMAIN_USERNAME"), password);
                 await manager.Send("/domains/" + domainId, HttpMethod.Get, status: 403);
-                foreach (string path in new[] { "/queue", "/routes", "/rules", "/status" }) await manager.Send(path, HttpMethod.Get, status: 403);
+                foreach (string path in new[] { "/queue", "/routes", "/rules", "/status", "/servermessages", "/logs", "/diagnostics/results", "/logs/hmailserver_events.log" })
+                    await manager.Send(path, HttpMethod.Get, status: 403);
+                await manager.Send("/server/stop", HttpMethod.Post, new { expectedState = 3 }, status: 403);
+                await manager.Send("/sendout/preview", HttpMethod.Post, new { recipients = "*" }, status: 403);
+                await manager.Send("/settings/smtp/smart-host-credential", HttpMethod.Put, new { password = "x" }, status: 403);
+                await manager.Send("/settings/administrator-password", HttpMethod.Post, new { currentPassword = password, newPassword = password }, status: 403);
                 await manager.Send($"/domains/{actor.GetProperty("domainId").GetInt64()}/accounts/{actor.GetProperty("accountId").GetInt64()}/profile", HttpMethod.Patch, new { firstName = "blocked" }, status: 403);
             }
             using (var user = new BrowserSession(admin.Client.BaseAddress!, check))
