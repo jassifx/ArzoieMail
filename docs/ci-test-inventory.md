@@ -182,7 +182,7 @@ Per backend: **1685** separate assertions = 26 DNS +546 HTTP/security +2 plainte
 1209 passed,0 failed/warnings,34 inconclusive,76 skipped; Express 1210 passed,0 failed/warnings,
 34 inconclusive,75 skipped. Logs: `out/certificate-green-{compact,mysql,postgresql,express}-ci.log`.
 CI installer artifact publication also passed; CodeQL/workflow lint were not checks in this
-branch-push run. The following native correction needs its own final-head CI.
+branch-push run. The following native correction's CI result is recorded below.
 The earlier focused 60-case pass predates the endpoint changes.
 Current handoff:
 [2026-10-30](agents/handoffs/2026-10-30.md). Native installation/activation is not implemented.
@@ -201,14 +201,29 @@ Both selected runs restored the original service files and temporary checkpoint;
 An earlier incomplete filter selected zero tests and was rejected, not accepted as evidence.
 The build ran with service/COM hooks disabled. This correction needs its own four-backend CI.
 
-First pushed identity head `95c91ce55` passed Compact, Release and GCC/Clang but failed MySQL:
+First pushed identity head `95c91ce55` passed Compact/PostgreSQL, Release and GCC/Clang but failed MySQL:
 the new test used CAST(... AS BIGINT), which MySQL rejects. Four NUnit cases calling the
 internal suite failed (1205 passed,4 failed,34 inconclusive,76 skipped,0 warnings out of 1319);
 these are not production ID-fix failures or a waived flaky test. Log:
 `out/identity-failed-mysql-ci.log`. The fixture now selects MySQL's CAST(... AS SIGNED),
 which produces a signed BIGINT per the [MySQL contract](https://dev.mysql.com/doc/refman/8.4/en/cast-functions.html),
-while preserving BIGINT on the other providers. Native compilation passed with hooks disabled
-in `out/phase1b-identity-mysql-build.log`; the corrected head needs its own full CI.
+while preserving BIGINT on the other providers. Express and installer publication were cancelled
+when the correction was pushed; they are not accepted results for that head. Native compilation
+passed with hooks disabled in `out/phase1b-identity-mysql-build.log`. Corrected head
+`7258068dff8062c2072eebd6d0603722362eff41` then passed all four database jobs, Release,
+GCC/Clang and CI installer publication: NUnit 1319 cases (Compact/MySQL/PostgreSQL 1209 passed,
+34 inconclusive, 76 skipped; Express 1210 passed, 75 skipped; 0 failed/warnings each) and the same
+1685 separate assertions and both browser suites per backend as `ae903a182`. Logs:
+`out/identity-green-*.log`.
+
+Separate storage research: the [Windows machine-key probe](agents/tools/certificate-key-store-probe/README.md)
+passed 50 assertions on the disposable Windows Server 2025 VM, including protected DACL readback,
+reopen/export identity and unprivileged-user denial for RSA-2048/ECDSA-P256. Final tracked-run
+log: `out/phase1b-cng-storage-final-vm.log`, exit0; generated keys/user cleaned up, checkpoint
+restored/removed. This standalone manual probe is not invoked by application CI and adds nothing
+to its 1685 count. Native OpenSSL, service/IIS identity, backup, activation, other Windows versions
+and algorithms remain unproved. Earlier rejected runner/fixture attempts are recorded in the
+[storage proposal](certificate-storage-design.md), not counted as successful application tests.
 
 ## Modern-stack CI expansion merged and verified
 

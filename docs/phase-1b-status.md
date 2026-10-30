@@ -67,8 +67,17 @@ The next native prerequisite corrects 32-bit narrowing of certificate/listener d
 newly returned identities, listener certificate references and certificate-name lookup during
 backup restoration. The actual Compact provider regression failed before the fix and passed
 afterward through TestInternals. It reads synthetic BIGINT projections without reseeding tables
-or registering/activating certificates. Four-backend CI for this correction remains pending;
-legacy COM long properties and other objects' ID modernization are not covered by it.
+or registering/activating certificates. Its corrected head `7258068dff8062c2072eebd6d0603722362eff41` then passed all four database jobs, Release,
+GCC/Clang and CI installer publication: NUnit 1319 cases (Compact/MySQL/PostgreSQL 1209 passed,
+34 inconclusive, 76 skipped; Express 1210 passed, 75 skipped; 0 failed/warnings each) and the same
+1685 separate assertions and both browser suites per backend as `ae903a182`. Logs:
+`out/identity-green-*.log`.
+Legacy COM long properties and other objects' ID modernization are not covered by it.
+
+The [certificate storage proposal](certificate-storage-design.md) records a preferred Windows
+machine-key/native-OpenSSL direction and a 50-assertion disposable-VM feasibility result.
+It does not implement import, transfer, native key loading, backup or activation. Its tracked
+standalone probe is separate from application CI and does not close A06/E03/E07.
 
 ## Implemented capabilities and their boundaries
 

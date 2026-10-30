@@ -189,6 +189,11 @@ preserves BIGINT identities/references, including returned insert IDs and backup
 No schema migration or COM expansion is introduced; legacy COM long properties and other
 objects' ID modernization remain separate work.
 
+The [certificate storage proposal](certificate-storage-design.md) records the preferred Windows
+machine-key/native-OpenSSL direction, a 50-assertion disposable-VM CNG feasibility result and
+the still-unimplemented transfer, journal/reconciliation, backup and activation contracts.
+Its standalone probe is research evidence, not an added application endpoint or CI acceptance.
+
 1. Establish the opt-in native management boundary, shared business authentication, ASP.NET Core
    session/security foundation, initial spam/DNSBL/DNS workflows and repeatable tests. This is
    the foundation merged in PR #31; it does not switch existing installations to the new panel.

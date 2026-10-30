@@ -17,7 +17,7 @@ competing plans.
 | Release identity and numbering | [VERSION](../VERSION), [release policy](release-versioning.md) | Independent ArzoieMail 6.0.0 target, generated metadata, compatibility/schema separation and publication gates |
 | Detailed Phase 1b capability and migration status | [Phase 1b ledger](phase-1b-status.md) | Delivered versus missing controls, legacy surface inventory, restrictions, acceptance and PHP cutover gates |
 | Agreed web administration requirements | [Requirements](webadmin-requirements.md) | Product and security obligations, certificate and Defender requirements; requirements are not completion evidence |
-| Management boundary and security design | [Architecture](management-api-architecture.md) | Native/REST/.NET separation, authentication, roles, trust boundaries and deployment design |
+| Management boundary and security design | [Architecture](management-api-architecture.md), subordinate [certificate proposal](certificate-storage-design.md) | Native/REST/.NET separation, roles/trust/deployment; certificate storage research, finite implementation/recovery gates and explicit unimplemented status |
 | Implemented REST contract | [Management README](../hmailserver/source/Management/README.md) | Actual routes, fields, limits, permissions, defaults, errors, recovery and preview restrictions |
 | Builds, tests, releases and prerequisites | [BUILDING](../BUILDING.md) | Reproducible commands and runtime prerequisites; runtime execution stays in VM/CI |
 | Test coverage and evidence | [CI inventory](ci-test-inventory.md) | Exact tested revision, backend counts, checks, retries, fixture boundaries and manual/planned coverage |

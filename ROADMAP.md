@@ -377,7 +377,7 @@ actual SignPath certificate signing remains a separate master-only manual valida
 | Remaining advanced administration | 📋 Planned | Remaining domain/mailbox/server settings, external fetchers, IP/security ranges, listener/TLS and other legacy parity. Separate confirmation after the current PR; no production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
 | SpamAssassin engine packaging and lifecycle | 📋 Planned | Initial connection/settings controls exist; finish engine delivery, operations and tests. |
-| Guided TLS certificate installation and renewal | 📋 Planned | Import/issuance wizard, listener assignment, validation, renewal, safe activation and rollback. |
+| Guided TLS certificate installation and renewal | 🔄 In progress | Configured inventory/PFX inspection passed checkpoint CI; [storage proposal](docs/certificate-storage-design.md) has a bounded CNG VM probe. Native import/storage adapter, issuance, assignment, renewal, safe activation/rollback and hosting acceptance remain unfinished. |
 | **Microsoft Defender Antivirus email scanning** | **📋 Planned — implementation not started** | Dedicated native adapter, lifecycle coverage, durable scheduling, mitigation and measured high-pressure acceptance; requirements/assessment in #32. |
 | Production hosting, installer and PHP retirement | 📋 Planned | Restricted identity, HTTPS/runtime provisioning, full parity, upgrade acceptance and removal of the legacy PHP endpoint/source/packaging. |
 
