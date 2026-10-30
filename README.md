@@ -164,8 +164,19 @@ remaining work, acceptance gates and every legacy PHP/desktop main-pane migratio
 | **5 · Code quality** | Modern ownership (smart pointers), compiling at warning level 4, smaller modules, more of the server in the portable core with its tests and fuzzers - continuously, alongside the other phases | Ongoing |
 | **6 · Features** | Sieve filtering, DMARC aggregate reports, ARC, webmail | Planned |
 
-The current authorized effort completes all remaining Phase 1b, tracked on
-`feature/phase1b-completion`. Server settings and three filtering/relay collections passed
+The current authorized effort completes all remaining Phase 1b, submitted as one checkpoint PR
+per bundle. Checkpoint 1 (typed settings, self-service, mail TLS, transport inventory, PFX
+inspection) merged as #45. Checkpoint 2, [PR #46](https://github.com/jassifx/ArzoieMail/pull/46),
+adds server status and stop/start, the remaining SMTP/IMAP/performance settings, server messages,
+administrator sendout, diagnostics with a mail-server lookup and bounded log reading; it passed
+four-backend CI and awaits review. Still to come, as one checkpoint PR per bundle: external POP3 fetch, shared/public folders and
+maintenance tools (A07, A10, A15); remaining spam controls, DNS/DKIM setup and the SpamAssassin
+engine (A11, E01, E02); guided certificates and production hosting (E03, E07); optional Defender
+scanning (E04-E06); and the cutover: PHP retirement, moving the tools and tests off COM, and final
+acceptance and user documentation (E08-E10). The remaining A08, A12, A18 and A19 decisions are
+folded into the nearest of these.
+
+The history behind checkpoint 1: server settings and three filtering/relay collections passed
 initial VM validation; mailbox self-service also passed native/browser VM checks. Password-policy
 and IP security-range additions, plus logging, passed initial VM checks. A reproduced session
 revocation issue was reproduced and fixed with passing VM regression checks; 43 controlled-clock
