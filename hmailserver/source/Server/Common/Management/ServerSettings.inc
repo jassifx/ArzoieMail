@@ -21,6 +21,7 @@ struct ServerSetting
 #define ADMIN_TEXT(section, name, property, maximum, help, restart) {section, name, property, "string", 0, maximum, help, restart}
 #define ADMIN_LOG_FLAG(name, mask, help) {"logging", name, PROPERTY_LOGGING, "boolean", 0, 1, help, false, mask}
 #define ADMIN_TLS_FLAG(name, property, mask, help) {"tls", name, property, "boolean", 0, 1, help, true, mask}
+#define ADMIN_BACKUP_FLAG(name, mask, help) {"backup", name, PROPERTY_BACKUPOPTIONS, "boolean", 0, 1, help, false, mask}
 #define ADMIN_CHOICE(section, name, property, low, high, choices, help) {section, name, property, "integer", low, high, help, false, 0, choices}
 #define ADMIN_DIRECT(section, name, property, kind, maximum, choices, help) {section, name, property, kind, 0, maximum, help, false, 0, choices, true}
 const ServerSetting ServerSettings[] = {
@@ -119,6 +120,11 @@ const ServerSetting ServerSettings[] = {
    ADMIN_TLS_FLAG("tls12Enabled", PROPERTY_SSLVERSIONS, TlsVersion12, "Enable TLS 1.2 for mail transport after restart."),
    ADMIN_TLS_FLAG("tls13Enabled", PROPERTY_SSLVERSIONS, TlsVersion13, "Enable TLS 1.3 for mail transport after restart."),
    ADMIN_TLS_FLAG("preferServerCiphers", PROPERTY_TLSOPTIONS, TlsOptionPreferServerCiphers, "Prefer the server cipher order after restart."),
+   ADMIN_BACKUP_FLAG("includeSettings", Backup::BOSettings, "Include server settings in backups."),
+   ADMIN_BACKUP_FLAG("includeDomains", Backup::BODomains, "Include domains, mailboxes, aliases, lists and their settings."),
+   ADMIN_BACKUP_FLAG("includeMessages", Backup::BOMessages, "Include stored messages; requires domains. Backups grow with the message store."),
+   ADMIN_BACKUP_FLAG("compress", Backup::BOCompression, "Compress the message files inside the archive."),
+   ADMIN_TEXT("backup", "destination", PROPERTY_BACKUPDESTINATION, 240, "Existing local folder the service writes backup archives to. Keep it private: archives hold every mailbox and setting.", false),
    ADMIN_TLS_FLAG("prioritizeChaCha", PROPERTY_TLSOPTIONS, TlsOptionPrioritizeChaCha, "Prioritize ChaCha when the client prefers it; requires server cipher preference and TLS 1.2 or 1.3. Restart required.")
 };
 #undef ADMIN_BOOL
@@ -127,6 +133,7 @@ const ServerSetting ServerSettings[] = {
 #undef ADMIN_LOG_FLAG
 #undef ADMIN_TLS_FLAG
 #undef ADMIN_CHOICE
+#undef ADMIN_BACKUP_FLAG
 #undef ADMIN_DIRECT
 
 json::array SettingChoices(const ServerSetting &field)
@@ -186,6 +193,19 @@ json::value ManageServerSettings(const std::string &operation, json::object &arg
       if (!saved) throw RequestError{503};
       LOG_APPLICATION("The built-in Administrator password was changed through the management API.");
       return json::object{{"changed", true}};
+   }
+   if (operation == "settings.backup.passphrase")
+   {
+      // Write-only, like the smart-host credential. Empty clears it, so new backups are unencrypted.
+      SecretWipe wipe{arguments.if_contains("passphrase")};
+      if (arguments.size() != 1) throw RequestError{422};
+      const auto passphrase = Text(arguments, "passphrase", 1024);
+      if (!passphrase.empty() && passphrase.size() < 12) throw RequestError{422};
+      for (const unsigned char character : passphrase) if (character < 32 || character == 127) throw RequestError{422};
+      String value = Wide(arguments.at("passphrase"));
+      Configuration::Instance()->SetBackupPassphrase(value);
+      SecureZeroMemory(value.data(), value.size() * sizeof(wchar_t));
+      return json::object{{"configured", !Configuration::Instance()->GetBackupPassphrase().IsEmpty()}};
    }
    if (operation == "settings.messageindex.clear")
    {
@@ -276,6 +296,17 @@ json::value ManageServerSettings(const std::string &operation, json::object &arg
                boost::asio::ip::make_address(text, error);
                if (error && OperationDomain(patch->as_object(), name.c_str()).Find(_T("*")) >= 0) throw RequestError{422};
             }
+            if (name == "destination" && !text.empty())
+            {
+               // An existing, absolute local folder: no UNC share, device path, link or the Windows folder.
+               const std::wstring path = change.value;
+               wchar_t windows[MAX_PATH] = {};
+               GetWindowsDirectoryW(windows, MAX_PATH);
+               const DWORD attributes = GetFileAttributesW(path.c_str());
+               if (path.size() < 3 || path[1] != L':' || path[2] != L'\\' || path.find(L"..") != std::wstring::npos
+                   || attributes == INVALID_FILE_ATTRIBUTES || !(attributes & FILE_ATTRIBUTE_DIRECTORY) || (attributes & FILE_ATTRIBUTE_REPARSE_POINT)
+                   || _wcsnicmp(path.c_str(), windows, wcslen(windows)) == 0) throw RequestError{422};
+            }
             if (name == "mirrorAddress" && !text.empty() && !StringParser::IsValidEmailAddress(change.value)) throw RequestError{422};
             if (name == "publicFolderName" && text.empty()) throw RequestError{422};
          }
@@ -321,6 +352,13 @@ json::value ManageServerSettings(const std::string &operation, json::object &arg
             ERR_clear_error();
             if (!valid) throw RequestError{422};
          }
+      }
+      if (section == "backup")
+      {
+         auto effective = values;
+         for (const auto &entry : patch->as_object()) effective[entry.key()] = entry.value();
+         // Messages are restored into domains, so a backup cannot hold them without domains.
+         if (effective.at("includeMessages").as_bool() && !effective.at("includeDomains").as_bool()) throw RequestError{422};
       }
       if (section == "passwordhash")
       {
@@ -370,6 +408,8 @@ json::value ManageServerSettings(const std::string &operation, json::object &arg
    }
    json::object result{{"section", section}, {"values", std::move(values)}, {"schema", std::move(schema)}};
    // Write-only secrets report only whether one is stored.
+   if (section == "backup")
+      result["credentials"] = json::object{{"passphraseConfigured", !Configuration::Instance()->GetBackupPassphrase().IsEmpty()}};
    if (section == "smtp")
       result["credentials"] = json::object{{"smartHostConfigured", !Configuration::Instance()->GetSMTPConfiguration()->GetSMTPRelayerPassword().IsEmpty()}};
    return result;

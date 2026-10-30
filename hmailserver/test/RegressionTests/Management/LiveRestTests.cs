@@ -46,6 +46,9 @@ static class LiveRestTests
             await admin.Send(domainPath, HttpMethod.Patch, new { unexpected = true }, status: 422);
             var account = await admin.Send(domainPath + "/accounts", HttpMethod.Post, new { address = "mail@" + name, password, active = true, level = 0 });
             long accountId = account.GetProperty("id").GetInt64(); string mailbox = domainPath + "/accounts/" + accountId;
+            check((await admin.Send(mailbox + "/fetchaccounts", HttpMethod.Get)).GetProperty("total").GetInt64() == 0, "Real API lists a mailbox's fetch accounts.");
+            await admin.Send(mailbox + "/fetchaccounts", HttpMethod.Post, new { name = "x", serverAddress = "pop.example.test", username = "u", password = "p", security = 0 }, status: 422);
+            check((await admin.Send("/secretkey", HttpMethod.Get)).GetProperty("keyId").GetString()!.Length > 0, "Real API reads the installation key identifier.");
             check(!account.TryGetProperty("password", out _), "Live HTTP account views never expose the password.");
             await admin.Send(mailbox + "/profile", HttpMethod.Patch, new { firstName = "REST", lastName = "Integration" });
             var persisted = await native.SendAsync("accounts.profile.read", username, password, new { domainId, id = accountId }, CancellationToken.None);
@@ -95,6 +98,10 @@ static class LiveRestTests
                 await manager.Send("/sendout/preview", HttpMethod.Post, new { recipients = "*" }, status: 403);
                 await manager.Send("/settings/smtp/smart-host-credential", HttpMethod.Put, new { password = "x" }, status: 403);
                 await manager.Send("/settings/administrator-password", HttpMethod.Post, new { currentPassword = password, newPassword = password }, status: 403);
+                foreach (string path in new[] { "/groups", "/publicfolders", "/backup", "/secretkey" }) await manager.Send(path, HttpMethod.Get, status: 403);
+                await manager.Send("/secretkey/export", HttpMethod.Post, new { passphrase = "long enough passphrase" }, status: 403);
+                await manager.Send("/backup/restore", HttpMethod.Post, new { name = "HMBackup x.7z", confirmName = "HMBackup x.7z", settings = true }, status: 403);
+                await manager.Send(mailbox + "/fetchaccounts", HttpMethod.Get, status: 403);
                 await manager.Send($"/domains/{actor.GetProperty("domainId").GetInt64()}/accounts/{actor.GetProperty("accountId").GetInt64()}/profile", HttpMethod.Patch, new { firstName = "blocked" }, status: 403);
             }
             using (var user = new BrowserSession(admin.Client.BaseAddress!, check))
