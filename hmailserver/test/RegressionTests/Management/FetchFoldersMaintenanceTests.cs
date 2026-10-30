@@ -163,6 +163,21 @@ static class FetchFoldersMaintenanceTests
             string destination = original.GetProperty("destination").GetString()!;
             string folder = Path.Combine(Path.GetTempPath(), "arzoiemail-backup-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(folder);
+            // The service checks and writes the destination under its own identity, which may be the
+            // restricted NT SERVICE\hMailServer account rather than SYSTEM.
+            if (OperatingSystem.IsWindows())
+            {
+                try
+                {
+                    var info = new DirectoryInfo(folder); var security = info.GetAccessControl();
+                    security.AddAccessRule(new System.Security.AccessControl.FileSystemAccessRule(@"NT SERVICE\hMailServer",
+                        System.Security.AccessControl.FileSystemRights.Modify,
+                        System.Security.AccessControl.InheritanceFlags.ContainerInherit | System.Security.AccessControl.InheritanceFlags.ObjectInherit,
+                        System.Security.AccessControl.PropagationFlags.None, System.Security.AccessControl.AccessControlType.Allow));
+                    info.SetAccessControl(security);
+                }
+                catch (System.Security.Principal.IdentityNotMappedException) { }
+            }
             Dictionary<string, object> Expected(JsonElement values, params string[] keys) => keys.ToDictionary(key => key, key => (object)values.GetProperty(key).Clone());
             try
             {
