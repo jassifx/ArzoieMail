@@ -326,8 +326,13 @@ see the handoff and CI inventory for exact revision attribution.
 The next transport-inventory addition exposes bounded server-only configured listener and
 certificate metadata, with exact string IDs and no private paths/file reads. Native/managed
 compilation and the full VM/native/REST/browser run passed (831 native,449 HTTP/security).
-Its own CI remains pending. This supports future
+All four backend jobs, Release, GCC/Clang and CI installer generation passed at `8cdc085b4`. This supports future
 guided setup; it does not deliver certificate provisioning, assignment or activation.
+The subsequent bounded PFX inspection workflow adds a protected upload form, public metadata/
+host/time/usage/chain warnings, strict secret-owning JSON input and resource guards. Its final
+VM run passed 546 HTTP/security,60 parser,831 native and145 real HTTP assertions, both browsers
+and selected TestInternals, with private fixtures and checkpoint cleaned up. Its own CI remains
+pending; protected native installation/assignment/renewal/rollback and IIS acceptance remain open.
 
 ### Phase 1b delivery tracker
 

@@ -53,6 +53,26 @@ with sync_playwright() as playwright:
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Transport inventory overflows on mobile.'
         page.screenshot(path=str(output / 'transport-inventory-mobile.png'), full_page=True)
         page.set_viewport_size({"width": 1440, "height": 1000})
+        stage = 'protected PFX inspection'
+        original_certificates = context.request.get(base + '/api/v1/transport/certificates').json()['data']['total']
+        page.get_by_label('PFX file', exact=True).set_input_files(os.environ['ARZOIEMAIL_TEST_PFX_PATH'])
+        page.get_by_label('PFX password', exact=True).fill(os.environ['ARZOIEMAIL_TEST_PFX_PASSWORD'])
+        page.get_by_label('Mail hostnames or IP addresses', exact=True).fill('mail.example.test\nwrong.example.test')
+        with page.expect_response(lambda item: item.url.endswith('/transport/certificates/inspect') and item.request.method == 'POST') as inspected:
+            page.get_by_role('button', name='Inspect PFX', exact=True).click()
+        assert inspected.value.status == 200
+        page.get_by_role('heading', name='PFX inspection results', exact=True).wait_for()
+        page.get_by_text('mail.example.test: matches', exact=True).wait_for()
+        page.get_by_text('wrong.example.test: does not match', exact=True).wait_for()
+        assert page.get_by_label('PFX password', exact=True).input_value() == ''
+        assert context.request.get(base + '/api/v1/transport/certificates').json()['data']['total'] == original_certificates
+        page.evaluate('window.scrollTo(0, 0)')
+        page.screenshot(path=str(output / 'certificate-inspection-desktop.png'), full_page=True)
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.evaluate('window.scrollTo(0, 0)')
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'PFX inspection results overflow on mobile.'
+        page.screenshot(path=str(output / 'certificate-inspection-mobile.png'), full_page=True)
+        page.set_viewport_size({"width": 1440, "height": 1000})
         stage = 'server settings persistence'
         settings = context.request.get(base + '/api/v1/settings/pop3')
         assert settings.status == 200
@@ -167,6 +187,9 @@ with sync_playwright() as playwright:
                 assert not role_page.get_by_role('link', name='Mail transport', exact=True).is_visible()
                 assert role_context.request.get(base + '/api/v1/transport/listeners').status == 403
                 assert role_context.request.get(base + '/api/v1/transport/certificates').status == 403
+                role_session = role_context.request.get(base + '/api/v1/session').json()['data']
+                assert role_context.request.post(base + '/api/v1/transport/certificates/inspect', data={},
+                    headers={'X-CSRF-Token': role_session['csrf']}).status == 403
                 stage = 'live mailbox self-service'
                 own_profile = role_context.request.get(base + '/api/v1/self/profile')
                 assert own_profile.status == 200

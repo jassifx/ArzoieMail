@@ -8,7 +8,7 @@ using ArzoieMail.Management;
 using Microsoft.Extensions.DependencyInjection;
 
 int assertions = 0;
-string[] modes = ["--runtime", "--ranges-live", "--self-live", "--policies-live", "--settings-live", "--live-http", "--tls", "--tls-native", "--browser-host", "--squatting", "--live"];
+string[] modes = ["--runtime", "--certificate-inspection", "--prepare-certificate-browser", "--ranges-live", "--self-live", "--policies-live", "--settings-live", "--live-http", "--tls", "--tls-native", "--browser-host", "--squatting", "--live"];
 if (args.Length > 1 || args.Any(argument => !modes.Contains(argument)))
     throw new ArgumentException("Select exactly one supported management-test mode, or omit it for deterministic HTTP/DNS tests.");
 void Check(bool condition, string message)
@@ -17,6 +17,18 @@ void Check(bool condition, string message)
     if (!condition) throw new Exception(message);
 }
 
+if (args.Contains("--prepare-certificate-browser"))
+{
+    CertificateInspectionTests.WriteBrowserFixture();
+    Console.WriteLine("Prepared a protected temporary browser PFX fixture.");
+    return;
+}
+if (args.Contains("--certificate-inspection"))
+{
+    CertificateInspectionTests.Run(Check);
+    Console.WriteLine($"Passed {assertions} bounded PFX inspection assertions.");
+    return;
+}
 if (args.Contains("--runtime"))
 {
     var api = typeof(ManagementHost).Assembly;
@@ -352,6 +364,8 @@ try
     Check(fake.LastOperation == "antispam.update", "Route calls explicit native command.");
     await Send("/settings/smtp", HttpMethod.Get);
     Check(fake.LastOperation == "settings.read" && fake.LastArguments.GetProperty("section").GetString() == "smtp", "Server-settings route selects its native section.");
+    await CertificateInspectionHttpTests.Run(client, token, Check);
+    Check(fake.LastOperation == "authenticate", "PFX inspection never forwards uploaded private material to native management commands.");
     foreach (string resource in new[] { "listeners", "certificates" })
     {
         await Send($"/transport/{resource}?limit=25&offset=1&search=fixture", HttpMethod.Get);
@@ -477,8 +491,10 @@ try
     await Send("/status", HttpMethod.Get, status: 403);
     await Send("/transport/listeners", HttpMethod.Get, status: 403);
     await Send("/transport/certificates", HttpMethod.Get, status: 403);
+    await Send("/transport/certificates/inspect", HttpMethod.Post, new { }, token, 403);
     await Send("/domains", HttpMethod.Get);
     fake.Level = 0;
+    await Send("/transport/certificates/inspect", HttpMethod.Post, new { }, token, 403);
     await Send("/transport/listeners", HttpMethod.Get, status: 403);
     await Send("/transport/certificates", HttpMethod.Get, status: 403);
     await Send("/self", HttpMethod.Get);
@@ -558,6 +574,9 @@ Console.WriteLine("Passed production HTTPS boundary checks.");
 int lifetimeStart = assertions;
 await SessionLifetimeTests.Run(Check);
 Console.WriteLine($"Passed {assertions - lifetimeStart} controlled-clock session lifecycle assertions.");
+int certificateStart = assertions;
+CertificateInspectionTests.Run(Check);
+Console.WriteLine($"Passed {assertions - certificateStart} bounded PFX inspection assertions.");
 
 sealed class FakeChannel : IManagementChannel
 {

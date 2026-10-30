@@ -62,8 +62,16 @@ The following inventory revision extends C04/C12/C13 with configured listener/ce
 roles, strict filters, 25-item pages, exact string IDs, explicit public metadata fields and a
 published browser search/mobile/inert-markup workflow. Its temporary certificate registration
 uses nonexistent paths, is never assigned to a listener and is removed by the tracked live
-driver. Builds and full VM validation passed; its own final-head CI remains pending. These tests do
+driver. Builds, full VM validation and four-backend CI passed at `8cdc085b4`. These tests do
 not satisfy certificate import/chain/key/renewal, actual listener state or activation/rollback gates.
+
+PFX preflight extends C04/C12 with the .NET 10 bounded/ephemeral loader, public-only reports,
+strict sensitive-buffer ownership, per-route body limits, CSRF/origin/role checks, concurrent
+upload rejection, deadline/cancellation cleanup and an independent request budget. The final
+VM run passed 546 HTTP/security plus60 parser assertions and the affected full browser/native
+layers; its own CI remains pending. The temporary PFX stays outside evidence and is deleted.
+This proves inspection behavior, not protected native installation, authoritative activation,
+IIS private-key access, client trust/revocation or certificate renewal.
 
 ## Fixture boundaries and secret handling
 

@@ -41,6 +41,8 @@ if ($null -eq $app.Authenticate($AdministratorCredential.UserName, $adminPasswor
 if ($app.Database.CurrentVersion -ne $app.Database.RequiredVersion) { throw 'Install a matching server/database before running native tests.' }
 $fixtureDomainId = $null
 $fixtureCertificateId = $null
+$pfxFixtureDirectory = $null
+$pfxFixturePath = $null
 $objects = @()
 function Stop-TestService {
     if ((Get-Service hMailServer).Status -ne 'Stopped') {
@@ -114,8 +116,21 @@ try {
     Invoke-ManagementMode '--live'
     Invoke-ManagementMode '--live-http'
     Invoke-ManagementMode '--tls-native'
-    if ($PublishedApi) { & "$PSScriptRoot\test-management-browser.ps1" -PublishedApi $PublishedApi -Python $Python }
+    if ($PublishedApi) {
+        $pfxFixtureDirectory = Join-Path ([IO.Path]::GetTempPath()) ('ArzoieMail-certificate-' + [Guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $pfxFixtureDirectory | Out-Null
+        & icacls.exe $pfxFixtureDirectory /inheritance:r /grant:r "*$($sid):(OI)(CI)F" '*S-1-5-18:(OI)(CI)F' | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'Could not secure the temporary browser PFX directory.' }
+        $pfxFixturePath = Join-Path $pfxFixtureDirectory 'inspection-fixture.pfx'
+        $env:ARZOIEMAIL_TEST_PFX_PATH = $pfxFixturePath
+        $env:ARZOIEMAIL_TEST_PFX_PASSWORD = $password
+        Invoke-ManagementMode '--prepare-certificate-browser'
+        & "$PSScriptRoot\test-management-browser.ps1" -PublishedApi $PublishedApi -Python $Python
+    }
 } finally {
+    $env:ARZOIEMAIL_TEST_PFX_PATH = $null; $env:ARZOIEMAIL_TEST_PFX_PASSWORD = $null
+    if ($null -ne $pfxFixturePath -and (Test-Path -LiteralPath $pfxFixturePath)) { Remove-Item -LiteralPath $pfxFixturePath -Force }
+    if ($null -ne $pfxFixtureDirectory -and (Test-Path -LiteralPath $pfxFixtureDirectory)) { [IO.Directory]::Delete($pfxFixtureDirectory, $false) }
     $env:ASPNETCORE_CONTENTROOT = $originalContentRoot
     foreach ($item in @($objects) + @($app)) { if ($null -ne $item -and [Runtime.InteropServices.Marshal]::IsComObject($item)) { try { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($item) } catch { } } }
     Stop-TestService

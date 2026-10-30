@@ -479,7 +479,47 @@ chain/hostname/key validity, access permissions or renewal readiness.
 The panel renders registration names as inert text, supports search/paging and distinguishes
 saved listeners from running state. Guided import/ACME, listener edits/assignment, validation,
 activation/restart and rollback remain A06/E03 work. Native/managed builds and the full Compact
-VM run passed (831 native,449 HTTP/security,145 real HTTP and both browsers); its own CI is required.
+VM run passed (831 native,449 HTTP/security,145 real HTTP and both browsers), followed by
+four-backend CI at `8cdc085b4`.
+
+### PFX inspection (completion branch, VM validation in progress)
+
+`POST /api/v1/transport/certificates/inspect` accepts exactly `pfx` (base64 PFX bytes),
+`password` (string, empty only for an unprotected file) and `hosts` (1-32 DNS names/IPs).
+Server administration, fresh native session validation, CSRF and same-origin rules apply.
+No server paths, filenames, arbitrary storage/provider settings or caller-supplied clocks
+are accepted. This action inspects a browser upload; it does not install, register, assign,
+renew or activate anything, and does not transfer uploaded key material to native commands.
+
+This route alone accepts up to 1 MiB of JSON; decoded PFX is capped at 512 KiB. Passwords
+are capped at 1024 UTF-8 bytes with no NUL. Other management routes keep their 16 KiB body
+limit. There are at most two inspections per process and 30 route requests per minute per
+remote IP; 429 supplies retry guidance. Body transfer has a trusted-clock 30-second deadline
+(408). This is not a hard deadline for every OS/cryptographic operation. KDF/count limits are
+separate: MAC and individual KDF iterations 300000, total KDF 1000000, one private key,
+16 certificates and 128 DNS/IP alternative names. Unsafe loader limits return 422 with
+re-export guidance. Malformed JSON returns 400; invalid/duplicate/extra fields return 422.
+
+The .NET 10 loader uses ephemeral key storage and ignores storage-provider/key-name/alias
+attributes. Owned UTF-8 wire, decoded PFX and password-character buffers are cleared on
+completion/error/cancellation, including trailing JSON. Certificate/key handles are disposed.
+This does not claim every browser/runtime/OS internal copy is erased. The panel clears its
+password field and byte buffer, renders public output as inert text, and never displays PFX
+or private-key bytes. The protected browser PFX fixture stays outside CI evidence and is deleted.
+
+Results include SHA-256 identity, bounded subject/issuer display, UTC validity, key algorithm/
+size/minimum-strength flag, CA/EKU/key-usage metadata, SAN names, per-host matches, separate
+chain status and warnings. DNS/IDNA and canonical IP inputs are normalized; hostname matching
+uses SAN with common-name fallback disabled. Chain trust uses this web host's Windows identity,
+disables certificate downloads and explicitly reports revocation `NotChecked`; it does not
+establish trust for remote clients or the native service. RSA/ECDSA fixtures passed; DSA/provider
+and production IIS compatibility still require acceptance. There is no overall activation approval.
+
+The bounded helper passed 60 focused VM assertions. The endpoint/form then passed the full
+native/API/browser/cleanup VM run (513 HTTP/security,60 helper,831 native,145 real HTTP and
+both browsers). The final rate-budget/harness run passed 546 HTTP/security,60 parser and
+the same native/live HTTP/browser layers with checkpoint cleanup. Its own CI is pending;
+no import/activation acceptance is implied.
 
 ## Filtering and trusted-relay collections (completion branch)
 

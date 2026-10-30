@@ -172,6 +172,14 @@ implementation. Certificate transfer must accommodate the current 16 KiB HTTP-bo
 RPC-frame limits without accepting arbitrary server paths or silently weakening global limits.
 Import/key-file/database reconciliation and safe listener activation remain design/delivery gates.
 
+The following .NET 10 preflight workflow inspects PFX uploads in the web host under bounded
+loader/HTTP/concurrency/rate/deadline controls and returns public metadata only. The owned
+wire/PFX/password buffers are cleared; keys load ephemerally and certificate/key handles are
+disposed. It does not install, assign, persist or forward private material to native commands.
+Native installation must independently validate material and enforce protected storage,
+transaction/recovery, listener policy and activation; the web host's chain view is advisory.
+Its final VM run passed; its own CI and production IIS/identity acceptance remain pending.
+
 1. Establish the opt-in native management boundary, shared business authentication, ASP.NET Core
    session/security foundation, initial spam/DNSBL/DNS workflows and repeatable tests. This is
    the foundation merged in PR #31; it does not switch existing installations to the new panel.

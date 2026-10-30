@@ -83,9 +83,14 @@ public static class ManagementHost
             options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
                 { PermitLimit = 10, Window = TimeSpan.FromMinutes(5), QueueLimit = 0, AutoReplenishment = true }));
+            options.AddPolicy("certificate-inspection", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+                { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
             options.OnRejected = async (context, token) =>
             {
-                context.HttpContext.Response.Headers.RetryAfter = "300";
+                long retrySeconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retry)
+                    ? Math.Clamp((long)Math.Ceiling(retry.TotalSeconds), 1, 3600) : 1;
+                context.HttpContext.Response.Headers.RetryAfter = retrySeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 await context.HttpContext.Response.WriteAsJsonAsync(new { error = new { message = "Too many requests. Try again later." } }, token);
             };
         });
@@ -120,7 +125,7 @@ public static class ManagementHost
                     app.Logger.LogWarning("Management operation failed ({ExceptionType}).", error.GetType().Name);
                 context.Response.StatusCode = status;
                 await context.Response.WriteAsJsonAsync(new { error = new { message = error is ManagementError known ? known.Message :
-                    status == 403 ? "The security token expired. Reload and try again." : status == 400 ? "Invalid request." : "The management service is unavailable." } });
+                    status == 403 ? "The security token expired. Reload and try again." : status == 400 ? "Invalid request." : status == 413 ? "The request is too large for this operation." : "The management service is unavailable." } });
             }
         });
         app.UseRateLimiter();
@@ -193,6 +198,7 @@ public static class ManagementHost
         api.MapPatch("/settings/{section}", (string section, HttpContext c, CredentialVault v, IManagementChannel p) => Settings(c, v, p, section, true));
         api.MapGet("/transport/listeners", (HttpContext c, CredentialVault v, IManagementChannel p) => TransportInventory(c, v, p, "transport.listeners.list"));
         api.MapGet("/transport/certificates", (HttpContext c, CredentialVault v, IManagementChannel p) => TransportInventory(c, v, p, "transport.certificates.list"));
+        api.MapPost("/transport/certificates/inspect", CertificateInspectionEndpoint.Handle).RequireRateLimiting("certificate-inspection");
         api.MapPost("/policies/securityranges/match", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "securityranges.match", true));
         foreach (string resource in new[] { "surbl", "blockedattachments", "incomingrelays", "securityranges" })
         {

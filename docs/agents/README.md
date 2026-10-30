@@ -6,7 +6,7 @@ traps found along the way, and where the last session left off.
 
 ## Read in this order
 
-Current handoff: [2026-10-29](handoffs/2026-10-29.md). PR #43 is merged at `92ac28d`;
+Current handoff: [2026-10-30](handoffs/2026-10-30.md). PR #43 is merged at `92ac28d`;
 its final head `7a143ca` passed all CI. The maintainer authorized **all remaining Phase 1b**
 in one completion effort on `feature/phase1b-completion`, with no partial completion claim.
 No new PR is submitted yet. Server settings and three filtering/relay collections passed initial
@@ -20,7 +20,12 @@ Corrected head `bc3980201` passed all four backend jobs, Release, GCC/Clang and 
 generation. Eight subsequent TLS controls passed the full VM run (781 native), browsers and
 four-backend CI at `82a3bdaf5`. Later listener/certificate save-error and disconnected-upgrade
 corrections passed targeted VM regressions and four-backend CI at `170442658`. The subsequent
-read-only transport inventory passed full VM/browser validation and awaits its own CI.
+read-only transport inventory passed full VM/browser validation and four-backend CI at `8cdc085b4`.
+The next bounded PFX helper passed 60 VM assertions; its newer inspection endpoint/reader/form
+passed the final native/API/browser/cleanup VM run, including the independent rate budget
+(546 HTTP/security,60 parser). Public screenshots were reviewed; its own CI remains pending.
+The new handoff owns
+exact progress and next checks.
 No completion PR exists. The full A/E ledger
 remains open. Complete COM retirement and the [frozen 6.0 scope](../version-6-scope.md)
 remain mandatory, with [breaking changes](../breaking-changes-6.0.md) and

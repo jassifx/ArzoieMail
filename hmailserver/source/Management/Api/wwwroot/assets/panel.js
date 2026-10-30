@@ -784,7 +784,50 @@
     }
     form.addEventListener('submit', event => { event.preventDefault(); reload().catch(error => notify(error.message, true)); });
     chooser.addEventListener('change', () => { search.input.value = ''; reload().catch(error => notify(error.message, true)); });
-    root.append(label, chooser, form, listing); await reload();
+    const inspection = card('Inspect a PFX certificate');
+    inspection.body.append(el('p', 'Check a certificate before installing it. Inspection does not install, register or assign a certificate.', 'help'));
+    const inspectForm = el('form'), grid = el('div', null, 'form-grid');
+    const fileWrap = el('div'), fileLabel = el('label', 'PFX file', 'form-label'), file = el('input', null, 'form-control');
+    file.id = 'certificate-pfx'; file.type = 'file'; file.accept = '.pfx,.p12'; file.required = true; fileLabel.htmlFor = file.id;
+    fileWrap.append(fileLabel, file, el('p', 'PFX/PKCS#12, up to 512 KiB. The file is used only for this inspection.', 'help'));
+    const password = inputField('PFX password', '', 'Leave empty only when the file has no password.');
+    password.input.type = 'password'; password.input.autocomplete = 'off'; password.input.maxLength = 1024;
+    const hostWrap = el('div'), hostLabel = el('label', 'Mail hostnames or IP addresses', 'form-label'), hosts = el('textarea', null, 'form-control');
+    hosts.id = 'certificate-hosts'; hosts.rows = 3; hosts.maxLength = 8192; hosts.required = true; hostLabel.htmlFor = hosts.id;
+    hosts.placeholder = 'mail.example.com';
+    hostWrap.append(hostLabel, hosts, el('p', 'One name per line or comma, up to 32. Use the names mail clients connect to.', 'help'));
+    grid.append(fileWrap, password.wrap, hostWrap);
+    const inspect = el('button', 'Inspect PFX', 'btn btn-primary mt-3'); inspect.type = 'submit';
+    const report = el('div', null, 'section-gap'); inspectForm.append(grid, inspect); inspection.body.append(inspectForm, report);
+    inspectForm.addEventListener('submit', async event => {
+      event.preventDefault(); if (!inspectForm.reportValidity()) return;
+      const selected = file.files[0], requestedHosts = hosts.value.split(/[,\r\n]+/).map(value => value.trim()).filter(Boolean);
+      if (!selected || selected.size < 1 || selected.size > 524288) { notify('Select a PFX file no larger than 512 KiB.', true); return; }
+      if (!requestedHosts.length || requestedHosts.length > 32) { notify('Supply between 1 and 32 mail hostnames or IP addresses.', true); return; }
+      inspect.disabled = true; let bytes;
+      try {
+        bytes = new Uint8Array(await selected.arrayBuffer()); const chunks = [];
+        for (let start = 0; start < bytes.length; start += 32768) chunks.push(String.fromCharCode(...bytes.subarray(start, start + 32768)));
+        const result = await request('/transport/certificates/inspect', 'POST', { pfx: btoa(chunks.join('')), password: password.input.value, hosts: requestedHosts });
+        if (!root.isConnected || currentPage !== 'transport') return;
+        const details = card('PFX inspection results');
+        details.body.append(el('p', 'Inspection only. Chain trust reflects this web host; mail clients can have different trust settings. Revocation was not checked.', 'help'),
+          el('p', 'SHA-256 fingerprint', 'record-label'), el('pre', result.sha256, 'record'));
+        for (const [title, value] of [['Subject', result.subject], ['Issuer', result.issuer],
+          ['Valid from', result.notBefore], ['Valid until', result.notAfter], ['Key', `${result.keyAlgorithm} · ${result.keyBits} bits`],
+          ['Validity period', result.isCurrentlyValid ? 'Current' : 'Expired or not yet valid'],
+          ['Server authentication usage', result.serverAuthenticationEku ? 'Permitted' : 'Not permitted'],
+          ['Chain trust (revocation not checked)', result.chainTrustedWithoutRevocationCheck ? 'Trusted by this web host' : 'Review chain trust'],
+          ['Chain status', result.chainStatus.join(', ') || 'No chain errors reported']]) {
+          const row = el('div', null, 'domain-row'); row.append(el('strong', title), el('span', value)); details.body.append(row);
+        }
+        for (const host of result.hosts) details.body.append(el('p', `${host.host}: ${host.matches ? 'matches' : 'does not match'}`, 'help'));
+        for (const warning of result.warnings) details.body.append(el('p', warning, 'alert alert-warning mt-2'));
+        report.replaceChildren(details.outer); notify('Certificate inspected. Review the individual checks and warnings.');
+      } catch (error) { if (root.isConnected) notify(error.message, true); }
+      finally { if (bytes) bytes.fill(0); password.input.value = ''; inspect.disabled = false; }
+    });
+    root.append(label, chooser, form, listing, inspection.outer); await reload();
   }
   async function diagnostics(root) {
     const result = await request('/diagnostics');

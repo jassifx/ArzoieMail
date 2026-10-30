@@ -173,8 +173,10 @@ session checks also passed. Database corrections at `bc3980201` passed all four 
 Release, GCC/Clang and CI installer generation. Eight additional mail TLS controls passed
 the 781-native-assertion VM run, published browser checks and four-backend CI at `82a3bdaf5`.
 Subsequent persistence/recovery corrections passed targeted VM regressions and four-backend CI at `170442658`.
-A transport inventory addition passed full VM/browser validation and awaits its own CI; it shows configured listeners and
-certificate names without private paths. The remaining
+A transport inventory addition passed full VM/browser validation and four-backend CI at `8cdc085b4`; it shows configured listeners and
+certificate names without private paths. The subsequent
+PFX inspection workflow passed full VM/native/browser checks; its own CI is pending and
+certificate installation/assignment is still unfinished. The remaining
 administration, scanner, certificate, hosting, migration and cutover gates are still open.
 No new completion PR or Phase 1b completion is claimed.
 

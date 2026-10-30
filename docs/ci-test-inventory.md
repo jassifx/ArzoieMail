@@ -152,7 +152,32 @@ Native and managed builds passed. The full Compact VM run passed in
 43 lifecycle,26 DNS,2 plaintext-boundary,7 runtime,11 TLS,145 real HTTP/native and12 native TLS
 assertions, both browsers and selected TestInternals (1 passed). Original executable/database/
 INI/service state was restored. Inventory assertion counts depend on fixture listener count;
-these are functional checks, not load evidence. Final-head CI for this addition remains pending.
+these are functional checks, not load evidence. Transport head
+`8cdc085b4ebc9042b4ecbc4f31e8467b0a335079` then passed all four backend jobs, Release,
+GCC/Clang and CI installer generation: **1528** separate assertions per backend, both browsers,
+and the same 1319-case NUnit outcomes as `170442658`. Logs:
+`out/transport-green-{compact,mysql,postgresql,express}-ci.log`. CodeQL/workflow lint were not
+checks in this branch-push run. The subsequent certificate inspector requires its own evidence.
+
+The next .NET 10 bounded PFX helper passed **60** focused VM assertions in
+`out/phase1b-certificate-inspection-vm.log` (exit0, checkpoint restored/removed). These cover
+format/password/size/key/certificate/KDF limits, SAN matching/IDNA/IP/CN behavior, validity,
+CA/EKU/key-strength metadata, public-only replies and no personal-store installation. Its
+newer POST endpoint/owned JSON reader/form and rate/concurrency/body/deadline controls compiled.
+Their first full VM run `out/phase1b-certificate-preflight-vm.log` passed
+513 management HTTP/security,43 lifecycle,60 parser,831 native,145 real HTTP/native,26 DNS,
+2 plaintext-boundary,7 runtime,11 TLS,12 native TLS, both browsers and selected TestInternals
+(1 passed); original state/checkpoint restored. A further independent-host inspection-rate-budget
+test and the latest fixture cleanup/desktop screenshot harness were validated in
+`out/phase1b-certificate-preflight-final-vm.log`; the final run passed **546 management HTTP/
+security**,60 parser,43 lifecycle,831 native,145 real HTTP/native,26 DNS,2 plaintext-boundary,
+7 runtime,11 TLS and12 native TLS assertions, both browsers and selected TestInternals (1 passed).
+Private PFX files and the original VM state/checkpoint were cleaned up/restored. Public desktop/
+mobile captures were retained and visually reviewed for layout, inert metadata and the cleared
+password; these do not establish complete manual/IIS/platform acceptance. Final-head CI is pending.
+The earlier focused 60-case pass predates the endpoint changes.
+Current handoff:
+[2026-10-30](agents/handoffs/2026-10-30.md). Native installation/activation is not implemented.
 
 ## Modern-stack CI expansion merged and verified
 

@@ -1,10 +1,10 @@
 # Phase 1b capability ledger and completion gates
 
-Status snapshot: **2026-10-29, Asia/Colombo**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
+Status snapshot: **2026-10-30, Asia/Colombo**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
 is merged at `74eecc017f48ddd445870bfd73dd6eb00aed6cef`; tested head
 `28dd3df912fac9109260efe9f5571dc05b402d12` passed all four database jobs, Release,
 GCC/Clang, CodeQL, workflow lint and CI installer publication. See [CI evidence](ci-test-inventory.md)
-and the [current handoff](agents/handoffs/2026-10-29.md). PR #43 is merged at `92ac28d`;
+and the [current handoff](agents/handoffs/2026-10-30.md). PR #43 is merged at `92ac28d`;
 the present completion branch implements remaining work against the approved
 [6.0 scope](version-6-scope.md).
 
@@ -54,8 +54,13 @@ no Defender/certificate/hosting/consumer-migration/PHP-retirement completion is 
 The subsequent transport inventory adds server-only read-only listener/certificate metadata
 to native/REST/panel, with exact decimal-string IDs, 25-item pages, inert names and no private
 path/file access. Builds and the full VM run (831 native,449 HTTP/security and both browsers)
-passed; its own CI remains pending. Certificate registration metadata
+passed, followed by four-backend CI at `8cdc085b4`. Certificate registration metadata
 is not guided provisioning or active-listener/health evidence; A06/E03 remain open.
+The following PFX preparation helper passed 60 bounded-inspection VM checks. Its newer
+HTTP endpoint/owned-buffer reader/form passed a full native/API/browser/cleanup VM run. The
+final run also passed its independent rate budget (546 HTTP/security,60 parser assertions).
+Its own CI remains pending.
+Native installation and activation remain unfinished.
 
 ## Implemented capabilities and their boundaries
 
