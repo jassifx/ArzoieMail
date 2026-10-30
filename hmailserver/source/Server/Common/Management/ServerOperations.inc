@@ -87,7 +87,7 @@ json::value ManageSendout(const std::string &operation, json::object &arguments)
       if (arguments.size() != 1) throw RequestError{422};
       return json::object{{"recipients", static_cast<__int64>(recipients.size())}};
    }
-   if (arguments.size() != 7) throw RequestError{422};
+   if (arguments.size() != 6) throw RequestError{422};
    const auto single = [&](const char *name, size_t maximum, bool quotes)
    {
       const auto text = Text(arguments, name, maximum);
