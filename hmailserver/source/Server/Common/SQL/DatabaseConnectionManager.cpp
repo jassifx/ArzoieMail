@@ -15,6 +15,7 @@
 #include "MySQLInterface.h"
 
 #include "SQLCommand.h"
+#include "TransactionLease.h"
 
 #include "Prerequisites/PrerequisiteList.h"
 #include "SQLScriptRunner.h"
@@ -153,8 +154,7 @@ namespace HM
 
       if (!pDALConn)
       {
-
-         assert(0);
+         sErrorMessage = "No database connection is available.";
          return false;
       }
 
@@ -180,7 +180,6 @@ namespace HM
 
       if (!pDALConn)
       {
-         assert(0);
          return pRecordset;
       }
 
@@ -214,6 +213,30 @@ namespace HM
       available_connections_.insert(pConnection);
    }
 
+   void
+   DatabaseConnectionManager::RetireConnection_(std::shared_ptr<DALConnection> connection) noexcept
+   {
+      if (!connection) return;
+      std::shared_ptr<DALConnection> replacement;
+      try { replacement = DALConnectionFactory::CreateConnection(connection->GetSettings()); }
+      catch (...) { /* Capacity can shrink on allocation failure; never reuse uncertain state. */ }
+      bool owned = false;
+      try
+      {
+         boost::lock_guard<boost::recursive_mutex> guard(mutex_);
+         owned = busy_connections_.erase(connection) == 1;
+         if (owned && replacement) available_connections_.insert(replacement);
+      }
+      catch (...) { /* Preserve the original transaction failure during cleanup. */ }
+      if (owned)
+      {
+         // Disconnect outside the pool mutex. Even a failed close cannot put this
+         // physical client back in the reusable pool; its replacement opens later.
+         try { connection->Disconnect(); } catch (...) { }
+         try { LOG_APPLICATION("Retired a database connection after an unconfirmed transaction."); } catch (...) { }
+      }
+   }
+
    int 
    DatabaseConnectionManager::GetCurrentDatabaseVersion()
    {
@@ -230,6 +253,7 @@ namespace HM
    std::shared_ptr<DALConnection>
    DatabaseConnectionManager::GetConnection_()
    {
+      std::shared_ptr<DALConnection> selected;
       // Loop until we find a free connection
       while (1)
       {
@@ -243,13 +267,12 @@ namespace HM
             if (iterConnection != available_connections_.end())
             {
                // Remove the connection from free and add to busy
-               std::shared_ptr<DALConnection> pConn = (*iterConnection);
+               selected = (*iterConnection);
 
                // Remove it from the list of available connections
                available_connections_.erase(iterConnection);
 
-               busy_connections_.insert(pConn);
-               return pConn;
+               busy_connections_.insert(selected);
             }
             else
             {
@@ -263,15 +286,30 @@ namespace HM
             }
          }
 
+         if (selected) break;
          Sleep(10);
       }
+      // Replacement clients start unopened. Open before handing one to any SQL
+      // path: MySQL's query/recordset APIs require a non-null native client handle.
+      // No pool mutex is held during network I/O, and legacy OnConnected upgrade
+      // hooks are not rerun when replacing a client.
+      String error;
+      if (!TransactionLease::EnsureConnected(selected, error,
+         [](DALConnection &connection, String &result) { return connection.Connect(result) == DALConnection::Connected; },
+         [this](const auto &connection) noexcept { RetireConnection_(connection); })) return {};
+      return selected;
    }
 
    std::shared_ptr<DALConnection> 
-   DatabaseConnectionManager::BeginTransaction(String &sErrorMessage)
+   DatabaseConnectionManager::BeginTransaction(String &sErrorMessage, TransactionLease::BeginResult *result)
    {
+      if (result) *result = TransactionLease::BeginResult::Unavailable;
       std::shared_ptr<DALConnection> pDALConnection = GetConnection_();
-      if (!pDALConnection->BeginTransaction(sErrorMessage))
+      const auto started = TransactionLease::Begin(pDALConnection, sErrorMessage,
+         [this](const auto &connection) { ReleaseConnection_(connection); },
+         [this](const auto &connection) noexcept { RetireConnection_(connection); });
+      if (result) *result = started;
+      if (started != TransactionLease::BeginResult::Started)
       {
          // Could not start database transaction.
          std::shared_ptr<DALConnection> pEmpty;
@@ -284,19 +322,29 @@ namespace HM
    bool
    DatabaseConnectionManager::CommitTransaction(std::shared_ptr<DALConnection> pConnection, String &sErrorMessage)
    {
-      bool bResult = pConnection->CommitTransaction(sErrorMessage);
-      ReleaseConnection_(pConnection);
-
-      return bResult;
+      {
+         boost::lock_guard<boost::recursive_mutex> guard(mutex_);
+         if (!pConnection || busy_connections_.find(pConnection) == busy_connections_.end())
+         { sErrorMessage = "The transaction connection is no longer leased."; return false; }
+      }
+      return TransactionLease::Finish(pConnection, sErrorMessage,
+         [](DALConnection &connection, String &error) { return connection.CommitTransaction(error); },
+         [this](const auto &connection) { ReleaseConnection_(connection); },
+         [this](const auto &connection) noexcept { RetireConnection_(connection); });
    }
 
    bool
    DatabaseConnectionManager::RollbackTransaction(std::shared_ptr<DALConnection> pConnection, String &sErrorMessage)
    {
-      bool bResult = pConnection->RollbackTransaction(sErrorMessage);
-      ReleaseConnection_(pConnection);
-
-      return bResult;
+      {
+         boost::lock_guard<boost::recursive_mutex> guard(mutex_);
+         if (!pConnection || busy_connections_.find(pConnection) == busy_connections_.end())
+         { sErrorMessage = "The transaction connection is no longer leased."; return false; }
+      }
+      return TransactionLease::Finish(pConnection, sErrorMessage,
+         [](DALConnection &connection, String &error) { return connection.RollbackTransaction(error); },
+         [this](const auto &connection) { ReleaseConnection_(connection); },
+         [this](const auto &connection) noexcept { RetireConnection_(connection); });
    }
 
    bool
@@ -315,6 +363,11 @@ namespace HM
    DatabaseConnectionManager::ExecuteScript(const String &sFile, String &sErrorMessage)
    {
       std::shared_ptr<DALConnection> pConnection = GetConnection_();
+      if (!pConnection)
+      {
+         sErrorMessage = "No database connection is available.";
+         return false;
+      }
 
       SQLScriptRunner scriptRunner;
       bool result = scriptRunner.ExecuteScript(pConnection, sFile, sErrorMessage);
@@ -331,6 +384,11 @@ namespace HM
 
       std::shared_ptr<DALConnection> pConnection = GetConnection_();
 
+      if (!pConnection)
+      {
+         sErrorMessage = "No database connection is available.";
+         return false;
+      }
       bool result = prerequisites.Ensure(pConnection, DBVersion, sErrorMessage);
 
       ReleaseConnection_(pConnection);

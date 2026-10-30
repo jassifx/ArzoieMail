@@ -43,7 +43,7 @@ namespace HM
    void
    Property::SetStringValue(const String &NewVal)
    {
-      string_value_ = NewVal;
+      SetStringValueWithoutSaving(NewVal);
       WriteStringSetting_(NewVal);
    }
 

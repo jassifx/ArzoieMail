@@ -16,6 +16,11 @@ unless the maintainer says otherwise for a specific task.
   across native/REST/panel, regressions and documentation in one PR rather than one small setting
   per PR. Preserve VM/CI-only execution and the review gate between PRs; this does not authorize
   automatic merging or starting the next bundle after submission.
+- **Checkpoint PRs per bundle** (maintainer decision, 2026-10-30): remaining Phase 1b work is
+  submitted as one PR per coherent bundle, each titled and described as a *checkpoint*, never as
+  Phase 1b completion. The ledger keeps every open A/E item visible. This replaces the earlier
+  single completion-PR instruction; the review gate, merge-on-instruction rule and VM/CI-only
+  testing are unchanged.
 - **Branch names decide whether CI runs.** Use `feature/…`, `bugfix/…`, `techdebt/…` or
   `claude/…` (version branches also run). Any other prefix, for example `security/…`, gets no CI
   at all.

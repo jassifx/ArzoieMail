@@ -29,6 +29,8 @@ with sync_playwright() as playwright:
     errors = []
     page.on('pageerror', lambda error: errors.append(type(error).__name__))
     domain_id = None
+    original_pop_limit = None
+    original_tls_cipher = None
     try:
         stage = 'server login and version'
         login(page, os.environ['ARZOIEMAIL_TEST_USERNAME'])
@@ -36,6 +38,90 @@ with sync_playwright() as playwright:
         response = context.request.get(base + '/api/v1/status')
         assert response.status == 200 and response.json()['data']['version'].startswith('6.')
         assert 'frame-ancestors' in response.headers['content-security-policy']
+        stage = 'configured transport inventory'
+        page.get_by_role('link', name='Mail transport', exact=True).click()
+        page.get_by_role('heading', name='Configured listeners', exact=True).wait_for()
+        page.get_by_text('These are saved settings. Running listeners can differ until the service is restarted.', exact=True).wait_for()
+        page.get_by_label('Transport inventory', exact=True).select_option('certificates')
+        page.get_by_role('heading', name='Configured certificates', exact=True).wait_for()
+        page.get_by_label('search', exact=True).fill(os.environ['ARZOIEMAIL_TEST_CERTIFICATE_NAME'])
+        page.get_by_role('button', name='Search transport', exact=True).click()
+        page.get_by_text(os.environ['ARZOIEMAIL_TEST_CERTIFICATE_NAME'], exact=True).wait_for()
+        assert page.evaluate('typeof window.transportInventoryExecuted') == 'undefined', 'Certificate names must remain inert text.'
+        assert 'not-used-private-key.pem' not in page.locator('#content').inner_text()
+        page.set_viewport_size({"width": 390, "height": 844})
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Transport inventory overflows on mobile.'
+        page.screenshot(path=str(output / 'transport-inventory-mobile.png'), full_page=True)
+        page.set_viewport_size({"width": 1440, "height": 1000})
+        stage = 'protected PFX inspection'
+        original_certificates = context.request.get(base + '/api/v1/transport/certificates').json()['data']['total']
+        page.get_by_label('PFX file', exact=True).set_input_files(os.environ['ARZOIEMAIL_TEST_PFX_PATH'])
+        page.get_by_label('PFX password', exact=True).fill(os.environ['ARZOIEMAIL_TEST_PFX_PASSWORD'])
+        page.get_by_label('Mail hostnames or IP addresses', exact=True).fill('mail.example.test\nwrong.example.test')
+        with page.expect_response(lambda item: item.url.endswith('/transport/certificates/inspect') and item.request.method == 'POST') as inspected:
+            page.get_by_role('button', name='Inspect PFX', exact=True).click()
+        assert inspected.value.status == 200
+        page.get_by_role('heading', name='PFX inspection results', exact=True).wait_for()
+        page.get_by_text('mail.example.test: matches', exact=True).wait_for()
+        page.get_by_text('wrong.example.test: does not match', exact=True).wait_for()
+        assert page.get_by_label('PFX password', exact=True).input_value() == ''
+        assert context.request.get(base + '/api/v1/transport/certificates').json()['data']['total'] == original_certificates
+        page.evaluate('window.scrollTo(0, 0)')
+        page.screenshot(path=str(output / 'certificate-inspection-desktop.png'), full_page=True)
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.evaluate('window.scrollTo(0, 0)')
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'PFX inspection results overflow on mobile.'
+        page.screenshot(path=str(output / 'certificate-inspection-mobile.png'), full_page=True)
+        page.set_viewport_size({"width": 1440, "height": 1000})
+        stage = 'server settings persistence'
+        settings = context.request.get(base + '/api/v1/settings/pop3')
+        assert settings.status == 200
+        original_pop_limit = settings.json()['data']['values']['maxConnections']
+        changed_limit = 137 if original_pop_limit != 137 else 138
+        page.get_by_role('link', name='Server settings', exact=True).click()
+        page.get_by_label('Settings section', exact=True).select_option('pop3')
+        page.get_by_label('max Connections', exact=True).fill(str(changed_limit))
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda item: item.url.endswith('/settings/pop3') and item.request.method == 'PATCH') as saved_settings:
+            page.get_by_role('button', name='Save server settings', exact=True).click()
+        assert saved_settings.value.status == 200
+        page.reload()
+        page.get_by_label('Settings section', exact=True).select_option('pop3')
+        assert page.get_by_label('max Connections', exact=True).input_value() == str(changed_limit)
+        page.get_by_label('max Connections', exact=True).fill(str(original_pop_limit))
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda item: item.url.endswith('/settings/pop3') and item.request.method == 'PATCH') as restored_settings:
+            page.get_by_role('button', name='Save server settings', exact=True).click()
+        assert restored_settings.value.status == 200
+        original_pop_limit = None
+        stage = 'TLS policy validation and persistence'
+        tls = context.request.get(base + '/api/v1/settings/tls')
+        assert tls.status == 200
+        original_tls_cipher = tls.json()['data']['values']['cipherList']
+        page.get_by_label('Settings section', exact=True).select_option('tls')
+        cipher = page.get_by_label('cipher List', exact=True)
+        cipher.fill('ARZOIEMAIL-NO-SUCH-CIPHER')
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda item: item.url.endswith('/settings/tls') and item.request.method == 'PATCH') as rejected_tls:
+            page.get_by_role('button', name='Save server settings', exact=True).click()
+        assert rejected_tls.value.status == 422
+        assert context.request.get(base + '/api/v1/settings/tls').json()['data']['values']['cipherList'] == original_tls_cipher
+        cipher.fill('HIGH:!aNULL:!eNULL')
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda item: item.url.endswith('/settings/tls') and item.request.method == 'PATCH') as saved_tls:
+            page.get_by_role('button', name='Save server settings', exact=True).click()
+        assert saved_tls.value.status == 200
+        page.reload()
+        page.get_by_label('Settings section', exact=True).select_option('tls')
+        cipher = page.get_by_label('cipher List', exact=True)
+        assert cipher.input_value() == 'HIGH:!aNULL:!eNULL'
+        assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        cipher.fill(original_tls_cipher)
+        page.once('dialog', lambda dialog: dialog.accept())
+        with page.expect_response(lambda item: item.url.endswith('/settings/tls') and item.request.method == 'PATCH') as restored_tls:
+            page.get_by_role('button', name='Save server settings', exact=True).click()
+        assert restored_tls.value.status == 200
+        original_tls_cipher = None
         stage = 'domain persistence'
         domain = 'browser-' + uuid.uuid4().hex + '.test'
         page.get_by_role('link', name='Domains & DNS').click()
@@ -95,6 +181,34 @@ with sync_playwright() as playwright:
                 for title in ['Delivery queue', 'Routing', 'Global rules']:
                     assert not role_page.get_by_role('link', name=title).is_visible()
                 assert role_context.request.get(base + '/api/v1/queue').status == 403
+                assert not role_page.get_by_role('link', name='Server settings', exact=True).is_visible()
+                assert role_context.request.get(base + '/api/v1/settings/pop3').status == 403
+                assert role_context.request.get(base + '/api/v1/settings/tls').status == 403
+                assert not role_page.get_by_role('link', name='Mail transport', exact=True).is_visible()
+                assert role_context.request.get(base + '/api/v1/transport/listeners').status == 403
+                assert role_context.request.get(base + '/api/v1/transport/certificates').status == 403
+                role_session = role_context.request.get(base + '/api/v1/session').json()['data']
+                assert role_context.request.post(base + '/api/v1/transport/certificates/inspect', data={},
+                    headers={'X-CSRF-Token': role_session['csrf']}).status == 403
+                stage = 'live mailbox self-service'
+                own_profile = role_context.request.get(base + '/api/v1/self/profile')
+                assert own_profile.status == 200
+                original_name = own_profile.json()['data']['firstName']
+                role_page.get_by_role('link', name='My mailbox', exact=True).click()
+                role_page.get_by_role('button', name='My profile', exact=True).click()
+                role_page.get_by_label('first Name', exact=True).fill('Own live browser profile')
+                with role_page.expect_response(lambda item: item.url.endswith('/self/profile') and item.request.method == 'PATCH') as own_saved:
+                    role_page.get_by_role('button', name='Save changes', exact=True).click()
+                assert own_saved.value.status == 200
+                assert role_context.request.get(base + '/api/v1/self/profile').json()['data']['firstName'] == 'Own live browser profile'
+                role_page.reload()
+                role_page.get_by_role('button', name='My profile', exact=True).click()
+                assert role_page.get_by_label('first Name', exact=True).input_value() == 'Own live browser profile'
+                role_page.get_by_label('first Name', exact=True).fill(original_name)
+                with role_page.expect_response(lambda item: item.url.endswith('/self/profile') and item.request.method == 'PATCH') as own_restored:
+                    role_page.get_by_role('button', name='Save changes', exact=True).click()
+                assert own_restored.value.status == 200
+                assert role_page.evaluate('document.documentElement.scrollWidth <= innerWidth')
                 role_page.get_by_role('button', name='Sign out', exact=True).click()
                 role_page.get_by_role('heading', name='Sign in to your server').wait_for()
                 assert role_context.request.get(base + '/api/v1/status').status == 401
@@ -109,6 +223,29 @@ with sync_playwright() as playwright:
         page.screenshot(path=str(output / 'published-live-failure.png'), full_page=True)
         raise SystemExit(1) from None
     finally:
+        if original_tls_cipher is not None:
+            try:
+                session = context.request.get(base + '/api/v1/session')
+                current = context.request.get(base + '/api/v1/settings/tls')
+                if session.status == 200 and current.status == 200:
+                    restored = context.request.patch(base + '/api/v1/settings/tls', data={
+                        'fields': {'cipherList': original_tls_cipher},
+                        'expected': {'cipherList': current.json()['data']['values']['cipherList']}},
+                        headers={'Content-Type': 'application/json', 'X-CSRF-Token': session.json()['data']['csrf']})
+                    assert restored.status == 200
+            except Exception:
+                print('Published live browser TLS cleanup could not complete.', file=sys.stderr)
+        if original_pop_limit is not None:
+            try:
+                session = context.request.get(base + '/api/v1/session')
+                current = context.request.get(base + '/api/v1/settings/pop3')
+                if session.status == 200 and current.status == 200:
+                    context.request.patch(base + '/api/v1/settings/pop3', data={
+                        'fields': {'maxConnections': original_pop_limit},
+                        'expected': {'maxConnections': current.json()['data']['values']['maxConnections']}},
+                        headers={'Content-Type': 'application/json', 'X-CSRF-Token': session.json()['data']['csrf']})
+            except Exception:
+                print('Published live browser settings cleanup could not complete.', file=sys.stderr)
         if domain_id is not None:
             try:
                 session = context.request.get(base + '/api/v1/session')

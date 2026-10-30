@@ -20,6 +20,14 @@ The approved [6.0 scope](version-6-scope.md) requires continuous migration/recov
 validation as each phase lands, followed by comprehensive validation of an immutable integrated
 baseline. Existing code still uses COM and Compact; future obligations below do not claim removal.
 
+Completion-branch follow-up: checkpoint `92c03fc` passed three database jobs but failed Express
+on ADO parameter-prefix replacement. The correction adds native ADO occurrence/order/type
+regressions and shared transaction-lease failure/capability tests to TestInternals and portable
+core tests. These passed in the disposable Compact VM; corrected head `bc3980201` then passed
+all four backend jobs, Release, GCC/Clang and installer generation. Later eight-field TLS policy
+tests and published browser workflow passed the full VM run and four-backend CI at `82a3bdaf5`.
+Fault-injected helper tests do not prove real provider outage or commit-acknowledgement recovery.
+
 | ID | Technology / boundary | Coverage and evidence | Execution |
 |---|---|---|---|
 | C01 | .NET 10 LTS toolchain | Root global.json selects stable SDK 10 with latest compatible feature band; check actual SDK, runtime major, x64 Windows, API target, ASP.NET Core 10 loaded and version-6 metadata | New runtime mode and SDK check on every backend |
@@ -30,17 +38,50 @@ baseline. Existing code still uses COM and Compact; future obligations below do 
 | C06 | Production hosting policy | Refuse missing/wildcard AllowedHosts, reject foreign HTTP Host on valid HTTPS and reject plaintext even with forged X-Forwarded-Proto | New TLS checks and expanded existing plaintext boundary checks |
 | C07 | Pipe trust boundary | SCM/server-PID verification, impostor rejection with zero credential bytes; invalid frame/malformed JSON/authorization checks | Existing two-assertion squatting mode newly automated before pipe opt-in; native framing suite on every backend |
 | C08 | Real REST/native/database integration | Real Kestrel, cookies, authentication, native channel and selected backend; domain/mailbox/profile/signature/alias/list/member/rule/route/recipient persistence and validation, stored-mail queue exclusion and request-size limits | New live HTTP mode on every backend, without a fake management channel |
-| C09 | Real identity and session lifecycle | Domain/admin/user restrictions, cross-domain denial, protected-account denial, native account disable revokes HTTP session, old cookies cannot resume on a fresh host/vault | New live HTTP mode; controlled-clock idle/absolute expiry checks remain a gap below |
+| C09 | Real identity and session lifecycle | Domain/admin/user restrictions, cross-domain denial, protected-account denial, account disable and same-password reset revoke HTTP sessions, old cookies cannot resume on a fresh host/vault; controlled-clock idle/absolute expiry and cookie renewal | Live HTTP mode; completion branch adds native credential binding and 43 controlled-clock assertions in default mode; VM and four-backend CI passed at `bc3980201` |
 | C10 | HTTPS through the native service | Repeat production TLS/cookie/host/chain checks with actual native authentication and version-6 service status | New live TLS/native mode inside the opted-in fixture on every backend |
 | C11 | Browser interaction edge cases | Fixture-backed workflows, confirmations/cancellation, inert HTML/source, password omission, queue precision/busy controls, rule order/activation, role restrictions, session recovery and mobile layout | Existing browser suite retained on every backend |
 | C12 | Published browser end to end | No API interception: real login, service version, domain/mailbox/profile/rule writes, persistence after reload/readback, native role restrictions, logout, cascading cleanup and mobile layout | New browser_live.py against the published API on every backend |
-| C13 | Native management behavior | Parent/role/revocation/parser/persistence boundaries; domain/account/alias/list/forward/reply/signature/policy/name/queue/route/rule workflows; local SMTP/POP3 effects and controlled busy queue | Existing 402-assertion live-native suite on every backend |
+| C13 | Native management behavior | Parent/role/revocation/parser/persistence boundaries; domain/account/alias/list/forward/reply/signature/policy/name/queue/route/rule workflows; local SMTP/POP3 effects and controlled busy queue; completion branch adds settings/TLS, filtering/relay collections, self-service and IP security ranges | Every backend; baseline 402 assertions expanded to 739 at green `bc3980201`, then 781 at green TLS head `82a3bdaf5`; newer heads need their own evidence |
 | C14 | Mail protocols and data/security | SMTP/IMAP/POP3, SQL binding, TLS, password hashing/UTF-8, crypto/key/backup, permissions and product/install identity; expected explicit/inconclusive outcomes reported separately | Installed-server NUnit suite on every backend; currently 1317 cases at the verified version-6 baseline |
 | C15 | SQL Server Express | OLE DB 19, native SQL-session encryption, certificate rejection/trust behavior and DB migration fixture | Express-specific setup/tests; equivalent shared behavior on all backends |
 | C16 | Product 6 and compatibility | Service/PE version agreement, product name, retained service name, new/legacy paths and installer/native-tool compilation; schema 5714 stays independent | Version-6 product regression and existing installation/identity checks |
 | C17 | Documentation as project memory | Local links, maintained PHP/desktop inventories and capability ownership; SDK/runtime evidence and results distinguish snapshots from unverified work | Static documentation checker newly run in every backend job |
 | C18 | Native portability and static security | GCC/Clang sanitizer/CTest, CodeQL for enabled languages, workflow actionlint/zizmor when workflow files change; NuGet restore auditing remains enabled | Existing separate CI jobs, with the expanded test code included |
 | C19 | Test evidence and diagnosis | SDK/runtime details, publish manifests, live native/REST/TLS logs, fixture/live browser screenshots and host logs; unique backend artifact names, always uploaded when available | New management-test-evidence artifacts; no service INI, credentials, private keys, HAR or authentication traces |
+
+Additional completion-branch native coverage: TestInternals runs the shared transaction-lease
+fault tests and ADO parameter prefix/occurrence/order/type regressions (green CI at `bc3980201`).
+Later persistence regressions require database-rejected listener/certificate inserts to fail
+the caller, avoid collection/identity publication and allow a corrected retry. Both passed in
+the Compact VM and four-backend CI at `170442658`. A disconnected-manager TestInternals
+regression reproduced unsafe prerequisite success; its null-guard correction also passed that CI.
+These checks do not replace real provider outage/acknowledgement-loss/concurrency acceptance.
+
+The following inventory revision extends C04/C12/C13 with configured listener/certificate
+roles, strict filters, 25-item pages, exact string IDs, explicit public metadata fields and a
+published browser search/mobile/inert-markup workflow. Its temporary certificate registration
+uses nonexistent paths, is never assigned to a listener and is removed by the tracked live
+driver. Builds, full VM validation and four-backend CI passed at `8cdc085b4`. These tests do
+not satisfy certificate import/chain/key/renewal, actual listener state or activation/rollback gates.
+
+PFX preflight extends C04/C12 with the .NET 10 bounded/ephemeral loader, public-only reports,
+strict sensitive-buffer ownership, per-route body limits, CSRF/origin/role checks, concurrent
+upload rejection, deadline/cancellation cleanup and an independent request budget. The final
+VM run passed 546 HTTP/security plus60 parser assertions and the affected full browser/native
+layers; four-backend CI passed at `ae903a182`. The temporary PFX stays outside evidence and is deleted.
+This proves inspection behavior, not protected native installation, authoritative activation,
+IIS private-key access, client trust/revocation or certificate renewal.
+
+The following native transport identity regression runs inside existing NUnit TestInternals:
+real-provider BIGINT projections verify certificate/listener IDs and certificate references,
+and setter boundaries include zero, the signed 32-bit boundary, values above 2^32 and signed
+64-bit maximum. The Compact VM reproduced narrowing before the fix and passed afterward.
+No identity seeds or certificate/listener rows are changed by that regression. Native insert
+identity assignment and backup name lookup are widened too; this test does not separately
+exercise a persisted high-identity insert or high-ID backup restoration. Four-backend final-head
+CI is still required. Legacy COM ID properties and other persistence objects remain outside
+this correction; schema version and table types are unchanged.
 
 ## Fixture boundaries and secret handling
 
@@ -74,7 +115,7 @@ fixtures and failure-path tests together when the owning feature is delivered.
 
 | Owner / area | New tests required before acceptance | Appropriate execution |
 |---|---|---|
-| Session timing | Deterministic inactivity/absolute expiry and boundary tests using an injectable clock; preserve reauthentication/restart/revocation checks | Per-backend management CI after adding a safe test-time clock seam |
+| Session timing | Completion branch implements injected vault/cookie time with System as production default; 43 controlled-clock VM assertions and affected real HTTP/TLS/browser integration passed. Covers idle/absolute bounds, activity, renewal identity, roles and binding revocation. Branch CI pending; service/IIS/reboot and further boundary/concurrency acceptance remain separate | Added to the existing default management mode used on every backend; CI not yet run for this branch |
 | E07 restricted hosting | Dedicated non-admin service/IIS identity, no DB/mail-store/DCOM grant, allowed/denied SID access, service-PID replacement, IIS recycle/reboot, HTTPS/AllowedHosts/runtime provisioning and permission repair | Disposable Windows install/upgrade/security matrix; not proven by administrator-run fixtures |
 | E07 installer delivery | Package/deploy the actual API, offline ASP.NET runtime, install/update/uninstall, service/pool identity cleanup, old installation migration and rollback | Installer VM tests on supported Windows/DB combinations |
 | E03 certificate wizard | PFX/PEM/chain/password import, wrong key/name/chain/expired rejection, private-key ACLs, real listener certificates, ACME challenge/issuance, renewal failure/recovery/rollback, separate IIS/mail bindings | Deterministic VM fixtures plus controlled external-CA acceptance; never public-CA requests in every PR |

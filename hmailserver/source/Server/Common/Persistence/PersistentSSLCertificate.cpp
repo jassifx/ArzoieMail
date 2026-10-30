@@ -34,7 +34,7 @@ namespace HM
    bool 
    PersistentSSLCertificate::ReadObject(std::shared_ptr<SSLCertificate> pObject, std::shared_ptr<DALRecordset> pRS)
    {
-      pObject->SetID (pRS->GetLongValue("sslcertificateid"));
+      pObject->SetID (pRS->GetInt64Value("sslcertificateid"));
       pObject->SetName(pRS->GetStringValue("sslcertificatename"));
       pObject->SetCertificateFile(pRS->GetStringValue("sslcertificatefile"));
       pObject->SetPrivateKeyFile(pRS->GetStringValue("sslprivatekeyfile"));
@@ -45,8 +45,9 @@ namespace HM
    bool 
    PersistentSSLCertificate::SaveObject(std::shared_ptr<SSLCertificate> pObject, String &errorMessage,  PersistenceMode mode)
    {
-      // errorMessage - not supported yet.
-      return SaveObject(pObject);
+      const bool saved = SaveObject(pObject);
+      if (!saved) errorMessage = "Failed to save SSL certificate settings to the database.";
+      return saved;
    }
 
    bool 
@@ -79,9 +80,7 @@ namespace HM
       __int64 iDBID = 0;
       bool bRetVal = Application::Instance()->GetDBManager()->Execute(oStatement, bNewObject ? &iDBID : 0);
       if (bRetVal && bNewObject)
-         pObject->SetID((int) iDBID);
-
-
-      return true;
+         pObject->SetID(iDBID);
+      return bRetVal;
    }
 }

@@ -38,6 +38,7 @@ namespace HM
       virtual bool Disconnect() = 0;
       virtual ExecutionResult TryExecute(const SQLCommand &command, String &sErrorMessage, __int64 *iInsertID = 0, int iIgnoreErrors = 0) = 0;
       virtual bool IsConnected() const = 0;
+      virtual bool GetSupportsTransactions() const { return true; }
       virtual void OnConnected() = 0;
 
       virtual bool BeginTransaction(String &sErrorMessage) = 0;

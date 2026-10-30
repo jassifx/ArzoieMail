@@ -164,6 +164,23 @@ remaining work, acceptance gates and every legacy PHP/desktop main-pane migratio
 | **5 · Code quality** | Modern ownership (smart pointers), compiling at warning level 4, smaller modules, more of the server in the portable core with its tests and fuzzers - continuously, alongside the other phases | Ongoing |
 | **6 · Features** | Sieve filtering, DMARC aggregate reports, ARC, webmail | Planned |
 
+The current authorized effort completes all remaining Phase 1b, tracked on
+`feature/phase1b-completion`. Server settings and three filtering/relay collections passed
+initial VM validation; mailbox self-service also passed native/browser VM checks. Password-policy
+and IP security-range additions, plus logging, passed initial VM checks. A reproduced session
+revocation issue was reproduced and fixed with passing VM regression checks; 43 controlled-clock
+session checks also passed. Database corrections at `bc3980201` passed all four backend jobs,
+Release, GCC/Clang and CI installer generation. Eight additional mail TLS controls passed
+the 781-native-assertion VM run, published browser checks and four-backend CI at `82a3bdaf5`.
+Subsequent persistence/recovery corrections passed targeted VM regressions and four-backend CI at `170442658`.
+A transport inventory addition passed full VM/browser validation and four-backend CI at `8cdc085b4`; it shows configured listeners and
+certificate names without private paths. The subsequent
+PFX inspection workflow passed full VM/native/browser checks and four-backend CI at `ae903a182`.
+A following native 64-bit certificate/listener ID correction passed a reproduced red/green
+VM regression and passed four-backend CI at `7258068df`. Certificate installation/assignment is unfinished. The remaining
+administration, scanner, certificate, hosting, migration and cutover gates are still open.
+Work is submitted as checkpoint PRs per bundle; none claims Phase 1b completion.
+
 The phases run in this order, each starting once the one before it is done; code quality (5) runs
 alongside all of them.
 

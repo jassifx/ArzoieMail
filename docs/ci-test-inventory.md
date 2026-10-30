@@ -4,6 +4,227 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Current completion-branch validation (not CI acceptance)
+
+Branch `feature/phase1b-completion`, based on merged #43, adds typed server settings,
+checked transactional patches/cache synchronization and SURBL/blocked-attachment/incoming-relay
+collections. On 2026-10-29 the disposable Windows Server 2025/Compact VM passed **630 native
+assertions** (402 prior + 156 settings + 72 policy collections), **131 real HTTP/native**,
+**12 production TLS/native**, fixture and published-live browser suites, and the selected
+product-version NUnit case (1 passed). The temporary checkpoint and original service/database/
+INI/executable were restored. Evidence: local ignored `out/phase1b-settings-policies-vm.log`;
+repeatable test sources and driver are checked in. Settings tests include a real POP3 greeting;
+browser tests include persisted settings changes and restoration.
+
+Earlier settings validation reproduced a Compact parameter-binding failure: ADO binds by
+ordinal, so guarded UPDATE parameters must follow SQL order (SET, then WHERE). Corrected code
+passed the run above. Earlier diagnostic and browser-navigation failures are historical failures,
+not additional successful tests. Database failure injection and concurrent legacy-tool acceptance
+remain open. Subsequent mailbox self-service changes are **not covered by that first VM pass**.
+The subsequent self-service revision passed a full Compact VM run: **656 native assertions**
+(630 above +26 self-service), **131 live HTTP/native**, **12 native TLS**, both browser suites
+(including ordinary-user/domain-admin own-profile persistence), and the selected NUnit case
+(1 passed). Original files/service and the checkpoint were restored. Local evidence:
+`out/phase1b-self-service-vm-v2.log`. A prior fixture identity-switch failure was fixed by
+explicitly reloading the mocked session after hash navigation. The later deterministic HTTP
+run caught a new test DELETE request without the API-required JSON body (415); the test was
+corrected to use the same request contract as the panel. Its checkpoint was restored.
+
+Later password-policy and IP security-range code is **not covered by those passes**. New tests
+cover algorithm-dependent cost validation/transaction restoration; IPv4/IPv6 permissions and
+expiry; real SMTP denial/recovery/authentication gates; transient trusted-relay acknowledgement;
+and management access during mail-protocol lockout. Those additions passed a full run with
+**706 native assertions**, 26 deterministic DNS, 413 HTTP/security, 2 plaintext HTTPS-boundary,
+7 runtime, 11 TLS, 131 real HTTP/native and 12 native TLS checks, both browser suites and
+the selected NUnit case (1 passed). The checkpoint was restored. Evidence:
+`out/phase1b-security-policy-vm.log`.
+
+The following logging revision passed **736 native assertions** (402 previous +204 settings
++72 filtering/relays +26 self-service +32 IP policies), the same other assertion layers,
+both browser suites and selected NUnit (1 passed), with original service state and checkpoint
+restored. Evidence: `out/phase1b-logging-policy-vm.log`. Logging tests exercise merged bit flags,
+omitted flags, stale/mixed-invalid patches and restoration. These are Compact VM runs, not
+four-backend CI or full security/capacity acceptance.
+
+A new real REST regression then **reproduced** session reuse after resetting an account to the
+same password: old session GET /status returned 200 instead of 401. Evidence:
+`out/phase1b-session-repro-vm.log`, LiveRestTests.cs; original state/checkpoint restored.
+The fix then passed **739 native assertions**, **415 HTTP/security**, **145 real HTTP/native**,
+26 DNS, 2 plaintext-boundary, 7 runtime, 11 TLS and 12 native TLS assertions, both browser suites
+and selected NUnit (1 passed). Original files/service and checkpoint were restored. Evidence:
+`out/phase1b-session-binding-vm.log`. The new same-password-reset regression passed; native
+metadata checks verify binding shape, stability across preferences and rotation on password change.
+
+Following that pass, an injected TimeProvider was added to vault/cookie timing with System as
+the production default. **43 controlled-clock assertions** have passed in the follow-up VM run:
+30-minute idle and 8-hour absolute vault expiry, activity below the absolute bound, cookie
+sliding renewal/idle expiry, fresh roles, only an opaque ID in renewed cookies, changed-binding
+revocation with a still-valid password, and missing-binding login refusal. The follow-up affected
+HTTP/TLS/browser run passed in `out/phase1b-session-lifetime-vm.log`: 415 HTTP/security, 43 lifecycle,
+26 DNS, 2 plaintext-boundary, 7 runtime, 11 TLS, 145 live HTTP/native and 12 native TLS assertions,
+both browser suites and selected NUnit (1 passed). Original files/service and checkpoint restored.
+Native code is
+unchanged from the 739-assertion pass; its full direct suite is not redundantly rerun there.
+Checkpoint head `92c03fc154b40c6d12ccdd6b7267371b3f68aefa` was pushed without a PR.
+Release, GCC/Clang and Compact/MySQL/PostgreSQL regression jobs passed. SQL Server Express
+failed in live mailbox self-service after its 1317-case NUnit run returned exit code 0;
+CI installer publication was skipped. Run `40870226699` exposed ADO replacing `@SELF_AD`
+inside `@SELF_ADDRESS`, leaving an invalid SQL parameter. This is a real product failure.
+
+The correction uses the existing whole-token positional binder and tests prefix collisions,
+repeated parameters, SQL occurrence order, Unicode and 64-bit values in ADOConnectionTester.
+Transaction-pool regressions also reproduced failed-BEGIN lease leaks and unsafe recycling
+after failed COMMIT/ROLLBACK (11 failed assertions), then unsupported/no-op transactions
+(2 failed assertions), before fixes passed with zero failures. These fault-injection tests
+run in both the portable core and native TestInternals; they do not simulate real provider
+outages or lost commit acknowledgements. Evidence: ignored `out/transaction-lease-red-vm-v2.log`,
+`out/transaction-capability-red-vm.log`, `out/transaction-lease-green-vm.log`.
+
+The corrected fresh native/managed build passed the disposable Compact VM run recorded in
+`out/phase1b-database-fixes-vm.log`: 739 native, 415 HTTP/security, 43 controlled-clock,
+26 DNS, 2 plaintext-boundary, 7 runtime, 11 TLS, 145 live HTTP/native and 12 native TLS
+assertions, both browser suites and selected NUnit **TestInternals** (1 passed, including
+the new ADO and transaction tests). Original executable/database/INI/service state was restored.
+Corrected head `bc3980201` then passed all four backend jobs, Release, GCC/Clang and CI installer
+generation. Per backend: **1402 management/runtime/security assertions** = 26 DNS +415 HTTP
++2 plaintext-boundary +43 lifecycle +739 native +7 runtime +2 pipe-squatting +145 real HTTP
++11 TLS +12 native TLS, plus both browser suites. NUnit on Compact/MySQL/PostgreSQL recorded
+1317 total, 1207 passed, 0 failed/warnings, 34 inconclusive, 76 skipped; Express recorded
+1208 passed, 34 inconclusive and 75 skipped. These are not 1317 passing cases. Ignored logs:
+`out/database-green-{compact,mysql,postgresql,express}-ci.log`. CodeQL/workflow lint were not
+checks in this branch-push run. Subsequent TLS changes were validated separately below; no PR exists.
+
+The next TLS revision adds eight controls (81 settings total), tests for invalid/all-disabled
+version policies, cipher validation, combined option masks, stale edits, role denials and
+configuration restoration, plus a real published browser validation/save/reload workflow.
+Native and managed builds passed with host service hooks disabled. The full Compact VM run
+passed in `out/phase1b-tls-controls-vm.log`: **781 native** (246 settings +72 collections
++29 self +32 IP ranges +402 prior),415 HTTP/security,43 lifecycle,26 DNS,2 plaintext-boundary,
+7 runtime,11 TLS,145 live HTTP/native,12 native TLS, both browsers and selected TestInternals
+(1 passed). Original executable/database/INI/service state and checkpoint were restored.
+TLS head `82a3bdaf5f15755c25730cbf03d40f80b7c3766b` then passed all four database jobs,
+Release, GCC/Clang and CI installer generation. Per backend: **1444** separate assertions
+(the prior 1402 with native 739 increased to 781), both browser suites, and the same NUnit
+1317-case outcomes as `bc3980201`. Logs: `out/tls-green-{compact,mysql,postgresql,express}-ci.log`.
+CodeQL/workflow lint were not checks in this branch-push run. Do not claim listener handshake/
+certificate/renewal acceptance from configuration tests.
+
+The subsequent listener/certificate persistence review added two NUnit regressions to
+Infrastructure/Persistence/TCPIPPortTests.cs. Both reproduced real Compact provider rejection
+while the caller still reported success: invalid protocol-column integer and a certificate
+name exceeding the 255-character schema limit. Both failed at the expected missing-exception
+assertion in `out/phase1b-persistence-red-vm.log`; original VM state/checkpoint restored.
+Native bool/error propagation and the existing compatibility caller were then corrected.
+Native and test compilation passed (inherited analyzer warnings remain). A focused VM rerun
+passed **2/2 NUnit cases** in `out/phase1b-persistence-green-vm.log`, with added no-publication
+and corrected-retry checks; original VM state/checkpoint restored. The subsequent CI result
+is recorded below. The certificate failure fixture
+requires provider length enforcement; permissive truncation is not proven covered.
+
+The next disconnected-manager regression in native ClassTester failed the selected TestInternals
+case in the VM (1/1 failed) with the expected default-log marker confirming that upgrade
+prerequisites incorrectly succeeded without a connection. Evidence:
+`out/phase1b-disconnected-red-vm.log`, `out/phase1b-disconnected-red-results.xml`.
+The assertion runs before the old SQL-script null dereference, so no intentional service crash
+is needed. Both manager entry points then gained early null guards; native compilation and
+selected TestInternals passed (1/1, zero failures/warnings/skips) in
+`out/phase1b-disconnected-green-vm.log`; original VM state/checkpoint restored. These changes
+then passed CI at `170442658`. This tests an unavailable connection manager, not a live provider
+outage or lost commit acknowledgement.
+
+Recovery head `170442658fc3603bface0613dafd6b271dbb3306` passed all four database jobs,
+Release, GCC/Clang and CI installer generation. Every backend retained **1444** separate
+management/runtime/security assertions and both browser suites. NUnit increased to **1319**:
+Compact/MySQL/PostgreSQL 1209 passed,0 failed/warnings,34 inconclusive,76 skipped; Express
+1210 passed,0 failed/warnings,34 inconclusive,75 skipped. This includes both new rejected-write/
+corrected-retry cases and the disconnected-manager TestInternals check. Logs:
+`out/recovery-green-{compact,mysql,postgresql,express}-ci.log`. CodeQL/workflow lint were not
+checks in this branch-push run. No public release or full-phase acceptance is implied.
+
+The next transport-inventory revision adds native role/filter/schema/paging/string-ID tests,
+deterministic REST route/bounds checks and a published browser workflow for configured listeners,
+certificate search, inert markup and mobile layout. The tracked live driver seeds one temporary
+certificate registration with deliberately nonexistent file paths and a markup-bearing name,
+then removes it in cleanup. No certificate files are installed/read or assigned to a listener.
+Native and managed builds passed. The full Compact VM run passed in
+`out/phase1b-transport-inventory-vm.log`: **831 native** (402 prior +246 settings +72 collections
++29 self +32 ranges +50 inventory on the four-listener fixture),**449 HTTP/security**,
+43 lifecycle,26 DNS,2 plaintext-boundary,7 runtime,11 TLS,145 real HTTP/native and12 native TLS
+assertions, both browsers and selected TestInternals (1 passed). Original executable/database/
+INI/service state was restored. Inventory assertion counts depend on fixture listener count;
+these are functional checks, not load evidence. Transport head
+`8cdc085b4ebc9042b4ecbc4f31e8467b0a335079` then passed all four backend jobs, Release,
+GCC/Clang and CI installer generation: **1528** separate assertions per backend, both browsers,
+and the same 1319-case NUnit outcomes as `170442658`. Logs:
+`out/transport-green-{compact,mysql,postgresql,express}-ci.log`. CodeQL/workflow lint were not
+checks in this branch-push run. The subsequent certificate inspector requires its own evidence.
+
+The next .NET 10 bounded PFX helper passed **60** focused VM assertions in
+`out/phase1b-certificate-inspection-vm.log` (exit0, checkpoint restored/removed). These cover
+format/password/size/key/certificate/KDF limits, SAN matching/IDNA/IP/CN behavior, validity,
+CA/EKU/key-strength metadata, public-only replies and no personal-store installation. Its
+newer POST endpoint/owned JSON reader/form and rate/concurrency/body/deadline controls compiled.
+Their first full VM run `out/phase1b-certificate-preflight-vm.log` passed
+513 management HTTP/security,43 lifecycle,60 parser,831 native,145 real HTTP/native,26 DNS,
+2 plaintext-boundary,7 runtime,11 TLS,12 native TLS, both browsers and selected TestInternals
+(1 passed); original state/checkpoint restored. A further independent-host inspection-rate-budget
+test and the latest fixture cleanup/desktop screenshot harness were validated in
+`out/phase1b-certificate-preflight-final-vm.log`; the final run passed **546 management HTTP/
+security**,60 parser,43 lifecycle,831 native,145 real HTTP/native,26 DNS,2 plaintext-boundary,
+7 runtime,11 TLS and12 native TLS assertions, both browsers and selected TestInternals (1 passed).
+Private PFX files and the original VM state/checkpoint were cleaned up/restored. Public desktop/
+mobile captures were retained and visually reviewed for layout, inert metadata and the cleared
+password; these do not establish complete manual/IIS/platform acceptance. Its checkpoint CI
+at `ae903a182811922e1764526936550680a84978d4` passed all four database jobs, Release and GCC/Clang.
+Per backend: **1685** separate assertions = 26 DNS +546 HTTP/security +2 plaintext-boundary
++43 lifecycle +60 PFX +831 native +7 runtime +2 pipe-squatting +145 real HTTP/native +11 TLS
++12 native TLS, plus both browser suites. NUnit remains **1319** cases: Compact/MySQL/PostgreSQL
+1209 passed,0 failed/warnings,34 inconclusive,76 skipped; Express 1210 passed,0 failed/warnings,
+34 inconclusive,75 skipped. Logs: `out/certificate-green-{compact,mysql,postgresql,express}-ci.log`.
+CI installer artifact publication also passed; CodeQL/workflow lint were not checks in this
+branch-push run. The following native correction's CI result is recorded below.
+The earlier focused 60-case pass predates the endpoint changes.
+Current handoff:
+[2026-10-30](agents/handoffs/2026-10-30.md). Native installation/activation is not implemented.
+
+The next native transport identity prerequisite adds a regression to existing TestInternals,
+without adding a separate NUnit case or management assertion count. On the Compact VM, the
+fully qualified test failed before the fix and passed afterward (1 selected case). Its
+application log records certificate ID, listener ID, certificate-reference and setter narrowing.
+Synthetic BIGINT projections use the actual provider without changing identity seeds or
+certificate/listener rows. Boundaries include signed 32-bit overflow, a colliding low 32-bit
+value and signed 64-bit maximum. Sources also widen returned insert IDs and backup certificate-
+name lookup; high-ID persisted insert/backup and COM compatibility are not separately proven
+by this read/setter regression. Logs: `out/phase1b-identity-red-focused-vm.log`,
+`out/phase1b-identity-green-vm.log`; XML: `out/phase1b-identity-{red,green}-results.xml`.
+Both selected runs restored the original service files and temporary checkpoint; no VM job remains active.
+An earlier incomplete filter selected zero tests and was rejected, not accepted as evidence.
+The build ran with service/COM hooks disabled. This correction needs its own four-backend CI.
+
+First pushed identity head `95c91ce55` passed Compact/PostgreSQL, Release and GCC/Clang but failed MySQL:
+the new test used CAST(... AS BIGINT), which MySQL rejects. Four NUnit cases calling the
+internal suite failed (1205 passed,4 failed,34 inconclusive,76 skipped,0 warnings out of 1319);
+these are not production ID-fix failures or a waived flaky test. Log:
+`out/identity-failed-mysql-ci.log`. The fixture now selects MySQL's CAST(... AS SIGNED),
+which produces a signed BIGINT per the [MySQL contract](https://dev.mysql.com/doc/refman/8.4/en/cast-functions.html),
+while preserving BIGINT on the other providers. Express and installer publication were cancelled
+when the correction was pushed; they are not accepted results for that head. Native compilation
+passed with hooks disabled in `out/phase1b-identity-mysql-build.log`. Corrected head
+`7258068dff8062c2072eebd6d0603722362eff41` then passed all four database jobs, Release,
+GCC/Clang and CI installer publication: NUnit 1319 cases (Compact/MySQL/PostgreSQL 1209 passed,
+34 inconclusive, 76 skipped; Express 1210 passed, 75 skipped; 0 failed/warnings each) and the same
+1685 separate assertions and both browser suites per backend as `ae903a182`. Logs:
+`out/identity-green-*.log`.
+
+Separate storage research: the [Windows machine-key probe](agents/tools/certificate-key-store-probe/README.md)
+passed 50 assertions on the disposable Windows Server 2025 VM, including protected DACL readback,
+reopen/export identity and unprivileged-user denial for RSA-2048/ECDSA-P256. Final tracked-run
+log: `out/phase1b-cng-storage-final-vm.log`, exit0; generated keys/user cleaned up, checkpoint
+restored/removed. This standalone manual probe is not invoked by application CI and adds nothing
+to its 1685 count. Native OpenSSL, service/IIS identity, backup, activation, other Windows versions
+and algorithms remain unproved. Earlier rejected runner/fixture attempts are recorded in the
+[storage proposal](certificate-storage-design.md), not counted as successful application tests.
+
 ## Modern-stack CI expansion merged and verified
 
 The [acceptance matrix](ci-acceptance-matrix.md) defines current checks and future coverage.
@@ -20,7 +241,7 @@ restricted production hosting, controlled-clock expiry, wizard/scanner lifecycle
 installer/API provisioning, consumer migration and PHP/COM retirement are still pending.
 The [6.0 scope](version-6-scope.md) adds mandatory acceptance obligations, not executed tests.
 
-## Latest verified application/test baseline: PR #42
+## Latest merged application/test baseline: PR #42
 
 Verified **2026-10-28 (Asia/Colombo)** on
 [`28dd3df912fac9109260efe9f5571dc05b402d12`](https://github.com/jassifx/ArzoieMail/commit/28dd3df912fac9109260efe9f5571dc05b402d12/checks),

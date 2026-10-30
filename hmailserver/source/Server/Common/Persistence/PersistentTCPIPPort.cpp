@@ -39,12 +39,12 @@ namespace HM
    {
       IPAddressSQLHelper helper;
 
-      pObject->SetID (pRS->GetLongValue("portid"));
+      pObject->SetID (pRS->GetInt64Value("portid"));
       pObject->SetProtocol((SessionType) pRS->GetLongValue("portprotocol"));
       pObject->SetPortNumber(pRS->GetLongValue("portnumber"));
       pObject->SetConnectionSecurity((ConnectionSecurity) pRS->GetLongValue("portconnectionsecurity"));
       pObject->SetAddress(helper.Construct(pRS, "portaddress1", "portaddress2"));
-      pObject->SetSSLCertificateID(pRS->GetLongValue("portsslcertificateid"));
+      pObject->SetSSLCertificateID(pRS->GetInt64Value("portsslcertificateid"));
       
       return true;
    }
@@ -96,9 +96,8 @@ namespace HM
       __int64 iDBID = 0;
       bool bRetVal = Application::Instance()->GetDBManager()->Execute(oStatement, bNewObject ? &iDBID : 0);
       if (bRetVal && bNewObject)
-         pObject->SetID((int) iDBID);
-
-
-      return true;
+         pObject->SetID(iDBID);
+      if (!bRetVal) errorMessage = "Failed to save TCP/IP listener settings to the database.";
+      return bRetVal;
    }
 }

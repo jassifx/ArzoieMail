@@ -4,6 +4,7 @@
 #pragma once
 
 #include "DALConnection.h"
+#include "TransactionLease.h"
 
 namespace HM
 {
@@ -41,7 +42,7 @@ namespace HM
 
       bool GetIsConnected();
 
-      std::shared_ptr<DALConnection> BeginTransaction(String &sErrorMessage);
+      std::shared_ptr<DALConnection> BeginTransaction(String &sErrorMessage, TransactionLease::BeginResult *result = nullptr);
       bool CommitTransaction(std::shared_ptr<DALConnection> pConnection, String &sErrorMessage);
       bool RollbackTransaction(std::shared_ptr<DALConnection> pConnection, String &sErrorMessage);
       bool ExecuteScript(const String &sFile, String &sErrorMessage);
@@ -53,6 +54,7 @@ namespace HM
 
       std::shared_ptr<DALConnection> GetConnection_();
       void ReleaseConnection_(std::shared_ptr<DALConnection> pConn);
+      void RetireConnection_(std::shared_ptr<DALConnection> connection) noexcept;
  
       boost::recursive_mutex mutex_;
       

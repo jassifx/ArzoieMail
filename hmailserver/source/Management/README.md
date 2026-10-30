@@ -361,3 +361,251 @@ sender-dependent/macros or DNS failures inconclusive. It does not claim full mes
 SPF evaluation, organizational-domain DMARC inheritance, or proof of outgoing DKIM signing.
 DNS is read through the Windows resolver, not a third-party public service. Review proposals
 and test messages from all providers before strengthening DMARC.
+
+## Server settings (completion branch, acceptance in progress)
+
+`GET /api/v1/settings/{section}` returns `section`, `values` and a typed `schema` for an
+explicit native allowlist. Sections: `protocols`, `smtp`, `imap`, `pop3`, `autoban`, `greylisting`,
+`performance`, `general`, `antivirus`, `passwordhash`, `logging`, `tls`. The current implementation maps 81 fields; it is not
+all server administration parity. Server administrators only, checked in HTTP and native code.
+No raw property names, SQL, process commands, secret values or filesystem paths are accepted.
+
+`PATCH` requires exactly `{ "fields": { ... }, "expected": { ... } }`, with matching keys
+and the previous values loaded for each changed field. Missing/unknown/incorrectly typed or
+out-of-range fields return 422; a stale expected value returns 409. UTF-8 text is bounded and
+rejects control characters; hostnames/IPs, default-domain names and mirror addresses are
+validated. Update only changed fields. Reload after a conflict rather than overwriting another
+administrator's changes. CSRF/origin/HTTPS/session rules apply as for all mutations.
+
+The native PropertySet checked batch uses bound guarded updates and readback on one leased
+transaction connection. No reconnect/retry occurs inside it. Cache values are published only
+after successful commit and notifications follow. Legacy setters and batch writes share the
+write mutex; normal cached value reads do not hold that mutex during database I/O. Numeric
+cache values are atomic, string copies are protected by a per-property lock, and map publication
+has its own short lock. This is not a simultaneous multi-field snapshot for protocol readers,
+nor a conversion of legacy setters into checked transactions. Other external database writers
+are not a supported configuration-management mechanism.
+
+On database/commit/notification failure, 503 does not prove the database remained unchanged:
+a commit acknowledgement may be lost or a post-commit observer may fail. Reconcile persisted
+and effective configuration before retrying, using supported recovery/service reload where
+needed. Do not claim an acknowledged success from the cache alone. Failed or exceptional
+BEGIN/COMMIT/ROLLBACK retires the physical client instead of recycling uncertain transaction
+state; its replacement opens before any SQL borrower uses it. Unsupported transactional storage
+returns 412. For MySQL, the existing capability check requires all database tables to use InnoDB;
+migrate with the service stopped and restart before retrying. Helper fault-injection regressions
+and native TestInternals passed in the disposable VM. Real provider outage/acknowledgement-loss,
+restart and concurrent legacy/new-tool acceptance remain pending full-phase validation.
+
+Schema entries expose type, bounds, explanation and whether restart is required. Saving never
+restarts the service automatically. Protocol enablement and networking thread-count changes
+are marked for restart; other values retain existing native effective behavior. SMTP message
+sizes and existing scanner limits are KB; cache lifetimes are seconds; retry/Auto-ban windows
+and initial greylisting delay are minutes; both greylisting triplet retention values are hours.
+ClamAV settings configure the existing provider, not an installed engine. Its legacy size-skip
+policy is unchanged; these controls are not the required Defender verdict pipeline.
+
+`passwordhash` adds algorithm (0/default or 1 Argon2id, 2 PBKDF2-SHA256), memoryKiB,
+iterations and autoUpgrade. Zero cost values select existing native algorithm defaults. Explicit
+memory is 4096-1048576 KiB; Argon2id iterations 1-20; PBKDF2 iterations 10000-10000000.
+Validation uses the complete proposed policy before any write, so change algorithm and iteration
+count in the same patch when needed. Omitted dependencies are also guarded against concurrent
+changes. Existing hashes keep their self-described format; auto-upgrade follows the configured
+target after successful authentication, including deliberately lowered costs. Defaults are
+unchanged. Measure authentication workload before increasing costs. This addition passed
+initial Compact VM validation in the later 706/736-native-assertion runs and four-backend CI
+at `bc3980201`; broader failure/concurrency acceptance remains pending. Stored-hash upgrades can require web sign-in again.
+
+`logging` provides enabled, application, smtp, pop3, imap, tcpIp, debug, keepFilesOpen and
+awStats. The native bitmask is never exposed. Multiple changed flags are merged into one
+checked underlying update, preserving omitted and unknown native flags; a concurrent change
+to that underlying setting causes 409 rather than overwriting it. AWStats remains its separate
+native setting and participates in the same checked batch. Configuration uses existing log
+storage/access policy; this endpoint does not expose filesystem paths or read log contents.
+Keep logs private and monitor volume before enabling detailed conversations/debug. This later
+addition passed initial Compact VM validation in the 736-native-assertion run and four-backend
+CI at `bc3980201`; broader operational diagnostics and failure acceptance remain pending.
+
+Panel tests cover cancellation, stale-edit refusal, refresh/retry, omitted-field preservation
+and mobile layout. Native tests cover both roles, schema/secret boundaries, malformed patches,
+persistence, cleanup and actual POP3 greeting behavior. Published live browser tests exercise
+a real settings change and restore it. This branch still needs complete VM/CI evidence before
+acceptance; the entire Phase 1b completion ledger remains open.
+
+`tls` adds eight fields: verifyRemoteCertificate, cipherList, tls10Enabled, tls11Enabled,
+tls12Enabled, tls13Enabled, preferServerCiphers and prioritizeChaCha. The underlying version
+and option masks are never exposed. Multiple flag edits merge while preserving omitted and
+unknown bits; dependencies and omitted underlying settings participate in the checked batch.
+At least one known TLS version must remain enabled. ChaCha prioritization requires server
+cipher preference and TLS 1.2 or 1.3. Obsolete TLS 1.0/1.1 remain explicit compatibility choices
+with warnings; defaults are unchanged. Retain remote certificate verification to prevent
+impersonation. Its existing native behavior applies to outgoing mail connections; mail TLS
+settings do not configure the separate web HTTPS binding.
+
+The cipher expression is limited to 4096 UTF-8 bytes. CR/LF and spaces retain the legacy
+normalization behavior; other controls/NUL are rejected. Before persistence, OpenSSL must
+accept a nonempty expression with at least one usable legacy-suite match. OpenSSL may ignore
+unknown components in an otherwise matching expression; this is not a strict token allowlist.
+An empty expression selects library defaults. This controls TLS 1.2 and earlier, not TLS 1.3
+cipher suites. Cipher/version/option changes require a later service restart; saving neither
+replaces active contexts nor restarts listeners. Pre-save checks do not prove endpoint handshake,
+certificate/hostname/key suitability or rollback acceptance. Those A06/E03 gates remain open.
+Native/managed compilation and the full Compact VM run passed (781 native assertions,
+including 246 settings assertions, and both browsers), followed by four-backend CI at `82a3bdaf5`.
+
+## Mail transport inventory (completion branch, validation in progress)
+
+`GET /api/v1/transport/listeners` and `GET /api/v1/transport/certificates` are server-only
+in REST and native code. Native commands are `transport.listeners.list` and
+`transport.certificates.list`; other transport commands are not exposed. These are read-only
+configuration records, not a live socket census or certificate-health check.
+
+Both return `items`, `total`, `offset`, `limit`, `maximumLimit:25` and `source:"configured"`.
+Filters are `search` (case-insensitive substring, maximum 255 UTF-8 bytes), `offset`
+(0-2147483647) and `limit` (1-25, default 25). Unknown filters and repeated REST query filters are rejected.
+Listener search covers protocol, address and port; certificate search covers name and ID text.
+Responses are bounded, but metadata is currently scanned in memory; DB-side paging/capacity
+acceptance remains open. Configured state can differ from running contexts until restart.
+
+Listener fields are `id`, `protocol`, `protocolCode`, `address`, `port`, `security`,
+`securityCode` and `certificateId`. IDs are exact decimal strings; an unassigned certificate
+is null. Known protocol codes are SMTP=1, POP3=3 and IMAP=5; security codes are plaintext=0,
+implicit TLS=1, optional STARTTLS=2 and required STARTTLS=3. Unknown legacy codes remain
+visible as `Unknown` with their numeric code so they are not silently reinterpreted.
+Certificate fields are only `id` and `name`. Queries do not select private-key/certificate
+paths and do not open certificate files. Registrations do not establish existence, expiry,
+chain/hostname/key validity, access permissions or renewal readiness.
+
+The panel renders registration names as inert text, supports search/paging and distinguishes
+saved listeners from running state. Guided import/ACME, listener edits/assignment, validation,
+activation/restart and rollback remain A06/E03 work. Native/managed builds and the full Compact
+VM run passed (831 native,449 HTTP/security,145 real HTTP and both browsers), followed by
+four-backend CI at `8cdc085b4`.
+
+### PFX inspection (completion branch, VM validated)
+
+`POST /api/v1/transport/certificates/inspect` accepts exactly `pfx` (base64 PFX bytes),
+`password` (string, empty only for an unprotected file) and `hosts` (1-32 DNS names/IPs).
+Server administration, fresh native session validation, CSRF and same-origin rules apply.
+No server paths, filenames, arbitrary storage/provider settings or caller-supplied clocks
+are accepted. This action inspects a browser upload; it does not install, register, assign,
+renew or activate anything, and does not transfer uploaded key material to native commands.
+
+This route alone accepts up to 1 MiB of JSON; decoded PFX is capped at 512 KiB. Passwords
+are capped at 1024 UTF-8 bytes with no NUL. Other management routes keep their 16 KiB body
+limit. There are at most two inspections per process and 30 route requests per minute per
+remote IP; 429 supplies retry guidance. Body transfer has a trusted-clock 30-second deadline
+(408). This is not a hard deadline for every OS/cryptographic operation. KDF/count limits are
+separate: MAC and individual KDF iterations 300000, total KDF 1000000, one private key,
+16 certificates and 128 DNS/IP alternative names. Unsafe loader limits return 422 with
+re-export guidance. Malformed JSON returns 400; invalid/duplicate/extra fields return 422.
+
+The .NET 10 loader uses ephemeral key storage and ignores storage-provider/key-name/alias
+attributes. Owned UTF-8 wire, decoded PFX and password-character buffers are cleared on
+completion/error/cancellation, including trailing JSON. Certificate/key handles are disposed.
+This does not claim every browser/runtime/OS internal copy is erased. The panel clears its
+password field and byte buffer, renders public output as inert text, and never displays PFX
+or private-key bytes. The protected browser PFX fixture stays outside CI evidence and is deleted.
+
+Results include SHA-256 identity, bounded subject/issuer display, UTC validity, key algorithm/
+size/minimum-strength flag, CA/EKU/key-usage metadata, SAN names, per-host matches, separate
+chain status and warnings. DNS/IDNA and canonical IP inputs are normalized; hostname matching
+uses SAN with common-name fallback disabled. Chain trust uses this web host's Windows identity,
+disables certificate downloads and explicitly reports revocation `NotChecked`; it does not
+establish trust for remote clients or the native service. RSA/ECDSA fixtures passed; DSA/provider
+and production IIS compatibility still require acceptance. There is no overall activation approval.
+
+The bounded helper passed 60 focused VM assertions. The endpoint/form then passed the full
+native/API/browser/cleanup VM run (513 HTTP/security,60 helper,831 native,145 real HTTP and
+both browsers). The final rate-budget/harness run passed 546 HTTP/security,60 parser and
+the same native/live HTTP/browser layers with checkpoint cleanup. Four-backend CI passed at
+`ae903a182` with 1685 separate assertions and both browser suites; exact NUnit outcomes are
+recorded in the CI inventory. No import/activation acceptance is implied.
+
+## Filtering and trusted-relay collections (completion branch)
+
+`/api/v1/policies/{resource}` supports GET/list and POST/create; `/{id}` supports GET,
+PATCH and DELETE. Resources are `surbl`, `blockedattachments`, `incomingrelays`, `securityranges`, all server-only
+in both API and native code. Lists return bounded `items`, total/offset/limit, explicit typed
+`schema`, `defaults` and `idMaximum`. Current legacy adapters accept positive IDs through
+2147483647 and encode policy IDs as decimal strings. Larger stored IDs fail visibly rather
+than narrowing into another object. High-ID persistence modernization remains pending.
+
+SURBL fields: zone, active, score and rejectMessage. New providers default disabled. Attachment
+fields: pattern and description; patterns are filenames rather than paths. Relay fields: name,
+lowerAddress and upperAddress; endpoints must be ordered within the same IP family. Relay trust
+affects upstream sender attribution: use exact intended ranges. Text rejects control characters;
+zones, lengths, types and bounds are checked before saving. Unknown fields return 422, duplicate
+names 409. PATCH requires the loaded full object in `expected` alongside changed fields. DELETE
+requires `{ "expected": { ...loaded object... } }`. Stale snapshots return 409. Writes read back
+persisted state and refresh native caches. Cross-COM transactional concurrency/failure recovery
+and complete workload acceptance remain pending. These collections passed initial Compact VM
+native and browser validation; final four-backend CI remains outstanding.
+
+IP security ranges add name, lower/upperAddress, priority, SMTP/IMAP/POP3 permissions, all four
+sender/recipient delivery classes and their SMTP authentication requirements, TLS-for-auth,
+spam/virus applicability, expires and expiresAt. Timestamps are exact server-local
+`YYYY-MM-DD HH:MM:SS`; enabled expiry must be in the future. Native expiry cleanup is asynchronous;
+existing protocol connections are not terminated by an edit. New policies deny connections and
+relay until deliberately configured. Higher numeric priorities win; avoid equal-priority overlap.
+POST `/policies/securityranges/match` with `{ "address": "..." }` inspects the native selected
+policy without opening a network connection. Management remains independent of mail-protocol
+range permissions, allowing an authenticated administrator to repair accidental mail lockout.
+
+The transient boolean `acknowledgeUnauthenticatedRelay` must explicitly be true on any write
+whose resulting range permits local-to-external or external-to-external delivery without its
+corresponding authentication requirement. Use only exact trusted source ranges. The panel warns
+about open-relay risk and confirms changes. The acknowledgement is never persisted and always
+reads false, so a later unsafe-range edit requires a fresh decision. This preserves intentional
+trusted-relay configurations while preventing an ordinary edit from silently opening relay.
+The IP policy addition passed 32 targeted native assertions and the later full Compact VM run,
+including real SMTP denial/recovery/authentication. Four-backend CI passed at `bc3980201`;
+broader acceptance remains pending.
+
+## Mailbox self-service (completion branch, under validation)
+
+Authenticated mailbox users, domain administrators and mailbox-backed server administrators
+can access `/api/v1/self`. The synthetic installation Administrator has no mailbox and receives404.
+The response contains address, directoryBacked and passwordChangeable, never password material.
+GET/PATCH `/self/profile`, `/self/signature` and `/self/behavior` use the existing bounded field
+contracts for those areas. Their native parent identity comes exclusively from authentication;
+browser-supplied account/domain IDs are rejected. Privileged account fields are unavailable.
+Self-service persistence updates only supplied permitted columns, guarding current role, active
+state, directory flag, address and password. It does not save the entire loaded account object.
+Concurrent changes can return 409; reload/reconcile before retrying.
+
+`/self/rules` offers bounded list/create and `/{id}` read/update/delete with ownership checked
+in native code. New rules are disabled drafts; existing condition/action restrictions remain.
+Another mailbox's rule ID does not grant access. This is not access to global rules or routing.
+
+POST `/self/password` requires `{ "currentPassword": "...", "newPassword": "..." }`.
+Both are nonempty and bounded to 1024 UTF-8 bytes natively. Directory-backed changes return 409;
+change those passwords through the directory. Native code separately proves the current password,
+reloads after possible legacy-hash upgrade, verifies the fresh hash, and performs a guarded update
+of password/hash-format columns only. Wrong current passwords return 403; invalid fields 422.
+Success removes the calling browser's vault entry/cookie and returns an anonymous CSRF token.
+Other old-password sessions fail their next native reauthentication. The endpoint uses login
+throttling and existing CSRF/origin/HTTPS rules. The panel requires matching confirmation and
+clears input controls after success; plaintext passwords are never returned.
+
+Native `authenticate` now includes a required 64-hex `securityStamp`. The API stores this opaque
+binding in its server-side vault entry and checks it after each native reauthentication. It is
+not returned in browser identity JSON or stored in the cookie, which retains only the vault ID.
+The native binding uses HMAC-SHA256 over persisted credentials/identity/directory binding under
+a random process-local key, including the freshly persisted hash after automatic hash upgrade.
+Resetting even to the same password creates a new salted hash and invalidates old bindings.
+Native or web process restart and stored-hash upgrades also require another sign-in. Native/API
+builds must be upgraded together; a missing or malformed binding fails closed with 503.
+AD password reuse and unobserved disable/re-enable cycles still need lifecycle acceptance;
+in-flight requests are not retrospectively cancelled. The fix passed the real same-password-reset
+regression and full Compact VM run (739 native, 145 real HTTP/native assertions).
+
+Vault/cookie timing uses injected TimeProvider with System as the production default, without an
+HTTP clock override. The 43 controlled-clock VM assertions cover idle/absolute vault expiry,
+sliding cookie renewal/expiry, refreshed roles, opaque-only renewed cookies and binding failures.
+Affected real HTTP/TLS/browser checks and four-backend CI at `bc3980201` also passed;
+broader acceptance remains pending.
+
+Self-service native, HTTP and fixture/published browser regressions are under VM validation.
+There is no full Phase 1b or production security acceptance claim. Self-service reply-history clearing follows successful guarded save/readback. Broader legacy
+concurrency and database failure recovery remain acceptance obligations.

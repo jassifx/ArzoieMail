@@ -33,8 +33,10 @@ activation fails on fresh/upgraded installs without affecting unrelated COM regi
 The [Phase 1b ledger](phase-1b-status.md) owns granular delivery/parity status and migration
 gates; [the authority index](README.md) defines documentation ownership. The mail-operations
 final head `28dd3df` in #42 passed VM and four-backend CI (897 assertions plus browser suites),
-merged as `74eecc017`. The current follow-up is documentation-only; no next implementation
-bundle or production cutover is authorized.
+merged as `74eecc017`. After merged #43, the maintainer authorized completing the remaining
+Phase 1b on `feature/phase1b-completion`. The [current handoff](agents/handoffs/2026-10-30.md)
+and ledger distinguish subsequent implementation, VM evidence and checkpoint-specific CI.
+Production cutover and starting Phase 2 are not authorized by that implementation request.
 
 Mailbox forwarding/replies, mailbox signatures and advanced domain/mailbox administration
 merged in #39?#41 with VM/four-backend CI acceptance. Global-name writes and object limits
@@ -51,7 +53,8 @@ transactional: infrastructure failure can leave a disabled partial draft requiri
 Regex, script and local-binding actions are excluded from the new boundary. Queue listing
 scans metadata in memory; indexed paging and measured capacity remain follow-ups.
 
-No COM dependency, web SQL, schema migration or mailbox-user self-service is introduced. See
+The replacement has no COM dependency or direct web SQL. The completion branch adds scoped
+mailbox self-service through native commands; it does not migrate the database schema. See
 the [REST contract](../hmailserver/source/Management/README.md#rest-v1-contract) for fields,
 limits, permissions and recovery. Verify the current feature PR's VM/CI acceptance.
 
@@ -95,6 +98,21 @@ Current desktop tools / scripts -> existing COM API -> same business layer
 - Cookies contain only opaque session IDs. Keep credentials encrypted in bounded, ephemeral
   server-side memory, reauthenticate native commands and expire sessions on restart, logout,
   inactivity or credential revocation. Never persist passwords in browser storage or cookies.
+  The completion branch additionally binds vault entries to a native credential version: an
+  HMAC over persisted account credential/directory-binding state under a random process-local
+  key. It prevents an old browser session surviving a same-password reset. The opaque binding
+  remains between native service and API vault; browser identity responses do not expose it.
+  Native and web process restarts, password resets and stored-hash upgrades require sign-in
+  again. Roles continue to be loaded from native identity. The regression was reproduced before
+  the fix; its full Compact VM run passed (739 native, 145 real HTTP/native assertions).
+  Unobserved disable/re-enable cycles, directory
+  password-reuse epochs and in-flight operations still need explicit acceptance; this is not a
+  claim that every revocation race has been solved.
+  Vault and cookie timing use injectable TimeProvider instances, with System as the production
+  default and no HTTP clock override. The completion branch's 43 controlled-clock assertions
+  cover idle/absolute expiry, sliding renewal, refreshed roles, opaque-only cookie identity
+  and binding failures; these checks passed four-backend CI at `bc3980201` and subsequent
+  verified checkpoints recorded in the CI inventory.
 - Do not trust forwarded headers without an explicitly configured trusted proxy. Production
   deployments terminate HTTPS in the application or a configured trusted hosting layer.
 - Publish versioned REST documentation and test unauthenticated access, CSRF, role changes,
@@ -150,6 +168,31 @@ required verdict. Validate protocol staging and per-message mitigation before en
 Defender throughput and the necessary scheduling changes are not implemented by the API foundation.
 
 ## Implementation sequence
+
+The completion branch's transport inventory reads only configured listener and certificate
+metadata. Its native SELECTs omit certificate/private-key paths, and IDs remain decimal strings.
+This is a prerequisite for guided setup, not a certificate import/health or active-listener
+implementation. Certificate transfer must accommodate the current 16 KiB HTTP-body and 64 KiB
+RPC-frame limits without accepting arbitrary server paths or silently weakening global limits.
+Import/key-file/database reconciliation and safe listener activation remain design/delivery gates.
+
+The following .NET 10 preflight workflow inspects PFX uploads in the web host under bounded
+loader/HTTP/concurrency/rate/deadline controls and returns public metadata only. The owned
+wire/PFX/password buffers are cleared; keys load ephemerally and certificate/key handles are
+disposed. It does not install, assign, persist or forward private material to native commands.
+Native installation must independently validate material and enforce protected storage,
+transaction/recovery, listener policy and activation; the web host's chain view is advisory.
+Its final VM run and four-backend CI at `ae903a182` passed; production IIS/identity acceptance
+remains pending. A subsequent native ID-width correction passed a reproduced red/green
+Compact VM regression; its own CI remains pending. The native certificate/listener model now
+preserves BIGINT identities/references, including returned insert IDs and backup name lookup.
+No schema migration or COM expansion is introduced; legacy COM long properties and other
+objects' ID modernization remain separate work.
+
+The [certificate storage proposal](certificate-storage-design.md) records the preferred Windows
+machine-key/native-OpenSSL direction, a 50-assertion disposable-VM CNG feasibility result and
+the still-unimplemented transfer, journal/reconciliation, backup and activation contracts.
+Its standalone probe is research evidence, not an added application endpoint or CI acceptance.
 
 1. Establish the opt-in native management boundary, shared business authentication, ASP.NET Core
    session/security foundation, initial spam/DNSBL/DNS workflows and repeatable tests. This is

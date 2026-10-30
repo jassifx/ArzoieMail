@@ -91,6 +91,17 @@ static class LiveRestTests
                 await user.Send("/queue", HttpMethod.Get, status: 403);
             }
             var revocable = await admin.Send(domainPath + "/accounts", HttpMethod.Post, new { address = "session@" + name, password, active = true, level = 2 });
+            using (var resetSession = new BrowserSession(admin.Client.BaseAddress!, check))
+            {
+                var sessionUser = await resetSession.Login("session@" + name, password);
+                check(!sessionUser.TryGetProperty("securityStamp", out _) && !sessionUser.TryGetProperty("password", out _),
+                    "Browser identity responses contain neither native credential bindings nor passwords.");
+                await resetSession.Send("/status", HttpMethod.Get);
+                await admin.Send(domainPath + "/accounts/" + revocable.GetProperty("id").GetInt64(), HttpMethod.Patch, new { password });
+                await resetSession.Send("/status", HttpMethod.Get, status: 401);
+                check((await resetSession.Send("/session", HttpMethod.Get)).GetProperty("user").ValueKind == JsonValueKind.Null,
+                    "Resetting even to the same password invalidates the earlier real browser session.");
+            }
             using (var revoked = new BrowserSession(admin.Client.BaseAddress!, check))
             {
                 await revoked.Login("session@" + name, password); await revoked.Send("/status", HttpMethod.Get);

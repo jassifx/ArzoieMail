@@ -16,6 +16,7 @@
 #include "stdafx.h"
 
 #include "../Common/Mime/MimeChar.h"
+#include "../Common/SQL/TransactionLeaseTests.h"
 #include "../SMTP/SPF/Conformance/SPFConformanceTester.h"
 #include "../SMTP/SPF/SPFEvaluatorTester.h"
 #include "../SMTP/SPF/SPFMacroExpanderTester.h"
@@ -134,6 +135,8 @@ namespace
 int main()
 {
    TestMimeChar();
+   for (const auto &failure : HM::TransactionLeaseTests::Run())
+      Check(false, failure.c_str());
    TestSPF();
 
    if (failures > 0)

@@ -1,11 +1,12 @@
 # Phase 1b capability ledger and completion gates
 
-Status snapshot: **2026-10-28, Asia/Colombo**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
+Status snapshot: **2026-10-30, Asia/Colombo**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
 is merged at `74eecc017f48ddd445870bfd73dd6eb00aed6cef`; tested head
 `28dd3df912fac9109260efe9f5571dc05b402d12` passed all four database jobs, Release,
 GCC/Clang, CodeQL, workflow lint and CI installer publication. See [CI evidence](ci-test-inventory.md)
-and the [current handoff](agents/handoffs/2026-10-28.md). The present documentation-only
-follow-up integrates the approved [6.0 scope](version-6-scope.md), not new implementation.
+and the [current handoff](agents/handoffs/2026-10-30.md). PR #43 is merged at `92ac28d`;
+the present completion branch implements remaining work against the approved
+[6.0 scope](version-6-scope.md).
 
 This is the detailed status owner under [ROADMAP](../ROADMAP.md). The [requirements](webadmin-requirements.md)
 own product obligations; the [REST contract](../hmailserver/source/Management/README.md#rest-v1-contract)
@@ -20,12 +21,70 @@ metadata and a version-identity regression. Final #42 CI passed **1317** NUnit c
 scope decision requires all current phases and complete COM removal before the integrated
 baseline; these are obligations, not delivered features.
 
+## Current full-phase completion effort
+
+After merging #43 (`92ac28d`), the maintainer authorized completing all remaining Phase 1b
+in the current work effort. Branch `feature/phase1b-completion`; no PR submitted yet. Initial
+server-settings implementation adds 60 typed native/REST/panel fields and checked database
+patches. SURBL, blocked attachments and trusted incoming relays now have typed CRUD controls.
+The Compact VM passed 630 native assertions, real HTTP/TLS and both browser suites; see the
+CI inventory for exact attribution and failures fixed. Mailbox self-service (own profile,
+signature, forwarding/replies, rules and password) uses restricted field writes and passed the
+subsequent 656-native-assertion VM/browser run. Four additional password-policy settings bring
+the allowlist to 64 fields; IP security-range management adds IPv4/IPv6 permission/priority/
+expiry controls, effective-policy inspection and explicit transient relay-risk acknowledgement.
+Those additions passed a full Compact VM run (706 native assertions). This covers portions of
+A02/A03/A04/A05/A09/A11/A12/A14/A17/A20. A subsequent logging section adds nine native flags
+(73 settings total), including atomic multi-flag patches that preserve omitted bits, and passed
+the following full 736-native-assertion run. Both runs passed browser/REST/TLS checks and restored
+their checkpoints. A same-password-reset session revocation regression was then reproduced;
+the native/vault credential-binding fix passed the full 739-native/145-live-HTTP VM run.
+Another 43 controlled-clock lifecycle checks and affected integration tests passed. Four-backend
+CI passed Compact/MySQL/PostgreSQL but failed Express on an ADO parameter-prefix collision.
+The correction and transaction-pool failure handling passed a fresh Compact VM run including
+native TestInternals. Corrected head `bc3980201` passed all four backend jobs, Release,
+GCC/Clang and CI installer generation. Subsequent eight-field global mail TLS controls
+(81 settings in 12 sections) passed the full VM run (781 native assertions and both browsers)
+and four-backend CI at `82a3bdaf5`. Subsequent native persistence/recovery corrections passed
+targeted VM regressions and four-backend CI at `170442658`. A13 log access/diagnostics
+remains incomplete. These are implementation
+progress, not full A/E acceptance. All open obligations below remain visible;
+no Defender/certificate/hosting/consumer-migration/PHP-retirement completion is implied.
+
+The subsequent transport inventory adds server-only read-only listener/certificate metadata
+to native/REST/panel, with exact decimal-string IDs, 25-item pages, inert names and no private
+path/file access. Builds and the full VM run (831 native,449 HTTP/security and both browsers)
+passed, followed by four-backend CI at `8cdc085b4`. Certificate registration metadata
+is not guided provisioning or active-listener/health evidence; A06/E03 remain open.
+The following PFX preparation helper passed 60 bounded-inspection VM checks. Its newer
+HTTP endpoint/owned-buffer reader/form passed a full native/API/browser/cleanup VM run. The
+final run also passed its independent rate budget (546 HTTP/security,60 parser assertions).
+Its four-backend CI passed at `ae903a182` (1685 separate assertions and both browser suites;
+1319 NUnit cases with skips/inconclusive recorded separately in the CI inventory).
+Native installation and activation remain unfinished.
+
+The next native prerequisite corrects 32-bit narrowing of certificate/listener database IDs,
+newly returned identities, listener certificate references and certificate-name lookup during
+backup restoration. The actual Compact provider regression failed before the fix and passed
+afterward through TestInternals. It reads synthetic BIGINT projections without reseeding tables
+or registering/activating certificates. Its corrected head `7258068dff8062c2072eebd6d0603722362eff41` then passed all four database jobs, Release,
+GCC/Clang and CI installer publication: NUnit 1319 cases (Compact/MySQL/PostgreSQL 1209 passed,
+34 inconclusive, 76 skipped; Express 1210 passed, 75 skipped; 0 failed/warnings each) and the same
+1685 separate assertions and both browser suites per backend as `ae903a182`. Logs:
+`out/identity-green-*.log`.
+Legacy COM long properties and other objects' ID modernization are not covered by it.
+
+The [certificate storage proposal](certificate-storage-design.md) records a preferred Windows
+machine-key/native-OpenSSL direction and a 50-assertion disposable-VM feasibility result.
+It does not implement import, transfer, native key loading, backup or activation. Its tracked
+standalone probe is separate from application CI and does not close A06/E03/E07.
+
 ## Implemented capabilities and their boundaries
 
 | ID | Capability | State / evidence | Exact boundary or remaining work |
 |---|---|---|---|
 | F01 | Modern panel and REST foundation | Merged #31 | ASP.NET Core/.NET 10, local opt-in native pipe, explicit commands, no COM or direct SQL in replacement; restricted production hosting/provisioning is unfinished |
-| F02 | Authentication and roles | Merged #31, expanded #35–#42 | Native reauthentication, bounded ephemeral sessions, CSRF/origin/CSP/rate limits, server/domain/protected-account checks; mailbox-user self-service remains missing |
+| F02 | Authentication and roles | Merged #31, expanded #35–#42; completion branch extends it | Native reauthentication, bounded ephemeral sessions, CSRF/origin/CSP/rate limits, server/domain/protected-account checks; own-mailbox native/REST/panel workflows passed initial VM checks but await full acceptance/CI |
 | F03 | SQL Server Express modernization | Merged #33 | OLE DB 19, encrypted/validated SQL connections, migration diagnostics, SQL Server 2025 Express CI; not every engine version or production workload validated |
 | F04 | Domain and mailbox CRUD | Merged #35 | Roles, storage quotas, password reset, search and bounded responses; names/addresses immutable through these endpoints; directory-backed password reset rejected |
 | F05 | Aliases, lists and recipients | Merged #36 | Parent-scoped CRUD, posting modes/authentication, member management; defaults disabled/members-only; envelope sender is not bound to SMTP authenticated identity |
@@ -54,20 +113,20 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | A01 | Server status and control | Start/stop/restart policy, protocol state/counters, live sessions and operational status; least-privilege native operations and interruption confirmation |
 | A02 | SMTP settings | Delivery/retry/relay defaults, authentication, size/recipient/session limits, local hostname/banner, advanced protocol and outgoing policies; retain UTF-8 credential handling and transport security |
 | A03 | IMAP and POP3 settings | Protocol switches, limits, IMAP extensions/delimiter/public-folder policy and POP3 behavior; actual protocol regression checks after changes |
-| A04 | IP/security ranges | IPv4/IPv6 ranges, priorities, connection/relay/authentication permissions, spam/virus applicability and safe lockout prevention; cross-domain permission and live enforcement tests |
+| A04 | IP/security ranges | Implemented on completion branch: IPv4/IPv6 ranges, priority, protocol/relay/authentication/TLS/spam/virus/expiry fields, native effective match and independent management recovery; 32 targeted Compact VM assertions include real SMTP denial/recovery/authentication. Trusted unauthenticated relay requires transient explicit acknowledgement. Four-backend/matrix/failure/field-parity acceptance remains pending |
 | A05 | Incoming relays and Auto-ban | CRUD/policy, trusted-hop interpretation, ban timing/thresholds, effective-state inspection and recovery without silently bypassing security |
-| A06 | TCP/IP listeners and global TLS | Bind addresses/ports/protocols, implicit TLS/STARTTLS, protocol/cipher/certificate-validation policies, collision/lockout detection, safe apply/rollback |
+| A06 | TCP/IP listeners and global TLS | Completion branch adds eight global TLS controls with checked version/option masks, remote certificate verification and pre-save cipher validation; 246 targeted settings assertions, full VM/browser checks and four-backend CI at `82a3bdaf5` passed. Underlying listener/certificate false-success saves were reproduced and corrected; recovery VM cases and four-backend CI at `170442658` passed. Read-only transport inventory passed full VM and four-backend CI at `8cdc085b4`; the following native ID-width correction passed a red/green VM regression and needs its own CI. Bind addresses/ports/protocols, implicit TLS/STARTTLS, certificate assignment, collision/lockout detection, restart/handshake acceptance and safe apply/rollback remain |
 | A07 | External POP3 fetch accounts | Scoped configuration, encrypted/write-only credentials, scheduling, SSL/TLS, delivery/rule/delete policy, manual fetch/status/error behavior and lifecycle tests |
 | A08 | Remaining domain/mailbox controls | Field-level comparison with legacy forms, directory bindings/provisioning policy and user-level permissions; document controls intentionally retained only in desktop tools |
-| A09 | Mailbox self-service | Authenticated user's own supported settings/password/rules, restricted fields and ownership checks; AD password policy and legacy normal-user workflows need explicit disposition |
+| A09 | Mailbox self-service | Own profile/signature/forwarding/replies/rules/password implemented on completion branch; 29 native assertions, real own-profile browser checks and four-backend CI at `bc3980201` passed. Restricted-column guarded account saves, current-password proof, sign-out, ownership and AD-password refusal implemented. Complete AD/revocation/concurrency/failure/browser-password/legacy workflow acceptance remains pending |
 | A10 | Groups, public/shared folders and ACLs | Desktop group/member and IMAP folder/permission surfaces; secure role matrix, hierarchy and client interoperability before any replacement claim |
 | A11 | Remaining spam controls | SURBL lists, allowlists, global greylisting timing/exceptions, other advanced filtering options and effective scoring guidance; existing DNSBL controls do not cover these |
 | A12 | Existing antivirus and blocked attachments | Current custom/ClamAV configuration, test actions, timeouts/results, attachment extension/policy controls and interaction with optional Defender; no silent loss of scanner choices |
-| A13 | Logging and diagnostics | Logging levels/protocol logs, bounded/redacted log access, operational diagnostics and DNS/MX tools; no unrestricted file reader or shell execution |
+| A13 | Logging and diagnostics | Nine typed logging flags implemented on completion branch with merged checked bit updates; initial Compact VM/native/browser checks passed. Bounded/redacted log access, operational diagnostics and DNS/MX tools remain; no unrestricted file reader or shell execution |
 | A14 | Performance settings | Connection/worker/cache/database knobs, units/limits/effective status, guarded changes and measured workload guidance; collection/queue DB-side paging remains a capacity follow-up |
 | A15 | Administrative maintenance | Backup/restore, archive passphrases, installation secret-key export/import, upgrade/database/data-directory tools and recovery; choose safe narrowly scoped web support or an explicitly documented desktop-only procedure |
 | A16 | Mirror, server messages and sendout | Mirror destination/policy, SMTP response templates and administrator sendout, with role, privacy, validation and confirmation checks |
-| A17 | Password hashing policy | Expose safe supported native policy/upgrade settings without weakening defaults or returning hashes/secrets; Phase 1 Argon2id review is already merged, panel coverage is not |
+| A17 | Password hashing policy | Four typed policy/upgrade settings implemented on completion branch with unchanged defaults, zero/default semantics, algorithm-dependent cross-field bounds and guarded dependencies. Compact settings checks and four-backend CI at `bc3980201` passed; broader concurrency/failure and operational acceptance remain pending. No hashes/secrets are returned |
 | A18 | Scripts and utility migration decisions | Legacy script configuration/execution is not exposed by #42 rules. PowerShell event-host implementation belongs to Phase 2. Resolve how affected PHP workflows migrate before cutover; do not add unrestricted web script/shell execution as a shortcut |
 | A19 | Existing route/rule/queue restrictions | Explicit disposition for legacy regex, script/local-binding rule actions, immutable names, bulk queue operations and other omitted controls; supported migration or approved restriction required, not silent parity claims |
 | A20 | General server settings | Default domain, IPv6 preference and legacy IP-home/multihoming settings, plus remaining general options; review even orphaned handlers and preserve or explicitly retire their supported behavior |

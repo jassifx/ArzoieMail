@@ -6,6 +6,7 @@
 #include "ADOConnection.h"
 #include "ADORecordset.h"
 #include "SQLCommand.h"
+#include "SQLStatement.h"
 #include "DatabaseSettings.h"
 #include "Macros/MSSQLMacroExpander.h"
 #include "ADOInt64Helper.h"
@@ -359,53 +360,38 @@ namespace HM
    void
    ADOConnection::InitializeCommandParameters(_CommandPtr &adoCommand, const SQLCommand &sqlCommand, String &queryString) const
    {
-      for(const SQLParameter &parameter : sqlCommand.GetParameters())
+      std::vector<const SQLParameter *> ordered;
+      String positional;
+      if (!SQLStatement::ToPositionalParameters(sqlCommand, positional, ordered, SQLStatement::QuestionMarkPlaceholders))
+         throw std::invalid_argument("A SQL parameter cannot be bound inside a string literal.");
+      for (const auto *item : ordered)
       {
-         String parameterName = parameter.GetName();
-
+         const auto &parameter = *item;
+         _variant_t value;
+         DataTypeEnum type = adInteger;
+         long size = 4;
          if (parameter.GetType() == SQLParameter::ParamTypeInt32)
          {
-            VARIANT integerType;
-            integerType.vt = VT_I4;
-            integerType.intVal = parameter.GetInt32Value();
-
-            adoCommand->Parameters->Append(adoCommand->CreateParameter(_bstr_t(),adInteger,adParamInput, 4, integerType));
+            value.vt = VT_I4; value.intVal = parameter.GetInt32Value();
          }
          else if (parameter.GetType() == SQLParameter::ParamTypeInt64)
          {
-                  ADO64Helper::AddInt64Parameter(adoCommand, parameterName, parameter.GetInt64Value());
+            value.vt = VT_I8; value.llVal = parameter.GetInt64Value(); type = adBigInt; size = sizeof(__int64);
          }
          else if (parameter.GetType() == SQLParameter::ParamTypeUnsignedInt32)
          {
-            VARIANT integerType;
-            integerType.vt = VT_UI4;
-            integerType.intVal = parameter.GetUnsignedInt32Value();
-
-            adoCommand->Parameters->Append(adoCommand->CreateParameter(_bstr_t(),adInteger,adParamInput, 4, integerType));
+            value.vt = VT_UI4; value.ulVal = parameter.GetUnsignedInt32Value();
          }
          else if (parameter.GetType() == SQLParameter::ParamTypeString)
          {
-            const String &value = parameter.GetStringValue();
-
-            VARIANT stringType;
-            stringType.vt = VT_BSTR;
-            stringType.bstrVal  = _bstr_t(value);
-
-            int length = 0;
-
-            if (value.GetLength() < 4000)
-               length = 4000;
-            else
-               length = value.GetLength();
-
-            if (!value.IsEmpty())
-               adoCommand->Parameters->Append(adoCommand->CreateParameter(_bstr_t(), adVarWChar, adParamInput, length, stringType));
-            else
-               adoCommand->Parameters->Append(adoCommand->CreateParameter(_bstr_t(), adVarWChar, adParamInput, 1, stringType));
+            const String text = parameter.GetStringValue();
+            value = _variant_t(text.c_str()); // Own the BSTR until ADO copies the value.
+            type = adVarWChar; size = text.IsEmpty() ? 1 : (std::max)(4000L, static_cast<long>(text.GetLength()));
          }
-
-         queryString.Replace(parameterName, _T("?"));
+         else throw std::invalid_argument("Unsupported SQL parameter type.");
+         adoCommand->Parameters->Append(adoCommand->CreateParameter(_bstr_t(), type, adParamInput, size, value));
       }
+      queryString = positional;
    }
 
    namespace
@@ -491,6 +477,28 @@ namespace HM
          if (!condition)
             throw std::logic_error("SQL Server connection security regression failed.");
       };
+      {
+         SQLCommand query("select @SELF_ADDRESS, @SELF_AD, @SELF_ADDRESS, @COUNT, @COUNT, @@ROWCOUNT");
+         const String address = _T("relay-\u03b1\u6f22@example.test");
+         query.AddParameter("@SELF_AD", 0); // Deliberately precedes its longer prefix sibling.
+         query.AddParameter("@COUNT", static_cast<__int64>(9007199254740993LL));
+         query.AddParameter("@SELF_ADDRESS", address);
+         _CommandPtr command;
+         require(SUCCEEDED(command.CreateInstance(__uuidof(Command))));
+         ADOConnection adapter(settings(""));
+         String sql = query.GetQueryString();
+         adapter.InitializeCommandParameters(command, query, sql);
+         require(sql == _T("select ?, ?, ?, ?, ?, @@ROWCOUNT"));
+         require(command->Parameters->Count == 5);
+         const _variant_t text = command->Parameters->GetItem(_variant_t(0L))->Value;
+         const _variant_t flag = command->Parameters->GetItem(_variant_t(1L))->Value;
+         const _variant_t repeated = command->Parameters->GetItem(_variant_t(2L))->Value;
+         const _variant_t count = command->Parameters->GetItem(_variant_t(3L))->Value;
+         require(text.vt == VT_BSTR && String(text.bstrVal) == address);
+         require(flag.vt == VT_I4 && flag.intVal == 0);
+         require(repeated.vt == VT_BSTR && String(repeated.bstrVal) == address);
+         require(count.vt == VT_I8 && count.llVal == 9007199254740993LL);
+      }
       String connection = ADOConnection::BuildConnectionString_(settings(""));
       require(connection.Find(_T("Provider=MSOLEDBSQL19;")) == 0);
       require(connection.Find(_T("Use Encryption for Data=Mandatory;Trust Server Certificate=False;")) >= 0);
