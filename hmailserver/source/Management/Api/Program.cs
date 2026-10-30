@@ -326,7 +326,7 @@ public static partial class ManagementHost
             var body = await c.Request.ReadFromJsonAsync<JsonElement>(c.RequestAborted);
             if (body.ValueKind != JsonValueKind.Object || body.EnumerateObject().Any(p => p.Name is not ("selector" or "bits"))
                 || !body.TryGetProperty("selector", out var selector) || selector.ValueKind != JsonValueKind.String)
-                throw new ManagementError(422, "Supply a selector and optionally bits (2048, 3072 or 4096).");
+                throw new ManagementError(422, "Supply a selector; keys are RSA 2048.");
             var arguments = new Dictionary<string, object?> { ["domainId"] = domainId, ["selector"] = selector.GetString() };
             if (body.TryGetProperty("bits", out var bits)) arguments["bits"] = bits;
             var credentials = vault.Get(c.User.FindFirstValue(ClaimTypes.NameIdentifier));

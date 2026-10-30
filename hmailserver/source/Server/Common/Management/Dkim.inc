@@ -136,8 +136,11 @@ json::value ManageDkim(const std::string &operation, json::object &arguments, co
    {
       for (const auto &argument : arguments)
          if (argument.key() != "domainId" && argument.key() != "selector" && argument.key() != "bits") throw RequestError{422};
+      // RSA 2048 only: larger keys can take longer to generate than a management request may
+      // run, and this pipe serves one request at a time. 2048 is the size RFC 8301 and the
+      // large receivers expect, and its DNS record fits without splitting.
       const auto bits = Number(arguments, "bits", 4096, 2048);
-      if (bits != 2048 && bits != 3072 && bits != 4096) throw RequestError{422};
+      if (bits != 2048) throw RequestError{422};
       if (existing != INVALID_FILE_ATTRIBUTES) throw RequestError{409};
       if (!CreateProtectedFolder(folder)) throw RequestError{503};
       std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> key(EVP_RSA_gen(static_cast<unsigned int>(bits)), EVP_PKEY_free);

@@ -106,7 +106,7 @@ static class SpamDkimTests
                 await Refuse("dkim.update", new { domainId, fields = new { signEnabled = true } }, 409);
                 foreach (string bad in new[] { "bad_selector", "-lead", "a..b", "x" + new string('y', 70) })
                     await Refuse("dkim.generate", new { domainId, selector = bad }, 422);
-                await Refuse("dkim.generate", new { domainId, selector = "s1", bits = 1024 }, 422);
+                foreach (int bits in new[] { 1024, 3072, 4096 }) await Refuse("dkim.generate", new { domainId, selector = "s1", bits }, 422);
                 await Refuse("dkim.generate", new { domainId, selector = "s1", path = "C:\\keys\\x.pem" }, 422);
                 var generated = await Send("dkim.generate", new { domainId, selector = "s1" });
                 var key = generated.GetProperty("keys").EnumerateArray().Single();
@@ -123,7 +123,7 @@ static class SpamDkimTests
                 var signing = await Send("dkim.update", new { domainId, fields = new { signEnabled = true, algorithm = 2, headerCanonicalization = 2, bodyCanonicalization = 2 } });
                 check(signing.GetProperty("signEnabled").GetBoolean(), "Signing is enabled once a key is active.");
                 await Refuse("dkim.delete", new { domainId, selector = "s1" }, 409);
-                await Send("dkim.generate", new { domainId, selector = "s2", bits = 3072 });
+                await Send("dkim.generate", new { domainId, selector = "s2", bits = 2048 });
                 check((await Send("dkim.delete", new { domainId, selector = "s2" })).GetProperty("keys").GetArrayLength() == 1, "An inactive key is deleted.");
 
                 // Conformance: the server signs, an independent RFC 6376 check verifies.

@@ -994,11 +994,10 @@
     if (!state.keys.length) c.body.append(el('p', 'No keys have been generated for this domain.', 'help'));
     if (server) {
       const grid = el('div', null, 'form-grid section-gap');
-      const selector = textInput(`arzoie${new Date().getFullYear()}`, 63); const bits = el('select', null, 'form-select');
-      for (const size of [2048, 3072, 4096]) { const option = el('option', `RSA ${size}`); option.value = String(size); bits.append(option); }
-      grid.append(labelled('dkimSelector', 'New key selector', selector), labelled('dkimBits', 'Key size', bits));
-      c.body.append(grid, button('Generate key', async () => {
-        await request(`${base}/keys`, 'POST', { selector: selector.value.trim(), bits: Number(bits.value) }); notify('Key generated. Publish its DNS record, then activate it.'); await dkimPanel(editor, domain);
+      const selector = textInput(`arzoie${new Date().getFullYear()}`, 63);
+      grid.append(labelled('dkimSelector', 'New key selector', selector));
+      c.body.append(grid, el('p', 'Keys are RSA 2048, the size large receivers expect.', 'help'), button('Generate key', async () => {
+        await request(`${base}/keys`, 'POST', { selector: selector.value.trim() }); notify('Key generated. Publish its DNS record, then activate it.'); await dkimPanel(editor, domain);
       }, 'btn btn-outline-secondary btn-sm mt-2'));
       const settings = el('div', null, 'form-grid section-gap');
       const sign = checkInput(state.signEnabled), aliases = checkInput(state.signAliases);
