@@ -98,6 +98,23 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | POST | `/api/v1/diagnostics/mail-servers` | Server administrator; the servers outgoing delivery would use for `domain` |
 | GET | `/api/v1/logs` | Server administrator; list allowlisted log files (name, size, modified) |
 | GET | `/api/v1/logs/{name}` | Server administrator; a page of at most 16 KiB ending at `before` (default: end of file) |
+| GET / POST | `/api/v1/domains/{domainId}/accounts/{accountId}/fetchaccounts` | Server or own-domain administrator; list/create external POP3 fetch accounts for a mailbox |
+| GET / PATCH / DELETE | `/api/v1/domains/{domainId}/accounts/{accountId}/fetchaccounts/{id}` | Read/change/delete a fetch account; the password is write-only; deleting a running download returns 409 |
+| POST | `/api/v1/domains/{domainId}/accounts/{accountId}/fetchaccounts/{id}/run` | Request a download now (enabled accounts only; 409 otherwise) |
+| GET / POST | `/api/v1/groups` | Server administrator; list/create groups |
+| GET / PATCH / DELETE | `/api/v1/groups/{id}` | Read/rename/delete a group (deleting removes memberships and its folder permissions) |
+| GET / POST | `/api/v1/groups/{groupId}/members` | List/add members by `accountId` |
+| DELETE | `/api/v1/groups/{groupId}/members/{id}` | Remove a member |
+| GET / POST | `/api/v1/publicfolders` | Server administrator; list the public folder tree / create a folder under `parentId` (0 = top level) |
+| PATCH / DELETE | `/api/v1/publicfolders/{id}` | Rename / delete a folder with its messages (409 while it has subfolders) |
+| GET / POST | `/api/v1/publicfolders/{folderId}/permissions` | List / grant a permission to a mailbox (`type` 0, `accountId`), group (1, `groupId`) or anyone (2) |
+| PATCH / DELETE | `/api/v1/publicfolders/{folderId}/permissions/{id}` | Change named `rights` / remove a permission |
+| GET | `/api/v1/backup` | Server administrator; running state, destination and the newest 100 archives |
+| POST | `/api/v1/backup/start` | Start a backup with the configured contents (409 while one runs, 412 without a valid destination) |
+| POST | `/api/v1/backup/restore` | Restore chosen parts of an archive named in the listing; `confirmName` must repeat the name |
+| PUT | `/api/v1/settings/backup/passphrase` | Write-only backup passphrase (at least 12 characters; empty removes it) |
+| GET | `/api/v1/secretkey` | Server administrator; the installation key identifier |
+| POST | `/api/v1/secretkey/export`, `/api/v1/secretkey/import` | Export the key under a passphrase (at least 12 characters) / import an exported key |
 | PUT | `/api/v1/settings/smtp/smart-host-credential` | Server administrator; write-only `{ "password": "..." }`; empty clears |
 | POST | `/api/v1/settings/administrator-password` | Server administrator; `currentPassword` of the built-in Administrator and `newPassword` |
 | POST | `/api/v1/settings/performance/message-index/clear` | Server administrator; empty JSON object |
@@ -379,7 +396,7 @@ and test messages from all providers before strengthening DMARC.
 
 `GET /api/v1/settings/{section}` returns `section`, `values` and a typed `schema` for an
 explicit native allowlist. Sections: `protocols`, `smtp`, `imap`, `pop3`, `autoban`, `greylisting`,
-`performance`, `general`, `antivirus`, `passwordhash`, `logging`, `tls`. The current implementation maps 92 fields. Server administrators only, checked in HTTP and native code.
+`performance`, `general`, `antivirus`, `passwordhash`, `logging`, `tls`, `backup`. The current implementation maps 97 fields. Server administrators only, checked in HTTP and native code.
 No raw property names, SQL, process commands, secret values or filesystem paths are accepted.
 
 `PATCH` requires exactly `{ "fields": { ... }, "expected": { ... } }`, with matching keys
@@ -558,6 +575,92 @@ When the test administrator is the built-in Administrator it also changes and re
 password. `LiveRestTests` checks the HTTP role, CSRF and log-name boundaries, and
 `browser.py` covers every new panel control, including inert rendering of log and diagnostic
 text and the mobile layout.
+
+## Fetch accounts, groups, public folders and maintenance (bundle 2 checkpoint)
+
+These replace the legacy external-account, group, public-folder, folder-permission, backup and
+secret-key surfaces (A07, A10, A15).
+
+**External POP3 fetch accounts** belong to one mailbox. Server administrators manage any
+mailbox's; domain administrators manage those of mailboxes in their own domain that are not
+server administrators; mailbox users cannot, because a fetch account makes the server connect
+to any host it names. Fields: `name`, `active`, `serverAddress` (host name or IP), `port`,
+`security`, `username`, write-only `password` (`passwordConfigured` is reported), and
+`minutesBetweenFetch` (1-10080). `daysToKeep` is -1 to delete after download, 0 to keep on the
+server, or N to delete after N days. The remaining fields are `processMimeRecipients`,
+`mimeRecipientHeaders` (comma-separated header names), `processMimeDate`, `routeRecipients`
+(only with MIME recipients), `useAntiSpam` and `useAntiVirus`. `nextTry` and `running` are
+read-only. New accounts start disabled, on port 995 with implicit TLS.
+
+`security` accepts only 1 (SSL/TLS) or 3 (STARTTLS required), so the panel never stores a
+new plaintext POP3 logon. An existing account set to 0 or 2 through the legacy tools keeps that
+value until it is changed, and the panel shows it as legacy. "Download now" makes an enabled
+account due and wakes the fetch manager. While a download runs, the account cannot be deleted
+(409). The password is stored with the existing encryption and read back internally after
+each save; it is never returned.
+
+**Groups** have a unique name and members chosen by account. Deleting a group removes its
+memberships and the folder permissions granted to it. **Public folders** are changed in the
+live tree that every IMAP session shares, exactly as the desktop tool does. Names are Unicode
+(stored as modified UTF-7), must not contain the hierarchy delimiter, cannot be `INBOX`, and
+are unique among siblings. New public folders are subscribed automatically. Deleting a folder
+deletes its messages, and is refused while it has subfolders, so one confirmation never removes
+a whole tree. **Permissions** go to one mailbox, one group or anyone (at most one of each per
+holder), with the eleven IMAP rights `lookup`, `read`, `writeSeen`, `writeOthers`, `insert`,
+`post`, `create`, `deleteMailbox`, `writeDeleted`, `expunge` and `administer`. An update
+changes only the rights it names. Mailbox owners share their own folders from their mail
+client (IMAP ACL); that is not part of this API.
+
+**Backup settings** are the `backup` settings section: `includeSettings`, `includeDomains`,
+`includeMessages` (requires domains) and `compress`, which are bits of one native setting
+merged like the logging flags, and `destination`. The destination must be an existing absolute
+local folder (no UNC share, `..`, reparse point or the Windows folder), because the service
+writes archives holding every mailbox there. The passphrase is write-only and needs at least
+12 characters; without one, new backups are not encrypted. `POST /backup/start` uses the
+configured contents; progress and errors go to `hmailserver_backup.log`, which the Logs page
+reads. `GET /backup` lists up to 100 `HMBackup *.7z` archives in the destination, newest first.
+
+**Restore** takes an archive name from that listing, never a path. `confirmName` must repeat
+it, and `settings`, `domains` and `messages` choose the parts (messages require domains, and
+each part must be in the archive). `passphrase` opens an encrypted archive: a wrong
+passphrase returns 422 and starts nothing. Restoring replaces the chosen parts and runs in the
+background like a backup. Restoring settings from another server also needs that server's
+installation key, imported first.
+
+**Installation key.** `GET /secretkey` returns the key identifier. Export wraps the key under
+a passphrase of at least 12 characters and returns the export text. Import takes such a text
+and its passphrase, re-protects every stored secret under the imported key (as the desktop
+tool does), and returns the new identifier. A wrong passphrase or damaged export returns 422
+and keeps the current key; importing the installation's own key changes nothing. Exports and
+imports are logged without the key or passphrase. Treat an export like the key itself.
+
+Not migrated here: the desktop's per-mailbox folder editor (A08) and moving data-directory
+contents (`DataDirectorySynchronizer`, a desktop tool covered by E10). The database setup and
+upgrade tools stay desktop tools until E10 moves them to the management API.
+
+Tests: `FetchFoldersMaintenanceTests` runs against the native dispatcher on every CI backend.
+Fetch accounts:
+- domain-administrator and role scoping;
+- every validation rule;
+- password non-disclosure and preservation on update;
+- refusing "download now" while disabled;
+- deletion.
+
+Groups and folders:
+- group names, duplicates and members;
+- folder tree, Unicode names, delimiter refusal and subfolder delete protection;
+- each permission holder type, duplicates and partial rights updates;
+- a real IMAP `LIST` by a group member, which shows the folder until the membership is removed.
+
+Backup and key:
+- destination, content and passphrase validation;
+- a real encrypted backup, polled to completion and listed;
+- every restore refusal (name, confirmation, wrong passphrase, parts missing from the archive);
+- key export and re-import.
+
+A restore that actually replaces data is left to the existing NUnit backup/restore tests, so
+the shared CI server is not overwritten. `LiveRestTests` checks the HTTP role boundaries and
+`browser.py` the new panel controls.
 
 ## Mail transport inventory (completion branch, validation in progress)
 

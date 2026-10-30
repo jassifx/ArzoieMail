@@ -586,13 +586,13 @@ with sync_playwright() as p:
     page.get_by_role('button', name='External accounts', exact=True).click()
     page.get_by_text('No external accounts.', exact=True).wait_for()
     page.get_by_role('button', name='New external account', exact=True).click()
-    page.get_by_label('Name', exact=True).fill('Old provider')
-    page.get_by_label('POP3 server', exact=True).fill('pop.example.net')
-    page.get_by_label('User name', exact=True).fill('remote')
-    page.get_by_label('Password', exact=True).fill('fetch secret')
-    page.get_by_label('Messages on the server', exact=True).select_option('days')
-    page.get_by_label('Days to keep', exact=True).fill('14')
-    assert page.get_by_label('Connection security', exact=True).locator('option').count() == 2, 'New fetch accounts offer only encrypted connections.'
+    page.locator('#content').get_by_label('Name', exact=True).fill('Old provider')
+    page.locator('#content').get_by_label('POP3 server', exact=True).fill('pop.example.net')
+    page.locator('#content').get_by_label('User name', exact=True).fill('remote')
+    page.locator('#content').get_by_label('Password', exact=True).fill('fetch secret')
+    page.locator('#content').get_by_label('Messages on the server', exact=True).select_option('days')
+    page.locator('#content').get_by_label('Days to keep', exact=True).fill('14')
+    assert page.locator('#content').get_by_label('Connection security', exact=True).locator('option').count() == 2, 'New fetch accounts offer only encrypted connections.'
     with page.expect_response(lambda response: response.url.endswith('/fetchaccounts') and response.request.method == 'POST') as fetch_created:
         page.get_by_role('button', name='Create external account', exact=True).click()
     fetch_body = fetch_created.value.request.post_data_json
