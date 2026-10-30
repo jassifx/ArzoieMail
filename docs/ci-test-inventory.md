@@ -201,6 +201,15 @@ Both selected runs restored the original service files and temporary checkpoint;
 An earlier incomplete filter selected zero tests and was rejected, not accepted as evidence.
 The build ran with service/COM hooks disabled. This correction needs its own four-backend CI.
 
+First pushed identity head `95c91ce55` passed Compact, Release and GCC/Clang but failed MySQL:
+the new test used CAST(... AS BIGINT), which MySQL rejects. Four NUnit cases calling the
+internal suite failed (1205 passed,4 failed,34 inconclusive,76 skipped,0 warnings out of 1319);
+these are not production ID-fix failures or a waived flaky test. Log:
+`out/identity-failed-mysql-ci.log`. The fixture now selects MySQL's CAST(... AS SIGNED),
+which produces a signed BIGINT per the [MySQL contract](https://dev.mysql.com/doc/refman/8.4/en/cast-functions.html),
+while preserving BIGINT on the other providers. Native compilation passed with hooks disabled
+in `out/phase1b-identity-mysql-build.log`; the corrected head needs its own full CI.
+
 ## Modern-stack CI expansion merged and verified
 
 The [acceptance matrix](ci-acceptance-matrix.md) defines current checks and future coverage.
@@ -217,7 +226,7 @@ restricted production hosting, controlled-clock expiry, wizard/scanner lifecycle
 installer/API provisioning, consumer migration and PHP/COM retirement are still pending.
 The [6.0 scope](version-6-scope.md) adds mandatory acceptance obligations, not executed tests.
 
-## Latest verified application/test baseline: PR #42
+## Latest merged application/test baseline: PR #42
 
 Verified **2026-10-28 (Asia/Colombo)** on
 [`28dd3df912fac9109260efe9f5571dc05b402d12`](https://github.com/jassifx/ArzoieMail/commit/28dd3df912fac9109260efe9f5571dc05b402d12/checks),

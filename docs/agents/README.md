@@ -23,7 +23,13 @@ corrections passed targeted VM regressions and four-backend CI at `170442658`. T
 read-only transport inventory passed full VM/browser validation and four-backend CI at `8cdc085b4`.
 The next bounded PFX helper passed 60 VM assertions; its newer inspection endpoint/reader/form
 passed the final native/API/browser/cleanup VM run, including the independent rate budget
-(546 HTTP/security,60 parser). Public screenshots were reviewed; its own CI remains pending.
+(546 HTTP/security,60 parser). Public screenshots were reviewed; four-backend CI, Release,
+GCC/Clang and CI installer publication passed at `ae903a182` (1685 separate assertions and
+both browser suites; exact NUnit outcomes in the CI inventory). The following native
+certificate/listener ID-width correction passed a reproduced red/green Compact VM regression
+and is pushed as `95c91ce55`. Its first CI passed Compact but failed MySQL on a test-fixture
+CAST dialect error; the fixture correction compiled and requires its own CI. No VM identity
+test job remains active. The handoff owns the latest source/storage-probe work and next checks.
 The new handoff owns
 exact progress and next checks.
 No completion PR exists. The full A/E ledger
