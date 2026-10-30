@@ -57,9 +57,14 @@ not add, remove or defer scope.
   (A07, A10, A15) → 3 spam, DNS/DKIM and SpamAssassin (A11, E01, E02) → 4 certificates and hosting
   (E03, E07) → 5 Defender (E04-E06) → 6 cutover: PHP retirement, COM migration and removal,
   acceptance and documentation (E08-E10). A08, A12, A18 and A19 fold into the nearest bundle.
-- **SpamAssassin (E02) is packaged as a Windows build**: a Perl runtime and SpamAssassin ship in
-  the installer and run as a managed service. Installer, licensing, update and security-update
-  ownership come with that choice and must be documented in E02's acceptance.
+- **Spam filtering (E02), revised 2026-10-31:** the earlier decision to package SpamAssassin
+  is withdrawn. ArzoieMail never builds or ships SpamAssassin or ClamAV; both stay optional
+  integrations that administrators install themselves, on Windows or another server such as
+  Linux, and connecting them must be easy (connection, health and detection tests, guidance).
+  The default becomes native filtering: a Bayesian filter trained from IMAP Junk moves, plus
+  content rules, in the server (bundle 3b). Microsoft Defender (bundle 5) provides built-in
+  antivirus. Bundle 3 is delivered as two checkpoints: 3a (A11, A12, E01, E02 integration) and
+  3b (native Bayesian filter and rules).
 - **ACME (E03) is built into the .NET management API**, using a maintained open-source ACME
   library, with HTTP-01 challenges, renewal, and keys held in native protected storage (see the
   [certificate storage proposal](certificate-storage-design.md)).

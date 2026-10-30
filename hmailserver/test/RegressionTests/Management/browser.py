@@ -429,7 +429,7 @@ def api(route):
     elif path == '/diagnostics':
         data = {"checks": [{"safe": True, "message": "Native management channel connected; no COM dependency."}]}
     elif path == '/spamassassin/test':
-        data = {"connected": True}
+        data = {"connected": True, "gtubeDetected": True, "headers": "X-Spam-Status: Yes, score=1000.0\n"}
     else:
         raise AssertionError(f"Unexpected browser API call: {request.method} {path}")
     route.fulfill(status=200, content_type='application/json', body=json.dumps({"data": data}))
@@ -470,7 +470,7 @@ with sync_playwright() as p:
     page.get_by_role('link', name='Spam protection').click()
     page.get_by_label('Spam Assassin Host', exact=True).wait_for()
     page.get_by_role('button', name='Test saved connection').click()
-    page.get_by_text('SpamAssassin connection succeeded.', exact=True).wait_for()
+    page.get_by_text('SpamAssassin is reachable and recognized the GTUBE spam test message.', exact=True).wait_for()
     page.get_by_role('link', name='Domains & DNS').click()
     page.get_by_role('button', name='New domain', exact=True).click()
     page.get_by_label('name', exact=True).fill('second.test')

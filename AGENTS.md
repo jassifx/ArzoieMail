@@ -72,7 +72,7 @@ defines current runtime, real REST/native/HTTPS, published-browser and per-backe
 unimplemented acceptance work. Keep every newly exposed control covered at native, REST and
 browser boundaries. Do not count mocks, manual checks or future scanner capacity as live CI proof.
 
-Current plan/status handoff: [2026-10-30](docs/agents/handoffs/2026-10-30.md). Phase 1b's
+Current plan/status handoff: [2026-10-31](docs/agents/handoffs/2026-10-31.md). Phase 1b's
 native/.NET API foundation is merged in #31; complete PHP retirement, guided certificate
 management and optional high-pressure Defender scanning remain delivery requirements, not
 completed functionality. Read the [Phase 1b tracker](ROADMAP.md#phase-1b-delivery-tracker)
