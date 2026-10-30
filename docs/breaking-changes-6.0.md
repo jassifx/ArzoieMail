@@ -1,6 +1,6 @@
 # ArzoieMail 6.0 compatibility and breaking-change register
 
-Approved direction: **2026-10-28 (Asia/Colombo)**. [Frozen scope](version-6-scope.md) owns
+Approved direction: **2026-10-28 (Asia/Kolkata)**. [Frozen scope](version-6-scope.md) owns
 the mandatory product outcomes; this register owns operator impact and migration evidence.
 Rows describe planned transitions, not completed migrations. Preserve original authorship,
 license notices, historical release/schema mappings and mail data. The final release notes

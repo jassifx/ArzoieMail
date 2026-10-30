@@ -107,6 +107,15 @@ unless the maintainer says otherwise for a specific task.
   through the current authorized PR, and distinguish merged work, planned features and unverified
   feasibility/capacity. Never use an old handoff's CI snapshot as evidence for a new commit.
 
+- **Every PR updates all the documentation it affects** (maintainer instruction, 2026-10-30):
+  root README status, ROADMAP authorization paragraph and delivery tracker table, the Phase 1b
+  ledger, CI inventory (final-head counts), latest handoff, `docs/agents/README.md`, the AGENTS
+  handoff pointer, the Management README REST contract and the breaking-change register when
+  something is retired. Check this before reporting a PR ready, and reconcile merged status in
+  the next change after a merge.
+- **Dates and times use Indian Standard Time, `Asia/Kolkata` (UTC+05:30)** (maintainer
+  instruction, 2026-10-30). Earlier records said Asia/Colombo, which has the same offset, so
+  their dates are unchanged; archived PR exports under `docs/history/` keep their original text.
 - Report CI results plainly: which jobs passed, which failed and why. Separate a known flaky test
   (gotchas.md lists them) from a real failure, and never call a change done while a failure is
   unexplained.

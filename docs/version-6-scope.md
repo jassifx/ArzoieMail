@@ -1,6 +1,6 @@
 # ArzoieMail 6.0 scope and validation contract
 
-Approved by the maintainer **2026-10-28 (Asia/Colombo)** after reviewing the Desktop
+Approved by the maintainer **2026-10-28 (Asia/Kolkata)** after reviewing the Desktop
 documentation proposals. This is the finite product-scope owner under [ROADMAP](../ROADMAP.md).
 It supersedes the former flexible scheduling of later phases and the decision to retain COM
 in the 6.0 product. [Release policy](release-versioning.md) owns version/build identities;

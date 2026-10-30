@@ -1,6 +1,6 @@
 # Phase 1b capability ledger and completion gates
 
-Status snapshot: **2026-10-30, Asia/Colombo**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
+Status snapshot: **2026-10-30, Asia/Kolkata**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
 is merged at `74eecc017f48ddd445870bfd73dd6eb00aed6cef`; tested head
 `28dd3df912fac9109260efe9f5571dc05b402d12` passed all four database jobs, Release,
 GCC/Clang, CodeQL, workflow lint and CI installer publication. See [CI evidence](ci-test-inventory.md)

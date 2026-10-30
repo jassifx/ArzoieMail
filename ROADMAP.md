@@ -37,7 +37,7 @@ Status: ✅ done · 🔄 in progress · 🔜 next · 📋 planned · ⏳ open fo
 
 ### Test baseline
 
-Merged [PR #42](https://github.com/jassifx/ArzoieMail/pull/42), 2026-10-28 (Asia/Colombo):
+Merged [PR #42](https://github.com/jassifx/ArzoieMail/pull/42), 2026-10-28 (Asia/Kolkata):
 merge `74eecc017f48ddd445870bfd73dd6eb00aed6cef`, tested head
 `28dd3df912fac9109260efe9f5571dc05b402d12`. All four backend jobs, Release, GCC/Clang,
 workflow lint, CodeQL and CI installer publication passed. Each backend recorded 1317 NUnit

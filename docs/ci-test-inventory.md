@@ -275,7 +275,7 @@ The [6.0 scope](version-6-scope.md) adds mandatory acceptance obligations, not e
 
 ## Latest merged application/test baseline: PR #42
 
-Verified **2026-10-28 (Asia/Colombo)** on
+Verified **2026-10-28 (Asia/Kolkata)** on
 [`28dd3df912fac9109260efe9f5571dc05b402d12`](https://github.com/jassifx/ArzoieMail/commit/28dd3df912fac9109260efe9f5571dc05b402d12/checks),
 [PR #42](https://github.com/jassifx/ArzoieMail/pull/42), merged as
 `74eecc017f48ddd445870bfd73dd6eb00aed6cef`. All four backend jobs,
@@ -399,7 +399,7 @@ Express fixture. That database-specific test is explicitly skipped on the other 
 
 ### Historical verified baseline after PR #40
 
-Verified on **2026-10-27 (Asia/Colombo)** from the successful logs for tested head
+Verified on **2026-10-27 (Asia/Kolkata)** from the successful logs for tested head
 `f9a94491d2f122fdf981aeb0be612136d2267dcd`, merged by
 [PR #40](https://github.com/jassifx/ArzoieMail/pull/40) as
 `589001f49f89dec62a390d78dbf4eecccaeeaf1d`. NUnit totals match #33/#35/#36/#39:
