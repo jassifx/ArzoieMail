@@ -33,6 +33,9 @@ param(
     [ValidateRange(1, 65535)][int]$HttpsPort = 8443
 )
 $ErrorActionPreference = 'Stop'
+# Started by setup with -NoProfile, PowerShell has not loaded the Cert: drive's module yet.
+Import-Module Microsoft.PowerShell.Security
+Import-Module PKI
 $serviceName = 'ArzoieMailAdmin'
 $account = "NT SERVICE\$serviceName"
 $webAdmin = Join-Path $InstallDirectory 'WebAdmin'

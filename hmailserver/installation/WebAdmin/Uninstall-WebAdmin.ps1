@@ -20,6 +20,8 @@ param(
     [Parameter(Mandatory = $true)][string]$IniFile
 )
 $ErrorActionPreference = 'Stop'
+# Started by setup with -NoProfile, PowerShell has not loaded the Cert: drive's module yet.
+Import-Module Microsoft.PowerShell.Security
 $serviceName = 'ArzoieMailAdmin'
 $settingsFile = Join-Path $InstallDirectory 'WebAdmin\appsettings.Production.json'
 
