@@ -1259,7 +1259,6 @@
   }
   async function certificates(root) {
     const [state, acme] = await Promise.all([request('/certificates'), request('/acme')]);
-    if (!root.isConnected || currentPage !== 'certificates') return;
     const reload = async () => { root.replaceChildren(); await certificates(root); };
     const restart = button('Restart mail services', async () => {
       if (!confirm('Restart the mail services now? Connected clients are disconnected and reconnect; queued mail waits until the services are back.')) return;
