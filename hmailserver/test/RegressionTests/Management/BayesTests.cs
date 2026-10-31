@@ -96,7 +96,9 @@ static class BayesTests
             fields["name"] = "Bayes test " + Guid.NewGuid().ToString("N")[..8];
             fields["priority"] = Math.Min(matched.GetProperty("priority").GetInt64() + 1, 1000000);
             fields["spamProtection"] = true;
-            if (matched.GetProperty("externalToExternal").GetBoolean() && !matched.GetProperty("authExternalToExternal").GetBoolean())
+            // The copy keeps the range's relay decisions, so an unauthenticated relay it allows needs the same acknowledgement.
+            bool Unauthenticated(string allow, string auth) => matched.GetProperty(allow).GetBoolean() && !matched.GetProperty(auth).GetBoolean();
+            if (Unauthenticated("externalToExternal", "authExternalToExternal") || Unauthenticated("localToExternal", "authLocalToExternal"))
                 fields["acknowledgeUnauthenticatedRelay"] = true;
             range = await Send("securityranges.create", new { fields });
 
