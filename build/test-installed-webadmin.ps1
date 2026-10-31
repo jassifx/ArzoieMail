@@ -26,10 +26,28 @@ if (-not ('ArzoieInstalledIni' -as [type])) {
 }
 function Get-ClientSid { $value = [Text.StringBuilder]::new(256); [void][ArzoieInstalledIni]::GetPrivateProfileString('Management', 'ApiClientSID', '', $value, 256, $iniFile); $value.ToString() }
 
+# Why the panel is not running: what setup logged, what Windows logged, and the panel's own
+# output when started by hand in its folder.
+function Show-PanelDiagnostics {
+    $log = Join-Path $InstallDirectory 'WebAdmin\Install-WebAdmin.log'
+    if (Test-Path -LiteralPath $log) { "--- $log"; Get-Content -LiteralPath $log }
+    "--- Application and System events"
+    Get-WinEvent -FilterHashtable @{ LogName = 'Application', 'System'; StartTime = (Get-Date).AddHours(-3) } -MaxEvents 400 -ErrorAction SilentlyContinue |
+        Where-Object { $_.ProviderName -in 'ArzoieMail Administration', '.NET Runtime', 'Application Error', 'Service Control Manager' -and ($_.ProviderName -ne 'Service Control Manager' -or $_.Message -match 'ArzoieMail') } |
+        Select-Object -First 15 | ForEach-Object { "[$($_.TimeCreated)] $($_.ProviderName): $($_.Message)" }
+    "--- Started in the foreground"
+    $exe = Join-Path $InstallDirectory 'WebAdmin\ArzoieMail.Api.exe'
+    $out = Join-Path $env:TEMP 'arzoie-panel-out.txt'; $err = Join-Path $env:TEMP 'arzoie-panel-err.txt'
+    $process = Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe) -PassThru -RedirectStandardOutput $out -RedirectStandardError $err -WindowStyle Hidden
+    if (-not $process.WaitForExit(15000)) { $process.Kill() }
+    Get-Content $out, $err -ErrorAction SilentlyContinue | Select-Object -First 60
+}
+
 function Test-InstalledPanel {
     $service = Get-CimInstance Win32_Service -Filter "Name='ArzoieMailAdmin'"
     Check ($null -ne $service) 'Setup created the ArzoieMailAdmin service.'
     Check ($service.StartName -eq 'NT SERVICE\ArzoieMailAdmin') "The panel runs as its virtual account, not $($service.StartName)."
+    if ($service.State -ne 'Running') { Show-PanelDiagnostics }
     Check ($service.State -eq 'Running') "The panel service is $($service.State)."
     $sid = ([Security.Principal.NTAccount]'NT SERVICE\ArzoieMailAdmin').Translate([Security.Principal.SecurityIdentifier]).Value
     Check ((Get-ClientSid) -eq $sid) 'The mail service accepts the panel identity on its management pipe.'
