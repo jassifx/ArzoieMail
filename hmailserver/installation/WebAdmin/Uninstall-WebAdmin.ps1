@@ -20,7 +20,10 @@ param(
     [Parameter(Mandatory = $true)][string]$IniFile
 )
 $ErrorActionPreference = 'Stop'
-# Started by setup with -NoProfile, PowerShell has not loaded the Cert: drive's module yet.
+# Started from PowerShell 7, setup's environment can carry PowerShell 7's module path, whose
+# core modules Windows PowerShell cannot load (the Cert: drive then goes missing). Use Windows
+# PowerShell's own module folders.
+$env:PSModulePath = "$env:ProgramFiles\WindowsPowerShell\Modules;$env:SystemRoot\System32\WindowsPowerShell\v1.0\Modules"
 Import-Module Microsoft.PowerShell.Security
 $serviceName = 'ArzoieMailAdmin'
 $settingsFile = Join-Path $InstallDirectory 'WebAdmin\appsettings.Production.json'

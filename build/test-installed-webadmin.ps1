@@ -100,7 +100,7 @@ function Test-InstalledPanel {
     $plain.Dispose()
 }
 
-Test-InstalledPanel
+try { Test-InstalledPanel } catch { Show-PanelDiagnostics; throw }
 
 # Remove and set up again, as an upgrade or repair runs the same scripts.
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $setup 'Uninstall-WebAdmin.ps1') -InstallDirectory $InstallDirectory -IniFile $iniFile
@@ -109,7 +109,7 @@ Check ($null -eq (Get-Service -Name 'ArzoieMailAdmin' -ErrorAction SilentlyConti
 Check ((Get-ClientSid) -eq '') 'Removing the panel withdraws its management pipe access.'
 Check (-not (Test-Path -LiteralPath $settingsFile)) 'Removing the panel removes its settings and own certificate.'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $setup 'Install-WebAdmin.ps1') -InstallDirectory $InstallDirectory -IniFile $iniFile
-if ($LASTEXITCODE -ne 0) { throw 'Install-WebAdmin.ps1 failed.' }
-Test-InstalledPanel
+if ($LASTEXITCODE -ne 0) { Show-PanelDiagnostics; throw 'Install-WebAdmin.ps1 failed.' }
+try { Test-InstalledPanel } catch { Show-PanelDiagnostics; throw }
 
 "Passed $checks installed web administration checks."

@@ -33,9 +33,6 @@ param(
     [ValidateRange(1, 65535)][int]$HttpsPort = 8443
 )
 $ErrorActionPreference = 'Stop'
-# Started by setup with -NoProfile, PowerShell has not loaded the Cert: drive's module yet.
-Import-Module Microsoft.PowerShell.Security
-Import-Module PKI
 $serviceName = 'ArzoieMailAdmin'
 $account = "NT SERVICE\$serviceName"
 $webAdmin = Join-Path $InstallDirectory 'WebAdmin'
@@ -47,6 +44,12 @@ function Write-Log([string]$message) { Add-Content -LiteralPath $logFile -Value 
 if (-not (Test-Path -LiteralPath $executable)) { throw "The panel is not installed: $executable is missing." }
 # Setup runs this silently; whatever stops it is recorded where the administrator can find it.
 trap { Write-Log "Setup of the panel failed: $($_.Exception.Message) (line $($_.InvocationInfo.ScriptLineNumber))"; break }
+# Started from PowerShell 7, setup's environment can carry PowerShell 7's module path, whose
+# core modules Windows PowerShell cannot load (the Cert: drive then goes missing). Use Windows
+# PowerShell's own module folders.
+$env:PSModulePath = "$env:ProgramFiles\WindowsPowerShell\Modules;$env:SystemRoot\System32\WindowsPowerShell\v1.0\Modules"
+Import-Module Microsoft.PowerShell.Security
+Import-Module PKI
 
 if (-not ('ArzoieWebAdminIni' -as [type])) {
     Add-Type 'using System.Runtime.InteropServices; public static class ArzoieWebAdminIni { [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] public static extern bool WritePrivateProfileString(string section, string key, string value, string file); }'
