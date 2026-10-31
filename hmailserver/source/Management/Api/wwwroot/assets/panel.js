@@ -1028,6 +1028,7 @@
       wrap.append(el('h3', 'Training'), el('p', status.ready
         ? `Ready: learned ${status.spamMessages} spam and ${status.hamMessages} legitimate messages (${status.tokens} distinct words).`
         : `Learning: ${status.spamMessages} spam and ${status.hamMessages} legitimate messages so far; scoring starts at ${status.minimumMessages} of each.`, 'help'));
+      if (!status.enabled) wrap.append(el('p', 'The filter is off: it scores nothing and does not learn from Junk folders. You can still teach it from a folder before turning it on with Bayes Enabled above.', 'help'));
       if (status.pending || status.training) wrap.append(el('p', `${status.pending} messages waiting to be learned.`, 'help'));
       if (status.failed || status.dropped) wrap.append(el('p', `${status.failed} messages could not be read and ${status.dropped} were skipped because the queue was full, since the service started.`, 'help'));
       wrap.append(el('p', 'The filter is shared by all mailboxes. To start it, learn a mailbox folder you trust, such as a Junk folder as spam and an Inbox as legitimate mail. Learning cannot be undone message by message; Reset forgets everything.', 'help'));

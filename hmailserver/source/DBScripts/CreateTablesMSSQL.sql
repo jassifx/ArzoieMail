@@ -918,7 +918,7 @@ insert into hm_settings (settingname, settingstring, settinginteger) values ('sp
 
 insert into hm_settings (settingname, settingstring, settinginteger) values ('spamassassinport', '', 783) 
 
-insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesenabled', '', 1)
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesenabled', '', 0)
 
 insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesscore', '', 5)
 

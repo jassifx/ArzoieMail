@@ -146,12 +146,13 @@ assertions and CodeQL, and #48 merged as `79df40565` on 2026-10-31. See the
 
 ### Bundle 3b checkpoint: native Bayesian spam filter (2026-10-31)
 
-Branch `feature/phase1b-bayes`. It makes the native Bayesian filter the default spam filtering
-(E02) and adds scoring guidance across every spam test (A11), across native, REST and panel:
+Branch `feature/phase1b-bayes`. It adds the native Bayesian filter as the built-in spam filtering
+(E02), off until an administrator enables it, and adds scoring guidance across every spam test (A11), across native, REST and panel:
 
 - **Schema 5715** on all four databases: `hm_bayes_tokens` holds 64-bit token hashes with spam
-  and ham counts (no message text), and five `bayes*` settings, on by default with a score of 5
-  at 90% probability once 200 spam and 200 ham messages are learned (BC-010).
+  and ham counts (no message text), and five `bayes*` settings. The filter is off until an
+  administrator enables it; its defaults are a score of 5 at 90% probability once 200 spam and
+  200 ham messages are learned.
 - **Scoring:** a post-transmission spam test (`SpamTestBayes`) tokenizes the subject, body,
   link hosts and sender domain and combines token evidence with Robinson/Fisher statistics.
 - **Training:** IMAP copies into a `\Junk` folder train spam, and out of one (except to
@@ -201,7 +202,7 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | ID | Workstream | Remaining delivery and completion gate |
 |---|---|---|
 | E01 | SPF/DKIM/DMARC setup | Publication inspection (#31). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): per-domain DKIM settings, server-generated RSA 2048 keys in a service-only folder, DNS-gated activation, rotation and deletion, and CI conformance: a server-signed message verified by an independent RFC 6376 check. Remaining: SPF/DMARC alignment conformance with external receivers and multi-provider SPF changes |
-| E02 | SpamAssassin engine operations | Decided 2026-10-31: not shipped; SpamAssassin and ClamAV are optional, administrator-installed integrations. Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): the SpamAssassin test reports GTUBE detection and headers; setup guidance covers a remote spamd. Bundle 3b checkpoint (`feature/phase1b-bayes`): the native Bayesian filter is the default (schema 5715), trained from IMAP Junk copies and administrator-chosen folders, with statistics, reset and a live SMTP/IMAP train-score-reset test per backend; content rules are the existing rules. Remaining: per-user models, untraining and token expiry are not planned for 6.0; accuracy on representative mail is unmeasured |
+| E02 | SpamAssassin engine operations | Decided 2026-10-31: not shipped; SpamAssassin and ClamAV are optional, administrator-installed integrations. Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): the SpamAssassin test reports GTUBE detection and headers; setup guidance covers a remote spamd. Bundle 3b checkpoint (`feature/phase1b-bayes`): the native Bayesian filter is built in and enabled by the administrator (schema 5715), trained from IMAP Junk copies and administrator-chosen folders, with statistics, reset and a live SMTP/IMAP train-score-reset test per backend; content rules are the existing rules. Remaining: per-user models, untraining and token expiry are not planned for 6.0; accuracy on representative mail is unmeasured |
 | E03 | Guided certificates | Import including protected PFX/chain, ACME provider/client/challenge selection, hostname/key/chain/access checks, SMTP/IMAP/POP3 listener assignment, independent web HTTPS binding, renewal/expiry, safe activation and rollback |
 | E04 | Optional Defender adapter | Native protected staging and bounded execution, clean/infected/error/unscannable outcomes, clean/EICAR/MIME/archive/encrypted-content/permission/error tests; implementation has not started |
 | E05 | Defender lifecycle, scheduling and mitigation | SMTP receive/submission, queued send, external fetch, uploaded drafts/IMAP APPEND/import and changed-content coverage; durable fair bounded workers, verdict gates, hold/retry/quarantine, retention/audit, restart/outage recovery and observability |

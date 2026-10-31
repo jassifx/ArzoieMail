@@ -744,18 +744,21 @@ explicitly; `browser.py` covers the new controls.
 
 ## Native Bayesian spam filter (bundle 3b checkpoint)
 
-The default spam filtering is native (maintainer decision, 2026-10-31): a Bayesian filter in
+The built-in spam filtering is native (maintainer decision, 2026-10-31): a Bayesian filter in
 the server, with no separate engine to install. SpamAssassin stays an optional integration.
+The filter is off until an administrator enables it (maintainer decision, 2026-10-31), in new
+and upgraded installations alike; the administrator also chooses its score, threshold,
+minimum training and whether it learns from Junk folders.
 
 **Settings** are five fields of the antispam section (`GET`/`PATCH /antispam`):
 
 | Field | Default | Meaning |
 |---|---|---|
-| `BayesEnabled` | `true` | Run the filter on incoming mail and learn from Junk copies |
+| `BayesEnabled` | `false` | Run the filter on incoming mail and learn from Junk copies; nothing is scored or learned while it is off |
 | `BayesScore` | 5 | Spam score added when a message reaches the threshold (0-10000) |
 | `BayesThreshold` | 90 | Spam probability, in percent (50-100), at or above which the score is added |
 | `BayesMinimumMessages` | 200 | The filter scores nothing until it has learned at least this many spam and this many ham messages (1-100000) |
-| `BayesLearnFromJunk` | `true` | Learn from users' IMAP copies into and out of Junk folders |
+| `BayesLearnFromJunk` | `true` | Learn from users' IMAP copies into and out of Junk folders, while the filter is enabled |
 
 **Scoring.** The filter is a post-transmission spam test, so it runs where the IP range has
 spam protection, after the cheaper tests, and adds its score to theirs. It tokenizes the subject
@@ -771,7 +774,8 @@ SpamAssassin's Bayes plugin do. The reason header names the probability, for exa
   are queued only once the whole COPY has succeeded. Public folders never train.
 - `POST /bayes/train` queues every message of one mailbox folder, for example a Junk folder as
   spam and an Inbox as ham, to start a new filter. The folder is a path with the server's
-  hierarchy delimiter. Unknown mailboxes and folders return 404.
+  hierarchy delimiter. Unknown mailboxes and folders return 404. It works while the filter is
+  off, so an administrator can train it before enabling it.
 - One background task at a time trains from a queue of at most 10,000 messages; further
   messages are counted as `dropped`. `GET /bayes` reports `spamMessages`, `hamMessages`,
   `tokens`, `minimumMessages`, `ready`, `pending`, `training`, and the `trained`, `failed` and

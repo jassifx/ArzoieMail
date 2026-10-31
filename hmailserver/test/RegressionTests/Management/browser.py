@@ -485,6 +485,7 @@ with sync_playwright() as p:
     page.get_by_role('button', name='Test saved connection').click()
     page.get_by_text('SpamAssassin is reachable and recognized the GTUBE spam test message.', exact=True).wait_for()
     page.get_by_text('Ready: learned 250 spam and 310 legitimate messages (48211 distinct words).', exact=True).wait_for()
+    assert page.get_by_text('The filter is off', exact=False).count() == 0, 'An enabled filter does not show the off notice.'
     page.get_by_label('Bayes Threshold', exact=True).wait_for()
     page.get_by_label('Mailbox address', exact=True).fill('someone@elsewhere.test')
     page.get_by_role('button', name='Learn folder', exact=True).click()

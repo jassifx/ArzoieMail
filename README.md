@@ -173,7 +173,7 @@ four-backend CI and merged as #46. Checkpoint 3 (bundle 2, merged as #47) adds e
 groups and public folders with their permissions, backup/restore and installation-key export/import.
 Checkpoint 4 (bundle 3a, merged as #48) adds the spam allowlist, greylisting exceptions, antivirus scanner
 tests and DKIM key generation, rotation and verified signing. Checkpoint 5 (bundle 3b, in progress)
-makes a native Bayesian spam filter the default: it learns from mail users move into and out of
+adds a native Bayesian spam filter that administrators enable and configure: it learns from mail users move into and out of
 Junk and from folders an administrator chooses, and needs schema 5715. Still to come, as one checkpoint PR
 per bundle: guided certificates and production hosting (E03, E07); optional Defender
 scanning (E04-E06); and the cutover: PHP retirement, moving the tools and tests off COM, and final
