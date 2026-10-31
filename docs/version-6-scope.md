@@ -65,6 +65,8 @@ not add, remove or defer scope.
   content rules, in the server (bundle 3b). Microsoft Defender (bundle 5) provides built-in
   antivirus. Bundle 3 is delivered as two checkpoints: 3a (A11, A12, E01, E02 integration) and
   3b (native Bayesian filter and rules).
+- **Native Bayesian filter control (2026-10-31):** the administrator controls enabling and
+  configuring the filter. It ships disabled, in new and upgraded installations alike.
 - **ACME (E03) is built into the .NET management API**, using a maintained open-source ACME
   library, with HTTP-01 challenges, renewal, and keys held in native protected storage (see the
   [certificate storage proposal](certificate-storage-design.md)).

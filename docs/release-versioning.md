@@ -31,7 +31,7 @@ The [breaking-change register](breaking-changes-6.0.md) records migration/recove
 | Release tag/title | `ArzoieMail-6.0.0-b<build>` / `ArzoieMail 6.0.0, build <build>` | Full three-part ArzoieMail version; manual release workflow creates a draft only when explicitly requested |
 | Management API product metadata | VersionPrefix read from `VERSION` | SDK-generated file/product metadata follows the product target; development default build component is zero |
 | .NET assembly identity / COM typelib | Current identity versions retained pending migration | Current binding contracts; COM identity is removed under V6-COM, not renumbered. A 1.x/5.x assembly identity is not a product-release target |
-| Database schema | `REQUIRED_DB_VERSION`, currently **5714** | Independent migration sequence; do not change it merely because product major becomes 6 |
+| Database schema | `REQUIRED_DB_VERSION`, currently **5715** | Independent migration sequence; do not change it merely because product major becomes 6 |
 
 [Set-Version.ps1](../build/Set-Version.ps1) stamps the native header, shipped desktop-tool
 file/informational versions, generated legacy PHP version gate and installer setup metadata.
@@ -81,7 +81,8 @@ roadmap. Branch names and release tags must keep the workflow's supported syntax
 - Preserve historical hMailServer release/schema mappings, SQL upgrade chains, original
   authorship and AGPLv3/license notices. ArzoieMail remains derived from that code; independent
   release ownership does not erase provenance or licensing obligations.
-- Schema 5714's current ArzoieMail display label is `ArzoieMail 6.0 (5714)`. The older
+- Schema 5715 (the native Bayesian filter's token table and settings) is labelled
+  `ArzoieMail 6.0 (5715)`, and 5714 `ArzoieMail 6.0 (5714)`. The older
   `hMailServer 5.8 (5713)` label is a legacy mapping, not the current product target.
 - Keep older handoffs, test logs, manual examples and third-party dependency versions factual.
   Do not globally replace `5.8`: it can occur in historical data or unrelated library versions.

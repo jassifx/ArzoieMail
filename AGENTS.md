@@ -4,7 +4,7 @@ ArzoieMail is a free, open-source email server for Microsoft Windows, licensed u
 
 **Release target: ArzoieMail 6.0.0**, independently versioned from hMailServer; the former
 5.8.0 target is superseded by the maintainer's 2026-10-28 instruction. Read [VERSION](VERSION)
-and [release versioning](docs/release-versioning.md). Product major, build number, schema 5714,
+and [release versioning](docs/release-versioning.md). Product major, build number, schema 5715,
 assembly identities and historical upgrade mappings are separate. Do not globally rename old
 versions or compatibility identifiers, or publish a release without explicit authorization.
 
@@ -93,6 +93,9 @@ backend; merge `74eecc017`. Consult the CI inventory for inconclusive/skipped ou
 PR #43 merged the approved 6.0 scope at `92ac28d`. The current authorization is to complete
 all remaining Phase 1b, submitted as one checkpoint PR per coherent bundle (maintainer decision,
 2026-10-30; see the working agreement); follow the latest handoff for implementation/evidence status. No Phase 2 start or automatic merge is authorized.
+Checkpoints #45-#49 are merged (#48, bundle 3a, as `79df40565`; #49, bundle 3b, the native
+Bayesian spam filter with schema 5715, off until an administrator enables it). Bundle 4
+(certificates with built-in ACME, production hosting) is next, after the maintainer confirms.
 
 ---
 

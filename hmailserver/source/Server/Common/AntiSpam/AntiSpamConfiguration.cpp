@@ -394,6 +394,66 @@ namespace HM
       return GetSettings_()->GetLong(PROPERTY_SPAMASSASSIN_PORT);
    }
 
+   bool
+   AntiSpamConfiguration::GetBayesEnabled()
+   {
+      return GetSettings_()->GetBool(PROPERTY_BAYES_ENABLED);
+   }
+
+   void
+   AntiSpamConfiguration::SetBayesEnabled(bool newVal)
+   {
+      GetSettings_()->SetBool(PROPERTY_BAYES_ENABLED, newVal);
+   }
+
+   int
+   AntiSpamConfiguration::GetBayesScore()
+   {
+      return GetSettings_()->GetLong(PROPERTY_BAYES_SCORE);
+   }
+
+   void
+   AntiSpamConfiguration::SetBayesScore(int newVal)
+   {
+      GetSettings_()->SetLong(PROPERTY_BAYES_SCORE, newVal);
+   }
+
+   int
+   AntiSpamConfiguration::GetBayesThreshold()
+   {
+      return GetSettings_()->GetLong(PROPERTY_BAYES_THRESHOLD);
+   }
+
+   void
+   AntiSpamConfiguration::SetBayesThreshold(int newVal)
+   {
+      GetSettings_()->SetLong(PROPERTY_BAYES_THRESHOLD, newVal);
+   }
+
+   int
+   AntiSpamConfiguration::GetBayesMinimumMessages()
+   {
+      return GetSettings_()->GetLong(PROPERTY_BAYES_MINIMUM_MESSAGES);
+   }
+
+   void
+   AntiSpamConfiguration::SetBayesMinimumMessages(int newVal)
+   {
+      GetSettings_()->SetLong(PROPERTY_BAYES_MINIMUM_MESSAGES, newVal);
+   }
+
+   bool
+   AntiSpamConfiguration::GetBayesLearnFromJunk()
+   {
+      return GetSettings_()->GetBool(PROPERTY_BAYES_LEARN_FROM_JUNK);
+   }
+
+   void
+   AntiSpamConfiguration::SetBayesLearnFromJunk(bool newVal)
+   {
+      GetSettings_()->SetBool(PROPERTY_BAYES_LEARN_FROM_JUNK, newVal);
+   }
+
    int 
    AntiSpamConfiguration::GetAntiSpamMaxSizeKB()
    {

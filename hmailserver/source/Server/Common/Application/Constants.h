@@ -103,6 +103,12 @@
 #define PROPERTY_SPAMASSASSIN_HOST              _T("spamassassinhost")
 #define PROPERTY_SPAMASSASSIN_PORT              _T("spamassassinport")
 
+#define PROPERTY_BAYES_ENABLED                  _T("bayesenabled")
+#define PROPERTY_BAYES_SCORE                    _T("bayesscore")
+#define PROPERTY_BAYES_THRESHOLD                _T("bayesthreshold")
+#define PROPERTY_BAYES_MINIMUM_MESSAGES         _T("bayesminimummessages")
+#define PROPERTY_BAYES_LEARN_FROM_JUNK          _T("bayeslearnfromjunk")
+
 #define PROPERTY_AS_DKIM_VERIFICATION_ENABLE          _T("ASDKIMVerificationEnabled")
 #define PROPERTY_AS_DKIM_VERIFICATION_FAILURE_SCORE   _T("ASDKIMVerificationFailureScore")
 
@@ -154,4 +160,4 @@
 #define PROPERTY_SRS_MAXAGEDAYS                 _T("SRSMaxAgeDays")
 #define PROPERTY_SRS_HASHLENGTH                 _T("SRSHashLength")
 
-#define REQUIRED_DB_VERSION            5714
+#define REQUIRED_DB_VERSION            5715

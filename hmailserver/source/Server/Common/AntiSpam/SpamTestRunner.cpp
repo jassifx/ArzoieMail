@@ -15,6 +15,7 @@
 #include "SpamTestSPF.h"
 #include "SpamTestSURBL.h"
 #include "SpamTestSpamAssassin.h"
+#include "SpamTestBayes.h"
 #include "DKIM/SpamTestDKIM.h"
 #include "DMARC/SpamTestDMARC.h"
 
@@ -47,6 +48,7 @@ namespace HM
       spam_tests_.push_back(std::shared_ptr<SpamTestDKIM> (new SpamTestDKIM));
       spam_tests_.push_back(std::shared_ptr<SpamTestDMARC> (new SpamTestDMARC));
       spam_tests_.push_back(std::shared_ptr<SpamTestSpamAssassin> (new SpamTestSpamAssassin));
+      spam_tests_.push_back(std::shared_ptr<SpamTestBayes> (new SpamTestBayes));
    }
 
    std::set<std::shared_ptr<SpamTestResult> >

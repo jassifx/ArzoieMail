@@ -4,8 +4,48 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Bundle 3b checkpoint: native Bayesian spam filter
+
+Merged as #49 on 2026-10-31. Branch `feature/phase1b-bayes` (E02, A11 guidance; see the
+[ledger](phase-1b-status.md#bundle-3b-checkpoint-native-bayesian-spam-filter-2026-10-31)).
+Head `d823a33b9817dd7f827d07a461a3d070b98c7cae` passed all four database jobs, Release x64,
+GCC/Clang (with `BayesFilterTests` under the sanitizers) and CI installer publication. Per backend:
+
+| Check | Compact, MySQL, PostgreSQL | SQL Server Express |
+|---|---|---|
+| NUnit regression | 1319 cases: 1209 passed, 0 failed, 34 inconclusive, 76 skipped | 1319 cases: 1210 passed, 0 failed, 34 inconclusive, 75 skipped |
+| Live native management | 1114 assertions (1086 before; +28 from `BayesTests`) | same |
+| Live HTTP/native integration | 238 assertions (224 before; +14 REST checks) | same |
+| Other management checks | unchanged from bundle 3a | same |
+| Browser | fixture suite (new controls included) and published live suite | same |
+
+That is 2059 numbered assertions per backend plus the unnumbered plaintext-boundary line.
+The NUnit outcome is unchanged, so the filter (off by default) does not affect the existing suite.
+
+Failure fixed on the way: the first run (`cad407087`) failed on every backend after training had
+passed, because the test's temporary copy of the 127.0.0.1 IP range allowed unauthenticated
+local-to-external relay without acknowledging it, which the native validation refuses (422).
+A test fix (`d823a33b9`), not a product bug.
+
+New coverage, per backend:
+
+- `BayesTests` (live native): roles and argument refusals; training spam through a real IMAP
+  COPY into a `\Junk` folder and ham from a folder; SMTP scoring of a spam-like and a ham-like
+  message with the reason header checked; COPY from Junk to Trash and to another folder; reset.
+  It enables spam checks for 127.0.0.1 with a temporary higher-priority copy of the matching IP
+  range and restores every changed setting.
+- `LiveRestTests`: the three routes and their server-administrator boundary.
+- `browser.py`: the training card, an unhosted mailbox refused before any request, and a reset
+  that is submitted only after confirmation.
+- `BayesFilterTests` (portable GCC/Clang under the sanitizers, and ClassTester): tokenizer,
+  hash, probability and copy classification.
+
+Schema 5715 is created on every backend by the CI database setup; the upgrade scripts
+5714-to-5715 are not run by CI (as for earlier schema steps).
+
 ## Bundle 3a checkpoint: spam allowlists, antivirus tests and DKIM
 
+Merged as #48 (`79df405656d75aa74be5e0b5ccd40a6dd0b9d894`) on 2026-10-31.
 Branch `feature/phase1b-spam-dkim` (A11/A12/E01/E02 integration; see the
 [ledger](phase-1b-status.md#bundle-3a-checkpoint-spam-allowlists-antivirus-tests-and-dkim-2026-10-31)).
 Head `d2b051f67d4d665f84597aa20a9e91b3e0f778ba` passed all four database jobs, Release x64,
@@ -14,12 +54,18 @@ GCC/Clang and CI installer publication. Per backend:
 | Check | Compact, MySQL, PostgreSQL | SQL Server Express |
 |---|---|---|
 | NUnit regression | 1319 cases: 1209 passed, 0 failed, 34 inconclusive, 76 skipped | 1319 cases: 1210 passed, 0 failed, 34 inconclusive, 75 skipped |
-| Live native management | 1084 assertions (1039 before; +45 from `SpamDkimTests`) | same |
+| Live native management | 1084 assertions (1039 before; +45 from `SpamDkimTests`); 1086 at the final head | same |
 | Live HTTP/native integration | 224 assertions (204 before; +20 REST checks) | same |
 | Other management checks | unchanged from bundle 2 | same |
 | Browser | fixture suite (new controls included) and published live suite | same |
 
 That is 2015 numbered assertions per backend plus the unnumbered plaintext-boundary line.
+
+After review, DKIM keys were limited to RSA 2048: 3072-bit generation outlasted the 10-second
+management request on PostgreSQL and Express. The refusal of 1024, 3072 and 4096 adds two native
+assertions. The final head `ce39cddded0c542e6b922dcb698e06eb48935665` passed all four database
+jobs, Release x64, GCC/Clang, CI installer publication and CodeQL, with the NUnit outcome above,
+1086 native and 224 live HTTP assertions and both browser suites per backend (2017 numbered).
 
 Exercised for real: a message from a DKIM-signing domain, signed by the service, read back over
 POP3 and verified by an independent RFC 6376 implementation in the test (relaxed/relaxed,

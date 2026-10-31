@@ -80,6 +80,11 @@
 #include "../BO/SecurityRanges.h"
 #include "../Cache/Cache.h"
 #include "../SQL/IPAddressSQLHelper.h"
+#include "../AntiSpam/Bayes/BayesStore.h"
+#include "../AntiSpam/Bayes/BayesTrainer.h"
+#include "../BO/Messages.h"
+#include "../../IMAP/IMAPFolderContainer.h"
+#include "../../IMAP/MessagesContainer.h"
 #include <functional>
 #include <string_view>
 #include <array>
@@ -824,6 +829,7 @@ namespace HM
       #include "Maintenance.inc"
       #include "AntiVirus.inc"
       #include "Dkim.inc"
+      #include "Bayes.inc"
       json::object DnsblView(DNSBlackList &item)
       {
          return {{"id", item.GetID()}, {"Active", item.GetIsActive()}, {"DNSHost", Utf8(item.GetDNSHost())},
@@ -853,7 +859,7 @@ namespace HM
          BOOL_SETTING(UseMXChecks), BOOL_SETTING(CheckHostInHelo), BOOL_SETTING(CheckPTR),
          BOOL_SETTING(DKIMVerificationEnabled), BOOL_SETTING(DMARCEnabled), BOOL_SETTING(DMARCHonorPolicy),
          BOOL_SETTING(AddAuthenticationResultsHeader), BOOL_SETTING(AddHeaderSpam), BOOL_SETTING(AddHeaderReason),
-         BOOL_SETTING(PrependSubject)
+         BOOL_SETTING(PrependSubject), BOOL_SETTING(BayesEnabled), BOOL_SETTING(BayesLearnFromJunk)
       };
       const IntSetting IntSettings[] = {
          INT_SETTING(SpamMarkThreshold, 0, 10000), INT_SETTING(SpamDeleteThreshold, 0, 10000),
@@ -861,6 +867,7 @@ namespace HM
          INT_SETTING(UseSPFScore, 0, 10000), INT_SETTING(UseMXChecksScore, 0, 10000),
          INT_SETTING(CheckHostInHeloScore, 0, 10000), INT_SETTING(CheckPTRScore, 0, 10000),
          INT_SETTING(DKIMVerificationFailureScore, 0, 10000), INT_SETTING(DMARCFailureScore, 0, 10000),
+         INT_SETTING(BayesScore, 0, 10000), INT_SETTING(BayesThreshold, 50, 100), INT_SETTING(BayesMinimumMessages, 1, 100000),
          {"MaximumMessageSize", &AntiSpamConfiguration::GetAntiSpamMaxSizeKB, &AntiSpamConfiguration::SetAntiSpamMaxSizeKB, 0, 2147483647}
       };
 #undef BOOL_SETTING
@@ -973,6 +980,7 @@ namespace HM
          if (operation.rfind("folderpermissions.", 0) == 0) return ManageFolderPermissions(operation, arguments);
          if (operation.rfind("backup.", 0) == 0 || operation.rfind("secretkey.", 0) == 0) return ManageMaintenance(operation, arguments);
          if (operation.rfind("antivirus.", 0) == 0) return ManageAntiVirus(operation, arguments);
+         if (operation.rfind("bayes.", 0) == 0) return ManageBayes(operation, arguments);
          if (operation == "antispam.read") return SpamView(config);
          if (operation == "antispam.update") { UpdateSpam(config, arguments); return SpamView(config); }
          if (operation == "spamassassin.test")
