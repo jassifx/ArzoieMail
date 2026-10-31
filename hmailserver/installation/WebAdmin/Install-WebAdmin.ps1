@@ -42,6 +42,8 @@ $logFile = Join-Path $webAdmin 'Install-WebAdmin.log'
 function Write-Log([string]$message) { Add-Content -LiteralPath $logFile -Value ("{0:yyyy-MM-dd HH:mm:ss} {1}" -f (Get-Date), $message); Write-Output $message }
 
 if (-not (Test-Path -LiteralPath $executable)) { throw "The panel is not installed: $executable is missing." }
+# Setup runs this silently; whatever stops it is recorded where the administrator can find it.
+trap { Write-Log "Setup of the panel failed: $($_.Exception.Message) (line $($_.InvocationInfo.ScriptLineNumber))"; break }
 
 if (-not ('ArzoieWebAdminIni' -as [type])) {
     Add-Type 'using System.Runtime.InteropServices; public static class ArzoieWebAdminIni { [DllImport("kernel32.dll", CharSet=CharSet.Unicode)] public static extern bool WritePrivateProfileString(string section, string key, string value, string file); }'
@@ -67,9 +69,10 @@ if ($LASTEXITCODE -ne 0) { throw "Could not set the $serviceName service account
 $sid = ([Security.Principal.NTAccount]$account).Translate([Security.Principal.SecurityIdentifier]).Value
 Write-Log "The panel runs as $account ($sid)."
 
-if (-not [Diagnostics.EventLog]::SourceExists('ArzoieMail Administration')) {
-    New-EventLog -LogName Application -Source 'ArzoieMail Administration'
-}
+# SourceExists throws when it cannot search the Security log, so register and accept
+# "already registered" instead.
+try { New-EventLog -LogName Application -Source 'ArzoieMail Administration' -ErrorAction Stop }
+catch { if ($_.Exception.Message -notmatch 'already registered') { Write-Log "Could not register the event log source: $($_.Exception.Message)" } }
 
 # The service only reads its folder; it writes nothing there.
 & icacls.exe $webAdmin /grant "*$($sid):(OI)(CI)RX" | Out-Null
