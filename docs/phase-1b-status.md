@@ -1,6 +1,6 @@
 # Phase 1b capability ledger and completion gates
 
-Status snapshot: **2026-10-31, Asia/Kolkata**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
+Status snapshot: **2026-11-01, Asia/Kolkata**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
 is merged at `74eecc017f48ddd445870bfd73dd6eb00aed6cef`; tested head
 `28dd3df912fac9109260efe9f5571dc05b402d12` passed all four database jobs, Release,
 GCC/Clang, CodeQL, workflow lint and CI installer publication. See [CI evidence](ci-test-inventory.md)
@@ -146,7 +146,7 @@ assertions and CodeQL, and #48 merged as `79df40565` on 2026-10-31. See the
 
 ### Bundle 3b checkpoint: native Bayesian spam filter (2026-10-31)
 
-Branch `feature/phase1b-bayes`, merged as #49 on 2026-10-31. It adds the native Bayesian filter as the built-in spam filtering
+Branch `feature/phase1b-bayes`, merged as #49 (`df10bc451`) on 2026-11-01. It adds the native Bayesian filter as the built-in spam filtering
 (E02), off until an administrator enables it, and adds scoring guidance across every spam test (A11), across native, REST and panel:
 
 - **Schema 5715** on all four databases: `hm_bayes_tokens` holds 64-bit token hashes with spam
@@ -168,6 +168,29 @@ contract and scoring guidance are in the
 Head `d823a33b9` passed four-backend CI (1114 native and 238 live HTTP assertions per backend,
 both browser suites, NUnit unchanged); see the [CI inventory](ci-test-inventory.md#bundle-3b-checkpoint-native-bayesian-spam-filter).
 
+### Bundle 4 checkpoint: listener certificates, ACME and the installed panel (2026-11-01)
+
+#49 merged as `df10bc451` on 2026-11-01; its final head `fdab651e7` passed all CI (1114 native,
+238 live HTTP per backend). Branch `feature/phase1b-certificates`, decided on 2026-11-01 as one
+checkpoint for E03 and E07 with keys in a protected PEM folder, an ACME client of our own and
+HTTP-01 answered by the API (see the [6.0 scope](version-6-scope.md#delivery-decisions-2026-10-30)):
+
+- **Certificates (E03, A06):** PEM and PFX import with key, strength, validity, CA and chain
+  checks; managed storage beside the data directory; replace with one-generation rollback;
+  delete only when unused; listener create, change and delete with TLS mode and certificate,
+  applied by restarting the mail services; a probe of the certificate a listener serves.
+- **ACME (E03):** RFC 8555 with HTTP-01 on a challenge-only port; keys generated and kept by the
+  service, which also signs the client's requests; issuance as a polled job; unattended renewal
+  through a narrow automation scope, restarting the mail services when a renewed certificate is
+  in use.
+- **Hosting (E07):** the ArzoieMailAdmin service under its own virtual account, set up by the
+  installer's new component with the ASP.NET Core Runtime, its pipe identity, its own HTTPS
+  certificate and a first-installation configuration (BC-010).
+
+The contract is in the
+[Management README](../hmailserver/source/Management/README.md#listener-certificates-acme-and-the-installed-panel-bundle-4-checkpoint).
+CI evidence is pending; see the [CI inventory](ci-test-inventory.md#bundle-4-checkpoint-listener-certificates-acme-and-the-installed-panel).
+
 ## Remaining administration parity
 
 These rows make the broad "advanced administration" item concrete. They are **planned** for
@@ -182,7 +205,7 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | A03 | IMAP and POP3 settings | Bundle 1 checkpoint (`feature/phase1b-server-operations`): adds the IMAP master user and hierarchy delimiter (applied alone through its native setter, refused while a folder or rule uses the character); every legacy IMAP/POP3 field is now typed. The POP3 greeting change and delimiter change/restore are exercised against the live service; IMAP client resynchronization after a delimiter change is not tested |
 | A04 | IP/security ranges | Implemented on completion branch: IPv4/IPv6 ranges, priority, protocol/relay/authentication/TLS/spam/virus/expiry fields, native effective match and independent management recovery; 32 targeted Compact VM assertions include real SMTP denial/recovery/authentication. Trusted unauthenticated relay requires transient explicit acknowledgement. Four-backend/matrix/failure/field-parity acceptance remains pending |
 | A05 | Incoming relays and Auto-ban | Trusted incoming relay CRUD (completion branch) and all four legacy Auto-ban fields plus invalid-command disconnection are typed. Bans the server creates are expiring IP security ranges, so they are inspected and lifted through A04's range list and effective-match tool. Bundle 1 checkpoint (`feature/phase1b-server-operations`) adds no new fields here. Remaining: operator guidance on trusted-hop interpretation |
-| A06 | TCP/IP listeners and global TLS | Completion branch adds eight global TLS controls with checked version/option masks, remote certificate verification and pre-save cipher validation; 246 targeted settings assertions, full VM/browser checks and four-backend CI at `82a3bdaf5` passed. Underlying listener/certificate false-success saves were reproduced and corrected; recovery VM cases and four-backend CI at `170442658` passed. Read-only transport inventory passed full VM and four-backend CI at `8cdc085b4`; the following native ID-width correction passed a red/green VM regression and needs its own CI. Bind addresses/ports/protocols, implicit TLS/STARTTLS, certificate assignment, collision/lockout detection, restart/handshake acceptance and safe apply/rollback remain |
+| A06 | TCP/IP listeners and global TLS | Completion branch adds eight global TLS controls with checked version/option masks, remote certificate verification and pre-save cipher validation; 246 targeted settings assertions, full VM/browser checks and four-backend CI at `82a3bdaf5` passed. Underlying listener/certificate false-success saves were reproduced and corrected; recovery VM cases and four-backend CI at `170442658` passed. Read-only transport inventory passed full VM and four-backend CI at `8cdc085b4`; the following native ID-width correction passed a red/green VM regression and needs its own CI. Bundle 4 checkpoint (`feature/phase1b-certificates`): listener create/change/delete with address, port, protocol, TLS mode and certificate; refusals of unloadable certificates and address/port collisions; restart-applied changes with a real handshake per certificate generation in CI; a served-certificate probe. Remaining: lockout warnings for changes to the listener the administrator depends on, and listener changes without a full restart |
 | A07 | External POP3 fetch accounts | Bundle 2 checkpoint (`feature/phase1b-fetch-folders-maintenance`): per-mailbox CRUD for server and own-domain administrators, write-only encrypted password, schedule, keep-days, MIME recipient/date/route policy, spam/virus flags and download-now; new choices always encrypt the logon. Remaining: a real download in CI (the CI POP3 listener has no TLS certificate; the existing NUnit fetch tests cover the engine) and last-error reporting, which the native object does not store |
 | A08 | Remaining domain/mailbox controls | Field-level comparison with legacy forms, directory bindings/provisioning policy and user-level permissions; document controls intentionally retained only in desktop tools |
 | A09 | Mailbox self-service | Own profile/signature/forwarding/replies/rules/password implemented on completion branch; 29 native assertions, real own-profile browser checks and four-backend CI at `bc3980201` passed. Restricted-column guarded account saves, current-password proof, sign-out, ownership and AD-password refusal implemented. Complete AD/revocation/concurrency/failure/browser-password/legacy workflow acceptance remains pending |
@@ -204,11 +227,11 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 |---|---|---|
 | E01 | SPF/DKIM/DMARC setup | Publication inspection (#31). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): per-domain DKIM settings, server-generated RSA 2048 keys in a service-only folder, DNS-gated activation, rotation and deletion, and CI conformance: a server-signed message verified by an independent RFC 6376 check. Remaining: SPF/DMARC alignment conformance with external receivers and multi-provider SPF changes |
 | E02 | SpamAssassin engine operations | Decided 2026-10-31: not shipped; SpamAssassin and ClamAV are optional, administrator-installed integrations. Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): the SpamAssassin test reports GTUBE detection and headers; setup guidance covers a remote spamd. Bundle 3b (merged as #49): the native Bayesian filter is built in and enabled by the administrator (schema 5715), trained from IMAP Junk copies and administrator-chosen folders, with statistics, reset and a live SMTP/IMAP train-score-reset test per backend; content rules are the existing rules. Remaining: per-user models, untraining and token expiry are not planned for 6.0; accuracy on representative mail is unmeasured |
-| E03 | Guided certificates | Import including protected PFX/chain, ACME provider/client/challenge selection, hostname/key/chain/access checks, SMTP/IMAP/POP3 listener assignment, independent web HTTPS binding, renewal/expiry, safe activation and rollback |
+| E03 | Guided certificates | Bundle 4 checkpoint (`feature/phase1b-certificates`): PEM/PFX import with key, strength, validity, CA and chain checks; protected managed storage; replace and one-generation rollback; listener assignment and probe; built-in ACME (own RFC 8555 client, HTTP-01 on a challenge-only port, keys generated and kept by the service) with unattended renewal and restart; Pebble end-to-end in CI. The panel's HTTPS binding is separate (E07). Remaining: DNS-01/wildcards, ACME for the panel's own certificate, expiry notices by mail, CNG key storage as later hardening, certificate files in backups |
 | E04 | Optional Defender adapter | Native protected staging and bounded execution, clean/infected/error/unscannable outcomes, clean/EICAR/MIME/archive/encrypted-content/permission/error tests; implementation has not started |
 | E05 | Defender lifecycle, scheduling and mitigation | SMTP receive/submission, queued send, external fetch, uploaded drafts/IMAP APPEND/import and changed-content coverage; durable fair bounded workers, verdict gates, hold/retry/quarantine, retention/audit, restart/outage recovery and observability |
 | E06 | Defender capacity acceptance | Define numerical throughput/latency goals and hardware/message mix, test at least 10,000 queued/in-flight messages, concurrent lifecycle activity, bursts/outages/recovery/soak, p95/p99/resource use/headroom; conditional on results, keep alternative scanner path |
-| E07 | Production hosting and installer | Restricted IIS pool or service identity, ASP.NET runtime/offline delivery, SID/service-status/pipe permissions, HTTPS/hostname configuration, identity/secret/key protection, diagnostics, install/uninstall/upgrade and rollback tests |
+| E07 | Production hosting and installer | Bundle 4 checkpoint (`feature/phase1b-certificates`): the ArzoieMailAdmin service under its own virtual account, the bundled ASP.NET Core Runtime, pipe identity in hMailServer.ini, the panel's own HTTPS certificate with account-only key access, first-installation configuration kept on upgrade, removal on uninstall (BC-010); CI checks the installed service, a real sign-in through it, and removal and set-up again. Remaining: a full Inno uninstall and upgrade from an earlier release in the VM, other Windows versions, signing of the panel binaries, firewall guidance in the manual |
 | E08 | PHP retirement | Complete parity/dispositions, migration guide and role mapping, disable old URLs on upgrade, remove PHP source/assets/packaging/runtime/deployment dependencies and prove old administration endpoint inaccessible; retain unrelated PHP apps; migrate supported management consumers and retire COM under E10/V6-COM |
 | E09 | Production acceptance and user documentation | Role matrix on every operation, malicious/invalid/oversized inputs, revocation/concurrency/persistence failures, browser-to-service acceptance, four DB jobs and supported Windows matrix, migration/rollback, actual screenshots/manual review/rendering/navigation/assets/publication |
 | E10 | Tools/tests/automation API migration and COM retirement | Inventory all desktop/DB/maintenance consumers, regression/volume/VM fixtures, scripts, interfaces/events/utility calls and build/packaging registration. Deliver secured API parity and bootstrap/recovery workflows, migrate supported consumers without coverage loss; complete COM removal before the 6.0 integrated baseline, coordinated with Phase 2. Not implemented; BC-007/V6-COM own final acceptance. |

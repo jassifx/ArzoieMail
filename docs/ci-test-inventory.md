@@ -4,9 +4,38 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Bundle 4 checkpoint: listener certificates, ACME and the installed panel
+
+Branch `feature/phase1b-certificates` (E03, E07, A06; see the
+[ledger](phase-1b-status.md#bundle-4-checkpoint-listener-certificates-acme-and-the-installed-panel-2026-11-01)).
+CI evidence is pending. New coverage, per backend:
+
+- `CertificateTests` (live native): import refusals (mismatched, expired, CA, RSA 1024,
+  encrypted and malformed keys, path fields); a real implicit-TLS IMAP listener on a free port
+  serving the imported, replaced and rolled-back certificate after each restart; ACME orders
+  completed by a certificate authority in the test, checked against the service's key and host
+  names; renewal automation (due list, prepare, complete with restart, failure record) and the
+  automation scope's refusals; listener validation; the ACME account signature verified against
+  the published key.
+- `AcmeLiveTests` (`--acme-live`): Pebble v2.10.1 and its DNS test server, fetched and
+  digest-checked by the workflow; terms refusal, account registration, HTTP-01 through the API's
+  challenge port, issuance, unattended renewal of a 20-day certificate and *Renew now*.
+- `LiveRestTests`: PEM and PFX import, wrong PFX password, both formats at once, rename, unknown
+  fields, listing, probe refusal on a plaintext listener, ACME account read, role boundaries.
+- `browser.py`: the Certificates page, import, ACME settings and issuance, listener change with
+  a cancelled and an accepted confirmation, served-certificate check, restart, mobile layout.
+- `build/test-installed-webadmin.ps1`: the service installed by setup, its virtual account and
+  pipe identity, its own certificate and key access, HTTPS-only service, a sign-in through the
+  installed panel reaching the mail service, a challenge-only ACME port, and removal and
+  set-up again with setup's scripts.
+
+Not exercised: a public certificate authority, a full Inno Setup uninstall or upgrade from an
+earlier release (the scripts setup runs are exercised instead), and Windows versions other than
+the runner's.
+
 ## Bundle 3b checkpoint: native Bayesian spam filter
 
-Merged as #49 on 2026-10-31. Branch `feature/phase1b-bayes` (E02, A11 guidance; see the
+Merged as #49 (`df10bc451bd377214ddd9bcff804591cfb014ffd`) on 2026-11-01; the final head `fdab651e7` (documentation only after `d823a33b9`) passed all CI. Branch `feature/phase1b-bayes` (E02, A11 guidance; see the
 [ledger](phase-1b-status.md#bundle-3b-checkpoint-native-bayesian-spam-filter-2026-10-31)).
 Head `d823a33b9817dd7f827d07a461a3d070b98c7cae` passed all four database jobs, Release x64,
 GCC/Clang (with `BayesFilterTests` under the sanitizers) and CI installer publication. Per backend:

@@ -71,8 +71,9 @@ in `hmailserver/test/RegressionTests/Management`; they compile into a separate t
   it does not need service start/stop or administrator permission.
 - Web credentials are kept encrypted in bounded ephemeral memory; cookies hold only opaque
   session IDs. Logout, process restart, inactivity and credential revocation invalidate sessions.
-- Installer/service provisioning and complete legacy-page parity are still being implemented.
-  This development implementation is not yet selected by the installer as the replacement for existing WebAdmin.
+- Setup installs the panel as the ArzoieMailAdmin service under its own virtual account and
+  does all of the above itself; see "Listener certificates, ACME and the installed panel".
+  Complete legacy-page parity and the retirement of the PHP WebAdmin are still to come (E08).
 
 ## REST v1 contract
 
@@ -116,6 +117,14 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | GET | `/api/v1/bayes` | Server administrator; native Bayesian filter statistics and training queue |
 | POST | `/api/v1/bayes/train` | Server administrator; queue every message of one mailbox `folder` (`accountId`) for training `as` `spam` or `ham` |
 | POST | `/api/v1/bayes/reset` | Server administrator; forget all training, with `confirm: true` |
+| GET / POST | `/api/v1/certificates` | Server administrator; listener certificates and listeners, or import PEM/PFX (1 MiB) |
+| GET / PATCH / DELETE | `/api/v1/certificates/{id}` | Server administrator; read, rename or set `autoRenew`, delete when unused |
+| POST | `/api/v1/certificates/{id}/replace`, `/rollback`, `/renew` | Server administrator; new generation, previous generation, ACME renewal job |
+| POST | `/api/v1/certificates/acme` | Server administrator; ACME issuance job for `hostnames` (202) |
+| GET | `/api/v1/certificates/acme/jobs/{id}` | Server administrator; issuance job state |
+| GET / PATCH | `/api/v1/acme` | Server administrator; ACME directory, contact and terms acceptance |
+| POST | `/api/v1/listeners`; PATCH / DELETE `/api/v1/listeners/{id}` | Server administrator; mail listeners, TLS mode and certificate (restart applies) |
+| POST | `/api/v1/listeners/{id}/probe` | Server administrator; the certificate the listener actually serves |
 | GET / PATCH | `/api/v1/domains/{domainId}/dkim` | Read (own-domain administrator or server administrator) / change (server administrator) DKIM signing settings |
 | POST | `/api/v1/domains/{domainId}/dkim/keys` | Server administrator; generate an RSA 2048 key for `selector` |
 | POST | `/api/v1/domains/{domainId}/dkim/keys/{selector}/activate` | Activate after the published DNS record matches; `skipDnsCheck` true activates anyway |
@@ -823,6 +832,115 @@ backend:
 The tokenizer, hash, probability and copy rules are also checked by `BayesFilterTests` in the
 portable GCC/Clang build under the sanitizers and in ClassTester. `LiveRestTests` covers the
 routes and roles; `browser.py` covers the panel's training card and confirmed reset.
+
+## Listener certificates, ACME and the installed panel (bundle 4 checkpoint)
+
+Maintainer decisions, 2026-11-01: keys in a protected PEM folder (CNG machine keys deferred),
+an ACME client of our own rather than a library, HTTP-01 answered by the management API, and
+certificates and hosting in one checkpoint.
+
+**Certificates.** The mail listeners' certificates are managed by the service:
+
+- **Import** PEM text (`certificatePem` with its chain, `privateKeyPem`) or a PFX file (`pfx`
+  base64, `password`), which the API opens with the PFX-inspection limits and passes on as PEM.
+  Uploads are at most 1 MiB, PFX files 512 KiB.
+- **Checks before anything is stored:** the key matches and is RSA 2048-8192 or EC P-256 or
+  larger, and is not encrypted; the leaf is not a CA, is valid now (or within a day) and not
+  expired; each further certificate issued the one before it. Supplied roots are kept as chain,
+  never trusted. Refusals return 422 with a combined explanation; a duplicate name returns 409.
+- **Storage:** PEM files under `Certificates` beside the data directory, in a folder only
+  SYSTEM, administrators and the service can read, as the DKIM keys are. Requests never name a
+  path and no response contains a path or key. Certificates registered with file paths by the
+  legacy tools keep working and show as `managed: false`.
+- **Replace** keeps the current generation for one **rollback**; an older generation is
+  deleted. **Delete** is refused (409) while a listener uses the certificate.
+- **Views** (`GET /certificates`) give subject, issuer, DNS names, validity and days left,
+  SHA-256 fingerprint, key type, the listeners using it, whether a previous generation exists,
+  and ACME state (host names, automatic renewal, last attempt and error).
+
+**Listeners.** `POST /listeners`, `PATCH /listeners/{id}` and `DELETE /listeners/{id}` set the
+protocol (`protocolCode` 1 SMTP, 3 POP3, 5 IMAP), address, port, `securityCode` (0 none,
+1 implicit TLS, 2 STARTTLS optional, 3 STARTTLS required) and `certificateId`. A TLS listener
+needs a certificate the listener can actually load (409 otherwise); two listeners cannot share
+an address and port (409). Changes take effect when the mail services restart, which rebuilds
+every listener's TLS context; responses say `restartRequired`, and the panel offers the restart.
+`POST /listeners/{id}/probe` connects as a client (with STARTTLS where configured) and reports
+the certificate actually served and whether it is the configured one.
+
+**ACME (Let's Encrypt and others).** RFC 8555, with HTTP-01:
+
+- `GET`/`PATCH /acme`: the directory URL (https; empty clears it), a contact address and
+  acceptance of the certificate authority's terms. A new directory starts a new account.
+- The **account key** (EC P-256) and every **certificate key** are generated by the mail
+  service and never leave it. The API sends the service each JWS signing input to sign
+  (`acme.sign`), and gets a CSR for each order (`certificates.acme.prepare`); the issued chain
+  is installed only if it uses the order's key and names every host (`certificates.acme.complete`).
+- Host names are lower-case DNS names, up to 10, no wildcards or IP addresses (HTTP-01 cannot
+  prove them).
+- `POST /certificates/acme` (`name`, `hostnames`, `autoRenew`) and
+  `POST /certificates/{id}/renew` start a background job (202); poll
+  `GET /certificates/acme/jobs/{id}` for `running`, `succeeded` (with the certificate) or
+  `failed` (with the certificate authority's reason). One job runs at a time.
+- **HTTP-01** is answered on a separate listener, `Acme:HttpPort` (setup chooses 80 when it is
+  free), which serves `/.well-known/acme-challenge/{token}` for pending challenges and nothing
+  else. The host names must resolve to this server and port 80 must be reachable.
+- **Renewal** runs in the API every `Acme:RenewalCheckMinutes` (default 360) without an
+  administrator. The service lists certificates set to renew that expire within 30 days; after a
+  failure a certificate waits 12 hours. A renewed certificate in use restarts the mail services
+  so the listeners load it. Renewal uses a narrow automation scope (below).
+
+**Renewal automation scope.** A request with `"automation": "certificate-renewal"` and no
+credentials may only list due renewals, read the account, sign, prepare and complete a renewal
+of a certificate an administrator issued with automatic renewal (for the host names recorded
+then), and record a failure. The pipe accepts only the configured API identity, so this does not
+widen who can reach the service; it means a compromised API process could renew those
+certificates and sign ACME requests with the account key, but could not import a certificate,
+change a listener or read any key. Every other operation in the scope returns 403.
+
+**The installed panel (E07).** Setup's new *Web administration panel* component (part of the
+full installation):
+
+- installs the panel into `WebAdmin`, and the ASP.NET Core Runtime 10 when it is missing
+  (bundled; SHA-512 pinned in `libraries\fetch-dotnet-runtime.ps1`);
+- runs `WebAdmin\Setup\Install-WebAdmin.ps1`, which creates the **ArzoieMailAdmin** service
+  running as its own virtual account `NT SERVICE\ArzoieMailAdmin` (no mail-store, database or
+  administrator access), writes its SID as `[Management] ApiClientSID` and restarts the mail
+  service, and registers the event log source the panel writes to;
+- on a first installation creates the panel's own self-signed HTTPS certificate in the machine
+  store, readable by that account only, and writes `appsettings.Production.json`: HTTPS on port
+  8443 for this computer's name and `localhost`, and `Acme:HttpPort` 80 when the port is free;
+- keeps `appsettings.Production.json` on upgrade; uninstall removes the service, the pipe
+  access and the panel's own certificate (`Uninstall-WebAdmin.ps1`).
+
+No firewall port is opened. To reach the panel from elsewhere, open 8443 (and 80 for ACME), add
+the name used to `AllowedHosts`, and replace the self-signed certificate with a trusted one in
+`Kestrel:Endpoints:Https:Certificate`. The panel's certificate is separate from the mail
+listeners' and the panel never reads their keys.
+
+**Limits.**
+- Keys are protected by the folder's permissions, not by Windows machine-key storage (CNG);
+  that stays a possible later change.
+- No DNS-01 (so no wildcard certificates) and no TLS-ALPN-01.
+- The panel's own HTTPS certificate is not issued by ACME yet.
+- Applying a certificate restarts all mail services, which disconnects connected clients.
+- Backups keep the certificate registrations but not the files in the Certificates folder.
+
+Tests:
+- `CertificateTests` (live native, every backend): import refusals, a real TLS listener on a
+  free port serving each generation after restarts (import, replacement, rollback), ACME orders
+  completed by a test certificate authority in the test, renewal automation and its refusals,
+  and the scope's 403s.
+- `AcmeLiveTests` (CI, every backend): the whole flow against Pebble, Let's Encrypt's test
+  server, with its DNS server resolving the test name to the runner: terms refusal, account
+  registration, HTTP-01 through the API's challenge port, issuance, unattended renewal and
+  *Renew now*.
+- `LiveRestTests`: PEM and PFX import over real HTTP, refusals, rename, delete, probe refusal
+  and role boundaries. `browser.py`: the Certificates page, import, ACME settings and issuance,
+  listener changes with confirmation, the served-certificate check and the restart.
+- `build\test-installed-webadmin.ps1` (CI, every backend): the installed service and its
+  virtual account, its pipe identity, its own certificate and key access, a real sign-in
+  through the installed panel, HTTPS-only service and a challenge-only ACME port; then removal
+  and set-up again with the scripts setup uses.
 
 ## Mail transport inventory (completion branch, validation in progress)
 

@@ -67,9 +67,13 @@ not add, remove or defer scope.
   3b (native Bayesian filter and rules).
 - **Native Bayesian filter control (2026-10-31):** the administrator controls enabling and
   configuring the filter. It ships disabled, in new and upgraded installations alike.
-- **ACME (E03) is built into the .NET management API**, using a maintained open-source ACME
-  library, with HTTP-01 challenges, renewal, and keys held in native protected storage (see the
+- **ACME (E03) is built into the .NET management API**, with HTTP-01 challenges, renewal, and
+  keys held in native protected storage (see the
   [certificate storage proposal](certificate-storage-design.md)).
+- **Certificates and hosting (E03, E07), decided 2026-11-01:** keys are managed PEM files in a
+  protected folder (Windows machine keys deferred); the ACME client is our own small RFC 8555
+  client instead of a library (the .NET libraries are lightly maintained); the management API
+  answers HTTP-01 on a challenge-only port; certificates and hosting are one checkpoint PR.
 - **Microsoft Defender scanning (E04-E06) stays in Phase 1b, in roadmap order** (bundle 5, before
   the cutover bundle), including its 10,000-message pressure acceptance.
 

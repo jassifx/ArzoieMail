@@ -1,7 +1,12 @@
 # Guided certificate storage and installation design
 
-Status: **2026-10-30 implementation proposal with a VM feasibility result**, not delivered
-certificate installation. [Requirements](webadmin-requirements.md#certificate-setup-and-lifecycle)
+Status: **2026-10-30 implementation proposal with a VM feasibility result.** On 2026-11-01 the
+maintainer chose the simpler direction for 6.0: managed PEM files in a protected folder, as the
+DKIM keys are, which the existing OpenSSL listener loading uses unchanged. Bundle 4 implements
+that, with import, rollback, ACME and listener assignment; see the
+[REST contract](../hmailserver/source/Management/README.md#listener-certificates-acme-and-the-installed-panel-bundle-4-checkpoint).
+The machine-key (CNG) design below stays a possible later hardening, not 6.0 work. The rest of
+this page is the original proposal, kept for that purpose. [Requirements](webadmin-requirements.md#certificate-setup-and-lifecycle)
 own the product obligations; [the ledger](phase-1b-status.md) owns A06/E03/E07 acceptance.
 The implemented [REST contract](../hmailserver/source/Management/README.md) currently provides
 configured transport inventory and bounded PFX inspection only. No import/assign/renew API,

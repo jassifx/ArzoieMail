@@ -227,12 +227,13 @@ listed there are accepted. To move to a newer 7-Zip, record its hashes in `$Arch
 and `$BootstrapHashes` and update the `7zip-&lt;Version&gt;` folder name in `post-build.bat` and
 `hMailServer64.iss`.
 
-Fetching the .NET Desktop Runtime
----------------------------------
-The administration tools are .NET 10 applications, and the installer bundles Microsoft's .NET
-Desktop Runtime installer, which it runs when the runtime is missing, so that an installation
-needs no internet connection. The `libraries\fetch-dotnet-runtime.ps1` script downloads it into
-%hMailServerLibs%\dotnet-desktop-runtime-&lt;Version&gt; and checks it against the SHA-512 that
+Fetching the .NET runtimes
+--------------------------
+The administration tools are .NET 10 applications, and the web administration panel is an
+ASP.NET Core application. The installer bundles Microsoft's .NET Desktop Runtime and ASP.NET Core
+Runtime installers, which it runs when a runtime is missing, so that an installation needs no
+internet connection. The `libraries\fetch-dotnet-runtime.ps1` script downloads both into
+%hMailServerLibs%\dotnet-desktop-runtime-&lt;Version&gt; and checks each against the SHA-512 that
 Microsoft publishes, pinned in the script.
 
 Run, from the repository root:
@@ -241,8 +242,8 @@ Run, from the repository root:
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File libraries\fetch-dotnet-runtime.ps1 -Version 10.0.13
    </pre>
 
-To move to a newer runtime, record its hash in `$RuntimeHashes` and update
-`DOTNET_DESKTOP_RUNTIME_VERSION` in `hMailServer64.iss`.
+To move to a newer runtime, record its hashes in `$RuntimeHashes` and `$AspNetCoreHashes` and
+update `DOTNET_DESKTOP_RUNTIME_VERSION` in `hMailServer64.iss`.
 
 Building the server, the tools and the installer
 ------------------------------------------------
@@ -262,7 +263,9 @@ with `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>`:
    tools, which are .NET 10 Windows Forms applications (the .NET 10 SDK comes with Visual
    Studio 2026). They generate their COM interop from the type library the server build writes,
    using TlbImp from the .NET Framework 4.8 tools of the Windows SDK, so build the server first.
-4. Compile `hmailserver\installation\hMailServer64.iss` with InnoSetup to build the installer,
+4. Publish the web administration panel, which the installer's webadmin component ships:
+   `dotnet publish hmailserver\source\Management\Api\ArzoieMail.Api.csproj -c Release -o hmailserver\source\Management\Api\bin\publish`.
+5. Compile `hmailserver\installation\hMailServer64.iss` with InnoSetup to build the installer,
    `ArzoieMail-<version>-B<build>-x64-Setup.exe`.
 
    The installer ships the newest installed Visual C++ runtime beside hMailServer.exe. Point

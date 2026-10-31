@@ -174,8 +174,10 @@ groups and public folders with their permissions, backup/restore and installatio
 Checkpoint 4 (bundle 3a, merged as #48) adds the spam allowlist, greylisting exceptions, antivirus scanner
 tests and DKIM key generation, rotation and verified signing. Checkpoint 5 (bundle 3b, merged as #49)
 adds a native Bayesian spam filter that administrators enable and configure: it learns from mail users move into and out of
-Junk and from folders an administrator chooses, and needs schema 5715. Still to come, as one checkpoint PR
-per bundle: guided certificates and production hosting (E03, E07); optional Defender
+Junk and from folders an administrator chooses, and needs schema 5715. Checkpoint 6 (bundle 4, in
+progress) manages the mail listeners' certificates (import, ACME issuance and automatic renewal,
+rollback, listener TLS) and installs the panel as its own Windows service. Still to come, as one
+checkpoint PR per bundle: optional Defender
 scanning (E04-E06); and the cutover: PHP retirement, moving the tools and tests off COM, and final
 acceptance and user documentation (E08-E10). The remaining A08, A12, A18 and A19 decisions are
 folded into the nearest of these.
