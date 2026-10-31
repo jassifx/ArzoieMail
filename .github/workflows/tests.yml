@@ -284,13 +284,27 @@ jobs:
 
       - name: Test the installed web administration panel
         run: |
+          # The built-in Administrator may have a blank password here, which the panel does not
+          # accept, so the test signs in as a temporary server-administrator mailbox.
           $application = New-Object -ComObject 'hMailServer.Application'
           $source = Get-Content hmailserver/test/RegressionTests/Shared/TestSetup.cs -Raw
           $password = [regex]::Match($source, 'Authenticate\("Administrator", "([^"]+)"\)').Groups[1].Value
-          if ($null -eq $application.Authenticate('Administrator', $password)) { throw 'The installed panel test needs the test administrator password.' }
-          [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($application)
-          $credential = [pscredential]::new('Administrator', (ConvertTo-SecureString $password -AsPlainText -Force))
-          & build/test-installed-webadmin.ps1 -AdministratorCredential $credential
+          if ($null -eq $application.Authenticate('Administrator', $password)) {
+              if ($null -eq $application.Authenticate('Administrator', '')) { throw 'Cannot authenticate test setup.' }
+          }
+          $domainName = 'installed-panel-' + [Guid]::NewGuid().ToString('N') + '.test'
+          $secret = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(24))
+          $domain = $application.Domains.Add()
+          $domain.Name = $domainName; $domain.Active = $true; $domain.Save()
+          try {
+              $account = $domain.Accounts.Add()
+              $account.Address = "admin@$domainName"; $account.Password = $secret; $account.Active = $true; $account.AdminLevel = 2; $account.Save()
+              $credential = [pscredential]::new("admin@$domainName", (ConvertTo-SecureString $secret -AsPlainText -Force))
+              & build/test-installed-webadmin.ps1 -AdministratorCredential $credential
+          } finally {
+              $application.Domains.ItemByName($domainName).Delete()
+              [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($application)
+          }
 
       - name: Fetch the Pebble ACME test server
         run: |
