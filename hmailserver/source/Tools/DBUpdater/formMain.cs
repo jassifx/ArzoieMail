@@ -186,6 +186,7 @@ namespace DBUpdater
          _upgradeScripts.Add(new UpgradeScript(5711, 5712));
          _upgradeScripts.Add(new UpgradeScript(5712, 5713));
          _upgradeScripts.Add(new UpgradeScript(5713, 5714));
+         _upgradeScripts.Add(new UpgradeScript(5714, 5715));
       }
 
       private void buttonClose_Click(object sender, EventArgs e)
@@ -313,6 +314,8 @@ namespace DBUpdater
                return "hMailServer 5.8 (5713)";
             case 5714:
                return "ArzoieMail 6.0 (5714)";
+            case 5715:
+               return "ArzoieMail 6.0 (5715)";
             default:
                return "Unknown version";
          }

@@ -20,6 +20,8 @@ if exists (select * from sysobjects where id = object_id('hm_dbversion') and obj
 
 if exists (select * from sysobjects where id = object_id('hm_uidvalidity') and objectproperty(id, 'isusertable') = 1) drop table hm_uidvalidity 
 
+if exists (select * from sysobjects where id = object_id('hm_bayes_tokens') and objectproperty(id, 'isusertable') = 1) drop table hm_bayes_tokens 
+
 if exists (select * from sysobjects where id = object_id('hm_routes') and objectproperty(id, 'isusertable') = 1) drop table hm_routes 
 
 if exists (select * from sysobjects where id = object_id('hm_routeaddresses') and objectproperty(id, 'isusertable') = 1) drop table hm_routeaddresses 
@@ -316,6 +318,12 @@ create table hm_dbversion (
 create table hm_uidvalidity (
 	uidvalidityaccountid bigint not null primary key,
 	uidvalidityvalue bigint not null
+) 
+
+create table hm_bayes_tokens (
+	tokenhash bigint not null primary key,
+	spamcount int not null,
+	hamcount int not null
 ) 
 
 create table hm_distributionlists 
@@ -910,6 +918,16 @@ insert into hm_settings (settingname, settingstring, settinginteger) values ('sp
 
 insert into hm_settings (settingname, settingstring, settinginteger) values ('spamassassinport', '', 783) 
 
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesenabled', '', 0)
+
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesscore', '', 5)
+
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesthreshold', '', 90)
+
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesminimummessages', '', 200)
+
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayeslearnfromjunk', '', 1)
+
 insert into hm_settings (settingname, settingstring, settinginteger) values ('antispammaxsize', '', 1024)
 
 insert into hm_settings (settingname, settingstring, settinginteger) values ('ASDKIMVerificationEnabled', '', 0)
@@ -998,4 +1016,6 @@ insert into hm_tcpipports (portprotocol, portnumber, portaddress1, portaddress2,
 
 insert into hm_tcpipports (portprotocol, portnumber, portaddress1, portaddress2, portconnectionsecurity, portsslcertificateid) values (5, 143, 0, NULL, 0, 0) 
 
-insert into hm_dbversion values (5714)
+insert into hm_bayes_tokens (tokenhash, spamcount, hamcount) values (0, 0, 0)
+
+insert into hm_dbversion values (5715)

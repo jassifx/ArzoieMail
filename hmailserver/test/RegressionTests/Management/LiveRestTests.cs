@@ -55,6 +55,10 @@ static class LiveRestTests
             await admin.Send(domainPath + "/dkim/keys/rest1/activate", HttpMethod.Post, new { }, status: 409);
             check((await admin.Send(domainPath + "/dkim/keys/rest1/activate", HttpMethod.Post, new { skipDnsCheck = true })).GetProperty("selector").GetString() == "rest1", "Activation without the DNS check is explicit.");
             await admin.Send(domainPath + "/dkim/keys", HttpMethod.Post, new { selector = "rest2", path = "x" }, status: 422);
+            check((await admin.Send("/bayes", HttpMethod.Get)).TryGetProperty("spamMessages", out _), "Real API reads the Bayesian filter statistics.");
+            check((await admin.Send("/bayes/train", HttpMethod.Post, new { accountId, folder = "INBOX", @as = "ham" })).GetProperty("queued").GetInt64() == 0, "Real API trains from an empty mailbox folder.");
+            await admin.Send("/bayes/train", HttpMethod.Post, new { accountId, folder = "No such folder", @as = "ham" }, status: 404);
+            await admin.Send("/bayes/reset", HttpMethod.Post, new { }, status: 422);
             check(!account.TryGetProperty("password", out _), "Live HTTP account views never expose the password.");
             await admin.Send(mailbox + "/profile", HttpMethod.Patch, new { firstName = "REST", lastName = "Integration" });
             var persisted = await native.SendAsync("accounts.profile.read", username, password, new { domainId, id = accountId }, CancellationToken.None);
@@ -104,7 +108,8 @@ static class LiveRestTests
                 await manager.Send("/sendout/preview", HttpMethod.Post, new { recipients = "*" }, status: 403);
                 await manager.Send("/settings/smtp/smart-host-credential", HttpMethod.Put, new { password = "x" }, status: 403);
                 await manager.Send("/settings/administrator-password", HttpMethod.Post, new { currentPassword = password, newPassword = password }, status: 403);
-                foreach (string path in new[] { "/groups", "/publicfolders", "/backup", "/secretkey", "/antivirus", "/policies/spamallowlist", "/policies/greylistexceptions" }) await manager.Send(path, HttpMethod.Get, status: 403);
+                foreach (string path in new[] { "/groups", "/publicfolders", "/backup", "/secretkey", "/antivirus", "/bayes", "/policies/spamallowlist", "/policies/greylistexceptions" }) await manager.Send(path, HttpMethod.Get, status: 403);
+                await manager.Send("/bayes/reset", HttpMethod.Post, new { confirm = true }, status: 403);
                 await manager.Send(domainPath + "/dkim", HttpMethod.Get, status: 403);
                 await manager.Send(domainPath + "/dkim/keys", HttpMethod.Post, new { selector = "s1" }, status: 403);
                 await manager.Send("/secretkey/export", HttpMethod.Post, new { passphrase = "long enough passphrase" }, status: 403);

@@ -119,6 +119,8 @@ namespace HM
          }
       }
 
+      Completed(pConnection);
+
       if (any_missing && policy == MissingMessagePolicy::ReportAfterActing)
          return IMAPResult(IMAPResult::ResultNo, "[EXPUNGEISSUED] Some of the messages no longer exist.");
 

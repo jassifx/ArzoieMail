@@ -94,6 +94,24 @@ namespace HM
       int GetSpamAssassinPort();
       void SetSpamAssassinPort(int bNewVal);
 
+      // The native Bayesian filter. Threshold is the spam probability, in percent, at or above
+      // which the filter adds its score. It scores nothing until it has been trained on at
+      // least MinimumMessages spam and MinimumMessages ham messages.
+      bool GetBayesEnabled();
+      void SetBayesEnabled(bool newVal);
+
+      int GetBayesScore();
+      void SetBayesScore(int newVal);
+
+      int GetBayesThreshold();
+      void SetBayesThreshold(int newVal);
+
+      int GetBayesMinimumMessages();
+      void SetBayesMinimumMessages(int newVal);
+
+      bool GetBayesLearnFromJunk();
+      void SetBayesLearnFromJunk(bool newVal);
+
       int GetAntiSpamMaxSizeKB();
       void SetAntiSpamMaxSizeKB(int newVal);
 
