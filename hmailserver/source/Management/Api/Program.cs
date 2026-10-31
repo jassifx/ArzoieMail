@@ -317,6 +317,10 @@ public static partial class ManagementHost
         // Existing antivirus providers: status and tests of the configured scanners only.
         api.MapGet("/antivirus", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "antivirus.status"));
         api.MapPost("/antivirus/test", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "antivirus.test", true));
+        // The native Bayesian filter: statistics, training from a mailbox folder, and reset. Its settings are in /antispam.
+        api.MapGet("/bayes", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "bayes.status"));
+        api.MapPost("/bayes/train", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "bayes.train", true));
+        api.MapPost("/bayes/reset", (HttpContext c, CredentialVault v, IManagementChannel p) => ServerOnly(c, v, p, "bayes.reset", true));
         // DKIM signing. Domain administrators may read their own domain; changes need a server administrator.
         api.MapGet("/domains/{domainId:long:min(1)}/dkim", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "dkim.read", domainId: domainId));
         api.MapPatch("/domains/{domainId:long:min(1)}/dkim", (long domainId, HttpContext c, CredentialVault v, IManagementChannel p) => Objects(c, v, p, "dkim.update", true, domainId: domainId));

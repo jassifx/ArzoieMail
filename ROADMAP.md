@@ -309,7 +309,8 @@ protocol operations: status/control, remaining SMTP/IMAP/performance settings, s
 sendout, diagnostics, logs), merged as #46 (`2a2b23b6f`). The third, bundle 2 (external POP3 fetch
 accounts, groups and public folders with permissions, backup/restore and the installation key), is
 `feature/phase1b-fetch-folders-maintenance`, merged as #47 (`a72e32cbc`). Bundle 3a (spam allowlists,
-antivirus tests, DKIM keys) is `feature/phase1b-spam-dkim`. The maintainer's delivery decisions (review
+antivirus tests, DKIM keys) merged as #48 (`79df40565`). Bundle 3b, the native Bayesian spam filter,
+is `feature/phase1b-bayes`. The maintainer's delivery decisions (review
 gate per bundle, native spam filtering with optional user-installed SpamAssassin/ClamAV, ACME in the
 API, Defender in roadmap order) are in the
 [6.0 scope](docs/version-6-scope.md#delivery-decisions-2026-10-30). No checkpoint claims Phase 1b completion. Typed server settings,
@@ -386,10 +387,11 @@ actual SignPath certificate signing remains a separate master-only manual valida
 | Checkpoint 1: typed settings, self-service, mail TLS, transport inventory, PFX inspection | ✅ Merged #45 | 81 typed settings, SURBL/attachment/relay collections, IP security ranges, mailbox self-service, global mail TLS, read-only transport inventory and PFX inspection; head `3c07946f3` passed four-backend CI and CodeQL. Merge `5cce5a906`. |
 | Checkpoint 2: server status/control, protocol settings and server operations (A01, A02/A03, A05, A13, A14, A16, A20) | ✅ Merged [#46](https://github.com/jassifx/ArzoieMail/pull/46) (`2a2b23b6f`) | Status counters and mail-service stop/start, 11 more settings (92), write-only smart-host credential, Administrator password, server messages, sendout, background diagnostics, mail-server lookup, bounded log reading; worker thread priority and the IP-home handler retired (BC-009). Head `b65cc8555` passed four-backend CI (963 native, 182 live HTTP assertions per backend, both browser suites); PR head passed CodeQL. Remaining per row is in the ledger. |
 | Checkpoint 3: fetch accounts, groups, public folders and maintenance (A07, A10, A15) | ✅ Merged [#47](https://github.com/jassifx/ArzoieMail/pull/47) (`a72e32cbc`) | Head `aa126ef45` passed four-backend CI (1039 native, 204 live HTTP assertions per backend, both browser suites). Per-mailbox POP3 fetch accounts (write-only password, encrypted logon for new choices, download now), groups/members, public folders and their IMAP permissions, backup settings/start/restore with typed confirmation, installation-key export/import; real IMAP LIST, encrypted backup and key round trip in CI. Remaining per row is in the ledger. |
-| Checkpoint 4: spam allowlists, antivirus tests and DKIM (A11, A12, E01, E02 integration) | 🔄 [PR #48](https://github.com/jassifx/ArzoieMail/pull/48), awaiting review | Head `d2b051f67` passed four-backend CI (1084 native, 224 live HTTP assertions per backend, both browser suites). Spam allowlist and greylisting exceptions, antivirus provider tests, DKIM key generation with DNS-gated activation and rotation, GTUBE-aware SpamAssassin testing; a server-signed message verified by an independent RFC 6376 check in CI. |
-| Remaining advanced administration | 📋 Planned | Bundle 3b: the native Bayesian filter and content rules. A08, A12, A18 and A19 decisions fold into the nearest bundle. No production PHP cutover yet. |
+| Checkpoint 4: spam allowlists, antivirus tests and DKIM (A11, A12, E01, E02 integration) | ✅ Merged [#48](https://github.com/jassifx/ArzoieMail/pull/48) (`79df40565`) | Final head `ce39cddde` passed four-backend CI (1086 native, 224 live HTTP assertions per backend, both browser suites) and CodeQL. DKIM keys are RSA 2048 only. Spam allowlist and greylisting exceptions, antivirus provider tests, DKIM key generation with DNS-gated activation and rotation, GTUBE-aware SpamAssassin testing; a server-signed message verified by an independent RFC 6376 check in CI. |
+| Checkpoint 5: native Bayesian spam filter (E02 default, A11 guidance) | 🔄 Bundle 3b, `feature/phase1b-bayes` | Schema 5715 token table on all four databases; a post-transmission spam test; training from IMAP copies into and out of Junk folders and from a mailbox folder on one background worker; statistics, reset and settings in native, REST and panel; scoring guidance. A live SMTP/IMAP test trains, scores and resets on every backend. |
+| Remaining advanced administration | 📋 Planned | A08, A12, A18 and A19 decisions fold into the nearest bundle. No production PHP cutover yet. |
 | Complete SPF/DKIM/DMARC setup workflows | 📋 Planned | Initial guidance exists; finish key lifecycle, provider coexistence and protocol-conformance acceptance. |
-| Spam engine | 🔄 In progress (bundles 3a/3b) | Decided 2026-10-31: SpamAssassin and ClamAV are not shipped; they stay optional, administrator-installed integrations (3a improves their tests and guidance). The default becomes a native Bayesian filter with content rules (3b). |
+| Spam engine | 🔄 In progress (bundle 3b) | Decided 2026-10-31: SpamAssassin and ClamAV are not shipped; they stay optional, administrator-installed integrations (3a, merged, improved their tests and guidance). 3b makes the native Bayesian filter the default; content rules are the existing global and mailbox rules. Limits: one global model, no untraining, no token expiry. |
 | Guided TLS certificate installation and renewal | 🔄 In progress | Configured inventory/PFX inspection passed checkpoint CI; [storage proposal](docs/certificate-storage-design.md) has a bounded CNG VM probe. Native import/storage adapter, issuance, assignment, renewal, safe activation/rollback and hosting acceptance remain unfinished. |
 | **Microsoft Defender Antivirus email scanning** | **📋 Planned — implementation not started** | Dedicated native adapter, lifecycle coverage, durable scheduling, mitigation and measured high-pressure acceptance; requirements/assessment in #32. |
 | Production hosting, installer and PHP retirement | 📋 Planned | Restricted identity, HTTPS/runtime provisioning, full parity, upgrade acceptance and removal of the legacy PHP endpoint/source/packaging. |
@@ -483,7 +485,8 @@ setup/validation have moved to Phase 1b; DMARC aggregate reporting remains here.
 
 - **Schema changes** follow the checklist in AGENTS.md: upgrade scripts for all four database
   types, the three `CreateTables*.sql`, `REQUIRED_DB_VERSION`, and DBUpdater. Remember the blank
-  line between statements. The current schema version is **5714**.
+  line between statements. The current schema version is **5715** (the native Bayesian filter's
+  `hm_bayes_tokens` table and five `bayes*` settings).
 - **Naming**: the product is ArzoieMail, but some identifiers keep the hMailServer name on purpose
   (`hMailServer.exe`, service/INI names and installer identity). AGENTS.md lists them;
   COM is explicitly excluded and retires under V6-COM. Do not rename retained identifiers.

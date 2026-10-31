@@ -1,6 +1,6 @@
 # Phase 1b capability ledger and completion gates
 
-Status snapshot: **2026-10-30, Asia/Kolkata**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
+Status snapshot: **2026-10-31, Asia/Kolkata**. [PR #42](https://github.com/jassifx/ArzoieMail/pull/42)
 is merged at `74eecc017f48ddd445870bfd73dd6eb00aed6cef`; tested head
 `28dd3df912fac9109260efe9f5571dc05b402d12` passed all four database jobs, Release,
 GCC/Clang, CodeQL, workflow lint and CI installer publication. See [CI evidence](ci-test-inventory.md)
@@ -139,7 +139,32 @@ optional, administrator-installed SpamAssassin and ClamAV; see the
 [6.0 scope](version-6-scope.md#delivery-decisions-2026-10-30). The REST contract is in the
 [Management README](../hmailserver/source/Management/README.md#spam-allowlists-antivirus-providers-and-dkim-bundle-3a-checkpoint).
 Head `d2b051f67` passed four-backend CI (1084 native and 224 live HTTP assertions per backend,
-both browser suites); see the [CI inventory](ci-test-inventory.md#bundle-3a-checkpoint-spam-allowlists-antivirus-tests-and-dkim).
+both browser suites). Review then limited DKIM keys to RSA 2048, since larger keys could outlast a
+management request; the final head `ce39cddde` passed four-backend CI with 1086 native
+assertions and CodeQL, and #48 merged as `79df40565` on 2026-10-31. See the
+[CI inventory](ci-test-inventory.md#bundle-3a-checkpoint-spam-allowlists-antivirus-tests-and-dkim).
+
+### Bundle 3b checkpoint: native Bayesian spam filter (2026-10-31)
+
+Branch `feature/phase1b-bayes`. It makes the native Bayesian filter the default spam filtering
+(E02) and adds scoring guidance across every spam test (A11), across native, REST and panel:
+
+- **Schema 5715** on all four databases: `hm_bayes_tokens` holds 64-bit token hashes with spam
+  and ham counts (no message text), and five `bayes*` settings, on by default with a score of 5
+  at 90% probability once 200 spam and 200 ham messages are learned (BC-010).
+- **Scoring:** a post-transmission spam test (`SpamTestBayes`) tokenizes the subject, body,
+  link hosts and sender domain and combines token evidence with Robinson/Fisher statistics.
+- **Training:** IMAP copies into a `\Junk` folder train spam, and out of one (except to
+  `\Trash`) train ham, once the whole COPY has succeeded; an administrator can train a whole
+  mailbox folder. One background task drains a bounded queue.
+- **Management:** `bayes.status`, `bayes.train` and confirmed `bayes.reset`, the settings in the
+  antispam section, and a panel card with statistics, folder training and reset.
+
+Limits recorded in the REST contract: one global model, no untraining, no token expiry, and COPY
+only (no IMAP MOVE yet). Content rules are the existing global and mailbox rules (#42). The
+contract and scoring guidance are in the
+[Management README](../hmailserver/source/Management/README.md#native-bayesian-spam-filter-bundle-3b-checkpoint).
+CI evidence is pending; see the [CI inventory](ci-test-inventory.md#bundle-3b-checkpoint-native-bayesian-spam-filter).
 
 ## Remaining administration parity
 
@@ -160,7 +185,7 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | A08 | Remaining domain/mailbox controls | Field-level comparison with legacy forms, directory bindings/provisioning policy and user-level permissions; document controls intentionally retained only in desktop tools |
 | A09 | Mailbox self-service | Own profile/signature/forwarding/replies/rules/password implemented on completion branch; 29 native assertions, real own-profile browser checks and four-backend CI at `bc3980201` passed. Restricted-column guarded account saves, current-password proof, sign-out, ownership and AD-password refusal implemented. Complete AD/revocation/concurrency/failure/browser-password/legacy workflow acceptance remains pending |
 | A10 | Groups, public/shared folders and ACLs | Bundle 2 checkpoint (`feature/phase1b-fetch-folders-maintenance`): groups and members, the public folder tree (Unicode names, rename, guarded delete) and permissions for a mailbox, group or anyone with all eleven IMAP rights, server-administrator only; a real IMAP LIST shows a folder through a group permission. Mailbox-owned folder sharing stays in mail clients (IMAP ACL). Remaining: acceptance with several IMAP clients |
-| A11 | Remaining spam controls | SURBL providers and greylisting timing (completion branch). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): spam allowlist and greylisting exceptions as typed collections. Remaining: effective scoring guidance across DNSBL, SURBL, SPF/DKIM/DMARC, SpamAssassin and the native filter (bundle 3b) |
+| A11 | Remaining spam controls | SURBL providers and greylisting timing (completion branch). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): spam allowlist and greylisting exceptions as typed collections. Bundle 3b checkpoint (`feature/phase1b-bayes`): scoring guidance across DNSBL, SURBL, SPF/DKIM/DMARC, SpamAssassin and the native filter, in the REST contract. Remaining: guidance validated against representative production mail |
 | A12 | Existing antivirus and blocked attachments | ClamAV settings and blocked attachments (completion branch). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): provider status and EICAR tests of the configured ClamAV, custom-scanner and ClamWin providers. Custom-scanner and ClamWin program paths stay read-only (a web session must not choose a program the service runs); E10 must migrate them before the desktop tool is removed. Remaining: interaction with optional Defender (bundle 5) |
 | A13 | Logging and diagnostics | Nine typed logging flags (completion branch). Bundle 1 checkpoint (`feature/phase1b-server-operations`): log listing and bounded 16 KiB page reads by allowlisted name only (no paths, reparse points refused, credentials already masked by the server); native diagnostics as a polled background task; mail-server (MX) lookup replacing the desktop MX query. No live log stream, search or download; no shell execution |
 | A14 | Performance settings | Bundle 1 checkpoint (`feature/phase1b-server-operations`): adds message indexing (applied through its native setter) and index clearing; cache hit rates appear in status. Worker thread priority is retired because no server code reads it (BC-009). Remaining: measured workload guidance; collection/queue DB-side paging is a capacity follow-up |
@@ -176,7 +201,7 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 | ID | Workstream | Remaining delivery and completion gate |
 |---|---|---|
 | E01 | SPF/DKIM/DMARC setup | Publication inspection (#31). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): per-domain DKIM settings, server-generated RSA 2048 keys in a service-only folder, DNS-gated activation, rotation and deletion, and CI conformance: a server-signed message verified by an independent RFC 6376 check. Remaining: SPF/DMARC alignment conformance with external receivers and multi-provider SPF changes |
-| E02 | SpamAssassin engine operations | Decided 2026-10-31: not shipped; SpamAssassin and ClamAV are optional, administrator-installed integrations. Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): the SpamAssassin test reports GTUBE detection and headers; setup guidance covers a remote spamd. Bundle 3b adds the native Bayesian filter and content rules as the default. Remaining: 3b, and scoring guidance |
+| E02 | SpamAssassin engine operations | Decided 2026-10-31: not shipped; SpamAssassin and ClamAV are optional, administrator-installed integrations. Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): the SpamAssassin test reports GTUBE detection and headers; setup guidance covers a remote spamd. Bundle 3b checkpoint (`feature/phase1b-bayes`): the native Bayesian filter is the default (schema 5715), trained from IMAP Junk copies and administrator-chosen folders, with statistics, reset and a live SMTP/IMAP train-score-reset test per backend; content rules are the existing rules. Remaining: per-user models, untraining and token expiry are not planned for 6.0; accuracy on representative mail is unmeasured |
 | E03 | Guided certificates | Import including protected PFX/chain, ACME provider/client/challenge selection, hostname/key/chain/access checks, SMTP/IMAP/POP3 listener assignment, independent web HTTPS binding, renewal/expiry, safe activation and rollback |
 | E04 | Optional Defender adapter | Native protected staging and bounded execution, clean/infected/error/unscannable outcomes, clean/EICAR/MIME/archive/encrypted-content/permission/error tests; implementation has not started |
 | E05 | Defender lifecycle, scheduling and mitigation | SMTP receive/submission, queued send, external fetch, uploaded drafts/IMAP APPEND/import and changed-content coverage; durable fair bounded workers, verdict gates, hold/retry/quarantine, retention/audit, restart/outage recovery and observability |

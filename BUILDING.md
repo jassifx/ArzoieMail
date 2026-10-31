@@ -43,7 +43,7 @@ $releaseVersion = (Get-Content VERSION -Raw).Trim()
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File build/Set-Version.ps1 $releaseVersion 0
 ```
 
-Product 6 does not renumber schema 5714 or remove legacy upgrade paths. Runtime validation
+Product 6 does not renumber the database schema (now 5715) or remove legacy upgrade paths. Runtime validation
 stays in the disposable VM/CI. Artifact publication is not authorization to publish a release.
 Root `global.json` selects the stable .NET 10 SDK and permits newer compatible feature bands
 within 10. The [CI acceptance matrix](docs/ci-acceptance-matrix.md) describes each modern-stack

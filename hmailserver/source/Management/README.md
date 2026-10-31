@@ -113,6 +113,9 @@ or logout. Cookies are HttpOnly, SameSite=Strict and Secure in production. Sessi
 | GET / POST, GET / PATCH / DELETE | `/api/v1/policies/greylistexceptions[/{id}]` | Server administrator; IP patterns that skip greylisting |
 | GET | `/api/v1/antivirus` | Server administrator; status of the ClamAV, custom-scanner and ClamWin providers |
 | POST | `/api/v1/antivirus/test` | Test the configured `scanner` (`clamav`, `custom`, `clamwin`) with EICAR and clean files |
+| GET | `/api/v1/bayes` | Server administrator; native Bayesian filter statistics and training queue |
+| POST | `/api/v1/bayes/train` | Server administrator; queue every message of one mailbox `folder` (`accountId`) for training `as` `spam` or `ham` |
+| POST | `/api/v1/bayes/reset` | Server administrator; forget all training, with `confirm: true` |
 | GET / PATCH | `/api/v1/domains/{domainId}/dkim` | Read (own-domain administrator or server administrator) / change (server administrator) DKIM signing settings |
 | POST | `/api/v1/domains/{domainId}/dkim/keys` | Server administrator; generate an RSA 2048 key for `selector` |
 | POST | `/api/v1/domains/{domainId}/dkim/keys/{selector}/activate` | Activate after the published DNS record matches; `skipDnsCheck` true activates anyway |
@@ -738,6 +741,84 @@ Tests: `SpamDkimTests` runs against the native dispatcher on every CI backend. I
 
 `LiveRestTests` checks roles and that activation is refused until the DNS check is skipped
 explicitly; `browser.py` covers the new controls.
+
+## Native Bayesian spam filter (bundle 3b checkpoint)
+
+The default spam filtering is native (maintainer decision, 2026-10-31): a Bayesian filter in
+the server, with no separate engine to install. SpamAssassin stays an optional integration.
+
+**Settings** are five fields of the antispam section (`GET`/`PATCH /antispam`):
+
+| Field | Default | Meaning |
+|---|---|---|
+| `BayesEnabled` | `true` | Run the filter on incoming mail and learn from Junk copies |
+| `BayesScore` | 5 | Spam score added when a message reaches the threshold (0-10000) |
+| `BayesThreshold` | 90 | Spam probability, in percent (50-100), at or above which the score is added |
+| `BayesMinimumMessages` | 200 | The filter scores nothing until it has learned at least this many spam and this many ham messages (1-100000) |
+| `BayesLearnFromJunk` | `true` | Learn from users' IMAP copies into and out of Junk folders |
+
+**Scoring.** The filter is a post-transmission spam test, so it runs where the IP range has
+spam protection, after the cheaper tests, and adds its score to theirs. It tokenizes the subject
+(as separate tokens), the plain and HTML body with markup removed (first 200 KB), link host
+names and the sender's domain, and keeps at most 2000 distinct tokens. Token probabilities use
+Robinson's method and are combined with Fisher's chi-square method, as SpamBayes and
+SpamAssassin's Bayes plugin do. The reason header names the probability, for example
+`Bayesian filter: spam probability 99%`.
+
+**Training.**
+- A user's IMAP COPY into a folder with the `\Junk` special use trains the copies as spam.
+  A COPY out of a Junk folder trains them as ham, unless it goes to a `\Trash` folder. Copies
+  are queued only once the whole COPY has succeeded. Public folders never train.
+- `POST /bayes/train` queues every message of one mailbox folder, for example a Junk folder as
+  spam and an Inbox as ham, to start a new filter. The folder is a path with the server's
+  hierarchy delimiter. Unknown mailboxes and folders return 404.
+- One background task at a time trains from a queue of at most 10,000 messages; further
+  messages are counted as `dropped`. `GET /bayes` reports `spamMessages`, `hamMessages`,
+  `tokens`, `minimumMessages`, `ready`, `pending`, `training`, and the `trained`, `failed` and
+  `dropped` counts since the service started.
+- `POST /bayes/reset` with `{"confirm": true}` clears the queue and the token table.
+
+**Storage.** `hm_bayes_tokens` (schema 5715) holds a 64-bit hash of each token with its spam and
+ham counts; the row with hash 0 holds the message totals. No token text or message content is
+stored. The hashes are not a secret: someone who can read the database can test whether a
+given word has appeared in trained mail.
+
+**Limits.**
+- One model for the whole server, trained from every mailbox; there are no per-user models.
+- No untraining: a message learned twice, or learned wrongly, stays counted until a reset.
+  Moving a message into Junk and back out trains it once as spam and once as ham.
+- Tokens are never expired, so the table grows with the vocabulary of trained mail.
+- Only IMAP COPY trains. ArzoieMail has no IMAP MOVE yet (V6-03B); clients fall back to COPY.
+
+**Content rules** are the existing global and mailbox rules (#42): criteria on headers and
+body text with actions such as moving to a folder, setting a header or deleting. The filter
+adds no separate rule engine.
+
+**Scoring guidance.** Every test adds its score to one total, compared with the mark and delete
+thresholds (defaults 5 and 20 in new installations):
+- Score each signal once. A DNSBL and SURBL listing, an SPF or DMARC failure, SpamAssassin and
+  the Bayesian filter can all react to the same spam run; if one score alone reaches the mark
+  threshold, the others only matter for the delete threshold.
+- Keep the Bayesian score at or below the mark threshold until it has been trained on mail
+  representative of the server, and check its reason headers before raising it.
+- When SpamAssassin runs its own Bayes, keep only one of the two Bayesian filters scoring, or
+  lower both scores.
+- Use the delete threshold only for combinations that are certain, such as a DNSBL listing
+  together with a high Bayesian probability.
+
+Tests: `BayesTests` runs against the native dispatcher and the real mail service on every CI
+backend:
+- roles and argument refusals for every operation, and the setting ranges;
+- training spam by an IMAP COPY into a `\Junk` folder and ham from a folder, with a COPY to
+  an ordinary folder training nothing;
+- scoring over SMTP: a message like the trained spam carries the Bayesian reason header and is
+  marked as spam, and one like the ham is not;
+- a COPY from Junk to Trash training nothing and from Junk to another folder training ham;
+- reset.
+
+The tokenizer, hash, probability and copy rules are also checked by `BayesFilterTests` in the
+portable GCC/Clang build under the sanitizers and in ClassTester. `LiveRestTests` covers the
+routes and roles; `browser.py` covers the panel's training card and confirmed reset.
 
 ## Mail transport inventory (completion branch, validation in progress)
 

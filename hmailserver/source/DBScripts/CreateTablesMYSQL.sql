@@ -18,6 +18,8 @@ drop table if exists hm_dbversion;
 
 drop table if exists hm_uidvalidity;
 
+drop table if exists hm_bayes_tokens;
+
 drop table if exists hm_distributionlists;
 
 drop table if exists hm_distributionlistsrecipients;
@@ -203,6 +205,13 @@ create table hm_uidvalidity
 (
 	uidvalidityaccountid bigint not null primary key,
 	uidvalidityvalue bigint not null
+) DEFAULT CHARSET=utf8;
+
+create table hm_bayes_tokens 
+(
+	tokenhash bigint not null primary key,
+	spamcount int not null,
+	hamcount int not null
 ) DEFAULT CHARSET=utf8;
 
 create table hm_distributionlists 
@@ -736,6 +745,16 @@ insert into hm_settings (settingname, settingstring, settinginteger) values ('sp
 
 insert into hm_settings (settingname, settingstring, settinginteger) values ('spamassassinport', '', 783);
 
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesenabled', '', 1);
+
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesscore', '', 5);
+
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesthreshold', '', 90);
+
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayesminimummessages', '', 200);
+
+insert into hm_settings (settingname, settingstring, settinginteger) values ('bayeslearnfromjunk', '', 1);
+
 insert into hm_settings (settingname, settingstring, settinginteger) values ('antispammaxsize', '', 1024);
 
 insert into hm_settings (settingname, settingstring, settinginteger) values ('ASDKIMVerificationEnabled', '', 0);
@@ -824,4 +843,6 @@ insert into hm_tcpipports (portprotocol, portnumber, portaddress1, portaddress2,
 
 insert into hm_tcpipports (portprotocol, portnumber, portaddress1, portaddress2, portconnectionsecurity, portsslcertificateid) values (5, 143, 0, NULL, 0, 0);
 
-insert into hm_dbversion values (5714);
+insert into hm_bayes_tokens (tokenhash, spamcount, hamcount) values (0, 0, 0);
+
+insert into hm_dbversion values (5715);

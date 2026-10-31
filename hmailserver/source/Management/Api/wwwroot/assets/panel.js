@@ -5,7 +5,7 @@
   const pages = {
     overview: ['Overview', 'Your mail infrastructure, at a glance.'],
     domains: ['Domains & DNS', 'Manage domains, mailboxes, storage limits and authentication records.'],
-    antispam: ['Spam protection', 'Fine-tune filtering, authentication checks, and your SpamAssassin connection.'],
+    antispam: ['Spam protection', 'Fine-tune filtering, the built-in Bayesian filter, authentication checks, and an optional SpamAssassin connection.'],
     dnsbl: ['DNS blocklists', 'Your providers. Your policy. Manage multiple lists without vendor restrictions.'],
     diagnostics: ['Diagnostics', 'Check the administration runtime, deployment and server configuration.'],
     queue: ['Delivery queue', 'Inspect pending mail and request a retry or removal.'],
@@ -206,7 +206,8 @@
     const sections = [
       ['SpamAssassin connection', key => key.startsWith('SpamAssassin')],
       ['Authentication & sender checks', key => /^(Use|Check|DKIM|DMARC|AddAuthentication)/.test(key)],
-      ['Scoring & message treatment', key => !key.startsWith('SpamAssassin') && !/^(Use|Check|DKIM|DMARC|AddAuthentication)/.test(key)],
+      ['Bayesian filter', key => key.startsWith('Bayes')],
+      ['Scoring & message treatment', key => !key.startsWith('SpamAssassin') && !key.startsWith('Bayes') && !/^(Use|Check|DKIM|DMARC|AddAuthentication)/.test(key)],
     ];
     for (const [title, filter] of sections) {
       const c = card(title); c.outer.classList.add('section-gap');
@@ -215,7 +216,11 @@
         SpamAssassinMergeScore: 'Use the score returned by SpamAssassin instead of the fixed server score.',
         SpamDeleteThreshold: 'Messages reaching this threshold are deleted. Review carefully before changing.',
         MaximumMessageSize: 'Maximum message size checked for spam, in KB.',
+        BayesThreshold: 'Spam probability, in percent (50 to 100), at or above which the Bayesian score is added.',
+        BayesMinimumMessages: 'The filter scores nothing until it has learned at least this many spam and this many legitimate messages.',
+        BayesLearnFromJunk: 'Learn spam when a user moves mail into a Junk folder, and legitimate mail when they move it out (except to Trash).',
       }));
+      if (title === 'Bayesian filter') c.body.append(await bayesPanel());
       if (title === 'SpamAssassin connection') {
         c.body.append(button('Test saved connection', async () => {
           const result = await request('/spamassassin/test', 'POST');
@@ -1014,6 +1019,33 @@
       }, 'btn btn-primary btn-sm mt-2'));
     }
     editor.replaceChildren(c.outer);
+  }
+  async function bayesPanel() {
+    const wrap = el('div', null, 'section-gap');
+    const render = async () => {
+      const status = await request('/bayes');
+      wrap.replaceChildren();
+      wrap.append(el('h3', 'Training'), el('p', status.ready
+        ? `Ready: learned ${status.spamMessages} spam and ${status.hamMessages} legitimate messages (${status.tokens} distinct words).`
+        : `Learning: ${status.spamMessages} spam and ${status.hamMessages} legitimate messages so far; scoring starts at ${status.minimumMessages} of each.`, 'help'));
+      if (status.pending || status.training) wrap.append(el('p', `${status.pending} messages waiting to be learned.`, 'help'));
+      if (status.failed || status.dropped) wrap.append(el('p', `${status.failed} messages could not be read and ${status.dropped} were skipped because the queue was full, since the service started.`, 'help'));
+      wrap.append(el('p', 'The filter is shared by all mailboxes. To start it, learn a mailbox folder you trust, such as a Junk folder as spam and an Inbox as legitimate mail. Learning cannot be undone message by message; Reset forgets everything.', 'help'));
+      const grid = el('div', null, 'row g-3'); const address = textInput('', 320, 'email'); const folder = textInput('INBOX', 255);
+      const kind = el('select', null, 'form-select'); for (const [value, text] of [['ham', 'Legitimate mail'], ['spam', 'Spam']]) { const option = el('option', text); option.value = value; kind.append(option); }
+      grid.append(labelled('bayesMailbox', 'Mailbox address', address), labelled('bayesFolder', 'Folder', folder), labelled('bayesKind', 'Learn as', kind));
+      wrap.append(grid, button('Learn folder', async () => {
+        const accountId = await findAccountId(address.value.trim());
+        const result = await request('/bayes/train', 'POST', { accountId, folder: folder.value.trim(), as: kind.value });
+        notify(result.dropped ? `${result.queued} messages queued; ${result.dropped} skipped because the queue is full.` : `${result.queued} messages queued for learning.`, !!result.dropped);
+        await render();
+      }, 'btn btn-outline-primary btn-sm'), ' ', button('Refresh', render), ' ', button('Reset filter', async () => {
+        if (!confirm('Forget everything the Bayesian filter has learned? It stops scoring until it is trained again.')) return;
+        await request('/bayes/reset', 'POST', { confirm: true }); notify('Bayesian filter reset.'); await render();
+      }, 'btn btn-outline-danger btn-sm'));
+    };
+    await render();
+    return wrap;
   }
   async function antivirusPanel() {
     const status = await request('/antivirus');

@@ -10,7 +10,11 @@ output = pathlib.Path(sys.argv[2])
 output.mkdir(parents=True, exist_ok=True)
 providers = [{"id": 1, "Active": True, "DNSHost": "dnsbl.example.net", "ExpectedResult": "127.0.0.*", "RejectMessage": "Blocked", "Score": 3}]
 user = {"address": "Administrator", "level": 2, "domainId": 0, "accountId": 0}
-settings = {"SpamAssassinEnabled": True, "SpamAssassinHost": "127.0.0.1", "SpamAssassinPort": 783, "SpamAssassinMergeScore": True, "SpamAssassinScore": 5, "UseSPF": True, "UseSPFScore": 3, "DMARCEnabled": True, "SpamMarkThreshold": 5, "SpamDeleteThreshold": 20}
+settings = {"SpamAssassinEnabled": True, "SpamAssassinHost": "127.0.0.1", "SpamAssassinPort": 783, "SpamAssassinMergeScore": True, "SpamAssassinScore": 5, "UseSPF": True, "UseSPFScore": 3, "DMARCEnabled": True, "SpamMarkThreshold": 5, "SpamDeleteThreshold": 20,
+            "BayesEnabled": True, "BayesScore": 5, "BayesThreshold": 90, "BayesMinimumMessages": 200, "BayesLearnFromJunk": True}
+bayes_state = {"enabled": True, "spamMessages": 250, "hamMessages": 310, "tokens": 48211, "minimumMessages": 200, "ready": True,
+               "pending": 0, "training": False, "trained": 12, "failed": 0, "dropped": 0}
+bayes_requests = []
 requests = []
 domains = [{"id": 5, "name": "example.com", "active": True, "dkimEnabled": True, "selector": "arzoie", "maxSizeMB": 0, "maxAccountSizeMB": 0, "maxMessageSizeKB": 0}]
 mailboxes = []
@@ -156,6 +160,15 @@ def api(route):
         elif request.method == 'PATCH':
             dkim_state.update(body)
         data = dkim_state
+    elif path == '/bayes':
+        data = bayes_state
+    elif path in ('/bayes/train', '/bayes/reset'):
+        bayes_requests.append((path, body))
+        if path == '/bayes/reset':
+            bayes_state.update({'spamMessages': 0, 'hamMessages': 0, 'tokens': 0, 'ready': False})
+            data = bayes_state
+        else:
+            data = {'queued': 3, 'dropped': 0}
     elif path == '/antivirus':
         data = {'clamAv': {'enabled': True, 'host': 'clamav.internal', 'port': 3310}, 'customScanner': {'enabled': False, 'executable': '', 'returnValue': 1},
                 'clamWin': {'enabled': False, 'executable': '', 'database': ''}}
@@ -471,6 +484,19 @@ with sync_playwright() as p:
     page.get_by_label('Spam Assassin Host', exact=True).wait_for()
     page.get_by_role('button', name='Test saved connection').click()
     page.get_by_text('SpamAssassin is reachable and recognized the GTUBE spam test message.', exact=True).wait_for()
+    page.get_by_text('Ready: learned 250 spam and 310 legitimate messages (48211 distinct words).', exact=True).wait_for()
+    page.get_by_label('Bayes Threshold', exact=True).wait_for()
+    page.get_by_label('Mailbox address', exact=True).fill('someone@elsewhere.test')
+    page.get_by_role('button', name='Learn folder', exact=True).click()
+    page.get_by_text('That domain is not hosted here.', exact=True).wait_for()
+    assert not bayes_requests, 'Training must not be requested for a mailbox that is not hosted here.'
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Reset filter', exact=True).click()
+    assert not bayes_requests, 'Cancelling the reset must not submit.'
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Reset filter', exact=True).click()
+    page.get_by_text('Learning: 0 spam and 0 legitimate messages so far; scoring starts at 200 of each.', exact=True).wait_for()
+    assert bayes_requests == [('/bayes/reset', {'confirm': True})], bayes_requests
     page.get_by_role('link', name='Domains & DNS').click()
     page.get_by_role('button', name='New domain', exact=True).click()
     page.get_by_label('name', exact=True).fill('second.test')

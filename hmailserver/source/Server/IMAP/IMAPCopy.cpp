@@ -16,6 +16,8 @@
 #include "IMAPFolderView.h"
 #include "IMAPNotificationClient.h"
 #include "../Common/Util/FileUtilities.h"
+#include "../Common/AntiSpam/AntiSpamConfiguration.h"
+#include "../Common/AntiSpam/Bayes/BayesTrainer.h"
 
 
 #include "MessagesContainer.h"
@@ -215,6 +217,7 @@ namespace HM
       source_uids_.push_back(pOldMessage->GetUID());
       destination_uids_.push_back(pNewMessage->GetUID());
       copied_message_ids_.insert(pNewMessage->GetID());
+      copied_messages_.push_back(pNewMessage);
 
       MessagesContainer::Instance()->SetFolderNeedsRefresh(pFolder->GetID());
 
@@ -226,6 +229,30 @@ namespace HM
       pConnection->SetDelayedChangeNotification(pNotification);
 
       return IMAPResult();
+   }
+
+   void
+   IMAPCopy::Completed(std::shared_ptr<IMAPConnection> pConnection)
+   {
+      // A copy into or out of a Junk folder is the user saying what the message is. Public
+      // folders are shared, so a copy there says nothing about one user's mail.
+      auto &config = Configuration::Instance()->GetAntiSpamConfiguration();
+      if (!config.GetBayesEnabled() || !config.GetBayesLearnFromJunk())
+         return;
+
+      auto source = pConnection->GetCurrentFolder();
+      if (!source || source->IsPublicFolder() || destination_folder_->IsPublicFolder())
+         return;
+
+      const auto verdict = Bayes::ClassifyCopy((source->GetSpecialUseFlags() & IMAPFolder::SpecialUseJunk) != 0,
+         (destination_folder_->GetSpecialUseFlags() & IMAPFolder::SpecialUseJunk) != 0,
+         (destination_folder_->GetSpecialUseFlags() & IMAPFolder::SpecialUseTrash) != 0);
+      if (verdict == Bayes::CopyVerdict::None)
+         return;
+
+      for (const auto &message : copied_messages_)
+         BayesTrainer::Instance().Queue(PersistentMessage::GetFileName(pConnection->GetAccount(), message),
+            message->GetFromAddress(), verdict == Bayes::CopyVerdict::Spam);
    }
 
    void
@@ -251,5 +278,6 @@ namespace HM
       source_uids_.clear();
       destination_uids_.clear();
       copied_message_ids_.clear();
+      copied_messages_.clear();
    }
 }

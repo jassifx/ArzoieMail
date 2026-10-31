@@ -35,6 +35,9 @@ namespace HM
       // Removes the copies already made, so a failed COPY leaves the destination unchanged.
       virtual void RollBack(std::shared_ptr<IMAPConnection> pConnection);
 
+      // Queues the copies for Bayesian training, once the COPY can no longer be rolled back.
+      virtual void Completed(std::shared_ptr<IMAPConnection> pConnection);
+
    private:
 
       static String FormatUIDSet_(const std::vector<unsigned int> &uids);
@@ -55,5 +58,8 @@ namespace HM
       std::vector<unsigned int> destination_uids_;
 
       std::set<__int64> copied_message_ids_;
+
+      // The copies, in order, for Completed.
+      std::vector<std::shared_ptr<Message>> copied_messages_;
    };
 }

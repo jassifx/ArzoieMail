@@ -54,6 +54,9 @@ namespace HM
       // Called when DoAction fails. Override to undo the actions already taken.
       virtual void RollBack(std::shared_ptr<IMAPConnection> pConnection) {}
 
+      // Called when DoAction succeeded for every message acted on.
+      virtual void Completed(std::shared_ptr<IMAPConnection> pConnection) {}
+
       // Override and return true if DoAction updates the message. Such commands are given the
       // objects the collection holds rather than copies of them.
       virtual bool UsesLiveMessages() const { return false; }

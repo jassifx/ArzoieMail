@@ -15,6 +15,7 @@
 
 #include "stdafx.h"
 
+#include "../Common/AntiSpam/Bayes/BayesFilterTests.h"
 #include "../Common/Mime/MimeChar.h"
 #include "../Common/SQL/TransactionLeaseTests.h"
 #include "../SMTP/SPF/Conformance/SPFConformanceTester.h"
@@ -136,6 +137,8 @@ int main()
 {
    TestMimeChar();
    for (const auto &failure : HM::TransactionLeaseTests::Run())
+      Check(false, failure.c_str());
+   for (const auto &failure : HM::BayesFilterTests::Run())
       Check(false, failure.c_str());
    TestSPF();
 

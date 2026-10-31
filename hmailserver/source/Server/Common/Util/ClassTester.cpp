@@ -42,6 +42,7 @@
 #include "../SQL/SQLStatement.h"
 #include "../SQL/ADOConnection.h"
 #include "../SQL/TransactionLeaseTests.h"
+#include "../AntiSpam/Bayes/BayesFilterTests.h"
 #include "../BO/SSLCertificate.h"
 #include "../BO/TCPIPPort.h"
 #include "../Persistence/PersistentSSLCertificate.h"
@@ -205,6 +206,10 @@ namespace HM
       std::vector<AnsiString> transactionFailures;
       for (const auto &failure : TransactionLeaseTests::Run()) transactionFailures.emplace_back(failure.c_str());
       ReportFailures_("database transaction leases", transactionFailures);
+
+      std::vector<AnsiString> bayesFailures;
+      for (const auto &failure : BayesFilterTests::Run()) bayesFailures.emplace_back(failure.c_str());
+      ReportFailures_("Bayesian filter", bayesFailures);
 
       {
          // Read the real provider's BIGINT values without altering identity seeds,
