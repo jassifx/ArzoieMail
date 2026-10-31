@@ -157,7 +157,7 @@ remaining work, acceptance gates and every legacy PHP/desktop main-pane migratio
 |---|---|---|
 | **0 · Foundation** | Visual Studio 2026 and C++20, hardening flags, Windows 10 minimum, Inno Setup 6.7, .NET 10 tools and tests, NUnit 5 | ✅ Done |
 | **1 · Security** | Bound SQL parameters on every database, retiring the `libmysql.dll` fallback, AES-GCM and DPAPI instead of Blowfish with an exportable key, passphrase-protected backups, DPAPI for the Administrator's saved passwords, an Argon2id review (logon timing), UTF-8 client credentials | ✅ Done |
-| **1b · Web admin** | Modern Bootstrap panel with advanced administration and REST API from the first release; SpamAssassin management, configurable DNSBLs, SPF/DKIM/DMARC guidance and validation including shared-provider SPF; .NET 10 backend with native management access and no COM dependency; guided TLS certificate setup/renewal, optional Microsoft Defender Antivirus scanning, full PHP retirement after migration and SQL Server Express modernization | In progress |
+| **1b · Web admin** | Modern Bootstrap panel with advanced administration and REST API from the first release; a built-in Bayesian spam filter with optional SpamAssassin, configurable DNSBLs, SPF/DKIM/DMARC guidance and validation including shared-provider SPF; .NET 10 backend with native management access and no COM dependency; guided TLS certificate setup/renewal, optional Microsoft Defender Antivirus scanning, full PHP retirement after migration and SQL Server Express modernization | In progress |
 | **2 · Scripting** | PowerShell event host replacing VBScript and JScript | Planned |
 | **3 · Protocols and data integrity** | Checked identifiers and transactional IMAP UID allocation, safe generation renewal and capacity controls; SMTP/IMAP extensions, SCRAM-SHA-256, MTA-STS, DANE and DKIM with Ed25519 | Planned |
 | **4 · Built-in database** | SQLite replacing SQL Server Compact, migrated automatically | Planned |
@@ -172,7 +172,7 @@ administrator sendout, diagnostics with a mail-server lookup and bounded log rea
 four-backend CI and merged as #46. Checkpoint 3 (bundle 2, merged as #47) adds external POP3 fetch accounts,
 groups and public folders with their permissions, backup/restore and installation-key export/import.
 Checkpoint 4 (bundle 3a, merged as #48) adds the spam allowlist, greylisting exceptions, antivirus scanner
-tests and DKIM key generation, rotation and verified signing. Checkpoint 5 (bundle 3b, in progress)
+tests and DKIM key generation, rotation and verified signing. Checkpoint 5 (bundle 3b, merged as #49)
 adds a native Bayesian spam filter that administrators enable and configure: it learns from mail users move into and out of
 Junk and from folders an administrator chooses, and needs schema 5715. Still to come, as one checkpoint PR
 per bundle: guided certificates and production hosting (E03, E07); optional Defender

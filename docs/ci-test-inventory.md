@@ -6,7 +6,7 @@ production deployment, capacity, or that skipped/manual scenarios executed.
 
 ## Bundle 3b checkpoint: native Bayesian spam filter
 
-Branch `feature/phase1b-bayes` (E02 default, A11 guidance; see the
+Merged as #49 on 2026-10-31. Branch `feature/phase1b-bayes` (E02, A11 guidance; see the
 [ledger](phase-1b-status.md#bundle-3b-checkpoint-native-bayesian-spam-filter-2026-10-31)).
 Head `d823a33b9817dd7f827d07a461a3d070b98c7cae` passed all four database jobs, Release x64,
 GCC/Clang (with `BayesFilterTests` under the sanitizers) and CI installer publication. Per backend:

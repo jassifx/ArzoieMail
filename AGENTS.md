@@ -93,8 +93,9 @@ backend; merge `74eecc017`. Consult the CI inventory for inconclusive/skipped ou
 PR #43 merged the approved 6.0 scope at `92ac28d`. The current authorization is to complete
 all remaining Phase 1b, submitted as one checkpoint PR per coherent bundle (maintainer decision,
 2026-10-30; see the working agreement); follow the latest handoff for implementation/evidence status. No Phase 2 start or automatic merge is authorized.
-Checkpoints #45-#48 are merged (#48, bundle 3a, as `79df40565`); bundle 3b, the native Bayesian
-spam filter (schema 5715), is the current checkpoint.
+Checkpoints #45-#49 are merged (#48, bundle 3a, as `79df40565`; #49, bundle 3b, the native
+Bayesian spam filter with schema 5715, off until an administrator enables it). Bundle 4
+(certificates with built-in ACME, production hosting) is next, after the maintainer confirms.
 
 ---
 
