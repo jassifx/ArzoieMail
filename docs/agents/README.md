@@ -12,8 +12,8 @@ since 2026-10-30 it is submitted as one **checkpoint PR per bundle**, none claim
 completion (working agreement). Checkpoint 1 (`feature/phase1b-completion`) merged as #45;
 checkpoint 2, bundle 1 server and protocol operations, merged as #46. Checkpoint 3, bundle 2
 (A07, A10, A15), merged as #47. Checkpoint 4, bundle 3a (A11, A12, E01, E02 integration), merged
-as #48 (`79df40565`). Checkpoint 5, bundle 3b (the native Bayesian filter, schema 5715), is
-`feature/phase1b-bayes`. The 2026-10-30 delivery decisions
+as #48 (`79df40565`). Checkpoint 5, bundle 3b (the native Bayesian filter, schema 5715), is PR #49
+(`feature/phase1b-bayes`), green and awaiting review. The 2026-10-30 delivery decisions
 for bundles 3-6 are in the 6.0 scope; stop for review after each bundle's PR. Earlier history: server settings and three filtering/relay collections passed initial
 Compact VM validation. Password-policy, IP-range and logging revisions subsequently passed
 full VM/browser checks (latest 736 native assertions). A same-password-reset session regression
