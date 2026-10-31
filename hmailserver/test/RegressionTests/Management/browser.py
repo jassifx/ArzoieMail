@@ -897,7 +897,7 @@ with sync_playwright() as p:
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Maintenance overflows on mobile.'
     page.set_viewport_size({'width': 1440, 'height': 1000})
     page.get_by_role('link', name='Certificates', exact=True).click()
-    page.get_by_text('Fixture mail certificate', exact=True).wait_for()
+    page.get_by_text('Fixture mail certificate', exact=True).first.wait_for()
     page.get_by_text('ACME · renews automatically', exact=True).wait_for()
     page.get_by_role('button', name='Import a certificate…', exact=True).click()
     page.get_by_label('Name', exact=True).fill('Imported fixture')
@@ -908,7 +908,7 @@ with sync_playwright() as p:
     imported = [entry for entry in certificate_requests if entry[0] == 'POST' and entry[1] == '/certificates'][-1][2]
     assert imported == {'name': 'Imported fixture', 'certificatePem': '-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----',
                         'privateKeyPem': '-----BEGIN PRIVATE KEY-----\nBBBB\n-----END PRIVATE KEY-----'}, imported
-    page.get_by_text('Imported fixture', exact=True).wait_for()
+    page.get_by_text('Imported fixture', exact=True).first.wait_for()
     page.get_by_label('I agree to the certificate authority\u2019s terms of service', exact=True).check()
     page.get_by_label('Contact email (expiry notices)', exact=True).fill('admin@example.com')
     page.get_by_role('button', name='Save ACME settings', exact=True).click()
