@@ -306,7 +306,12 @@ jobs:
               $credential = [pscredential]::new("admin@$domainName", (ConvertTo-SecureString $secret -AsPlainText -Force))
               & build/test-installed-webadmin.ps1 -AdministratorCredential $credential
           } finally {
-              $application.Domains.ItemByName($domainName).Delete()
+              # Setting the panel up again restarts the mail service, so connect afresh to clean up.
+              [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($application)
+              $application = New-Object -ComObject 'hMailServer.Application'
+              if ($null -eq $application.Authenticate('Administrator', $password)) { [void]$application.Authenticate('Administrator', '') }
+              $fixture = $application.Domains.ItemByName($domainName)
+              if ($null -ne $fixture) { $fixture.Delete() }
               [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($application)
           }
 
