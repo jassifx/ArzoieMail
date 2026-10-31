@@ -20,7 +20,7 @@ public sealed record CertificateInspectionResult(string Sha256, string Subject, 
 public static class CertificateInspection
 {
     public const int MaximumPfxBytes = 524288;
-    private static readonly Pkcs12LoaderLimits Limits = CreateLimits();
+    internal static readonly Pkcs12LoaderLimits Limits = CreateLimits();
     private static Pkcs12LoaderLimits CreateLimits()
     {
         var limits = new Pkcs12LoaderLimits

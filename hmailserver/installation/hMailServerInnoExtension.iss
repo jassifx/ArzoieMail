@@ -392,6 +392,62 @@ begin
    Result := not IsDotNetDesktopRuntimeInstalled();
 end;
 
+// The web administration panel needs the ASP.NET Core Runtime 10.
+function NeedsAspNetCoreRuntime() : Boolean;
+var
+   FindRec: TFindRec;
+begin
+   Result := True;
+   if FindFirst(ExpandConstant('{commonpf64}\dotnet\shared\Microsoft.AspNetCore.App\10.*'), FindRec) then
+   begin
+      try
+         repeat
+            if FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY <> 0 then
+            begin
+               Result := False;
+               exit;
+            end;
+         until not FindNext(FindRec);
+      finally
+         FindClose(FindRec);
+      end;
+   end;
+end;
+
+procedure InstallAspNetCoreRuntime();
+var
+   Installer: String;
+   ResultCode: Integer;
+begin
+   Installer := ExpandConstant('{tmp}\{#ASPNETCORE_RUNTIME_FILE}');
+   if not FileExists(Installer) then
+      exit;
+
+   Log('ArzoieMail: installing the ASP.NET Core Runtime {#DOTNET_DESKTOP_RUNTIME_VERSION}');
+   if not Exec(Installer, '/install /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+      ResultCode := -1;
+
+   if (ResultCode <> 0) and (ResultCode <> 3010) and (ResultCode <> 1638) then
+      SuppressibleMsgBox('The ASP.NET Core Runtime {#DOTNET_DESKTOP_RUNTIME_VERSION} could not be installed (exit code ' + IntToStr(ResultCode) + '). '
+         + 'The web administration panel needs it. Install it from https://dotnet.microsoft.com/download/dotnet/10.0 and then run the setup again.',
+         mbError, MB_OK, IDOK);
+end;
+
+// Sets up the panel's service, identity and HTTPS certificate; see Install-WebAdmin.ps1.
+procedure SetUpWebAdmin();
+var
+   ResultCode: Integer;
+begin
+   Log('ArzoieMail: setting up the web administration panel');
+   if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+         '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\WebAdmin\Setup\Install-WebAdmin.ps1') + '"'
+         + ' -InstallDirectory "' + ExpandConstant('{app}') + '" -IniFile "' + GetIniPath('') + '"',
+         '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+      SuppressibleMsgBox('The web administration panel could not be set up (exit code ' + IntToStr(ResultCode) + '). '
+         + 'See ' + ExpandConstant('{app}\WebAdmin\Install-WebAdmin.log') + ', then run Install-WebAdmin.ps1 in ' + ExpandConstant('{app}\WebAdmin\Setup') + ' again.',
+         mbError, MB_OK, IDOK);
+end;
+
 // Runs the bundled .NET Desktop Runtime installer, if [Files] extracted it because the
 // runtime was missing. Must run before any of the tools is started.
 procedure InstallDotNetDesktopRuntime();
@@ -1065,6 +1121,9 @@ begin
 	   // Move hMailServer.ini before files are copied
 	   MoveIni();
 
+	   // An upgrade replaces the panel's files, which its running service holds open.
+	   StopServiceAndWait('ArzoieMailAdmin');
+
 	   // Must run after MoveIni, so that an installation whose ini file was still
 	   // in the Windows directory is recognized as an existing installation.
 	   if (IsProgramDataInstallation()) then
@@ -1093,6 +1152,13 @@ begin
 	   end;
 	 end;
 
+	  // After the mail service exists, so the panel's identity reaches its management pipe.
+	  if (WizardIsComponentSelected('webadmin')) then
+	  begin
+	    InstallAspNetCoreRuntime();
+	    SetUpWebAdmin();
+	  end;
+
    DeleteOldFiles();
 
 	end;
@@ -1102,11 +1168,20 @@ end;
 
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+	ResultCode: Integer;
 begin
 	// Stop hMailServer before [UninstallRun] unregisters the service and the
 	// files are removed. Otherwise the running process keeps its files locked.
 	if CurUninstallStep = usUninstall then
 	begin
+		// The panel's service, identity and own certificate go first; see Uninstall-WebAdmin.ps1.
+		if FileExists(ExpandConstant('{app}\WebAdmin\Setup\Uninstall-WebAdmin.ps1')) then
+			Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+				'-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\WebAdmin\Setup\Uninstall-WebAdmin.ps1') + '"'
+				+ ' -InstallDirectory "' + ExpandConstant('{app}') + '" -IniFile "' + GetIniPath('') + '"',
+				'', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
 		if StopServiceAndWait('hMailServer') = false then
 			ReportServiceStopFailure('The ArzoieMail service could not be stopped. Some files may not be removed until the computer is restarted.');
 	end;

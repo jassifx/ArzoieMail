@@ -116,6 +116,8 @@ try {
     Invoke-ManagementMode '--live'
     Invoke-ManagementMode '--live-http'
     Invoke-ManagementMode '--tls-native'
+    # ACME end to end, when the workflow has fetched Pebble (Let's Encrypt's test server).
+    if ($env:ARZOIEMAIL_TEST_PEBBLE) { Invoke-ManagementMode '--acme-live' }
     if ($PublishedApi) {
         $pfxFixtureDirectory = Join-Path ([IO.Path]::GetTempPath()) ('ArzoieMail-certificate-' + [Guid]::NewGuid().ToString('N'))
         New-Item -ItemType Directory -Path $pfxFixtureDirectory | Out-Null

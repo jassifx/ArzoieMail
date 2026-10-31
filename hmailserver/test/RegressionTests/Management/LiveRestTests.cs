@@ -59,6 +59,33 @@ static class LiveRestTests
             check((await admin.Send("/bayes/train", HttpMethod.Post, new { accountId, folder = "INBOX", @as = "ham" })).GetProperty("queued").GetInt64() == 0, "Real API trains from an empty mailbox folder.");
             await admin.Send("/bayes/train", HttpMethod.Post, new { accountId, folder = "No such folder", @as = "ham" }, status: 404);
             await admin.Send("/bayes/reset", HttpMethod.Post, new { }, status: 422);
+            // Certificates over real HTTP: PEM and PFX import, rename, refusal, delete, and the probe.
+            var restCertificate = CertificateTests.SelfSigned("rest-" + Guid.NewGuid().ToString("N")[..8] + ".test", TimeSpan.FromDays(60));
+            var pemImported = await admin.Send("/certificates", HttpMethod.Post, new { name = "REST PEM " + name, certificatePem = restCertificate.Pem, privateKeyPem = restCertificate.Key });
+            string pemId = pemImported.GetProperty("id").GetString()!;
+            check(pemImported.GetProperty("managed").GetBoolean(), "Real API imports a PEM certificate.");
+            byte[] pfx;
+            using (var key = System.Security.Cryptography.RSA.Create())
+            {
+                key.ImportFromPem(restCertificate.Key);
+                using var withKey = System.Security.Cryptography.X509Certificates.RSACertificateExtensions.CopyWithPrivateKey(restCertificate.Certificate, key);
+                pfx = withKey.Export(System.Security.Cryptography.X509Certificates.X509ContentType.Pkcs12, "pfx-password");
+            }
+            await admin.Send("/certificates", HttpMethod.Post, new { name = "REST PFX " + name, pfx = Convert.ToBase64String(pfx), password = "wrong" }, status: 422);
+            var pfxImported = await admin.Send("/certificates", HttpMethod.Post, new { name = "REST PFX " + name, pfx = Convert.ToBase64String(pfx), password = "pfx-password" });
+            string pfxId = pfxImported.GetProperty("id").GetString()!;
+            check(pfxImported.GetProperty("fingerprintSha256").GetString() == pemImported.GetProperty("fingerprintSha256").GetString(), "Real API imports the same certificate from a PFX file.");
+            await admin.Send("/certificates", HttpMethod.Post, new { name = "REST both " + name, certificatePem = restCertificate.Pem, privateKeyPem = restCertificate.Key, pfx = Convert.ToBase64String(pfx) }, status: 422);
+            await admin.Send($"/certificates/{pemId}", HttpMethod.Patch, new { name = "REST renamed " + name });
+            await admin.Send($"/certificates/{pemId}", HttpMethod.Patch, new { path = "x" }, status: 422);
+            var inventory = await admin.Send("/certificates", HttpMethod.Get);
+            check(inventory.GetProperty("items").EnumerateArray().Any(item => item.GetProperty("name").GetString() == "REST renamed " + name), "Real API lists and renames certificates.");
+            var plainListener = inventory.GetProperty("listeners").EnumerateArray().First(item => item.GetProperty("securityCode").GetInt32() == 0);
+            await admin.Send($"/listeners/{plainListener.GetProperty("id").GetString()}/probe", HttpMethod.Post, new { }, status: 409);
+            check((await admin.Send("/acme", HttpMethod.Get)).TryGetProperty("jwk", out _), "Real API reads the ACME account.");
+            await admin.Send("/certificates/acme", HttpMethod.Post, new { name = "x", hostnames = new[] { "a.test" }, path = "x" }, status: 422);
+            foreach (string id in new[] { pemId, pfxId }) await admin.Send($"/certificates/{id}", HttpMethod.Delete);
+            await admin.Send($"/certificates/{pemId}", HttpMethod.Get, status: 404);
             check(!account.TryGetProperty("password", out _), "Live HTTP account views never expose the password.");
             await admin.Send(mailbox + "/profile", HttpMethod.Patch, new { firstName = "REST", lastName = "Integration" });
             var persisted = await native.SendAsync("accounts.profile.read", username, password, new { domainId, id = accountId }, CancellationToken.None);
@@ -110,6 +137,8 @@ static class LiveRestTests
                 await manager.Send("/settings/administrator-password", HttpMethod.Post, new { currentPassword = password, newPassword = password }, status: 403);
                 foreach (string path in new[] { "/groups", "/publicfolders", "/backup", "/secretkey", "/antivirus", "/bayes", "/policies/spamallowlist", "/policies/greylistexceptions" }) await manager.Send(path, HttpMethod.Get, status: 403);
                 await manager.Send("/bayes/reset", HttpMethod.Post, new { confirm = true }, status: 403);
+                foreach (string path in new[] { "/certificates", "/acme" }) await manager.Send(path, HttpMethod.Get, status: 403);
+                await manager.Send("/listeners", HttpMethod.Post, new { protocolCode = 5 }, status: 403);
                 await manager.Send(domainPath + "/dkim", HttpMethod.Get, status: 403);
                 await manager.Send(domainPath + "/dkim/keys", HttpMethod.Post, new { selector = "s1" }, status: 403);
                 await manager.Send("/secretkey/export", HttpMethod.Post, new { passphrase = "long enough passphrase" }, status: 403);
@@ -163,7 +192,7 @@ static class LiveRestTests
 
     static string Required(string name) => Environment.GetEnvironmentVariable(name) ?? throw new Exception("Missing live REST fixture variable: " + name);
 
-    sealed class BrowserSession : IDisposable
+    internal sealed class BrowserSession : IDisposable
     {
         readonly Action<bool, string> check;
         readonly HttpClientHandler handler;

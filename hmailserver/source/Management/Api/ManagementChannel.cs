@@ -18,6 +18,10 @@ public interface IManagementChannel
 {
     Task<JsonElement> SendAsync(string operation, string username, string password,
         object? arguments, CancellationToken cancellationToken);
+
+    // The certificate-renewal scope, which needs no administrator credentials. The native
+    // service accepts only renewal operations in it, and only from the configured API identity.
+    Task<JsonElement> SendAutomationAsync(string operation, object? arguments, CancellationToken cancellationToken);
 }
 
 // The web process has no COM, database, or mail-store access. The native service owns authorization.
@@ -26,8 +30,14 @@ public sealed class ManagementChannel : IManagementChannel
     public const string PipeName = "ArzoieMail.Management.v1";
     public const int MaximumFrame = 65536;
 
-    public async Task<JsonElement> SendAsync(string operation, string username, string password,
-        object? arguments, CancellationToken cancellationToken)
+    public Task<JsonElement> SendAsync(string operation, string username, string password,
+        object? arguments, CancellationToken cancellationToken) =>
+        SendFrameAsync(JsonSerializer.SerializeToUtf8Bytes(new { version = 1, operation, username, password, arguments = arguments ?? new { } }), cancellationToken);
+
+    public Task<JsonElement> SendAutomationAsync(string operation, object? arguments, CancellationToken cancellationToken) =>
+        SendFrameAsync(JsonSerializer.SerializeToUtf8Bytes(new { version = 1, automation = "certificate-renewal", operation, arguments = arguments ?? new { } }), cancellationToken);
+
+    private static async Task<JsonElement> SendFrameAsync(byte[] body, CancellationToken cancellationToken)
     {
         if (!OperatingSystem.IsWindows())
             throw new ManagementError(503, "The management service requires Windows.");
@@ -37,7 +47,6 @@ public sealed class ManagementChannel : IManagementChannel
             PipeOptions.Asynchronous, TokenImpersonationLevel.Identification);
         await pipe.ConnectAsync(timeout.Token);
         VerifyServer(pipe.SafePipeHandle);
-        byte[] body = JsonSerializer.SerializeToUtf8Bytes(new { version = 1, operation, username, password, arguments = arguments ?? new { } });
         try
         {
             if (body.Length > MaximumFrame) throw new ManagementError(413, "Request is too large.");

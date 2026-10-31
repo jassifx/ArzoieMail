@@ -8,6 +8,9 @@
 #define DOTNET_DESKTOP_RUNTIME_VERSION "10.0.13"
 #define DOTNET_DESKTOP_RUNTIME_FILE "windowsdesktop-runtime-" + DOTNET_DESKTOP_RUNTIME_VERSION + "-win-x64.exe"
 #define DOTNET_DESKTOP_RUNTIME_PATH HMAILSERVERLIBS + "\dotnet-desktop-runtime-" + DOTNET_DESKTOP_RUNTIME_VERSION + "\" + DOTNET_DESKTOP_RUNTIME_FILE
+; The ASP.NET Core Runtime the web administration panel needs, fetched into the same folder.
+#define ASPNETCORE_RUNTIME_FILE "aspnetcore-runtime-" + DOTNET_DESKTOP_RUNTIME_VERSION + "-win-x64.exe"
+#define ASPNETCORE_RUNTIME_PATH HMAILSERVERLIBS + "\dotnet-desktop-runtime-" + DOTNET_DESKTOP_RUNTIME_VERSION + "\" + ASPNETCORE_RUNTIME_FILE
 
 ; The Visual C++ runtime shipped in Bin. Microsoft's advice is to ship the latest available
 ; runtime, and the installer requires Windows 10, where every 14.x runtime runs, so the

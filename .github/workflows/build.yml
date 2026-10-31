@@ -421,6 +421,13 @@ jobs:
           & $msbuild @arguments
           if ($LASTEXITCODE -ne 0) { throw "Building hMailServer Tools.sln failed with exit code $LASTEXITCODE" }
 
+      - name: Publish the web administration panel
+        run: |
+          # The installer's webadmin component ships this folder (section_files_64.iss). It is
+          # framework-dependent: setup installs the ASP.NET Core Runtime when it is missing.
+          dotnet publish hmailserver\source\Management\Api\ArzoieMail.Api.csproj -c Release -o hmailserver\source\Management\Api\bin\publish
+          if ($LASTEXITCODE -ne 0) { throw "Publishing the web administration panel failed with exit code $LASTEXITCODE" }
+
       # Signed here, before Inno Setup packs them: SignPath cannot open an Inno Setup
       # installer, so it can only sign what goes into it beforehand.
       - name: Stage hMailServer's own binaries for signing
