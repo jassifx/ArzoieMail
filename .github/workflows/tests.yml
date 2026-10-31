@@ -276,7 +276,11 @@ jobs:
           # All executable checks stay on this disposable CI VM.
           & build/test-management.ps1 -Runtime -NoBuild
           & build/test-management.ps1 -Tls -NoBuild
-          & build/test-management.ps1 -PipeIdentity -NoBuild
+          # The impostor needs the pipe name free; setup's panel makes the mail service own it.
+          Stop-Service hMailServer
+          (Get-Service hMailServer).WaitForStatus('Stopped', [TimeSpan]::FromSeconds(60))
+          try { & build/test-management.ps1 -PipeIdentity -NoBuild }
+          finally { Start-Service hMailServer; (Get-Service hMailServer).WaitForStatus('Running', [TimeSpan]::FromSeconds(60)) }
           & build/test-management.ps1 -NoBuild
           python -m pip install --disable-pip-version-check -r hmailserver/test/RegressionTests/Management/requirements-browser.txt
           if ($LASTEXITCODE -ne 0) { throw "Browser dependencies failed to install." }
