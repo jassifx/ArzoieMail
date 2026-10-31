@@ -47,7 +47,9 @@ if (Test-Path -LiteralPath $IniFile) {
 if (Test-Path -LiteralPath $settingsFile) {
     $subject = (Get-Content -LiteralPath $settingsFile -Raw | ConvertFrom-Json).Kestrel.Endpoints.Https.Certificate.Subject
     if ($subject -like 'ArzoieMail Administration *') {
-        Get-ChildItem 'Cert:\LocalMachine\My' | Where-Object { $_.Subject -eq "CN=$subject" } | Remove-Item -DeleteKey
+        # -DeleteKey is a certificate-provider parameter, so it needs the certificate's own path.
+        Get-ChildItem 'Cert:\LocalMachine\My' | Where-Object { $_.Subject -eq "CN=$subject" } |
+            ForEach-Object { Remove-Item -LiteralPath $_.PSPath -DeleteKey }
     }
     Remove-Item -LiteralPath $settingsFile -Force
 }
