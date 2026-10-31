@@ -8,7 +8,26 @@ production deployment, capacity, or that skipped/manual scenarios executed.
 
 Branch `feature/phase1b-bayes` (E02 default, A11 guidance; see the
 [ledger](phase-1b-status.md#bundle-3b-checkpoint-native-bayesian-spam-filter-2026-10-31)).
-CI evidence is pending. New coverage, per backend:
+Head `d823a33b9817dd7f827d07a461a3d070b98c7cae` passed all four database jobs, Release x64,
+GCC/Clang (with `BayesFilterTests` under the sanitizers) and CI installer publication. Per backend:
+
+| Check | Compact, MySQL, PostgreSQL | SQL Server Express |
+|---|---|---|
+| NUnit regression | 1319 cases: 1209 passed, 0 failed, 34 inconclusive, 76 skipped | 1319 cases: 1210 passed, 0 failed, 34 inconclusive, 75 skipped |
+| Live native management | 1114 assertions (1086 before; +28 from `BayesTests`) | same |
+| Live HTTP/native integration | 238 assertions (224 before; +14 REST checks) | same |
+| Other management checks | unchanged from bundle 3a | same |
+| Browser | fixture suite (new controls included) and published live suite | same |
+
+That is 2059 numbered assertions per backend plus the unnumbered plaintext-boundary line.
+The NUnit outcome is unchanged, so the filter (off by default) does not affect the existing suite.
+
+Failure fixed on the way: the first run (`cad407087`) failed on every backend after training had
+passed, because the test's temporary copy of the 127.0.0.1 IP range allowed unauthenticated
+local-to-external relay without acknowledging it, which the native validation refuses (422).
+A test fix (`d823a33b9`), not a product bug.
+
+New coverage, per backend:
 
 - `BayesTests` (live native): roles and argument refusals; training spam through a real IMAP
   COPY into a `\Junk` folder and ham from a folder; SMTP scoring of a spam-like and a ham-like

@@ -165,7 +165,8 @@ Limits recorded in the REST contract: one global model, no untraining, no token 
 only (no IMAP MOVE yet). Content rules are the existing global and mailbox rules (#42). The
 contract and scoring guidance are in the
 [Management README](../hmailserver/source/Management/README.md#native-bayesian-spam-filter-bundle-3b-checkpoint).
-CI evidence is pending; see the [CI inventory](ci-test-inventory.md#bundle-3b-checkpoint-native-bayesian-spam-filter).
+Head `d823a33b9` passed four-backend CI (1114 native and 238 live HTTP assertions per backend,
+both browser suites, NUnit unchanged); see the [CI inventory](ci-test-inventory.md#bundle-3b-checkpoint-native-bayesian-spam-filter).
 
 ## Remaining administration parity
 
