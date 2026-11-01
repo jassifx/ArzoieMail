@@ -189,7 +189,9 @@ HTTP-01 answered by the API (see the [6.0 scope](version-6-scope.md#delivery-dec
 
 The contract is in the
 [Management README](../hmailserver/source/Management/README.md#listener-certificates-acme-and-the-installed-panel-bundle-4-checkpoint).
-CI evidence is pending; see the [CI inventory](ci-test-inventory.md#bundle-4-checkpoint-listener-certificates-acme-and-the-installed-panel).
+Head `b662d7961` passed four-backend CI (1172 native, 274 live HTTP, 54-56 Pebble ACME and 25
+installed-panel checks per backend, both browser suites, NUnit unchanged); see the
+[CI inventory](ci-test-inventory.md#bundle-4-checkpoint-listener-certificates-acme-and-the-installed-panel).
 
 ## Remaining administration parity
 

@@ -8,7 +8,42 @@ production deployment, capacity, or that skipped/manual scenarios executed.
 
 Branch `feature/phase1b-certificates` (E03, E07, A06; see the
 [ledger](phase-1b-status.md#bundle-4-checkpoint-listener-certificates-acme-and-the-installed-panel-2026-11-01)).
-CI evidence is pending. New coverage, per backend:
+Head `b662d7961` passed all four database jobs, Release x64, GCC/Clang and CI installer
+publication. Per backend:
+
+| Check | Compact, MySQL, PostgreSQL | SQL Server Express |
+|---|---|---|
+| NUnit regression | 1319 cases: 1209 passed, 0 failed, 34 inconclusive, 76 skipped | 1319 cases: 1210 passed, 0 failed, 34 inconclusive, 75 skipped |
+| Live native management | 1172 assertions (1114 before; +58 from `CertificateTests`) | same |
+| Live HTTP/native integration | 274 assertions (238 before; +36 REST checks) | same |
+| Live ACME against Pebble (`--acme-live`, new) | 54-56 assertions; the count follows how often the issuance job is polled | same |
+| Installed panel (`build/test-installed-webadmin.ps1`, new) | 25 checks | same |
+| Other management checks | unchanged from bundle 3b | same |
+| Browser | fixture suite (Certificates page included) and published live suite | same |
+
+The NUnit outcome is unchanged.
+
+Failures fixed on the way, in order:
+- the Certificates page returned before drawing because the panel attaches a page only after it is built (`7c0b2b8d8`), and a test locator matched the name in three places (`3b4c16b4f`);
+- the installed-panel check signed in as an Administrator with a blank password (`0c535d55f`);
+- three faults in the panel's setup script, found with added diagnostics (`81185f435`):
+  `EventLog.SourceExists` throwing on the Security log (`fb14d8674`), the `Cert:` drive missing
+  (`0dae99db3`), and Windows PowerShell inheriting PowerShell 7's module path from setup's
+  environment (`90a0fad9d`). Each stopped setup before the panel's settings were written, so
+  the service did not start. These were product bugs a silent install hid;
+- with the panel configured, the mail service owns the management pipe, so the pipe-squatting
+  test now runs with the mail service stopped (`41bf80df4`);
+- `Remove-Item -DeleteKey` needs the certificate's provider path (`c78118e86`), a product bug in
+  removal; the test's cleanup needed a fresh COM connection after the restart (`5be7fa5d1`);
+- Pebble's DNS server flag and host name (`e068d0820`);
+- the ACME client sent no User-Agent, which RFC 8555 requires and Let's Encrypt enforces
+  (`6397d460f`), a product bug;
+- *Renew now* did not reuse the recorded host names (`b662d7961`), a product bug.
+
+On the CI runners port 80 is in use, so setup left ACME HTTP-01 off there; the Pebble test runs
+the challenge listener on its own port.
+
+New coverage, per backend:
 
 - `CertificateTests` (live native): import refusals (mismatched, expired, CA, RSA 1024,
   encrypted and malformed keys, path fields); a real implicit-TLS IMAP listener on a free port
