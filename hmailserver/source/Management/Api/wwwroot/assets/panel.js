@@ -21,6 +21,7 @@
     logs: ['Logs', 'Read the server log files.'],
     folders: ['Groups & public folders', 'Manage groups, shared public folders and who may use them.'],
     maintenance: ['Backup & maintenance', 'Back up and restore the server, and move its installation key.'],
+    certificates: ['Certificates', 'Issue, import and renew the mail listeners\u2019 certificates, and choose how each listener uses TLS.'],
   };
   function el(tag, text, className) {
     const node = document.createElement(tag);
@@ -1256,6 +1257,183 @@
     });
     detail.replaceChildren(c.outer);
   }
+  async function certificates(root) {
+    const [state, acme] = await Promise.all([request('/certificates'), request('/acme')]);
+    const reload = async () => { root.replaceChildren(); await certificates(root); };
+    const restart = button('Restart mail services', async () => {
+      if (!confirm('Restart the mail services now? Connected clients are disconnected and reconnect; queued mail waits until the services are back.')) return;
+      await request('/server/stop', 'POST', { expectedState: 3 });
+      await request('/server/start', 'POST', { expectedState: 1 });
+      notify('Mail services restarted. The listeners now use the saved certificates.');
+    }, 'btn btn-outline-primary btn-sm');
+    const names = new Map(state.items.map(item => [item.id, item.name]));
+
+    const list = card('Certificates');
+    list.body.append(el('p', 'Certificates the mail listeners can use. Keys are stored where only the mail service and administrators can read them, and are never shown here. Changes reach the listeners when the mail services restart.', 'help'), restart);
+    if (!state.items.length) list.body.append(el('p', 'No certificates yet. Issue one with ACME or import one below.', 'help'));
+    for (const item of state.items) {
+      const row = el('div', null, 'domain-row'), summary = el('div');
+      const expiry = item.readable ? `${item.daysRemaining} days left · until ${item.notAfter}` : 'The certificate file cannot be read';
+      summary.append(el('strong', item.name),
+        el('p', item.readable ? `${item.subject} · ${(item.dnsNames || []).join(', ') || 'no DNS names'} · ${item.keyType} · issued by ${item.issuer}` : '', 'help mb-0'),
+        el('p', expiry, `help mb-0${item.readable && item.daysRemaining < 21 ? ' text-danger' : ''}`));
+      const badges = el('div');
+      if (item.acme) badges.append(pill(item.acme.autoRenew ? 'ACME · renews automatically' : 'ACME · manual renewal'));
+      if (!item.managed) badges.append(pill('Legacy files', 'warning'));
+      if (item.listeners.length) badges.append(pill(`${item.listeners.length} listener${item.listeners.length > 1 ? 's' : ''}`));
+      if (item.acme && item.acme.lastError) summary.append(el('p', `Last renewal failed: ${item.acme.lastError}`, 'help mb-0 text-danger'));
+      summary.append(badges);
+      const actions = el('div', null, 'form-actions');
+      if (item.acme) {
+        actions.append(button('Renew now', async () => { await acmeJob(`/certificates/${item.id}/renew`, {}); await reload(); }));
+        actions.append(button(item.acme.autoRenew ? 'Turn off automatic renewal' : 'Turn on automatic renewal', async () => {
+          await request(`/certificates/${item.id}`, 'PATCH', { autoRenew: !item.acme.autoRenew }); notify('Renewal setting saved.'); await reload();
+        }));
+      }
+      actions.append(button('Replace…', () => importForm(item)));
+      if (item.previousAvailable) actions.append(button('Roll back', async () => {
+        if (!confirm(`Return ${item.name} to its previous certificate and key? Restart the mail services afterwards.`)) return;
+        await request(`/certificates/${item.id}/rollback`, 'POST'); notify('Rolled back. Restart the mail services to serve it.'); await reload();
+      }));
+      actions.append(button('Delete', async () => {
+        if (!confirm(`Delete ${item.name} and its key? This cannot be undone.`)) return;
+        await request(`/certificates/${item.id}`, 'DELETE'); notify('Certificate deleted.'); await reload();
+      }, 'btn btn-outline-danger btn-sm'));
+      row.append(summary, actions); list.body.append(row);
+    }
+
+    const editor = el('div', null, 'section-gap');
+    function importForm(target) {
+      const c = card(target ? `Replace ${target.name}` : 'Import a certificate');
+      c.body.append(el('p', 'Paste PEM text, or choose a PFX file. The private key must match the certificate, be RSA 2048 or larger or EC P-256 or larger, and not be encrypted in PEM form. A replaced certificate is kept for one rollback.', 'help'));
+      const grid = el('div', null, 'form-grid');
+      const name = textInput('', 255), mode = el('select', null, 'form-select');
+      for (const [value, text] of [['pem', 'PEM text'], ['pfx', 'PFX file']]) { const option = el('option', text); option.value = value; mode.append(option); }
+      const certificatePem = el('textarea', null, 'form-control'); certificatePem.rows = 6; certificatePem.maxLength = 40000; certificatePem.placeholder = '-----BEGIN CERTIFICATE-----';
+      const keyPem = el('textarea', null, 'form-control'); keyPem.rows = 6; keyPem.maxLength = 16000; keyPem.placeholder = '-----BEGIN PRIVATE KEY-----'; keyPem.autocomplete = 'off';
+      const file = el('input', null, 'form-control'); file.type = 'file'; file.accept = '.pfx,.p12';
+      const password = textInput('', 1024, 'password'); password.autocomplete = 'off';
+      if (!target) grid.append(labelled('certificateName', 'Name', name));
+      grid.append(labelled('certificateMode', 'Format', mode));
+      const pemFields = [labelled('certificatePem', 'Certificate and chain (PEM)', certificatePem), labelled('certificateKey', 'Private key (PEM)', keyPem)];
+      const pfxFields = [labelled('certificatePfx', 'PFX file', file), labelled('certificatePfxPassword', 'PFX password', password)];
+      grid.append(...pemFields, ...pfxFields);
+      const show = () => { pemFields.forEach(field => field.hidden = mode.value !== 'pem'); pfxFields.forEach(field => field.hidden = mode.value !== 'pfx'); };
+      mode.addEventListener('change', show); show();
+      c.body.append(grid, button(target ? 'Replace certificate' : 'Import certificate', async () => {
+        let bytes;
+        try {
+          const body = target ? {} : { name: name.value.trim() };
+          if (mode.value === 'pem') { body.certificatePem = certificatePem.value; body.privateKeyPem = keyPem.value; }
+          else {
+            const selected = file.files[0];
+            if (!selected || selected.size > 524288) { notify('Select a PFX file no larger than 512 KiB.', true); return; }
+            bytes = new Uint8Array(await selected.arrayBuffer()); const chunks = [];
+            for (let start = 0; start < bytes.length; start += 32768) chunks.push(String.fromCharCode(...bytes.subarray(start, start + 32768)));
+            body.pfx = btoa(chunks.join('')); body.password = password.value;
+          }
+          const result = await request(target ? `/certificates/${target.id}/replace` : '/certificates', 'POST', body);
+          notify(result.restartRequired ? 'Certificate replaced. Restart the mail services to serve it.' : 'Certificate saved.');
+          await reload();
+        } finally { if (bytes) bytes.fill(0); keyPem.value = ''; password.value = ''; }
+      }, 'btn btn-primary btn-sm mt-3'));
+      editor.replaceChildren(c.outer);
+    }
+
+    // Issuance runs in the background; poll until it finishes.
+    async function acmeJob(path, body) {
+      let job = await request(path, 'POST', body);
+      notify('Requesting the certificate. This can take a minute while the certificate authority checks the host names.');
+      while (job.status === 'running') {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        if (!root.isConnected) return;
+        job = await request(`/certificates/acme/jobs/${job.id}`);
+      }
+      if (job.status === 'failed') throw new Error(job.message || 'The certificate could not be issued.');
+      notify(job.certificate && job.certificate.restartRequired ? 'Certificate issued. Restart the mail services to serve it.' : 'Certificate issued.');
+    }
+
+    const acmeCard = card('Automatic certificates (ACME)');
+    acmeCard.outer.classList.add('section-gap');
+    acmeCard.body.append(el('p', 'Get certificates from Let’s Encrypt or another ACME certificate authority. It checks each host name over HTTP on port 80, which this panel answers when its ACME port is set; the names must point at this server. Certificates renew automatically 30 days before they expire.', 'help'));
+    const presets = [['https://acme-v02.api.letsencrypt.org/directory', 'Let’s Encrypt'], ['https://acme-staging-v02.api.letsencrypt.org/directory', 'Let’s Encrypt staging (test certificates)']];
+    const directory = el('select', null, 'form-select');
+    for (const [value, text] of presets) { const option = el('option', text); option.value = value; directory.append(option); }
+    const custom = el('option', 'Other directory URL'); custom.value = 'custom'; directory.append(custom);
+    const known = presets.some(([value]) => value === acme.directoryUrl);
+    directory.value = acme.directoryUrl ? (known ? acme.directoryUrl : 'custom') : presets[0][0];
+    const customUrl = textInput(known ? '' : acme.directoryUrl, 500, 'url');
+    const contact = textInput(acme.contact, 254, 'email'), terms = checkInput(acme.termsAgreed);
+    const accountGrid = el('div', null, 'form-grid');
+    const customField = labelled('acmeCustomUrl', 'Directory URL', customUrl);
+    accountGrid.append(labelled('acmeDirectory', 'Certificate authority', directory), customField, labelled('acmeContact', 'Contact email (expiry notices)', contact),
+      labelled('acmeTerms', 'I agree to the certificate authority’s terms of service', terms));
+    const toggleCustom = () => { customField.hidden = directory.value !== 'custom'; };
+    directory.addEventListener('change', toggleCustom); toggleCustom();
+    acmeCard.body.append(accountGrid, el('p', acme.accountUrl ? 'An account is registered with this certificate authority.' : 'An account is registered on the first request.', 'help'),
+      button('Save ACME settings', async () => {
+        await request('/acme', 'PATCH', { directoryUrl: directory.value === 'custom' ? customUrl.value.trim() : directory.value, contact: contact.value.trim(), termsAgreed: terms.checked });
+        notify('ACME settings saved.'); await reload();
+      }, 'btn btn-outline-primary btn-sm'));
+    const issueGrid = el('div', null, 'form-grid section-gap');
+    const issueName = textInput('', 255), hosts = el('textarea', null, 'form-control'), renew = checkInput(true);
+    hosts.rows = 2; hosts.maxLength = 2600; hosts.placeholder = 'mail.example.com';
+    issueGrid.append(labelled('acmeName', 'Name for the new certificate', issueName), labelled('acmeHosts', 'Host names (one per line, up to 10)', hosts), labelled('acmeAutoRenew', 'Renew automatically', renew));
+    acmeCard.body.append(issueGrid, button('Request certificate', async () => {
+      const hostnames = hosts.value.split(/[,\s]+/).map(value => value.trim().toLowerCase()).filter(Boolean);
+      await acmeJob('/certificates/acme', { name: issueName.value.trim(), hostnames, autoRenew: renew.checked }); await reload();
+    }, 'btn btn-primary btn-sm mt-3'));
+
+    const listeners = card('Mail listeners');
+    listeners.outer.classList.add('section-gap');
+    listeners.body.append(el('p', 'Choose how each listener uses TLS and which certificate it serves. Changes apply when the mail services restart. Check serves the certificate a client actually receives now.', 'help'));
+    const securities = [[0, 'No TLS'], [1, 'Implicit TLS'], [2, 'STARTTLS optional'], [3, 'STARTTLS required']];
+    const certificateSelect = selected => {
+      const select = el('select', null, 'form-select'); const none = el('option', 'None'); none.value = ''; select.append(none);
+      for (const item of state.items) { const option = el('option', item.name); option.value = item.id; select.append(option); }
+      select.value = selected || ''; return select;
+    };
+    const securitySelect = selected => {
+      const select = el('select', null, 'form-select');
+      for (const [value, text] of securities) { const option = el('option', text); option.value = String(value); select.append(option); }
+      select.value = String(selected); return select;
+    };
+    for (const listener of state.listeners) {
+      const row = el('div', null, 'domain-row'), summary = el('div');
+      summary.append(el('strong', `${listener.protocol} · ${listener.address}:${listener.port}`),
+        el('p', listener.certificateId ? `Certificate: ${names.get(listener.certificateId) || listener.certificateId}` : 'No certificate', 'help mb-0'));
+      const security = securitySelect(listener.securityCode), certificate = certificateSelect(listener.certificateId), report = el('p', '', 'help mb-0');
+      const grid = el('div', null, 'form-grid');
+      grid.append(labelled(`listenerSecurity${listener.id}`, 'TLS', security), labelled(`listenerCertificate${listener.id}`, 'Certificate', certificate));
+      const actions = el('div', null, 'form-actions');
+      actions.append(button('Save listener', async () => {
+        if (!confirm(`Change ${listener.protocol} on port ${listener.port}? Clients may need new settings; it applies after a restart.`)) return;
+        await request(`/listeners/${listener.id}`, 'PATCH', { securityCode: Number(security.value), certificateId: certificate.value || null });
+        notify('Listener saved. Restart the mail services to apply it.'); await reload();
+      }), button('Check served certificate', async () => {
+        const probe = await request(`/listeners/${listener.id}/probe`, 'POST');
+        report.textContent = `Serving ${probe.subject} (${probe.protocol}), until ${probe.notAfter}. ${probe.matchesConfigured ? 'This is the configured certificate.' : 'This is not the configured certificate: restart the mail services.'}`;
+      }), button('Delete listener', async () => {
+        if (!confirm(`Delete the ${listener.protocol} listener on port ${listener.port}? Clients using it stop connecting after a restart.`)) return;
+        await request(`/listeners/${listener.id}`, 'DELETE'); notify('Listener deleted. Restart the mail services to apply it.'); await reload();
+      }, 'btn btn-outline-danger btn-sm'));
+      summary.append(grid, actions, report); row.append(summary); listeners.body.append(row);
+    }
+    const addGrid = el('div', null, 'form-grid section-gap');
+    const protocol = el('select', null, 'form-select');
+    for (const [value, text] of [[1, 'SMTP'], [5, 'IMAP'], [3, 'POP3']]) { const option = el('option', text); option.value = String(value); protocol.append(option); }
+    const address = textInput('0.0.0.0', 64), port = textInput('', 5, 'number'), addSecurity = securitySelect(1), addCertificate = certificateSelect('');
+    addGrid.append(labelled('listenerProtocol', 'Protocol', protocol), labelled('listenerAddress', 'Address', address), labelled('listenerPort', 'Port', port),
+      labelled('listenerSecurityNew', 'TLS', addSecurity), labelled('listenerCertificateNew', 'Certificate', addCertificate));
+    listeners.body.append(addGrid, button('Add listener', async () => {
+      await request('/listeners', 'POST', { protocolCode: Number(protocol.value), address: address.value.trim(), port: Number(port.value), securityCode: Number(addSecurity.value), certificateId: addCertificate.value || null });
+      notify('Listener added. Restart the mail services to start it.'); await reload();
+    }, 'btn btn-outline-primary btn-sm mt-3'));
+
+    const importCard = el('div', null, 'section-gap');
+    importCard.append(button('Import a certificate…', () => importForm(null)));
+    root.append(list.outer, importCard, editor, acmeCard.outer, listeners.outer);
+  }
   async function maintenance(root) {
     const status = await request('/backup');
     const backup = card('Backups');
@@ -1431,7 +1609,7 @@
     $('content').setAttribute('aria-busy', 'true'); $('content').replaceChildren(el('p', 'Loading…', 'help'));
     const container = el('div');
     try {
-      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules, settings, policies, self, transport, server, messages, sendout, logs, folders, maintenance })[page](container);
+      await ({ overview, domains, antispam, dnsbl, diagnostics, queue, routes, rules, settings, policies, self, transport, server, messages, sendout, logs, folders, maintenance, certificates })[page](container);
       if (run === generation) $('content').replaceChildren(container);
     } catch (error) { if (run === generation) { $('content').replaceChildren(); notify(error.message, true); } }
     finally { if (run === generation) $('content').setAttribute('aria-busy', 'false'); }

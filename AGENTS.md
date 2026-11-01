@@ -72,7 +72,7 @@ defines current runtime, real REST/native/HTTPS, published-browser and per-backe
 unimplemented acceptance work. Keep every newly exposed control covered at native, REST and
 browser boundaries. Do not count mocks, manual checks or future scanner capacity as live CI proof.
 
-Current plan/status handoff: [2026-10-31](docs/agents/handoffs/2026-10-31.md). Phase 1b's
+Current plan/status handoff: [2026-11-01](docs/agents/handoffs/2026-11-01.md). Phase 1b's
 native/.NET API foundation is merged in #31; complete PHP retirement, guided certificate
 management and optional high-pressure Defender scanning remain delivery requirements, not
 completed functionality. Read the [Phase 1b tracker](ROADMAP.md#phase-1b-delivery-tracker)
@@ -94,8 +94,8 @@ PR #43 merged the approved 6.0 scope at `92ac28d`. The current authorization is 
 all remaining Phase 1b, submitted as one checkpoint PR per coherent bundle (maintainer decision,
 2026-10-30; see the working agreement); follow the latest handoff for implementation/evidence status. No Phase 2 start or automatic merge is authorized.
 Checkpoints #45-#49 are merged (#48, bundle 3a, as `79df40565`; #49, bundle 3b, the native
-Bayesian spam filter with schema 5715, off until an administrator enables it). Bundle 4
-(certificates with built-in ACME, production hosting) is next, after the maintainer confirms.
+Bayesian spam filter with schema 5715, as `df10bc451`). Bundle 4 (listener certificates,
+built-in ACME, the panel installed as the ArzoieMailAdmin service) is PR #50, awaiting review.
 
 ---
 

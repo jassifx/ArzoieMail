@@ -8,7 +8,7 @@ using ArzoieMail.Management;
 using Microsoft.Extensions.DependencyInjection;
 
 int assertions = 0;
-string[] modes = ["--runtime", "--certificate-inspection", "--prepare-certificate-browser", "--ranges-live", "--self-live", "--policies-live", "--settings-live", "--live-http", "--tls", "--tls-native", "--browser-host", "--squatting", "--live"];
+string[] modes = ["--runtime", "--certificate-inspection", "--prepare-certificate-browser", "--ranges-live", "--self-live", "--policies-live", "--settings-live", "--live-http", "--tls", "--tls-native", "--browser-host", "--squatting", "--live", "--acme-live"];
 if (args.Length > 1 || args.Any(argument => !modes.Contains(argument)))
     throw new ArgumentException("Select exactly one supported management-test mode, or omit it for deterministic HTTP/DNS tests.");
 void Check(bool condition, string message)
@@ -77,6 +77,13 @@ if (args.Contains("--self-live"))
     string password = Environment.GetEnvironmentVariable("ARZOIEMAIL_TEST_PASSWORD") ?? throw new Exception("Set test password.");
     await MailboxSelfServiceTests.Run(new ManagementChannel(), username, password, Check);
     Console.WriteLine($"Passed {assertions} live mailbox self-service assertions.");
+    return;
+}
+
+if (args.Contains("--acme-live"))
+{
+    await AcmeLiveTests.Run(Check);
+    Console.WriteLine($"Passed {assertions} live ACME (Pebble) assertions.");
     return;
 }
 
@@ -185,6 +192,7 @@ if (args.Contains("--live"))
     await FetchFoldersMaintenanceTests.Run(native, name, password, Check);
     await SpamDkimTests.Run(native, name, password, Check);
     await BayesTests.Run(native, name, password, Check);
+    await CertificateTests.Run(native, name, password, Check);
     var settings = await native.SendAsync("antispam.read", name, password, null, CancellationToken.None);
     // Real native persistence/authorization coverage runs on every CI database backend.
     async Task<JsonElement> Command(string op, object data, string? actor = null, string? secret = null) =>
@@ -600,5 +608,13 @@ sealed class FakeChannel : IManagementChannel
         if (operation == "authenticate") return Task.FromResult(JsonSerializer.SerializeToElement(new { address = username, level = Level, domainId = 5, accountId = 7, securityStamp = SecurityStamp }));
         if (operation != "domains.list" && !operation.StartsWith("self.", StringComparison.Ordinal) && Level != 2) throw new ManagementError(403, "Access denied.");
         return Task.FromResult(JsonSerializer.SerializeToElement(new { ok = true }));
+    }
+    public int AutomationCalls { get; private set; }
+    public Task<JsonElement> SendAutomationAsync(string operation, object? arguments, CancellationToken cancellationToken)
+    {
+        ++AutomationCalls; LastOperation = operation;
+        LastArguments = JsonSerializer.SerializeToElement(arguments ?? new { });
+        if (Unavailable) throw new IOException("Simulated unavailable native service.");
+        return Task.FromResult(JsonSerializer.SerializeToElement(new { items = Array.Empty<object>() }));
     }
 }

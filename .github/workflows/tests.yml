@@ -276,11 +276,65 @@ jobs:
           # All executable checks stay on this disposable CI VM.
           & build/test-management.ps1 -Runtime -NoBuild
           & build/test-management.ps1 -Tls -NoBuild
-          & build/test-management.ps1 -PipeIdentity -NoBuild
+          # The impostor needs the pipe name free; setup's panel makes the mail service own it.
+          Stop-Service hMailServer
+          (Get-Service hMailServer).WaitForStatus('Stopped', [TimeSpan]::FromSeconds(60))
+          try { & build/test-management.ps1 -PipeIdentity -NoBuild }
+          finally { Start-Service hMailServer; (Get-Service hMailServer).WaitForStatus('Running', [TimeSpan]::FromSeconds(60)) }
           & build/test-management.ps1 -NoBuild
           python -m pip install --disable-pip-version-check -r hmailserver/test/RegressionTests/Management/requirements-browser.txt
           if ($LASTEXITCODE -ne 0) { throw "Browser dependencies failed to install." }
           & build/test-management-browser.ps1
+
+      - name: Test the installed web administration panel
+        run: |
+          # The built-in Administrator may have a blank password here, which the panel does not
+          # accept, so the test signs in as a temporary server-administrator mailbox.
+          $application = New-Object -ComObject 'hMailServer.Application'
+          $source = Get-Content hmailserver/test/RegressionTests/Shared/TestSetup.cs -Raw
+          $password = [regex]::Match($source, 'Authenticate\("Administrator", "([^"]+)"\)').Groups[1].Value
+          if ($null -eq $application.Authenticate('Administrator', $password)) {
+              if ($null -eq $application.Authenticate('Administrator', '')) { throw 'Cannot authenticate test setup.' }
+          }
+          $domainName = 'installed-panel-' + [Guid]::NewGuid().ToString('N') + '.test'
+          $secret = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(24))
+          $domain = $application.Domains.Add()
+          $domain.Name = $domainName; $domain.Active = $true; $domain.Save()
+          try {
+              $account = $domain.Accounts.Add()
+              $account.Address = "admin@$domainName"; $account.Password = $secret; $account.Active = $true; $account.AdminLevel = 2; $account.Save()
+              $credential = [pscredential]::new("admin@$domainName", (ConvertTo-SecureString $secret -AsPlainText -Force))
+              & build/test-installed-webadmin.ps1 -AdministratorCredential $credential
+          } finally {
+              # Setting the panel up again restarts the mail service, so connect afresh to clean up.
+              [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($application)
+              $application = New-Object -ComObject 'hMailServer.Application'
+              if ($null -eq $application.Authenticate('Administrator', $password)) { [void]$application.Authenticate('Administrator', '') }
+              $fixture = $application.Domains.ItemByName($domainName)
+              if ($null -ne $fixture) { $fixture.Delete() }
+              [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($application)
+          }
+
+      - name: Fetch the Pebble ACME test server
+        run: |
+          # Let's Encrypt's test ACME server and its DNS test server, pinned by version and digest.
+          $directory = Join-Path $env:RUNNER_TEMP 'pebble'
+          New-Item -ItemType Directory -Force $directory | Out-Null
+          $assets = @(
+              @{ Name = 'pebble-windows-amd64.zip'; Sha256 = '2539f3903302d75f897522b23b1b52b3300f5f992245f13d3bdf3967cf23af6d' },
+              @{ Name = 'pebble-challtestsrv-windows-amd64.zip'; Sha256 = 'f4621c6ce1ac025c4f49a7316ec3d16779df8c5b09276a2544f5a5198a95e32a' }
+          )
+          foreach ($asset in $assets) {
+              $zip = Join-Path $directory $asset.Name
+              Invoke-WebRequest -Uri "https://github.com/letsencrypt/pebble/releases/download/v2.10.1/$($asset.Name)" -OutFile $zip
+              if ((Get-FileHash -Algorithm SHA256 $zip).Hash -ne $asset.Sha256) { throw "Unexpected digest for $($asset.Name)." }
+              Expand-Archive -Path $zip -DestinationPath $directory -Force
+          }
+          $pebble = Get-ChildItem $directory -Recurse -Filter 'pebble.exe' | Select-Object -First 1
+          $challenges = Get-ChildItem $directory -Recurse -Filter 'pebble-challtestsrv.exe' | Select-Object -First 1
+          if (-not $pebble -or -not $challenges) { throw 'The Pebble executables were not found.' }
+          "ARZOIEMAIL_TEST_PEBBLE=$($pebble.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "ARZOIEMAIL_TEST_PEBBLE_CHALLTESTSRV=$($challenges.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Test live native, REST and published web administration
         run: |

@@ -45,7 +45,15 @@ Source: "..\source\tools\shared\bin\x64\Release\Shared.dll.config"; DestDir: "{a
 
 ; The .NET Desktop Runtime the tools need, extracted only when it is not installed yet and
 ; run by InstallDotNetDesktopRuntime() before any of the tools is started.
-Source: "{#DOTNET_DESKTOP_RUNTIME_PATH}"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsDotNetDesktopRuntime; Components: server admintools;
+Source: "{#DOTNET_DESKTOP_RUNTIME_PATH}"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsDotNetDesktopRuntime; Components: server admintools webadmin;
+
+; The web administration panel: the published ASP.NET Core application, its setup scripts, and
+; the ASP.NET Core Runtime when it is missing. SetUpWebAdmin() runs Install-WebAdmin.ps1, which
+; writes appsettings.Production.json on a first installation; upgrades keep it.
+Source: "..\source\Management\Api\bin\publish\*"; Excludes: "*.pdb,appsettings.Development.json"; DestDir: "{app}\WebAdmin"; Flags: ignoreversion recursesubdirs; Components: webadmin;
+Source: "WebAdmin\Install-WebAdmin.ps1"; DestDir: "{app}\WebAdmin\Setup"; Flags: ignoreversion; Components: webadmin;
+Source: "WebAdmin\Uninstall-WebAdmin.ps1"; DestDir: "{app}\WebAdmin\Setup"; Flags: ignoreversion; Components: webadmin;
+Source: "{#ASPNETCORE_RUNTIME_PATH}"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: NeedsAspNetCoreRuntime; Components: webadmin;
 
 ; Data directory synchronizer
 ; Its build output already holds Interop.hMailServer.dll and Shared.dll.

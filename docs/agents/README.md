@@ -6,14 +6,14 @@ traps found along the way, and where the last session left off.
 
 ## Read in this order
 
-Current handoff: [2026-10-31](handoffs/2026-10-31.md). PR #43 is merged at `92ac28d`;
+Current handoff: [2026-11-01](handoffs/2026-11-01.md). PR #43 is merged at `92ac28d`;
 its final head `7a143ca` passed all CI. The maintainer authorized **all remaining Phase 1b**;
 since 2026-10-30 it is submitted as one **checkpoint PR per bundle**, none claiming Phase 1b
 completion (working agreement). Checkpoint 1 (`feature/phase1b-completion`) merged as #45;
 checkpoint 2, bundle 1 server and protocol operations, merged as #46. Checkpoint 3, bundle 2
 (A07, A10, A15), merged as #47. Checkpoint 4, bundle 3a (A11, A12, E01, E02 integration), merged
-as #48 (`79df40565`). Checkpoint 5, bundle 3b (the native Bayesian filter, schema 5715), merged as #49. Bundle 4
-(certificates with built-in ACME, production hosting) is next, after the maintainer confirms. The 2026-10-30 delivery decisions
+as #48 (`79df40565`). Checkpoint 5, bundle 3b (the native Bayesian filter, schema 5715), merged as #49 (`df10bc451`). Checkpoint 6, bundle 4 (listener certificates,
+built-in ACME, the installed panel), is PR #50 (`feature/phase1b-certificates`), green and awaiting review. The 2026-10-30 delivery decisions
 for bundles 3-6 are in the 6.0 scope; stop for review after each bundle's PR. Earlier history: server settings and three filtering/relay collections passed initial
 Compact VM validation. Password-policy, IP-range and logging revisions subsequently passed
 full VM/browser checks (latest 736 native assertions). A same-password-reset session regression

@@ -18,6 +18,11 @@ public static partial class ManagementHost
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.Logging.ClearProviders().AddSimpleConsole();
+        // Installed, the panel runs as the ArzoieMailAdmin service under its own virtual account;
+        // setup registers the event source it logs to. Elsewhere this changes nothing.
+        builder.Host.UseWindowsService(options => options.ServiceName = "ArzoieMailAdmin");
+        if (OperatingSystem.IsWindows() && Microsoft.Extensions.Hosting.WindowsServices.WindowsServiceHelpers.IsWindowsService())
+            AddServiceLog(builder.Logging);
         if (!builder.Environment.IsDevelopment()
             && (string.IsNullOrWhiteSpace(builder.Configuration["AllowedHosts"]) || builder.Configuration["AllowedHosts"]!.Contains('*')))
             throw new InvalidOperationException("Configure explicit AllowedHosts for the administration hostname.");
@@ -31,6 +36,16 @@ public static partial class ManagementHost
         builder.Services.AddSingleton<CredentialVault>();
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<ITxtResolver, WindowsTxtResolver>();
+        // ACME: the challenge answers, issuance jobs and renewal task, and the challenge listener.
+        builder.Services.Configure<AcmeOptions>(builder.Configuration.GetSection("Acme"));
+        builder.Services.AddSingleton<AcmeChallenges>();
+        builder.Services.AddSingleton<AcmeIssuer>();
+        builder.Services.AddSingleton<AcmeJobs>();
+        builder.Services.AddSingleton<AcmeRenewalService>();
+        builder.Services.AddHostedService(services => services.GetRequiredService<AcmeRenewalService>());
+        builder.Services.AddHostedService<AcmeChallengeServer>();
+        builder.Services.AddHttpClient(AcmeIssuer.HttpClientName, AcmeIssuer.ConfigureClient)
+            .ConfigurePrimaryHttpMessageHandler(services => AcmeIssuer.CreateHandler(services.GetRequiredService<Microsoft.Extensions.Options.IOptions<AcmeOptions>>().Value));
         builder.Services.ConfigureHttpJsonOptions(options =>
             options.SerializerOptions.UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow);
         // All web sessions deliberately end on restart. No reusable credentials or keys on disk.
@@ -199,6 +214,7 @@ public static partial class ManagementHost
         api.MapGet("/transport/listeners", (HttpContext c, CredentialVault v, IManagementChannel p) => TransportInventory(c, v, p, "transport.listeners.list"));
         api.MapGet("/transport/certificates", (HttpContext c, CredentialVault v, IManagementChannel p) => TransportInventory(c, v, p, "transport.certificates.list"));
         api.MapPost("/transport/certificates/inspect", CertificateInspectionEndpoint.Handle).RequireRateLimiting("certificate-inspection");
+        CertificateEndpoints.Map(api);
         api.MapPost("/policies/securityranges/match", (HttpContext c, CredentialVault v, IManagementChannel p) => Forward(c, v, p, "securityranges.match", true));
         foreach (string resource in new[] { "surbl", "blockedattachments", "incomingrelays", "securityranges", "spamallowlist", "greylistexceptions" })
         {
@@ -438,6 +454,9 @@ public static partial class ManagementHost
         if (context.User.FindFirstValue("level") != "2") throw new ManagementError(403, "Server administration is required.");
         return Objects(context, vault, channel, operation, readBody, id, groupId: groupId, folderId: folderId);
     }
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private static void AddServiceLog(ILoggingBuilder logging) =>
+        logging.AddEventLog(settings => settings.SourceName = "ArzoieMail Administration");
     private static Task<IResult> ServerOnly(HttpContext context, CredentialVault vault, IManagementChannel channel,
         string operation, bool readBody = false, long? id = null)
     {

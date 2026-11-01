@@ -15,6 +15,13 @@ settings = {"SpamAssassinEnabled": True, "SpamAssassinHost": "127.0.0.1", "SpamA
 bayes_state = {"enabled": True, "spamMessages": 250, "hamMessages": 310, "tokens": 48211, "minimumMessages": 200, "ready": True,
                "pending": 0, "training": False, "trained": 12, "failed": 0, "dropped": 0}
 bayes_requests = []
+certificate_items = [{'id': '1', 'name': 'Fixture mail certificate', 'readable': True, 'subject': 'mail.example.com', 'issuer': 'Fixture CA',
+                      'dnsNames': ['mail.example.com'], 'notBefore': '2026-10-01T00:00:00Z', 'notAfter': '2027-01-01T00:00:00Z', 'daysRemaining': 61,
+                      'fingerprintSha256': 'AB' * 32, 'keyType': 'EC 256', 'selfSigned': False, 'managed': True, 'listeners': [], 'previousAvailable': True,
+                      'acme': {'hostnames': ['mail.example.com'], 'autoRenew': True, 'lastAttempt': '', 'lastError': ''}}]
+certificate_listeners = [{'id': '10', 'protocol': 'SMTP', 'protocolCode': 1, 'address': '0.0.0.0', 'port': 25, 'securityCode': 0, 'certificateId': None}]
+acme_state = {'directoryUrl': '', 'contact': '', 'termsAgreed': False, 'accountUrl': '', 'jwk': {'kty': 'EC', 'crv': 'P-256', 'x': 'x', 'y': 'y'}}
+certificate_requests = []
 requests = []
 domains = [{"id": 5, "name": "example.com", "active": True, "dkimEnabled": True, "selector": "arzoie", "maxSizeMB": 0, "maxAccountSizeMB": 0, "maxMessageSizeKB": 0}]
 mailboxes = []
@@ -222,6 +229,33 @@ def api(route):
             data = {'items': folder_permissions, 'rights': ['lookup', 'read', 'writeSeen', 'writeOthers', 'insert', 'post', 'create', 'deleteMailbox', 'writeDeleted', 'expunge', 'administer']}
         else:
             data = {'deleted': True}
+    elif path == '/certificates' or path.startswith('/certificates/') or path == '/acme' or path.startswith('/listeners'):
+        certificate_requests.append((request.method, path, body))
+        if path == '/certificates' and request.method == 'GET':
+            data = {'items': certificate_items, 'listeners': certificate_listeners}
+        elif path == '/certificates':
+            if 'BEGIN PRIVATE KEY' not in body.get('privateKeyPem', ''):
+                route.fulfill(status=422, json={'error': {'message': 'The certificate was refused.'}})
+                return
+            data = {**certificate_items[0], 'id': '2', 'name': body['name'], 'acme': None, 'previousAvailable': False}
+            certificate_items.append(data)
+        elif path == '/certificates/acme':
+            data = {'id': 'a' * 32, 'status': 'running'}
+        elif path.startswith('/certificates/acme/jobs/'):
+            data = {'id': 'a' * 32, 'status': 'succeeded', 'message': '', 'certificate': {**certificate_items[0], 'restartRequired': False}}
+        elif path == '/acme':
+            if request.method == 'PATCH':
+                acme_state.update(body)
+            data = acme_state
+        elif path.endswith('/probe'):
+            data = {'listenerId': '10', 'protocol': 'Tls13', 'subject': 'mail.example.com', 'notAfter': '2027-01-01T00:00:00Z',
+                    'fingerprintSha256': 'AB' * 32, 'matchesConfigured': True}
+        elif path.startswith('/listeners/'):
+            if request.method == 'PATCH':
+                certificate_listeners[0].update(body)
+            data = {**certificate_listeners[0], 'restartRequired': True}
+        else:
+            data = {**certificate_items[0], 'restartRequired': False}
     elif path == '/backup':
         data = backup_state
     elif path == '/backup/start':
@@ -862,6 +896,52 @@ with sync_playwright() as p:
     page.set_viewport_size({'width': 390, 'height': 844})
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Maintenance overflows on mobile.'
     page.set_viewport_size({'width': 1440, 'height': 1000})
+    page.get_by_role('link', name='Certificates', exact=True).click()
+    page.get_by_text('Fixture mail certificate', exact=True).first.wait_for()
+    page.get_by_text('ACME · renews automatically', exact=True).wait_for()
+    page.get_by_role('button', name='Import a certificate…', exact=True).click()
+    page.get_by_label('Name', exact=True).fill('Imported fixture')
+    page.get_by_label('Certificate and chain (PEM)', exact=True).fill('-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----')
+    page.get_by_label('Private key (PEM)', exact=True).fill('-----BEGIN PRIVATE KEY-----\nBBBB\n-----END PRIVATE KEY-----')
+    page.get_by_role('button', name='Import certificate', exact=True).click()
+    page.get_by_text('Certificate saved.', exact=True).wait_for()
+    imported = [entry for entry in certificate_requests if entry[0] == 'POST' and entry[1] == '/certificates'][-1][2]
+    assert imported == {'name': 'Imported fixture', 'certificatePem': '-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----',
+                        'privateKeyPem': '-----BEGIN PRIVATE KEY-----\nBBBB\n-----END PRIVATE KEY-----'}, imported
+    page.get_by_text('Imported fixture', exact=True).first.wait_for()
+    page.get_by_label('I agree to the certificate authority\u2019s terms of service', exact=True).check()
+    page.get_by_label('Contact email (expiry notices)', exact=True).fill('admin@example.com')
+    page.get_by_role('button', name='Save ACME settings', exact=True).click()
+    page.get_by_text('ACME settings saved.', exact=True).wait_for()
+    assert acme_state['termsAgreed'] and acme_state['directoryUrl'] == 'https://acme-v02.api.letsencrypt.org/directory' and acme_state['contact'] == 'admin@example.com'
+    page.get_by_label('Name for the new certificate', exact=True).fill('Mail')
+    page.get_by_label('Host names (one per line, up to 10)', exact=True).fill('mail.example.com\nIMAP.example.com')
+    page.get_by_role('button', name='Request certificate', exact=True).click()
+    page.get_by_text('Certificate issued.', exact=True).wait_for()
+    issued = [entry for entry in certificate_requests if entry[1] == '/certificates/acme'][-1][2]
+    assert issued == {'name': 'Mail', 'hostnames': ['mail.example.com', 'imap.example.com'], 'autoRenew': True}, issued
+    content = page.locator('#content')
+    content.get_by_label('TLS', exact=True).first.select_option('2')
+    content.get_by_label('Certificate', exact=True).first.select_option('1')
+    before = len(certificate_requests)
+    page.once('dialog', lambda dialog: dialog.dismiss())
+    page.get_by_role('button', name='Save listener', exact=True).first.click()
+    assert len(certificate_requests) == before, 'Cancelling a listener change sends nothing.'
+    page.once('dialog', lambda dialog: dialog.accept())
+    page.get_by_role('button', name='Save listener', exact=True).first.click()
+    page.get_by_text('Listener saved. Restart the mail services to apply it.', exact=True).wait_for()
+    saved = [entry for entry in certificate_requests if entry[0] == 'PATCH' and entry[1] == '/listeners/10'][-1][2]
+    assert saved == {'securityCode': 2, 'certificateId': '1'}, saved
+    page.get_by_role('button', name='Check served certificate', exact=True).first.click()
+    page.get_by_text('This is the configured certificate.', exact=False).wait_for()
+    page.once('dialog', lambda dialog: dialog.accept())
+    with page.expect_response(lambda response: response.url.endswith('/server/start')):
+        page.get_by_role('button', name='Restart mail services', exact=True).click()
+    page.get_by_text('Mail services restarted. The listeners now use the saved certificates.', exact=True).wait_for()
+    page.set_viewport_size({'width': 390, 'height': 844})
+    assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Certificates overflow on mobile.'
+    page.screenshot(path=str(output / 'certificates-mobile.png'), full_page=True)
+    page.set_viewport_size({'width': 1440, 'height': 1000})
     page.get_by_role('link', name='Server settings', exact=True).click()
     page.get_by_label('Settings section', exact=True).select_option('antivirus')
     page.get_by_role('button', name='Test ClamAV', exact=True).click()
@@ -1091,7 +1171,7 @@ with sync_playwright() as p:
     mailboxes.append({"id": 12, "domainId": 5, "address": "server@example.com", "active": True, "maxSizeMB": 10, "level": 2})
     page.reload()
     page.get_by_role('button', name='Mailboxes', exact=True).wait_for()
-    for title in ['Delivery queue', 'Routing', 'Global rules', 'Server settings', 'Filtering and relay policies', 'Server status', 'Server messages', 'Administrator sendout', 'Logs', 'Groups and public folders', 'Backup and maintenance']:
+    for title in ['Delivery queue', 'Routing', 'Global rules', 'Server settings', 'Filtering and relay policies', 'Server status', 'Server messages', 'Administrator sendout', 'Logs', 'Groups and public folders', 'Backup and maintenance', 'Certificates']:
         assert not page.get_by_role('link', name=title).is_visible(), 'Server operations must be hidden from domain administrators.'
     assert page.get_by_role('button', name='New domain', exact=True).count() == 0
     assert page.get_by_role('button', name='Delete domain', exact=True).count() == 0

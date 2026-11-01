@@ -81,6 +81,12 @@
 #include "../Cache/Cache.h"
 #include "../SQL/IPAddressSQLHelper.h"
 #include "../AntiSpam/Bayes/BayesStore.h"
+#include "../BO/SSLCertificate.h"
+#include "../BO/SSLCertificates.h"
+#include "../BO/TCPIPPort.h"
+#include "../BO/TCPIPPorts.h"
+#include "../Persistence/PersistentSSLCertificate.h"
+#include "../Persistence/PersistentTCPIPPort.h"
 #include "../AntiSpam/Bayes/BayesTrainer.h"
 #include "../BO/Messages.h"
 #include "../../IMAP/IMAPFolderContainer.h"
@@ -97,6 +103,14 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+#include <openssl/core_names.h>
+#include <openssl/ecdsa.h>
+#include <openssl/bn.h>
+#include <fstream>
+#include <iterator>
+#include <algorithm>
 #include <sddl.h>
 #include <boost/json/src.hpp>
 
@@ -830,6 +844,7 @@ namespace HM
       #include "AntiVirus.inc"
       #include "Dkim.inc"
       #include "Bayes.inc"
+      #include "Certificates.inc"
       json::object DnsblView(DNSBlackList &item)
       {
          return {{"id", item.GetID()}, {"Active", item.GetIsActive()}, {"DNSHost", Utf8(item.GetDNSHost())},
@@ -920,6 +935,18 @@ namespace HM
       {
          const auto *version = request.if_contains("version");
          if (!version || !version->is_int64() || version->as_int64() != 1) throw RequestError{422};
+         // Certificate renewal runs in the API without a signed-in administrator. Only the
+         // configured API identity can open this pipe, and the scope allows nothing but renewing
+         // certificates an administrator set to renew automatically.
+         if (const auto *automation = request.if_contains("automation"))
+         {
+            if (!automation->is_string() || automation->as_string() != "certificate-renewal"
+                || request.if_contains("username") || request.if_contains("password")) throw RequestError{422};
+            const auto operation = Text(request, "operation", 64);
+            auto *argumentValue = request.if_contains("arguments");
+            if (!argumentValue || !argumentValue->is_object()) throw RequestError{422};
+            return ManageCertificateAutomation(operation, argumentValue->as_object());
+         }
          Text(request, "username", 320);
          const auto password = Text(request, "password", 1024);
          if (password.empty()) throw RequestError{401};
@@ -981,6 +1008,8 @@ namespace HM
          if (operation.rfind("backup.", 0) == 0 || operation.rfind("secretkey.", 0) == 0) return ManageMaintenance(operation, arguments);
          if (operation.rfind("antivirus.", 0) == 0) return ManageAntiVirus(operation, arguments);
          if (operation.rfind("bayes.", 0) == 0) return ManageBayes(operation, arguments);
+         if (operation.rfind("certificates.", 0) == 0 || operation.rfind("listeners.", 0) == 0 || operation.rfind("acme.", 0) == 0)
+            return ManageCertificates(operation, arguments);
          if (operation == "antispam.read") return SpamView(config);
          if (operation == "antispam.update") { UpdateSpam(config, arguments); return SpamView(config); }
          if (operation == "spamassassin.test")

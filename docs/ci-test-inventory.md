@@ -4,9 +4,73 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Bundle 4 checkpoint: listener certificates, ACME and the installed panel
+
+Branch `feature/phase1b-certificates` (E03, E07, A06; see the
+[ledger](phase-1b-status.md#bundle-4-checkpoint-listener-certificates-acme-and-the-installed-panel-2026-11-01)).
+Head `b662d7961` passed all four database jobs, Release x64, GCC/Clang and CI installer
+publication. Per backend:
+
+| Check | Compact, MySQL, PostgreSQL | SQL Server Express |
+|---|---|---|
+| NUnit regression | 1319 cases: 1209 passed, 0 failed, 34 inconclusive, 76 skipped | 1319 cases: 1210 passed, 0 failed, 34 inconclusive, 75 skipped |
+| Live native management | 1172 assertions (1114 before; +58 from `CertificateTests`) | same |
+| Live HTTP/native integration | 274 assertions (238 before; +36 REST checks) | same |
+| Live ACME against Pebble (`--acme-live`, new) | 54-56 assertions; the count follows how often the issuance job is polled | same |
+| Installed panel (`build/test-installed-webadmin.ps1`, new) | 25 checks | same |
+| Other management checks | unchanged from bundle 3b | same |
+| Browser | fixture suite (Certificates page included) and published live suite | same |
+
+The NUnit outcome is unchanged.
+
+Failures fixed on the way, in order:
+- the Certificates page returned before drawing because the panel attaches a page only after it is built (`7c0b2b8d8`), and a test locator matched the name in three places (`3b4c16b4f`);
+- the installed-panel check signed in as an Administrator with a blank password (`0c535d55f`);
+- three faults in the panel's setup script, found with added diagnostics (`81185f435`):
+  `EventLog.SourceExists` throwing on the Security log (`fb14d8674`), the `Cert:` drive missing
+  (`0dae99db3`), and Windows PowerShell inheriting PowerShell 7's module path from setup's
+  environment (`90a0fad9d`). Each stopped setup before the panel's settings were written, so
+  the service did not start. These were product bugs a silent install hid;
+- with the panel configured, the mail service owns the management pipe, so the pipe-squatting
+  test now runs with the mail service stopped (`41bf80df4`);
+- `Remove-Item -DeleteKey` needs the certificate's provider path (`c78118e86`), a product bug in
+  removal; the test's cleanup needed a fresh COM connection after the restart (`5be7fa5d1`);
+- Pebble's DNS server flag and host name (`e068d0820`);
+- the ACME client sent no User-Agent, which RFC 8555 requires and Let's Encrypt enforces
+  (`6397d460f`), a product bug;
+- *Renew now* did not reuse the recorded host names (`b662d7961`), a product bug.
+
+On the CI runners port 80 is in use, so setup left ACME HTTP-01 off there; the Pebble test runs
+the challenge listener on its own port.
+
+New coverage, per backend:
+
+- `CertificateTests` (live native): import refusals (mismatched, expired, CA, RSA 1024,
+  encrypted and malformed keys, path fields); a real implicit-TLS IMAP listener on a free port
+  serving the imported, replaced and rolled-back certificate after each restart; ACME orders
+  completed by a certificate authority in the test, checked against the service's key and host
+  names; renewal automation (due list, prepare, complete with restart, failure record) and the
+  automation scope's refusals; listener validation; the ACME account signature verified against
+  the published key.
+- `AcmeLiveTests` (`--acme-live`): Pebble v2.10.1 and its DNS test server, fetched and
+  digest-checked by the workflow; terms refusal, account registration, HTTP-01 through the API's
+  challenge port, issuance, unattended renewal of a 20-day certificate and *Renew now*.
+- `LiveRestTests`: PEM and PFX import, wrong PFX password, both formats at once, rename, unknown
+  fields, listing, probe refusal on a plaintext listener, ACME account read, role boundaries.
+- `browser.py`: the Certificates page, import, ACME settings and issuance, listener change with
+  a cancelled and an accepted confirmation, served-certificate check, restart, mobile layout.
+- `build/test-installed-webadmin.ps1`: the service installed by setup, its virtual account and
+  pipe identity, its own certificate and key access, HTTPS-only service, a sign-in through the
+  installed panel reaching the mail service, a challenge-only ACME port, and removal and
+  set-up again with setup's scripts.
+
+Not exercised: a public certificate authority, a full Inno Setup uninstall or upgrade from an
+earlier release (the scripts setup runs are exercised instead), and Windows versions other than
+the runner's.
+
 ## Bundle 3b checkpoint: native Bayesian spam filter
 
-Merged as #49 on 2026-10-31. Branch `feature/phase1b-bayes` (E02, A11 guidance; see the
+Merged as #49 (`df10bc451bd377214ddd9bcff804591cfb014ffd`) on 2026-11-01; the final head `fdab651e7` (documentation only after `d823a33b9`) passed all CI. Branch `feature/phase1b-bayes` (E02, A11 guidance; see the
 [ledger](phase-1b-status.md#bundle-3b-checkpoint-native-bayesian-spam-filter-2026-10-31)).
 Head `d823a33b9817dd7f827d07a461a3d070b98c7cae` passed all four database jobs, Release x64,
 GCC/Clang (with `BayesFilterTests` under the sanitizers) and CI installer publication. Per backend:
