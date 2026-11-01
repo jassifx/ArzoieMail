@@ -146,7 +146,8 @@ static class AcmeLiveTests
             {
                 using var response = await client.GetAsync("https://localhost:14000/dir");
                 if (response.IsSuccessStatusCode) return;
-                last = "HTTP " + (int)response.StatusCode;
+                string body = await response.Content.ReadAsStringAsync();
+                last = "HTTP " + (int)response.StatusCode + " from " + response.RequestMessage?.RequestUri + ": " + (body.Length > 400 ? body[..400] : body);
             }
             catch (HttpRequestException error) { last = error.Message + (error.InnerException is null ? "" : " / " + error.InnerException.Message); }
             await Task.Delay(500);
