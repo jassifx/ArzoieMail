@@ -20,7 +20,8 @@ certificate_items = [{'id': '1', 'name': 'Fixture mail certificate', 'readable':
                       'fingerprintSha256': 'AB' * 32, 'keyType': 'EC 256', 'selfSigned': False, 'managed': True, 'listeners': [], 'previousAvailable': True,
                       'acme': {'hostnames': ['mail.example.com'], 'autoRenew': True, 'lastAttempt': '', 'lastError': ''}}]
 certificate_listeners = [{'id': '10', 'protocol': 'SMTP', 'protocolCode': 1, 'address': '0.0.0.0', 'port': 25, 'securityCode': 0, 'certificateId': None}]
-acme_state = {'directoryUrl': '', 'contact': '', 'termsAgreed': False, 'accountUrl': '', 'jwk': {'kty': 'EC', 'crv': 'P-256', 'x': 'x', 'y': 'y'}}
+acme_state = {'directoryUrl': '', 'contact': '', 'termsAgreed': False, 'accountUrl': '', 'jwk': {'kty': 'EC', 'crv': 'P-256', 'x': 'x', 'y': 'y'},
+              'httpChallenge': {'port': 80, 'listening': False, 'message': 'Fixture: port 80 is in use.'}}
 certificate_requests = []
 requests = []
 domains = [{"id": 5, "name": "example.com", "active": True, "dkimEnabled": True, "selector": "arzoie", "maxSizeMB": 0, "maxAccountSizeMB": 0, "maxMessageSizeKB": 0}]
@@ -909,10 +910,14 @@ with sync_playwright() as p:
     assert imported == {'name': 'Imported fixture', 'certificatePem': '-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----',
                         'privateKeyPem': '-----BEGIN PRIVATE KEY-----\nBBBB\n-----END PRIVATE KEY-----'}, imported
     page.get_by_text('Imported fixture', exact=True).first.wait_for()
+    # Without a running challenge listener the page says why issuance cannot work.
+    page.get_by_text('Fixture: port 80 is in use.', exact=True).wait_for()
+    acme_state['httpChallenge'] = {'port': 80, 'listening': True, 'message': None}
     page.get_by_label('I agree to the certificate authority\u2019s terms of service', exact=True).check()
-    page.get_by_label('Contact email (expiry notices)', exact=True).fill('admin@example.com')
+    page.get_by_label('Contact email for the certificate authority', exact=True).fill('admin@example.com')
     page.get_by_role('button', name='Save ACME settings', exact=True).click()
     page.get_by_text('ACME settings saved.', exact=True).wait_for()
+    page.get_by_text('Fixture: port 80 is in use.', exact=True).wait_for(state='detached')
     assert acme_state['termsAgreed'] and acme_state['directoryUrl'] == 'https://acme-v02.api.letsencrypt.org/directory' and acme_state['contact'] == 'admin@example.com'
     page.get_by_label('Name for the new certificate', exact=True).fill('Mail')
     page.get_by_label('Host names (one per line, up to 10)', exact=True).fill('mail.example.com\nIMAP.example.com')

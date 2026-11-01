@@ -63,6 +63,8 @@ static class AcmeLiveTests
             using var admin = new LiveRestTests.BrowserSession(new Uri(app.Urls.Single()), check);
             await admin.Login(username, password);
             var before = await admin.Send("/acme", HttpMethod.Get);
+            check(before.GetProperty("httpChallenge").GetProperty("listening").GetBoolean() && before.GetProperty("httpChallenge").GetProperty("port").GetInt32() == ChallengePort,
+                "The ACME settings report the running challenge listener.");
             string? certificateId = null;
             try
             {

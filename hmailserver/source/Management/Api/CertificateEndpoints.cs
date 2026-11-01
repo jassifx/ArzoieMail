@@ -38,7 +38,15 @@ public static class CertificateEndpoints
         api.MapPost("/certificates/{id:long:min(1)}/rollback", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Native(c, v, p, "certificates.rollback", new { id }));
         api.MapDelete("/certificates/{id:long:min(1)}", (long id, HttpContext c, CredentialVault v, IManagementChannel p) => Native(c, v, p, "certificates.delete", new { id }));
 
-        api.MapGet("/acme", (HttpContext c, CredentialVault v, IManagementChannel p) => Native(c, v, p, "acme.account.read", null));
+        api.MapGet("/acme", async (HttpContext c, CredentialVault v, IManagementChannel p, AcmeChallenges challenges) =>
+        {
+            // The account, and whether this process can answer HTTP-01 challenges.
+            ServerAdministrator(c);
+            var (username, password) = Credentials(c, v);
+            var account = System.Text.Json.Nodes.JsonNode.Parse((await p.SendAsync("acme.account.read", username, password, null, c.RequestAborted)).GetRawText())!.AsObject();
+            account["httpChallenge"] = new System.Text.Json.Nodes.JsonObject { ["port"] = challenges.Port, ["listening"] = challenges.Listening, ["message"] = challenges.Unavailable };
+            return Results.Json(new { data = account });
+        });
         api.MapPatch("/acme", async (HttpContext c, CredentialVault v, IManagementChannel p) => await Native(c, v, p, "acme.account.update", new { fields = await Body(c) }));
         api.MapPost("/certificates/acme", async (HttpContext c, CredentialVault v, IManagementChannel p, AcmeJobs jobs) =>
         {

@@ -1355,7 +1355,9 @@
 
     const acmeCard = card('Automatic certificates (ACME)');
     acmeCard.outer.classList.add('section-gap');
-    acmeCard.body.append(el('p', 'Get certificates from Let’s Encrypt or another ACME certificate authority. It checks each host name over HTTP on port 80, which this panel answers when its ACME port is set; the names must point at this server. Certificates renew automatically 30 days before they expire.', 'help'));
+    acmeCard.body.append(el('p', 'Get certificates from Let’s Encrypt or another ACME certificate authority that does not require external account binding (ZeroSSL and Google Trust Services do, and are not supported yet). It checks each host name over HTTP on port 80, which this panel answers; the names must point at this server. Certificates renew automatically 30 days before they expire.', 'help'));
+    const challenge = acme.httpChallenge || {};
+    if (!challenge.listening) acmeCard.body.append(el('div', challenge.message || 'The ACME challenge listener is not running, so certificates cannot be issued or renewed.', 'alert alert-warning'));
     const presets = [['https://acme-v02.api.letsencrypt.org/directory', 'Let’s Encrypt'], ['https://acme-staging-v02.api.letsencrypt.org/directory', 'Let’s Encrypt staging (test certificates)']];
     const directory = el('select', null, 'form-select');
     for (const [value, text] of presets) { const option = el('option', text); option.value = value; directory.append(option); }
@@ -1366,11 +1368,12 @@
     const contact = textInput(acme.contact, 254, 'email'), terms = checkInput(acme.termsAgreed);
     const accountGrid = el('div', null, 'form-grid');
     const customField = labelled('acmeCustomUrl', 'Directory URL', customUrl);
-    accountGrid.append(labelled('acmeDirectory', 'Certificate authority', directory), customField, labelled('acmeContact', 'Contact email (expiry notices)', contact),
+    accountGrid.append(labelled('acmeDirectory', 'Certificate authority', directory), customField, labelled('acmeContact', 'Contact email for the certificate authority', contact),
       labelled('acmeTerms', 'I agree to the certificate authority’s terms of service', terms));
     const toggleCustom = () => { customField.hidden = directory.value !== 'custom'; };
     directory.addEventListener('change', toggleCustom); toggleCustom();
-    acmeCard.body.append(accountGrid, el('p', acme.accountUrl ? 'An account is registered with this certificate authority.' : 'An account is registered on the first request.', 'help'),
+    acmeCard.body.append(accountGrid, el('p', 'Let’s Encrypt no longer sends expiry emails. This page shows the days left and any failed renewal, and the server’s application log records each renewal.', 'help'),
+      el('p', acme.accountUrl ? 'An account is registered with this certificate authority.' : 'An account is registered on the first request.', 'help'),
       button('Save ACME settings', async () => {
         await request('/acme', 'PATCH', { directoryUrl: directory.value === 'custom' ? customUrl.value.trim() : directory.value, contact: contact.value.trim(), termsAgreed: terms.checked });
         notify('ACME settings saved.'); await reload();

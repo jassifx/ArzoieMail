@@ -25,10 +25,19 @@ public sealed class AcmeOptions
     public string? TrustedRootFile { get; set; }
 }
 
-// Key authorizations waiting for the ACME server to fetch, by token.
+// Key authorizations waiting for the ACME server to fetch, by token, and whether the challenge
+// listener is answering.
 public sealed class AcmeChallenges
 {
     private readonly ConcurrentDictionary<string, string> answers = new(StringComparer.Ordinal);
+    public int Port { get; private set; }
+    public bool Listening { get; private set; }
+    public void SetListener(int port, bool listening) { Port = port; Listening = listening; }
+
+    // Why HTTP-01 cannot be answered, or null when it can.
+    public string? Unavailable => Listening ? null : Port <= 0
+        ? "ACME checks each host name over HTTP on port 80, and the challenge listener is off. Set Acme:HttpPort in appsettings.Production.json and restart the ArzoieMailAdmin service."
+        : $"The ACME challenge listener could not start on port {Port} because another program is using it. Free the port and restart the ArzoieMailAdmin service.";
     public void Add(string token, string keyAuthorization) => answers[token] = keyAuthorization;
     public void Remove(string token) => answers.TryRemove(token, out _);
     public string? Find(string token) => answers.TryGetValue(token, out var answer) ? answer : null;
@@ -54,6 +63,7 @@ public sealed class AcmeIssuer(IHttpClientFactory clients, AcmeChallenges challe
     // native prepare operation (host names and name, or the certificate being renewed).
     public async Task<JsonElement> IssueAsync(AcmeNative native, object prepareArguments, CancellationToken token)
     {
+        if (challenges.Unavailable is string unavailable) throw new AcmeException(unavailable);
         var account = await native.Call("acme.account.read", null, token);
         string directoryUrl = account.GetProperty("directoryUrl").GetString() ?? "";
         if (directoryUrl.Length == 0) throw new AcmeException("Choose an ACME certificate authority first.");
@@ -74,17 +84,23 @@ public sealed class AcmeIssuer(IHttpClientFactory clients, AcmeChallenges challe
         }
         session.AccountUrl = accountUrl;
 
-        var prepared = await native.Call(native.Automation ? "acme.renewals.prepare" : "certificates.acme.prepare", prepareArguments, token);
+        JsonElement prepared;
+        try { prepared = await native.Call(native.Automation ? "acme.renewals.prepare" : "certificates.acme.prepare", prepareArguments, token); }
+        catch (ManagementError error) when (error.Status == 409)
+        {
+            throw new AcmeException("This certificate is already being renewed. Try again in a few minutes.");
+        }
         string pendingId = prepared.GetProperty("pendingId").GetString()!;
-        var hostnames = prepared.GetProperty("hostnames").EnumerateArray().Select(item => item.GetString()!).ToArray();
-        var order = new JsonObject { ["identifiers"] = new JsonArray(hostnames.Select(host => (JsonNode)new JsonObject { ["type"] = "dns", ["value"] = host }).ToArray()) };
-        using var orderResponse = await session.PostAsync(session.Endpoint("newOrder"), order, token);
-        string orderUrl = orderResponse.Headers.Location?.ToString() ?? throw new AcmeException("The certificate authority did not return an order URL.");
-        var orderBody = await ReadJsonAsync(orderResponse, token);
-
+        bool installed = false;
         var tokens = new List<string>();
         try
         {
+            var hostnames = prepared.GetProperty("hostnames").EnumerateArray().Select(item => item.GetString()!).ToArray();
+            var order = new JsonObject { ["identifiers"] = new JsonArray(hostnames.Select(host => (JsonNode)new JsonObject { ["type"] = "dns", ["value"] = host }).ToArray()) };
+            using var orderResponse = await session.PostAsync(session.Endpoint("newOrder"), order, token);
+            string orderUrl = orderResponse.Headers.Location?.ToString() ?? throw new AcmeException("The certificate authority did not return an order URL.");
+            var orderBody = await ReadJsonAsync(orderResponse, token);
+
             foreach (var authorization in orderBody.GetProperty("authorizations").EnumerateArray())
                 await AuthorizeAsync(session, authorization.GetString()!, tokens, token);
             using (await session.PostAsync(orderBody.GetProperty("finalize").GetString()!, new JsonObject { ["csr"] = prepared.GetProperty("csr").GetString() }, token)) { }
@@ -92,11 +108,28 @@ public sealed class AcmeIssuer(IHttpClientFactory clients, AcmeChallenges challe
             string certificateUrl = finished.GetProperty("certificate").GetString() ?? throw new AcmeException("The order has no certificate.");
             using var download = await session.PostAsync(certificateUrl, null, token, accept: "application/pem-certificate-chain");
             string chain = await download.Content.ReadAsStringAsync(token);
-            var installed = await native.Call(native.Automation ? "acme.renewals.complete" : "certificates.acme.complete", new { pendingId, certificatePem = chain }, token);
+            var certificate = await native.Call(native.Automation ? "acme.renewals.complete" : "certificates.acme.complete", new { pendingId, certificatePem = chain }, token);
+            installed = true;
             log.LogInformation("ACME certificate issued for {Count} host name(s).", hostnames.Length);
-            return installed;
+            return certificate;
         }
-        finally { foreach (string item in tokens) challenges.Remove(item); }
+        finally
+        {
+            foreach (string item in tokens) challenges.Remove(item);
+            if (!installed) await DiscardAsync(native, pendingId);
+        }
+    }
+
+    // Lets the certificate be ordered again at once after a failure. A completion the service
+    // refused has already dropped the order, so a missing one is expected.
+    private static async Task DiscardAsync(AcmeNative native, string pendingId)
+    {
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await native.Call(native.Automation ? "acme.renewals.discard" : "certificates.acme.discard", new { pendingId }, timeout.Token);
+        }
+        catch (Exception) { }
     }
 
     private async Task AuthorizeAsync(Session session, string url, List<string> tokens, CancellationToken token)
@@ -249,7 +282,7 @@ public sealed class AcmeIssuer(IHttpClientFactory clients, AcmeChallenges challe
 
 // Interactive issuance runs in the background and is polled, because ACME validation can take
 // longer than a request should. One job runs at a time.
-public sealed class AcmeJobs(AcmeIssuer issuer, ILogger<AcmeJobs> log)
+public sealed class AcmeJobs(AcmeIssuer issuer, AcmeChallenges challenges, ILogger<AcmeJobs> log)
 {
     public sealed class Job
     {
@@ -263,6 +296,7 @@ public sealed class AcmeJobs(AcmeIssuer issuer, ILogger<AcmeJobs> log)
 
     public Job Start(AcmeNative native, object prepareArguments)
     {
+        if (challenges.Unavailable is string unavailable) throw new ManagementError(409, unavailable);
         if (Interlocked.CompareExchange(ref running, 1, 0) != 0) throw new ManagementError(409, "A certificate is already being issued. Wait for it to finish.");
         foreach (var old in jobs.Values.Where(job => job.Status != "running").ToArray()) jobs.TryRemove(old.Id, out _);
         var job = new Job { Id = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant() };
@@ -338,6 +372,7 @@ public sealed class AcmeRenewalService(IManagementChannel channel, AcmeIssuer is
 
 // The port-80 listener for HTTP-01. It answers /.well-known/acme-challenge/{token} for pending
 // challenges and nothing else, so the administration panel is never served over plain HTTP.
+// When the port is taken the panel still starts; issuance then says why it cannot run.
 public sealed class AcmeChallengeServer(AcmeChallenges challenges, Microsoft.Extensions.Options.IOptions<AcmeOptions> options,
     ILogger<AcmeChallengeServer> log) : IHostedService, IAsyncDisposable
 {
@@ -346,6 +381,7 @@ public sealed class AcmeChallengeServer(AcmeChallenges challenges, Microsoft.Ext
     public async Task StartAsync(CancellationToken token)
     {
         int port = options.Value.HttpPort;
+        challenges.SetListener(port, false);
         if (port <= 0) return;
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.ClearProviders();
@@ -359,7 +395,16 @@ public sealed class AcmeChallengeServer(AcmeChallenges challenges, Microsoft.Ext
         server.MapGet("/.well-known/acme-challenge/{token}", (string token) =>
             challenges.Find(token) is string answer ? Results.Text(answer, "application/octet-stream") : Results.NotFound());
         server.MapFallback(() => Results.NotFound());
-        await server.StartAsync(token);
+        try { await server.StartAsync(token); }
+        catch (Exception error) when (!token.IsCancellationRequested)
+        {
+            await server.DisposeAsync();
+            server = null;
+            log.LogWarning("The ACME HTTP-01 challenge listener could not start on port {Port} ({ExceptionType}); certificates cannot be issued until the port is free.",
+                port, error.GetType().Name);
+            return;
+        }
+        challenges.SetListener(port, true);
         log.LogInformation("ACME HTTP-01 challenge listener started on port {Port}.", port);
     }
 

@@ -324,6 +324,34 @@ using (var vault = new CredentialVault())
     catch (ManagementError e) { Check(e.Status == 401, "Removed session denied."); }
 }
 
+// A taken ACME challenge port leaves the panel running; issuance and renewal say why they
+// cannot run instead of failing the certificate authority's check.
+using (var occupied = new System.Net.Sockets.TcpListener(IPAddress.IPv6Any, 0))
+{
+    occupied.Server.DualMode = true; // the challenge listener binds IPv4 and IPv6
+    occupied.Start();
+    int busyPort = ((IPEndPoint)occupied.LocalEndpoint).Port;
+    var busyFake = new FakeChannel();
+    await using var busy = ManagementHost.Build(["--environment", "Development", "--urls", "http://127.0.0.1:0", "--Acme:HttpPort", busyPort.ToString(), "--Acme:RenewalCheckMinutes", "0"],
+        services => services.AddSingleton<IManagementChannel>(busyFake));
+    await busy.StartAsync();
+    var challenges = busy.Services.GetRequiredService<AcmeChallenges>();
+    Check(challenges.Port == busyPort && !challenges.Listening, "A taken ACME challenge port does not stop the panel from starting.");
+    using (var session = new LiveRestTests.BrowserSession(new Uri(busy.Urls.Single()), Check))
+    {
+        await session.Login("admin", "test-password");
+        var httpChallenge = (await session.Send("/acme", HttpMethod.Get)).GetProperty("httpChallenge");
+        Check(httpChallenge.GetProperty("port").GetInt32() == busyPort && !httpChallenge.GetProperty("listening").GetBoolean()
+            && httpChallenge.GetProperty("message").GetString()!.Contains("another program", StringComparison.Ordinal), "The ACME settings report the challenge listener that could not start.");
+        await session.Send("/certificates/acme", HttpMethod.Post, new { name = "Busy", hostnames = new[] { "busy.test" } }, status: 409);
+        await session.Send("/certificates/1/renew", HttpMethod.Post, new { }, status: 409);
+        Check(busyFake.LastOperation != "certificates.acme.prepare", "Issuance is refused before an order is prepared.");
+    }
+    try { await busy.Services.GetRequiredService<AcmeIssuer>().IssueAsync(AcmeNative.Renewal(busyFake), new { certificateId = "1" }, CancellationToken.None); Check(false, "Renewal ran without a challenge listener."); }
+    catch (AcmeException error) { Check(error.Message.Contains("another program", StringComparison.Ordinal) && busyFake.AutomationCalls == 0, "Renewal reports the missing challenge listener without calling the service."); }
+    await busy.StopAsync();
+}
+
 var fake = new FakeChannel();
 await using var app = ManagementHost.Build(["--environment", "Development", "--urls", "http://127.0.0.1:0"],
     services => services.AddSingleton<IManagementChannel>(fake));
