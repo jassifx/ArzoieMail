@@ -615,6 +615,12 @@ json::object PrepareAcmeOrder(const std::vector<std::string> &hostnames, __int64
    return {{"pendingId", id}, {"csr", csr}, {"hostnames", std::move(identifiers)}};
 }
 
+json::object AcmeMetadataOf(const json::object &metadata)
+{
+   const auto *acme = metadata.if_contains("acme");
+   return acme && acme->is_object() ? acme->as_object() : json::object();
+}
+
 // Installs an issued chain for a waiting order: it must use the order's key and name every host.
 json::object CompleteAcmeOrder(const std::string &pendingId, const std::string &chain, bool automation)
 {
@@ -648,11 +654,6 @@ json::object CompleteAcmeOrder(const std::string &pendingId, const std::string &
    return view;
 }
 
-json::object AcmeMetadataOf(const json::object &metadata)
-{
-   const auto *acme = metadata.if_contains("acme");
-   return acme && acme->is_object() ? acme->as_object() : json::object();
-}
 
 // Certificates set to renew automatically that expire within 30 days. After a failed attempt a
 // certificate waits 12 hours before the next; a successful renewal is not due again until it,
@@ -791,16 +792,21 @@ json::value ManageCertificates(const std::string &operation, json::object &argum
    if (operation == "certificates.acme.prepare")
    {
       AllowedFields(arguments, {"hostnames", "name", "certificateId", "autoRenew"});
-      if (!arguments.if_contains("hostnames")) throw RequestError{422};
-      const auto hostnames = AcmeHostnames(arguments.at("hostnames"));
-      const bool autoRenew = Boolean(arguments, "autoRenew", true);
       if (arguments.if_contains("certificateId"))
       {
+         // Renewing: the host names and renewal setting recorded at issuance, unless given.
          if (arguments.if_contains("name")) throw RequestError{422};
          auto certificate = FindCertificate(CertificateIdArgument(arguments, "certificateId"));
-         return PrepareAcmeOrder(hostnames, certificate->GetID(), certificate->GetName(), autoRenew, false);
+         const auto acme = AcmeMetadataOf(ReadCertificateMetadata(certificate->GetID()));
+         const auto *recorded = acme.if_contains("hostnames");
+         if (!arguments.if_contains("hostnames") && !recorded) throw RequestError{422};
+         const auto *renew = acme.if_contains("autoRenew");
+         const bool autoRenew = Boolean(arguments, "autoRenew", renew && renew->is_bool() ? renew->as_bool() : true);
+         return PrepareAcmeOrder(AcmeHostnames(arguments.if_contains("hostnames") ? arguments.at("hostnames") : *recorded),
+            certificate->GetID(), certificate->GetName(), autoRenew, false);
       }
-      return PrepareAcmeOrder(hostnames, 0, CertificateName(arguments), autoRenew, false);
+      if (!arguments.if_contains("hostnames")) throw RequestError{422};
+      return PrepareAcmeOrder(AcmeHostnames(arguments.at("hostnames")), 0, CertificateName(arguments), Boolean(arguments, "autoRenew", true), false);
    }
    if (operation == "certificates.acme.complete")
    {

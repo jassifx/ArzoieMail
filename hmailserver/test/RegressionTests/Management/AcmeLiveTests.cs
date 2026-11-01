@@ -105,7 +105,7 @@ static class AcmeLiveTests
                 job = await admin.Send($"/certificates/{certificateId}/renew", HttpMethod.Post, new { }, status: 202);
                 done = await Wait(admin, job.GetProperty("id").GetString()!);
                 check(done.GetProperty("status").GetString() == "succeeded"
-                    && done.GetProperty("certificate").GetProperty("fingerprintSha256").GetString() != second, "Renew now issues another certificate.");
+                    && done.GetProperty("certificate").GetProperty("fingerprintSha256").GetString() != second, "Renew now issues another certificate: " + done.GetProperty("message").GetString());
                 await admin.Send("/certificates/acme/jobs/" + new string('0', 32), HttpMethod.Get, status: 404);
             }
             finally
