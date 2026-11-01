@@ -139,6 +139,11 @@ static class CertificateTests
             var due = await native.SendAutomationAsync("acme.renewals.due", null, CancellationToken.None);
             check(due.GetProperty("items").EnumerateArray().Any(item => item.GetProperty("certificateId").GetString() == acmeId), "A certificate within 30 days of expiry is due for renewal.");
             var renewal = await native.SendAutomationAsync("acme.renewals.prepare", new { certificateId = acmeId }, CancellationToken.None);
+            // One order per certificate: a renewal in progress blocks Renew now and another renewal.
+            await Refuse("certificates.acme.prepare", new { certificateId = acmeId }, 409);
+            await RefuseAutomation("acme.renewals.prepare", new { certificateId = acmeId }, 409);
+            check(!(await native.SendAutomationAsync("acme.renewals.due", null, CancellationToken.None)).GetProperty("items").EnumerateArray()
+                .Any(item => item.GetProperty("certificateId").GetString() == acmeId), "A certificate with an order in progress is not offered for renewal again.");
             await RefuseAutomation("acme.renewals.complete", new { pendingId = order.GetProperty("pendingId").GetString(), certificatePem = chain }, 404);
             var (renewedChain, renewedCertificate) = Sign(renewal, authority, TimeSpan.FromDays(90));
             var renewed = await native.SendAutomationAsync("acme.renewals.complete", new { pendingId = renewal.GetProperty("pendingId").GetString(), certificatePem = renewedChain }, CancellationToken.None);
@@ -148,6 +153,28 @@ static class CertificateTests
                 .Any(item => item.GetProperty("certificateId").GetString() == acmeId), "A renewed certificate is not due again.");
             await native.SendAutomationAsync("acme.renewals.report", new { certificateId = acmeId, error = "Simulated failure" }, CancellationToken.None);
             check((await Send("certificates.read", new { id = acmeId })).GetProperty("acme").GetProperty("lastError").GetString() == "Simulated failure", "A failed renewal is recorded for the panel.");
+            // A failed order is discarded, so the certificate can be ordered again at once; each
+            // scope discards only its own orders.
+            var manual = await Send("certificates.acme.prepare", new { certificateId = acmeId });
+            await RefuseAutomation("acme.renewals.discard", new { pendingId = manual.GetProperty("pendingId").GetString() }, 404);
+            await Send("certificates.acme.discard", new { pendingId = manual.GetProperty("pendingId").GetString() });
+            await Refuse("certificates.acme.discard", new { pendingId = manual.GetProperty("pendingId").GetString() }, 404);
+            var again = await native.SendAutomationAsync("acme.renewals.prepare", new { certificateId = acmeId }, CancellationToken.None);
+            await native.SendAutomationAsync("acme.renewals.discard", new { pendingId = again.GetProperty("pendingId").GetString() }, CancellationToken.None);
+
+            // A host name too long for a common name is requested by its alternative name alone.
+            string longHost = new string('l', 60) + "." + suffix + ".test";
+            var longOrder = await Send("certificates.acme.prepare", new { hostnames = new[] { longHost, host }, name = "Long " + suffix, autoRenew = false });
+            var longRequest = CertificateRequest.LoadSigningRequest(FromBase64Url(longOrder.GetProperty("csr").GetString()!), HashAlgorithmName.SHA256,
+                CertificateRequestLoadOptions.UnsafeLoadCertificateExtensions);
+            check(longRequest.SubjectName.Name == "CN=" + host && longRequest.CertificateExtensions.OfType<X509SubjectAlternativeNameExtension>().Single().EnumerateDnsNames().Contains(longHost),
+                "A host name longer than 64 characters goes in the alternative names; the common name uses the first that fits.");
+            var onlyLong = await Send("certificates.acme.prepare", new { hostnames = new[] { longHost }, name = "Long only " + suffix, autoRenew = false });
+            check(CertificateRequest.LoadSigningRequest(FromBase64Url(onlyLong.GetProperty("csr").GetString()!), HashAlgorithmName.SHA256).SubjectName.RawData.Length <= 2,
+                "A request whose host names are all too long has an empty subject.");
+            await Send("certificates.acme.discard", new { pendingId = longOrder.GetProperty("pendingId").GetString() });
+            await Send("certificates.acme.discard", new { pendingId = onlyLong.GetProperty("pendingId").GetString() });
+
             await Send("certificates.update", new { id = acmeId, autoRenew = false });
             await RefuseAutomation("acme.renewals.prepare", new { certificateId = acmeId }, 403);
         }

@@ -568,10 +568,32 @@ std::map<std::string, PendingAcmeOrder> &PendingAcmeOrders()
    return orders;
 }
 
+// An order still in progress for the certificate. The API gives up on an order after five
+// minutes, so one older than ten has been abandoned and no longer blocks another.
+bool AcmeOrderInProgress(__int64 certificateId)
+{
+   const ULONGLONG now = GetTickCount64();
+   for (const auto &[id, order] : PendingAcmeOrders())
+      if (order.certificateId == certificateId && now - order.created < 10 * 60 * 1000ULL) return true;
+   return false;
+}
+
+// Drops an order the API could not complete, so the certificate can be ordered again at once.
+json::object DiscardAcmeOrder(const std::string &pendingId, bool automation)
+{
+   auto &orders = PendingAcmeOrders();
+   const auto found = orders.find(pendingId);
+   if (found == orders.end() || found->second.automation != automation) throw RequestError{404};
+   orders.erase(found);
+   return {{"discarded", true}};
+}
+
 // A fresh P-256 key and its certificate signing request. The key waits here for the issued
-// certificate; it is dropped after two hours or when more than eight orders wait.
+// certificate; it is dropped after two hours or when more than eight orders wait. A certificate
+// has one order at a time, so a renewal and Renew now cannot both issue it.
 json::object PrepareAcmeOrder(const std::vector<std::string> &hostnames, __int64 certificateId, const String &name, bool autoRenew, bool automation)
 {
+   if (certificateId > 0 && AcmeOrderInProgress(certificateId)) throw RequestError{409};
    auto &orders = PendingAcmeOrders();
    const ULONGLONG now = GetTickCount64();
    for (auto order = orders.begin(); order != orders.end();)
@@ -587,8 +609,12 @@ json::object PrepareAcmeOrder(const std::vector<std::string> &hostnames, __int64
    std::unique_ptr<STACK_OF(X509_EXTENSION), void (*)(STACK_OF(X509_EXTENSION) *)> extensions(sk_X509_EXTENSION_new_null(),
       [](STACK_OF(X509_EXTENSION) *stack) { sk_X509_EXTENSION_pop_free(stack, X509_EXTENSION_free); });
    X509_EXTENSION *names = X509V3_EXT_conf_nid(nullptr, nullptr, NID_subject_alt_name, alternatives.c_str());
+   // The names are in the subject alternative names. A common name holds at most 64 characters,
+   // so it carries the first host name only when that fits, as certificate authorities do.
+   const auto common = std::find_if(hostnames.begin(), hostnames.end(), [](const std::string &host) { return host.size() <= 64; });
    if (!extensions || !names || sk_X509_EXTENSION_push(extensions.get(), names) <= 0
-       || X509_NAME_add_entry_by_NID(subject, NID_commonName, MBSTRING_ASC, reinterpret_cast<const unsigned char *>(hostnames.front().c_str()), -1, -1, 0) != 1
+       || (common != hostnames.end()
+           && X509_NAME_add_entry_by_NID(subject, NID_commonName, MBSTRING_ASC, reinterpret_cast<const unsigned char *>(common->c_str()), -1, -1, 0) != 1)
        || X509_REQ_add_extensions(request.get(), extensions.get()) != 1 || X509_REQ_set_pubkey(request.get(), key.get()) != 1
        || X509_REQ_sign(request.get(), key.get(), EVP_sha256()) <= 0)
    {
@@ -668,7 +694,7 @@ json::object AcmeRenewalsDue()
    {
       const auto acme = AcmeMetadataOf(ReadCertificateMetadata(certificate->GetID()));
       const auto *renew = acme.if_contains("autoRenew");
-      if (!renew || !renew->is_bool() || !renew->as_bool()) continue;
+      if (!renew || !renew->is_bool() || !renew->as_bool() || AcmeOrderInProgress(certificate->GetID())) continue;
       const auto facts = CertificateFacts(certificate->GetCertificateFile());
       if (facts.at("readable").as_bool() && facts.at("daysRemaining").as_int64() > 30) continue;
       const auto *attempt = acme.if_contains("lastAttemptEpoch");
@@ -813,6 +839,11 @@ json::value ManageCertificates(const std::string &operation, json::object &argum
       AllowedFields(arguments, {"pendingId", "certificatePem"});
       return CompleteAcmeOrder(TextArgument(arguments, "pendingId", 64), TextArgument(arguments, "certificatePem", 40000), false);
    }
+   if (operation == "certificates.acme.discard")
+   {
+      AllowedFields(arguments, {"pendingId"});
+      return DiscardAcmeOrder(TextArgument(arguments, "pendingId", 64), false);
+   }
    if (operation == "certificates.acme.report")
    {
       AllowedFields(arguments, {"id", "error"});
@@ -951,6 +982,11 @@ json::value ManageCertificateAutomation(const std::string &operation, json::obje
       }
       view["restarted"] = restarted;
       return view;
+   }
+   if (operation == "acme.renewals.discard")
+   {
+      AllowedFields(arguments, {"pendingId"});
+      return DiscardAcmeOrder(TextArgument(arguments, "pendingId", 64), true);
    }
    if (operation == "acme.renewals.report")
    {
