@@ -52,7 +52,7 @@ static class AcmeLiveTests
                     profiles = new { @default = new { description = "CI", validityPeriod = 1728000 } }
                 }
             }));
-            processes.Add(Start(challengeServer, "-defaultIPv4 127.0.0.1 -defaultIPv6 \"\" -dns01 127.0.0.1:8053 -http01 \"\" -https01 \"\" -tlsalpn01 \"\" -doh \"\" -management 127.0.0.1:8055", work, []));
+            processes.Add(Start(challengeServer, "-defaultIPv4 127.0.0.1 -defaultIPv6 \"\" -dnsserver 127.0.0.1:8053 -http01 \"\" -https01 \"\" -tlsalpn01 \"\" -doh \"\" -management 127.0.0.1:8055", work, []));
             processes.Add(Start(pebble, $"-config \"{Path.Combine(work, "pebble.json")}\" -dnsserver 127.0.0.1:8053", work,
                 [("PEBBLE_VA_NOSLEEP", "1"), ("PEBBLE_WFE_NONCEREJECT", "0")]));
             await WaitForDirectory(rootFile);
@@ -74,14 +74,14 @@ static class AcmeLiveTests
                     check(panel.StatusCode == HttpStatusCode.NotFound && unknown.StatusCode == HttpStatusCode.NotFound, "The challenge port serves no panel and no unknown challenge.");
                 }
                 // Without accepted terms nothing is requested from the certificate authority.
-                await admin.Send("/acme", HttpMethod.Patch, new { directoryUrl = "https://127.0.0.1:14000/dir", contact = "", termsAgreed = false });
+                await admin.Send("/acme", HttpMethod.Patch, new { directoryUrl = "https://localhost:14000/dir", contact = "", termsAgreed = false });
                 var refusedJob = await admin.Send("/certificates/acme", HttpMethod.Post, new { name = "Pebble refused", hostnames = new[] { Host } }, status: 202);
                 var refused = await Wait(admin, refusedJob.GetProperty("id").GetString()!);
                 check(refused.GetProperty("status").GetString() == "failed" && refused.GetProperty("message").GetString()!.Contains("terms", StringComparison.Ordinal),
                     "Issuance refuses until the certificate authority's terms are accepted.");
                 await admin.Send("/certificates/acme", HttpMethod.Post, new { name = "Bad", hostnames = new[] { Host }, path = "x" }, status: 422);
 
-                await admin.Send("/acme", HttpMethod.Patch, new { directoryUrl = "https://127.0.0.1:14000/dir", contact = "", termsAgreed = true });
+                await admin.Send("/acme", HttpMethod.Patch, new { directoryUrl = "https://localhost:14000/dir", contact = "", termsAgreed = true });
                 var job = await admin.Send("/certificates/acme", HttpMethod.Post, new { name = "Pebble " + Guid.NewGuid().ToString("N")[..6], hostnames = new[] { Host }, autoRenew = true }, status: 202);
                 var done = await Wait(admin, job.GetProperty("id").GetString()!);
                 check(done.GetProperty("status").GetString() == "succeeded", "Pebble issues a certificate after validating HTTP-01 through the API: " + done.GetProperty("message").GetString());
@@ -91,7 +91,7 @@ static class AcmeLiveTests
                 string first = certificate.GetProperty("fingerprintSha256").GetString()!;
                 check(certificate.GetProperty("dnsNames").EnumerateArray().Any(name => name.GetString() == Host) && certificate.GetProperty("acme").GetProperty("autoRenew").GetBoolean(),
                     "The issued certificate names the host and renews automatically.");
-                check((await admin.Send("/acme", HttpMethod.Get)).GetProperty("accountUrl").GetString()!.StartsWith("https://127.0.0.1:14000/", StringComparison.Ordinal),
+                check((await admin.Send("/acme", HttpMethod.Get)).GetProperty("accountUrl").GetString()!.StartsWith("https://localhost:14000/", StringComparison.Ordinal),
                     "The ACME account was registered and recorded.");
 
                 // Renewal without an administrator: the certificate is valid for 20 days, so it is due.
@@ -139,13 +139,19 @@ static class AcmeLiveTests
     {
         using var handler = AcmeIssuer.CreateHandler(new AcmeOptions { TrustedRootFile = rootFile });
         using var client = new HttpClient(handler);
+        string last = "no response";
         for (int attempt = 0; attempt < 60; ++attempt)
         {
-            try { using var response = await client.GetAsync("https://127.0.0.1:14000/dir"); if (response.IsSuccessStatusCode) return; }
-            catch (HttpRequestException) { }
+            try
+            {
+                using var response = await client.GetAsync("https://localhost:14000/dir");
+                if (response.IsSuccessStatusCode) return;
+                last = "HTTP " + (int)response.StatusCode;
+            }
+            catch (HttpRequestException error) { last = error.Message + (error.InnerException is null ? "" : " / " + error.InnerException.Message); }
             await Task.Delay(500);
         }
-        throw new Exception("Pebble did not start.");
+        throw new Exception("Pebble's directory did not answer: " + last);
     }
 
     static async Task<JsonElement> Wait(LiveRestTests.BrowserSession admin, string id)
