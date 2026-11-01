@@ -139,6 +139,7 @@ static class AcmeLiveTests
     {
         using var handler = AcmeIssuer.CreateHandler(new AcmeOptions { TrustedRootFile = rootFile });
         using var client = new HttpClient(handler);
+        AcmeIssuer.ConfigureClient(client);
         string last = "no response";
         for (int attempt = 0; attempt < 60; ++attempt)
         {

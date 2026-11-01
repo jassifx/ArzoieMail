@@ -44,7 +44,7 @@ public static partial class ManagementHost
         builder.Services.AddSingleton<AcmeRenewalService>();
         builder.Services.AddHostedService(services => services.GetRequiredService<AcmeRenewalService>());
         builder.Services.AddHostedService<AcmeChallengeServer>();
-        builder.Services.AddHttpClient(AcmeIssuer.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(30))
+        builder.Services.AddHttpClient(AcmeIssuer.HttpClientName, AcmeIssuer.ConfigureClient)
             .ConfigurePrimaryHttpMessageHandler(services => AcmeIssuer.CreateHandler(services.GetRequiredService<Microsoft.Extensions.Options.IOptions<AcmeOptions>>().Value));
         builder.Services.ConfigureHttpJsonOptions(options =>
             options.SerializerOptions.UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow);

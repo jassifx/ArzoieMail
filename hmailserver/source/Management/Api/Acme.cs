@@ -218,6 +218,16 @@ public sealed class AcmeIssuer(IHttpClientFactory clients, AcmeChallenges challe
 
     internal static string Base64Url(byte[] data) => Convert.ToBase64String(data).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
+    // RFC 8555 6.1: every request names the client.
+    public static void ConfigureClient(HttpClient client)
+    {
+        client.Timeout = TimeSpan.FromSeconds(30);
+        // The product version; the assembly version is kept fixed for identity.
+        string version = (System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof(AcmeIssuer).Assembly)
+            ?.InformationalVersion ?? "6").Split('+')[0];
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("ArzoieMail-ACME/" + version);
+    }
+
     // The HTTP client for the ACME directory. A configured test root replaces the system roots.
     public static HttpMessageHandler CreateHandler(AcmeOptions options)
     {
