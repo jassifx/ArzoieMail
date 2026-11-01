@@ -95,7 +95,7 @@ all remaining Phase 1b, submitted as one checkpoint PR per coherent bundle (main
 2026-10-30; see the working agreement); follow the latest handoff for implementation/evidence status. No Phase 2 start or automatic merge is authorized.
 Checkpoints #45-#49 are merged (#48, bundle 3a, as `79df40565`; #49, bundle 3b, the native
 Bayesian spam filter with schema 5715, as `df10bc451`). Bundle 4 (listener certificates,
-built-in ACME, the panel installed as the ArzoieMailAdmin service) is `feature/phase1b-certificates`.
+built-in ACME, the panel installed as the ArzoieMailAdmin service) is PR #50, awaiting review.
 
 ---
 
