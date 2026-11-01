@@ -4,9 +4,27 @@ The [documentation index](README.md) defines evidence ownership. Capability/cove
 are tracked in the [Phase 1b ledger](phase-1b-status.md). Test counts do not imply full parity,
 production deployment, capacity, or that skipped/manual scenarios executed.
 
+## Bundle 4 follow-up: certificate and ACME gaps
+
+Branch `feature/phase1b-certificates-followup` (E03, E07; see the
+[ledger](phase-1b-status.md#bundle-4-follow-up-certificate-and-acme-gaps-2026-11-01)).
+CI evidence is pending. New coverage, per backend:
+
+- default management run: an API host whose ACME challenge port is already taken still starts;
+  `GET /acme` reports the port, `listening: false` and the reason; issuance and *Renew now*
+  return 409 before any order is prepared, and renewal fails with the reason without calling
+  the service.
+- `CertificateTests`: a renewal in progress refuses another order for the same certificate from
+  either scope (409) and drops it from the due list; each scope discards only its own orders; a
+  host name longer than 64 characters goes in the alternative names only, with the common name
+  taken from the first name that fits, or an empty subject when none does.
+- `AcmeLiveTests`: `GET /acme` reports the running challenge listener.
+- `browser.py`: the Certificates page warns when the challenge listener is not running and
+  clears the warning once it is; the contact field's new label.
+
 ## Bundle 4 checkpoint: listener certificates, ACME and the installed panel
 
-Branch `feature/phase1b-certificates` (E03, E07, A06; see the
+Merged as #50 (`ec2b42315`); branch `feature/phase1b-certificates` (E03, E07, A06; see the
 [ledger](phase-1b-status.md#bundle-4-checkpoint-listener-certificates-acme-and-the-installed-panel-2026-11-01)).
 Head `b662d7961` passed all four database jobs, Release x64, GCC/Clang and CI installer
 publication. Per backend:

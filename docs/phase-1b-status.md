@@ -193,6 +193,31 @@ Head `b662d7961` passed four-backend CI (1172 native, 274 live HTTP, 54-56 Pebbl
 installed-panel checks per backend, both browser suites, NUnit unchanged); see the
 [CI inventory](ci-test-inventory.md#bundle-4-checkpoint-listener-certificates-acme-and-the-installed-panel).
 
+### Bundle 4 follow-up: certificate and ACME gaps (2026-11-01)
+
+#50 merged as `ec2b42315` on 2026-11-01; its final head `f17ac0cc6` passed all CI. A review of
+the merged code found gaps the ledger did not record. Branch
+`feature/phase1b-certificates-followup` fixes five:
+
+- A taken ACME challenge port stopped the whole panel service from starting; the panel now
+  starts without the challenge listener and logs a warning.
+- The panel could not tell whether HTTP-01 could be answered; `GET /acme` reports the challenge
+  listener, the Certificates page warns, and issuance or renewal is refused with the reason
+  instead of failing the certificate authority's check after 90 seconds.
+- A renewal and *Renew now* could order the same certificate at once; the service allows one
+  order per certificate (an order abandoned for ten minutes no longer counts), and the API
+  discards an order it could not complete.
+- A first host name longer than 64 characters made the certificate request fail; it is now
+  requested by its alternative name only.
+- The contact field promised expiry notices, which Let's Encrypt no longer sends; the page says
+  where expiry and failed renewals show instead.
+
+Recorded as remaining in E03: certificate authorities that need external account binding, ACME
+Renewal Information and shorter certificate lifetimes, revocation and account key change, and
+restores that bring back listeners whose certificate files are not in the backup. CI evidence
+is pending; see the
+[CI inventory](ci-test-inventory.md#bundle-4-follow-up-certificate-and-acme-gaps).
+
 ## Remaining administration parity
 
 These rows make the broad "advanced administration" item concrete. They are **planned** for
@@ -229,7 +254,7 @@ row complete, enumerate and compare fields/actions in its legacy PHP and desktop
 |---|---|---|
 | E01 | SPF/DKIM/DMARC setup | Publication inspection (#31). Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): per-domain DKIM settings, server-generated RSA 2048 keys in a service-only folder, DNS-gated activation, rotation and deletion, and CI conformance: a server-signed message verified by an independent RFC 6376 check. Remaining: SPF/DMARC alignment conformance with external receivers and multi-provider SPF changes |
 | E02 | SpamAssassin engine operations | Decided 2026-10-31: not shipped; SpamAssassin and ClamAV are optional, administrator-installed integrations. Bundle 3a checkpoint (`feature/phase1b-spam-dkim`): the SpamAssassin test reports GTUBE detection and headers; setup guidance covers a remote spamd. Bundle 3b (merged as #49): the native Bayesian filter is built in and enabled by the administrator (schema 5715), trained from IMAP Junk copies and administrator-chosen folders, with statistics, reset and a live SMTP/IMAP train-score-reset test per backend; content rules are the existing rules. Remaining: per-user models, untraining and token expiry are not planned for 6.0; accuracy on representative mail is unmeasured |
-| E03 | Guided certificates | Bundle 4 checkpoint (`feature/phase1b-certificates`): PEM/PFX import with key, strength, validity, CA and chain checks; protected managed storage; replace and one-generation rollback; listener assignment and probe; built-in ACME (own RFC 8555 client, HTTP-01 on a challenge-only port, keys generated and kept by the service) with unattended renewal and restart; Pebble end-to-end in CI. The panel's HTTPS binding is separate (E07). Remaining: DNS-01/wildcards, ACME for the panel's own certificate, expiry notices by mail, CNG key storage as later hardening, certificate files in backups |
+| E03 | Guided certificates | Bundle 4 checkpoint (`feature/phase1b-certificates`): PEM/PFX import with key, strength, validity, CA and chain checks; protected managed storage; replace and one-generation rollback; listener assignment and probe; built-in ACME (own RFC 8555 client, HTTP-01 on a challenge-only port, keys generated and kept by the service) with unattended renewal and restart; Pebble end-to-end in CI. The panel's HTTPS binding is separate (E07). Follow-up branch (`feature/phase1b-certificates-followup`): the panel starts when the challenge port is taken and reports it, one ACME order per certificate, long host names, the contact label. Remaining: DNS-01/wildcards, ACME for the panel's own certificate, expiry notices by mail, CNG key storage as later hardening, certificate files in backups (a restore onto another computer brings back listeners whose certificates must be imported again), external account binding (ZeroSSL, Google Trust Services), ACME Renewal Information and a renewal window that follows shorter certificate lifetimes, revocation on delete and account key change |
 | E04 | Optional Defender adapter | Native protected staging and bounded execution, clean/infected/error/unscannable outcomes, clean/EICAR/MIME/archive/encrypted-content/permission/error tests; implementation has not started |
 | E05 | Defender lifecycle, scheduling and mitigation | SMTP receive/submission, queued send, external fetch, uploaded drafts/IMAP APPEND/import and changed-content coverage; durable fair bounded workers, verdict gates, hold/retry/quarantine, retention/audit, restart/outage recovery and observability |
 | E06 | Defender capacity acceptance | Define numerical throughput/latency goals and hardware/message mix, test at least 10,000 queued/in-flight messages, concurrent lifecycle activity, bursts/outages/recovery/soak, p95/p99/resource use/headroom; conditional on results, keep alternative scanner path |
